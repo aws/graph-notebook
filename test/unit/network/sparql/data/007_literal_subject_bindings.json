@@ -1,0 +1,167 @@
+{
+  "head": {
+    "vars": [
+      "s",
+      "p",
+      "o"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "DEN"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "CUN"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "CLT"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "YYZ"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "YUL"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "MTY"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "ATL"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "MIA"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "DFW"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "MEX"
+        }
+      },
+      {
+        "p": {
+          "type": "literal",
+          "value": "route"
+        },
+        "s": {
+          "type": "literal",
+          "value": "CZM"
+        },
+        "o": {
+          "type": "literal",
+          "value": "IAH"
+        }
+      }
+    ]
+  }
+}

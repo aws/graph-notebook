@@ -1,0 +1,335 @@
+{
+  "head": {
+    "vars": [
+      "s",
+      "p",
+      "o"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#Class"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Person"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Ora Lassila"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Wally"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Waldemort"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "o": {
+          "type": "literal",
+          "value": "male"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        }
+      },
+      {
+        "s": {
+          "type": "bnode",
+          "value": "b255789583"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "s": {
+          "type": "bnode",
+          "value": "b255789583"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Marcia Lassila"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Coco"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "o": {
+          "type": "literal",
+          "value": "female"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "o": {
+          "type": "bnode",
+          "value": "b255789583"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Susan Laurenson"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#Class"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Dog"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Peppermint"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "o": {
+          "type": "literal",
+          "value": "female"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        }
+      }
+    ]
+  }
+}

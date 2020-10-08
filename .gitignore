@@ -1,0 +1,27 @@
+# IDE directories
+.vscode
+.idea
+.DS_Store
+
+# python-generated directories
+venv
+**/__pycache__
+.pytest_cache
+src/graph_notebook.egg-info
+**.pyc
+build
+dist
+
+MANIFEST
+
+# do not include widget typescript output directories
+src/graph_notebook/widgets/dist/
+src/graph_notebook/widgets/docs/
+src/graph_notebook/widgets/labextension/
+src/graph_notebook/widgets/nbextension/
+src/graph_notebook/widgets/node_modules/
+src/graph_notebook/widgets/lib/
+
+# npm
+node_modules/
+node_modules/.package-lock.json

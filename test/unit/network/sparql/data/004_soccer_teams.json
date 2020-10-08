@@ -1,0 +1,1434 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Birmingham"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Birmingham"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Birmingham"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Bournemouth"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Bournemouth"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Bournemouth"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Burnley"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Burnley"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Burnley"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Manchester"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Manchester"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Manchester"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Watford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Watford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Watford"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Wolverhampton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Wolverhampton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Wolverhampton"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "https://schema.org/StadiumOrArena"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Aston Villa F.C."
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Villans"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1897"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Villa_Park"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Aston_Villa"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Aston Villa"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Brighton and Hove Albion F.C"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Seagulls"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1901"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Amex_Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Brighton"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Brighton and Hove Albion"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Carrow_Road_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Carrow_Road_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "27359"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Carrow_Road_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1935"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Carrow_Road_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Norwich"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Carrow_Road_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Carrow Road Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Chelsea F.C."
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Blues"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1905"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Stamford_Bridge"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Chelsea"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Chelsea"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/League"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "English Premier League"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Liverpool F.C."
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Reds"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1892"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Anfield"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Liverpool"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Liverpool"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#London_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#London_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "60000"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#London_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "2016"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#London_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#London"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#London_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "London Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Manchester City F.C"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Citizens"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1880"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Etihad"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Manchester_City"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Manchester City"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Newcastle United F.C"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Magpies"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1892"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Newcastle_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Newcastle United"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Old_Trafford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Old_Trafford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "75643"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Old_Trafford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1910"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Old_Trafford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Manchester"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Old_Trafford"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Old Trafford"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Team"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/teamName"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Sheffield United F.C"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/nickname"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Blades"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/founded"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1889"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/currentLeague"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#EPL"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/homeStadium"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Bramall_Lane"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Sheffield_United"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Sheffield United"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "52305"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1880"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Newcastle"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#St_James_Park"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "St. James' Park"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Emirates"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Emirates"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "60704"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Emirates"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "2006"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Emirates"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#London"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#The_Emirates"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "The Emirates"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Turf_Moor"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Turf_Moor"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "21944"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Turf_Moor"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1883"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Turf_Moor"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Burnley"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Turf_Moor"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Turf Moor"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Vitality_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/Stadium"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Vitality_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/capacity"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "11364"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Vitality_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/ontology/opened"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "1910"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Vitality_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://schema.org/location"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.example.com/location/resource#Bournemouth"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://www.example.com/soccer/resource#Vitality_Stadium"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Vitality Stadium"
+        }
+      }
+    ]
+  }
+}

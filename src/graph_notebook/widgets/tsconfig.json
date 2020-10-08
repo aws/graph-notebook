@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "lib": ["es2015", "dom"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "resolveJsonModule": true,
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+    "target": "es2015",
+    "noImplicitAny": false // to allow feather-icons
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

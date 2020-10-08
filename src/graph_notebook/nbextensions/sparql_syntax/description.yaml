@@ -1,0 +1,12 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+Type: Jupyter Notebook Extension
+Compatibility: 5.x, 6.x
+Name: sparql_syntax
+Main: main.js
+Link: README.md
+Description: |
+  Enables syntax higlighting for cells with the %%sparql magic
+Parameters:
+  - none
