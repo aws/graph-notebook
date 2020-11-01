@@ -1,7 +1,12 @@
 name: Integration Tests
 
 on:
-  push
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   generate-stack-name:
