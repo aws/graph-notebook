@@ -38,20 +38,33 @@ cmd_class['jsdeps'] = combine_commands(
     ensure_targets(js_targets),
 )
 
+
+def get_version():
+    version = ''
+    with open('src/graph_notebook/__init__.py') as f:
+        for line in f:
+            if line.startswith('__version__'):
+                _, _, version = line.replace("'", '').split()
+                break
+    if version == '':
+        raise ValueError('no version found')
+    return version
+
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="graph-notebook",
+    name='graph-notebook',
     author='amazon-neptune',
-    author_email="graph-notebook@amazon.com",
-    description="jupyter notebook extension to connect to graph databases",
+    author_email='amazon-neptune-pypi@amazon.com',
+    description='jupyter notebook extension to connect to graph databases',
     long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/aws/graph-notebook",
-    version="1.06",
-    packages=find_packages(where="src", exclude=("test",)),
-    package_dir={"": "src"},
+    long_description_content_type='text/markdown',
+    url='https://github.com/aws/graph-notebook',
+    version=get_version(),
+    packages=find_packages(where='src', exclude=('test',)),
+    package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
         'gremlinpython==3.4.3',
@@ -69,5 +82,11 @@ setup(
     package_data={
         '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
     },
-    cmdclass=cmd_class
+    cmdclass=cmd_class,
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python :: 3.6',
+        'License :: OSI Approved :: Apache Software License'
+    ],
+    keywords='jupyter neptune gremlin sparql',
 )
