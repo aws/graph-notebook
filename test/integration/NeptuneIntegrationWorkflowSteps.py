@@ -32,13 +32,6 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def set_github_action_output(output_name, output_value):
-    logging.info(f'setting output {output_name} to {output_value}')
-
-    print(f'::set-output name={output_name}::{output_value}')
-    logging.info(f'::set-output name={output_name}::{output_value}')
-
-
 def get_cfn_stack_details(cfn_stack_name: str, cfn_client) -> dict:
     stack_instance = cfn_client.describe_stacks(StackName=cfn_stack_name)
     if 'Stacks' not in stack_instance or len(stack_instance['Stacks']) == 0:
@@ -338,20 +331,12 @@ def main():
     parser_run_tests.add_argument('--cfn-stack-name', type=str, default='')
     parser_run_tests.add_argument('--aws-region', type=str, default='us-east-1')
 
-    # sub parser to enable iam auth
-    enable_iam_parser = subparsers.add_parser(SUBPARSER_ENABLE_IAM,
-                                              help='enable iam auth for a given cluster identifier')
-    enable_iam_parser.add_argument('--cfn-stack-name', type=str, default='')
-    enable_iam_parser.add_argument('--aws-region', type=str, default='us-east-1')
-
     args = parser.parse_args()
 
     cfn_client = boto3.client('cloudformation', region_name=args.aws_region)
     neptune_client = boto3.client('neptune', region_name=args.aws_region)
     if args.which == SUBPARSER_CREATE_CFN:
         stack_name = args.cfn_stack_name if args.cfn_stack_name != '' else generate_stack_name()
-
-        set_github_action_output('cfn_stack_name', stack_name)
         handle_create_cfn_stack(stack_name, args.cfn_template_url, args.cfn_s3_bucket, cfn_client, args.cfn_runner_role)
     elif args.which == SUBPARSER_DELETE_CFN:
         delete_stack(args.cfn_stack_name, cfn_client)

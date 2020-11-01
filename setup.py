@@ -3,8 +3,6 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import site
-
 from os.path import join as pjoin
 from setuptools import setup, find_packages
 from setupbase import (
@@ -51,7 +49,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/aws/graph-notebook",
-    version="1.05",
+    version="1.06",
     packages=find_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     include_package_data=True,
@@ -64,9 +62,12 @@ setup(
         'networkx==2.4',
         'Jinja2==2.10.1',
         'notebook<=5.7.8',
+        'jupyter-contrib-nbextensions==0.5.1',
+        'widgetsnbextension==3.5.1',
+        'pytest>=6'
     ],
     package_data={
-        '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.mdinstall_npm', '*.tgz']
+        '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
     },
     cmdclass=cmd_class
 )

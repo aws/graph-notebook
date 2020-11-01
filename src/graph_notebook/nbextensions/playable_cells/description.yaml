@@ -1,0 +1,12 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+Type: Jupyter Notebook Extension
+Compatibility: 5.x, 6.x
+Name: playable_cells
+Main: main.js
+Link: README.md
+Description: |
+  Adds a play button to all jupyter code cells
+Parameters:
+- none

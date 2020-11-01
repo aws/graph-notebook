@@ -4,7 +4,8 @@ import os
 PLUGINS = [
     'neptune_menu',
     'gremlin_syntax',
-    'sparql_syntax'
+    'sparql_syntax',
+    'playable_cells'
 ]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
