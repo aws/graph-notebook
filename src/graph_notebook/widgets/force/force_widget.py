@@ -2,7 +2,7 @@
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
-
+import graph_notebook
 from graph_notebook.network.EventfulNetwork import EventfulNetwork
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED
 from traitlets import Unicode, Dict, Instance
@@ -62,9 +62,9 @@ class Force(DOMWidget):
     _model_module = Unicode('graph_notebook_widgets').tag(sync=True)
 
     # Version of the front-end module containing widget view
-    _view_module_version = Unicode('^0.1.0').tag(sync=True)
+    _view_module_version = Unicode(graph_notebook.__version__).tag(sync=True)
     # Version of the front-end module containing widget model
-    _model_module_version = Unicode('^0.1.0').tag(sync=True)
+    _model_module_version = Unicode(graph_notebook.__version__).tag(sync=True)
 
     options = Dict().tag(sync=True)
     message = Unicode().tag(sync=True)

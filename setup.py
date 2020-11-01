@@ -40,7 +40,6 @@ cmd_class['jsdeps'] = combine_commands(
 
 
 def get_version():
-    version = ''
     with open('src/graph_notebook/__init__.py') as f:
         for line in f:
             if line.startswith('__version__'):

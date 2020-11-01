@@ -31,23 +31,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-"""
-def install_nbextensions():
-    class InstallNbExtensions(BaseCommand):
-        def run(self):
-            print('installing nb extensions...')
-            nbextensions_dir = pjoin(site.getsitepackages()[0], 'graph_notebook', 'nbextensions')
-            extensions = [
-                'neptune_menu',
-                'sparql_syntax',
-                'gremlin_syntax'
-            ]
-            for extension in extensions:
-                os.system(f'''echo "installing {extension}";\
-                cd {nbextensions_dir}; \
-                jupyter nbextension install {extension} --sys-prefix --overwrite;\
-                jupyter nbextension enable {extension}/main --sys-prefix''')
-
-    return InstallNbExtensions
-"""
