@@ -1,0 +1,31 @@
+name: Unit Tests
+
+on: [push]
+
+jobs:
+  unit-tests:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 ./src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 ./test --max-complexity 10 --ignore E501,C901,W291 --show-source --statistics
+
+      - name: Install
+        run: |
+          pip install .
+      - name: Test with pytest
+        run: |
+          pytest

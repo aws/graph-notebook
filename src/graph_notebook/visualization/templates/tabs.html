@@ -1,0 +1,103 @@
+<div>
+    {% block style %}
+    <style>
+        html * {
+            font-size: 1em !important;
+            font-family: monospace !important;
+        }
+
+        /* Style the tab */
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+
+        .tabcontent {
+            animation: fadeEffect 1s; /* Fading effect takes 1 second */
+        }
+
+        /* Go from zero to full opacity */
+        @keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        .show {
+            display: block;
+        }
+
+        .hide {
+            display: none;
+        }
+    </style>
+    {% endblock %}
+
+    {% block javascript %}
+    <script>
+        function openTab(evt) {
+            const name = evt.target.name;
+            // Get all elements with class="tabcontent" and hide them
+            const tabContent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].className = "tabcontent hide";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            const tabLinks = document.getElementsByClassName("tabLinks");
+            for (let i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(name).className = "tabcontent show";
+
+            evt.currentTarget.className += " active";
+        }
+    </script>
+    {% endblock %}
+    <div>
+        <div class="tab">
+            {% for t in tabs %}
+            <button name="{{t['name']}}" class="tabLinks" onclick="openTab(event)">{{t['name']}}</button>
+            {% endfor %}
+        </div>
+
+        <div class="content-div">
+            {% for t in tabs %}
+            <div name="{{t['name']}}" id="{{t['name']}}" class="tabcontent {{t['display_class']}}">
+                {{t['content']}}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

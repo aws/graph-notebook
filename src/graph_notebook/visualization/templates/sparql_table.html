@@ -1,0 +1,54 @@
+<div class="table-div">
+    <link rel="stylesheet" type="text/css" href="/static/datatables.css">
+    <style>
+        #{{guid}} {
+            margin: 0 auto;
+        }
+
+        #{{guid}} * {
+                      font-size: 1em !important;
+                      font-family: "Courier New", Courier, monospace !important;
+                  }
+
+        .sorting, .sorting_asc, .sorting_desc {
+            background : none !important;
+        }
+
+        .table-div {
+            width: 100% !important;
+        }
+
+    </style>
+    <table id="{{guid}}" class="nowrap dt-left" style="table-layout: auto; width: 100%;">
+        <thead>
+        <tr>
+            <th></th>
+            {% for c in columns %}
+            <th style="text-align: left">{{ c|e }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+        <tr class="result-row dt-left">
+            <td>{{loop.index}}</td>
+            {% for cell in r%}
+            <td style="text-align: left">{{ cell|e }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script type="text/javascript">
+        require(["datatables"], function (datatables) {
+            $('#{{guid}}').DataTable({
+                scrollY: true,
+                scrollX: true,
+                columnDefs: [
+                    {targets: [0], width: "5%"},
+                ],
+                bAutoWidth: true
+            });
+        })
+    </script>
+</div>

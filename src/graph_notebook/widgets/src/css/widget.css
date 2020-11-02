@@ -1,0 +1,309 @@
+.menu-div {
+    position: absolute;
+    top: 5px;
+    text-align: center;
+    pointer-events: none;
+    width: 100%;
+}
+
+::after {
+    display: none;
+}
+
+svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+
+.menu-action > button {
+    background: white;
+    width: 35px;
+    height: 35px;
+    border: 1px solid gray;
+    border-radius: 2px;
+    pointer-events: all;
+    top: 0;
+    position: center;
+}
+
+.menu-action {
+    background: white;
+    border: none;
+    border-radius: 2px;
+    display: inline;
+    margin: 4px;
+    height: 35px;
+}
+
+.fullscreen {
+    background: white;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    object-fit: fill;
+    z-index: 9999;
+}
+
+.hidden {
+    visibility: hidden !important;
+}
+
+.network-div {
+    position: relative;
+    border: none;
+    outline: none;
+    height: 600px;
+}
+
+.vis-network {
+    outline: none;
+    border: none;
+}
+
+.network-div * {
+    font-size: 1em !important;
+    font-family: "Courier New", Courier, monospace !important;
+}
+
+.network-div:fullscreen {
+    background-color: rgba(255, 255, 255, 0);
+}
+
+.network-div:-webkit-full-screen {
+    background-color: rgba(255, 255, 255, 0);
+}
+
+.network-div:-moz-full-screen {
+    background-color: rgba(255, 255, 255, 0);
+}
+
+::backdrop {
+    background-color: white;
+}
+
+.details {
+    position: absolute !important;
+    background-color: white;
+    text-align: center;
+    border: none;
+    visibility: visible;
+    width: 30em;
+    height: 15em;
+    z-index: 9999;
+    top: 100px;
+    left: 100px;
+    display: flex;
+
+    box-shadow: 3px 3px 3px 3px grey;
+    overflow: hidden;
+}
+
+.active {
+    background-color: lightgrey !important;
+
+    -webkit-transition: all .5s;
+    -moz-transition: all .5s;
+    -o-transition: all .5s;
+    transition: all .5s;
+}
+
+button:focus {
+    outline: 0;
+}
+
+td, th {
+    border: none;
+    text-align: left;
+    padding: 8px;
+}
+
+tr:nth-child(odd) {
+    background-color: #f4f4f4;
+}
+
+.collapsible {
+    background-color: #777;
+    color: white;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+}
+
+.active, .collapsible:hover {
+    background-color: #555;
+}
+
+.collapsible:after {
+    content: '\002B';
+    color: white;
+    font-weight: bold;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\2212";
+}
+
+.properties-table {
+    font-family: "Courier New", Courier, monospace;
+    border-collapse: collapse;
+    width: 100%;
+    border-style: hidden;
+}
+
+.properties-content {
+    border: none;
+    transition: max-height 0.2s ease-out;
+    background-color: white;
+    height: calc(100% - 80px);
+    overflow: scroll;
+}
+
+.displayNone {
+    display: none !important;
+
+    width: 0;
+}
+
+.displayBlock {
+    display: block;
+}
+
+.emptyDetails {
+    border: none;
+    display: block;
+    height: calc(100% - 80px);
+    text-align: left;
+    margin: auto auto auto 10px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.details-container {
+    width: 100%;
+}
+
+div.menu-action.active::after {
+    display: none;
+}
+
+.feather-list {
+    -moz-transform: translateY(2px);
+}
+
+.feather-maximize {
+    -moz-transform: translateY(2px);
+}
+
+.vis-tooltip {
+    background: white !important;
+    font-size: 1em !important;
+    font-family: "Courier New", Courier, monospace !important;
+
+    -webkit-marquee: auto medium infinite scroll normal !important;
+    overflow-x: -webkit-marquee !important;
+}
+
+.search-div {
+    background: transparent;
+}
+
+.search-bar {
+    height: 35px;
+    width: 100px;
+    border-radius: 2px;
+    color: black;
+    font-size: 15px;
+    pointer-events: all;
+    border: 1px solid gray;
+    text-align: left;
+    vertical-align: bottom;
+
+    -webkit-transition: all .5s;
+    -moz-transition: all .5s;
+    -o-transition: all .5s;
+    transition: all .5s;
+}
+
+button.active::after {
+    visibility: hidden;
+}
+
+.details-text {
+    display: inline-block;
+    margin: auto auto auto 10px;
+    font-weight: bold;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.details-header {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    cursor: move;
+    background-color: white;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    border-bottom: 1px solid lightgrey;
+}
+
+.close-button {
+    display: inline-block;
+    float: right;
+    background: inherit;
+    border: none;
+    cursor: pointer !important;
+}
+
+.details-footer {
+    background-color: white;
+    display: flex;
+    justify-content: flex-end;
+    flex-direction: row;
+    border-top: 1px solid lightgrey;
+    height: 40px;
+}
+
+.details-footer-button {
+    background: #4c6b9e;
+    color: white;
+    height: 70%;
+    float: right;
+    border-radius: 2px;
+    border: none;
+    margin-right: 20px;
+    margin-top: 10px;
+
+}
+
+.right-actions {
+    float: right;
+}
+
+.left-actions {
+    float: left;
+}
+
+.bottom-right {
+    position: absolute;
+    display: flex;
+    flex-flow: column;
+    bottom: 0;
+    right: 0;
+    margin-bottom: 4px;
+    margin-right: 4px;
+}

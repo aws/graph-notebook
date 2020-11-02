@@ -1,0 +1,20 @@
+<div>
+    {% block style %}
+    <style>
+        .raw-container {
+            overflow: scroll;
+            height: inherit;
+            width: 100%;
+            white-space: nowrap;
+            font-size: 1em !important;
+            font-family: "Courier New", Courier, monospace !important;
+        }
+    </style>
+    {% endblock %}
+    <div class="raw-container">
+        {% for l in lines %}
+        {{l|e}}
+        <br/>
+        {% endfor %}
+    </div>
+</div>

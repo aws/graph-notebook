@@ -1,0 +1,156 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/class/Airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/type"
+        },
+        "object": {
+          "type": "literal",
+          "value": "airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "SJC"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/code"
+        },
+        "object": {
+          "type": "literal",
+          "value": "SJC"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/desc"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Norman Y. Mineta San Jose International Airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/icao"
+        },
+        "object": {
+          "type": "literal",
+          "value": "KSJC"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/region"
+        },
+        "object": {
+          "type": "literal",
+          "value": "US-CA"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/runways"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "3"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/longest"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "11000"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/elev"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "62"
+        }
+      }
+    ]
+  }
+}

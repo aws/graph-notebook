@@ -1,0 +1,12 @@
+<div>
+    {% block style %}
+        <style>
+            #results-pre{
+                overflow: scroll;
+                font-size: 1em !important;
+                font-family: "Courier New", Courier, monospace !important;
+            }
+        </style>
+    {% endblock %}
+    <pre id="results-pre">{{content|e}}</pre>
+</div>
