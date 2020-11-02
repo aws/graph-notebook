@@ -73,7 +73,7 @@ setup(
         'ipywidgets',
         'networkx==2.4',
         'Jinja2==2.10.1',
-        'notebook',
+        'notebook<=5.7.10',
         'jupyter-contrib-nbextensions==0.5.1',
         'widgetsnbextension==3.5.1',
         'jupyter>=1.0.0'
