@@ -1,11 +1,12 @@
-notebook==5.7.8
-ipywidgets==7.5.1
 tornado==4.5.3
 SPARQLWrapper==1.8.4
 networkx==2.4
 Jinja2==2.10.1
-jupyter-contrib-nbextensions==0.5.1
-widgetsnbextension==3.5.1
+jupyter
+notebook
+ipywidgets
+jupyter-contrib-nbextensions
+widgetsnbextension
 gremlinpython
 requests
 

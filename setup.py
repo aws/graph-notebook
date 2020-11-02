@@ -66,17 +66,17 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython==3.4.3',
+        'gremlinpython',
         'SPARQLWrapper==1.8.4',
         'tornado==4.5.3',
         'requests',
-        'ipywidgets<=7.5.1',
+        'ipywidgets',
         'networkx==2.4',
         'Jinja2==2.10.1',
-        'notebook<=5.7.8',
+        'notebook',
         'jupyter-contrib-nbextensions==0.5.1',
         'widgetsnbextension==3.5.1',
-        'pytest>=6'
+        'jupyter>=1.0.0'
     ],
     package_data={
         '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
