@@ -251,8 +251,11 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
+        parser.add_argument('-g', '--groupby', default='', help='group by property')
+
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
+        logger.debug(f'Arguments {args}')
 
         tab = widgets.Tab()
         if mode == QueryMode.EXPLAIN:
@@ -290,6 +293,9 @@ class Graph(Magics):
             children.append(table_output)
 
             try:
+                groupby=None
+                if args.groupby:
+                    groupby=args.groupby
                 gn = GremlinNetwork()
                 if args.path_pattern == '':
                     gn.add_results(res)
