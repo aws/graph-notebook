@@ -50,6 +50,125 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_results([path])
         self.assertEqual(len(path), len(gn.graph.nodes))
 
+    def test_group_with_groupby(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(group_by_property='code')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], 'SEA')
+
+    def test_group_nonexistent_groupby(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(group_by_property='foo')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], '')
+
+    def test_group_without_groupby(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], 'airport')
+
+    def test_group_without_groupby_list(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'code': ['SEA']
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], 'airport')
+
+    def test_group_with_groupby_list(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'code': ['SEA']
+        }
+
+        gn = GremlinNetwork(group_by_property='code')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], "['SEA']")
+
+    def test_group_notokens_groupby(self):
+        vertex = {
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(group_by_property='code')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('graph_notebook-ed8fddedf251d3d5745dccfd53edf51d')
+        self.assertEqual(node['group'], 'SEA')
+
+    def test_group_notokens_without_groupby(self):
+        vertex = {
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('graph_notebook-ed8fddedf251d3d5745dccfd53edf51d')
+        self.assertEqual(node['group'], '')
+
+    def test_add_path_without_groupby(self):
+        path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
+                          "T.label": 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          "T.id:": '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
+                          'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
+                         {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
+                          "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                         "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
+        gn = GremlinNetwork()
+        gn.add_results([path])
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], "airport")
+
+    def test_add_path_with_groupby(self):
+        path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
+                          "T.label": 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          "T.id:": '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
+                          'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
+                         {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
+                          "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                         "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
+        gn = GremlinNetwork(group_by_property="code")
+        gn.add_results([path])
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], "['ATL']")
+
+
 
 if __name__ == '__main__':
     unittest.main()
