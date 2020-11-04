@@ -1,7 +1,7 @@
 ## graph-notebook
 
 Python package integrating jupyter notebooks with various graph-stores including
-[Apache Tinkerpop](https://tinkerpop.apache.org/) and [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/).
+[Apache TinkerPop](https://tinkerpop.apache.org/) and [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/).
 
 ## Requirements
 - Python3.6
@@ -23,6 +23,9 @@ python -m graph_notebook.nbextensions.install
 
 # copy premade starter notebooks
 python -m graph_notebook.notebooks.install --destination /notebook/destination/dir  
+
+# start jupyter
+jupyter notebook /notebook/destination/dir
 ```
 
 ## Configuration

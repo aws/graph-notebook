@@ -73,9 +73,9 @@ setup(
         'ipywidgets',
         'networkx==2.4',
         'Jinja2==2.10.1',
-        'notebook<=5.7.8',
-        'jupyter-contrib-nbextensions==0.5.1',
-        'widgetsnbextension==3.5.1',
+        'notebook',
+        'jupyter-contrib-nbextensions',
+        'widgetsnbextension',
         'jupyter>=1.0.0'
     ],
     package_data={
