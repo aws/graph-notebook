@@ -25,7 +25,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install .
+          pip install -e .
       - name: Post-install commands
         run: |
           jupyter nbextension install --py --sys-prefix graph_notebook.widgets
