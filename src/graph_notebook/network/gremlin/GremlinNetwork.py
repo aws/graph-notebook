@@ -308,6 +308,8 @@ class GremlinNetwork(EventfulNetwork):
             if self.group_by_property:
                 if self.group_by_property in properties:
                     group = str(properties[self.group_by_property])
+                else:
+                    group = label
             else:
                 group = label
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
@@ -316,6 +318,8 @@ class GremlinNetwork(EventfulNetwork):
             title = str(v)
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data = {'title': title, 'label': label, 'group': ''}
+
+        logger.debug(data)
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):

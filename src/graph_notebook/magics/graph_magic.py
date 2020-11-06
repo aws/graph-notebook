@@ -296,7 +296,7 @@ class Graph(Magics):
                 groupby=None
                 if args.groupby:
                     groupby=args.groupby
-                gn = GremlinNetwork()
+                gn = GremlinNetwork(group_by_property=groupby)
                 if args.path_pattern == '':
                     gn.add_results(res)
                 else:
