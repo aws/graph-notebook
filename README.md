@@ -7,6 +7,9 @@ Python package integrating jupyter notebooks with various graph-stores including
 - Python3.6
 - Jupyter Notebooks
 
+## Introduction
+The graph-notebook provides a way to interact using a Jupyter notebook with any graph database that follows the Gremlin Server or RDF HTTP protocols. These databases could be running locally on your laptop, in a private data center or in the cloud. This project was initially created as a way to work with Amazon Neptune but is not limited to that database engine. For example you can connect to a Gremlin Server running on your laptop using this solution. The instructions below describe the process for connecting to Amazon Neptune but we plan to add instructions regarding connecting to other databases and also encourage others to contribute configurations they find useful. There is an `additional-databases` folder where we plan to put such information. We have already provided instructions for establishing the Gremlin Server connection.
+
 ## Installation
 
 ```
@@ -82,7 +85,7 @@ echo "{
 ```
 
 ### Connecting to a local graph store
-It is possible to connect `graph-notebook` to a graph database running on your local machine. An example being Gremlin Server. There are additional instructions regarding the use of local servers in the `additional-databases` folder.
+As mentioned in the introduction, it is possible to connect `graph-notebook` to a graph database running on your local machine. An example being Gremlin Server. There are additional instructions regarding the use of local servers in the `additional-databases` folder.
 
 ## Authentication
 
