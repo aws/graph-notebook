@@ -104,6 +104,18 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex['T.id'])
         self.assertEqual(node['group'], 'airport')
 
+    def test_group_without_groupby_choose_label(self):
+        vertex = {
+            'T.id': '1234',
+            'T.label': 'airport',
+            'code': ['SEA']
+        }
+
+        gn = GremlinNetwork(group_by_property='T.label')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], 'airport')
+
     def test_group_with_groupby_list(self):
         vertex = {
             'T.id': '1234',
