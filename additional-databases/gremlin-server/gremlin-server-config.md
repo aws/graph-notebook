@@ -44,7 +44,7 @@ If the Gremlin Server you wish to connect to is remote,  replacing `localhost` w
 ### Using `%seed` with Gremlin Server
 The graph-notebook has a `%seed` command that can be used to load sample data. For some data sets to load successfully, the stack size used by the Gremlin Server needs to be increased. If you do not plan to use the `%seed` command to load the `air-routes` data set this step can be ignored.
 
-1. In order to load the `air-routes` data set into TinkerGraph via Gremlin Server using the graph-notebook `%seed` command, the size of the JVM thread stack needs to be increased. Editing the `gremlin-server.sh` file and adding `-Xss2m` to the JAVA_OPTIONS variable is one way to do that. Locat this section of the file and add the `-Xss2m` flag.
+1. In order to load the `air-routes` data set into TinkerGraph via Gremlin Server using the graph-notebook `%seed` command, the size of the JVM thread stack needs to be increased. Editing the `gremlin-server.sh` file and adding `-Xss2m` to the JAVA_OPTIONS variable is one way to do that. Locate this section of the file and add the `-Xss2m` flag.
 
   ```
   # Set Java options
