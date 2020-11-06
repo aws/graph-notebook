@@ -4,7 +4,7 @@ Python package integrating jupyter notebooks with various graph-stores including
 [Apache TinkerPop](https://tinkerpop.apache.org/) and [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/).
 
 ## Requirements
-- Python3.6
+- Python 3.6.1 or higher, Python 3.7
 - Jupyter Notebooks
 
 ## Installation
