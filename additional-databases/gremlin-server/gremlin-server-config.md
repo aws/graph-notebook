@@ -21,10 +21,10 @@ Several of the steps below are optional but please read each step carefully and 
    ```
    channelizer: org.apache.tinkerpop.gremlin.server.channel.WebSocketChannelizer
    ```
-  to
-  ```
-   channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer`.
-  ```
+   to
+   ```
+    channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer`.
+   ```
    This will allow you to access the Gremlin Server from Jupyter using commands like `curl` as well as using the `%%gremlin` cell magic. This step is optional if you do not need HTTP connectivity to the server.
 5. Start the Gremlin server `bin/gremlin-server.sh start`
 
