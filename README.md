@@ -81,16 +81,19 @@ echo "{
 }" >> ~/graph_notebook_config.json
 ```
 
+### Connecting to a local graph store
+It is possible to connect `graph-notebook` to a graph database running on your local machine. An example being Gremlin Server. There are additional instructions regarding the use of local servers in the `additional-databases` folder.
+
 ## Authentication
 
-If you are running a SigV4 authenticated endpoint, ensure that the config field `iam_credentials_provider_type` is set 
+If you are running a SigV4 authenticated endpoint, ensure that the config field `iam_credentials_provider_type` is set
 to `ENV` and that you have set the following environment variables:
 
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_REGION
-- AWS_SESSION_TOKEN (OPTIONAL. Use if you are using temporary credentials) 
- 
+- AWS_SESSION_TOKEN (OPTIONAL. Use if you are using temporary credentials)
+
 
 ## Security
 
@@ -99,4 +102,3 @@ See [CONTRIBUTING](https://github.com/aws/graph-notebook/blob/main/CONTRIBUTING.
 ## License
 
 This project is licensed under the Apache-2.0 License.
-
