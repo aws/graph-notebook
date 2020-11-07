@@ -8,7 +8,7 @@ Python package integrating Jupyter notebooks with various graph-stores including
 - Jupyter Notebook
 
 ## Introduction
-The graph-notebook provides a way to interact using a Jupyter notebook with any graph database that follows the Gremlin Server or RDF HTTP protocols. These databases could be running locally on your laptop, in a private data center or in the cloud. This project was initially created as a way to work with Amazon Neptune but is not limited to that database engine. For example you can connect to a Gremlin Server running on your laptop using this solution. The instructions below describe the process for connecting to Amazon Neptune. We encourage others to contribute configurations they find useful. There is an `additional-databases` folder where such information can be found. We have already provided instructions for establishing the Gremlin Server connection.
+The graph-notebook provides a way to interact using a Jupyter notebook with any graph database that follows the Gremlin Server or RDF HTTP protocols. These databases could be running locally on your laptop, in a private data center or in the cloud. This project was initially created as a way to work with Amazon Neptune but is not limited to that database engine. For example you can connect to a Gremlin Server running on your laptop using this solution. The instructions below describe the process for connecting to Amazon Neptune. We encourage others to contribute configurations they find useful. There is an [`additional-databases`](additional-databases) folder where such information can be found. We have already provided instructions for establishing the Gremlin Server connection.
 
 ## Installation
 
@@ -85,7 +85,7 @@ echo "{
 ```
 
 ### Connecting to a local graph store
-As mentioned in the introduction, it is possible to connect `graph-notebook` to a graph database running on your local machine, an example being Gremlin Server. There are additional instructions regarding the use of local servers in the `additional-databases` folder.
+As mentioned in the introduction, it is possible to connect [`graph-notebook`](src/graph_notebook) to a graph database running on your local machine, an example being Gremlin Server. There are additional instructions regarding the use of local servers in the [`additional-databases`](additional-databases) folder.
 
 ### Connecting a local graph-notebook to Amazon Neptune (first-time setup)
 When using graph-notebook locally to connect to an Amazon Neptune database for the first time, there are a couple of additional steps. This section assumes that you've already installed & configured [graph-notebook](#installation) locally.
@@ -95,9 +95,9 @@ Amazon Neptune DB clusters can only be created in an Amazon Virtual Private Clou
 #### Part 1: Set up a EC2 proxy server.
 Launch an [Amazon EC2](https://aws.amazon.com/ec2/) instance located in the same region as your Neptune cluster. In terms of configuration, a standard Amazon Linux AMI can be used.  Since this is a proxy server, you can choose the lowest resource settings.  
 
-Make sure the EC2 instance is in the same VPC group as your Neptune cluster. To find the VPC group for your Neptune cluster, check the console under [Neptune](https://console.aws.amazon.com/neptune/home)> Subnet groups. The instance's security group needs to be able to send and receive on port 22 for SSH and port 8182 for Neptune.  See below for an example security group setup.  
+Make sure the EC2 instance is in the same VPC group as your Neptune cluster. To find the VPC group for your Neptune cluster, check the console under [Neptune](https://console.aws.amazon.com/neptune/home) > Subnet groups. The instance's security group needs to be able to send and receive on port 22 for SSH and port 8182 for Neptune.  See below for an example security group setup.  
 
-![Sample EC2 Inbound Rules](https://github.com/aws/graph-notebook/blob/main/images/sample-EC2-inbound-rules.png)
+![Sample EC2 Inbound Rules](images/sample-ec2rules.png)
 
 Lastly, make sure you save the key-pair file (.pem) and note the directory for use in the next step.
 
