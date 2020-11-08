@@ -15,8 +15,9 @@ files = [
 
 
 def main():
-    sitepackages = site.getsitepackages()[0]
-    destination = pjoin(sitepackages, 'notebook', 'static')
+    sitepackages = site.getsitepackages()
+    static_base_directory = sitepackages[0] if os.name != 'nt' else sitepackages[1]
+    destination = pjoin(static_base_directory, 'notebook', 'static')
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for file in files:
