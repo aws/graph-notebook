@@ -35,21 +35,21 @@ You should see a report, similar to the one below, indicating the status and det
 
 ```
 {
-"status": "healthy",
-"startTime": "Wed Nov 04 23:24:44 UTC 2020",
-"dbEngineVersion": "1.0.3.0.R1",
-"role": "writer",
-"gremlin": {
-"version": "tinkerpop-3.4.3"
-},
-"sparql": {
-"version": "sparql-1.1"
-},
-"labMode": {
-"ObjectIndex": "disabled",
-"DFEQueryEngine": "disabled",
-"ReadWriteConflictDetection": "enabled"
-}
+  "status": "healthy",
+  "startTime": "Wed Nov 04 23:24:44 UTC 2020",
+  "dbEngineVersion": "1.0.3.0.R1",
+  "role": "writer",
+  "gremlin": {
+    "version": "tinkerpop-3.4.3"
+  },
+  "sparql": {
+    "version": "sparql-1.1"
+  },
+  "labMode": {
+    "ObjectIndex": "disabled",
+    "DFEQueryEngine": "disabled",
+    "ReadWriteConflictDetection": "enabled"
+  }
 }
 ```
 
