@@ -1,5 +1,5 @@
 ## Connecting a local graph-notebook to Amazon Neptune (first-time setup)
-When using graph-notebook locally to connect to an Amazon Neptune database for the first time, there are a couple of additional steps. This section assumes that you've already installed & configured [graph-notebook](#installation) locally.  Please note that this wiki is not an official recommendation on network setups as there are many ways to connect to Amazon Neptune from outside of the VPC, such as setting up a load balancer or VPC peering.
+When using graph-notebook locally to connect to an Amazon Neptune database for the first time, there are a couple of additional steps. This section assumes that you've already installed & configured [graph-notebook](https://github.com/aws/graph-notebook#installation) locally.  Please note that this wiki is not an official recommendation on network setups as there are many ways to connect to Amazon Neptune from outside of the VPC, such as setting up a load balancer or VPC peering.
 
 Amazon Neptune DB clusters can only be created in an Amazon Virtual Private Cloud (VPC).  One way to connect to Amazon Neptune from outside of the VPC is to set up an Amazon EC2 instance as a proxy server within the same VPC. With this approach, you will also want to set up an SSH tunnel to securely forward traffic to the VPC. 
 
@@ -31,8 +31,26 @@ To test the success of your local graph-notebook connection to Amazon Neptune, o
 
 `https://yourneptunendpoint:8182/status` 
 
-You should see a status report indicating the health of your cluster like so:
+You should see a report, similar to the one below, indicating the status and details of your specific cluster:
 
-`{"status":"healthy","startTime":"Wed Nov 04 23:24:44 UTC 2020","dbEngineVersion":"1.0.3.0.R1","role":"writer","gremlin":{"version":"tinkerpop-3.4.3"},"sparql":{"version":"sparql-1.1"},"labMode":{"ObjectIndex":"disabled","DFEQueryEngine":"disabled","ReadWriteConflictDetection":"enabled"}}`
+```
+{
+"status": "healthy",
+"startTime": "Wed Nov 04 23:24:44 UTC 2020",
+"dbEngineVersion": "1.0.3.0.R1",
+"role": "writer",
+"gremlin": {
+"version": "tinkerpop-3.4.3"
+},
+"sparql": {
+"version": "sparql-1.1"
+},
+"labMode": {
+"ObjectIndex": "disabled",
+"DFEQueryEngine": "disabled",
+"ReadWriteConflictDetection": "enabled"
+}
+}
+```
 
 Now, you should be able to run queries from your local Jupyter graph notebook to your Neptune clusters!  When you're ready to close the connection, use Ctrl+D to exit.
