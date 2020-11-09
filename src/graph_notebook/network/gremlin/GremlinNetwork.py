@@ -50,7 +50,7 @@ E_PATTERNS = [PathPattern.E, PathPattern.IN_E, PathPattern.OUT_E]
 
 
 def generate_id_from_dict(data: dict) -> str:
-    data_str = json.dumps(data)
+    data_str = json.dumps(data, default=str)
     hashed = hashlib.md5(data_str.encode())
     generate_id = hashed.hexdigest()
     return f'graph_notebook-{generate_id}'
