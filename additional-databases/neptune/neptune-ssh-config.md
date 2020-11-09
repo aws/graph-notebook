@@ -8,7 +8,7 @@ Launch an [Amazon EC2](https://aws.amazon.com/ec2/) instance located in the same
 
 Make sure the EC2 instance is in the same VPC group as your Neptune cluster. To find the VPC group for your Neptune cluster, check the console under [Neptune](https://console.aws.amazon.com/neptune/home) > Subnet groups. The instance's security group needs to be able to send and receive on port 22 for SSH and port 8182 for Neptune.  See below for an example security group setup.  
 
-![Sample EC2 Inbound Rules](images/sample-ec2rules.png)
+![Sample EC2 Inbound Rules](/././images/sample-ec2rules.png)
 
 Lastly, make sure you save the key-pair file (.pem) and note the directory for use in the next step.
 
