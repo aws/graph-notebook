@@ -4,11 +4,13 @@ Python package integrating Jupyter notebooks with various graph-stores including
 [Apache TinkerPop](https://tinkerpop.apache.org/) and [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/).
 
 ## Requirements
-- Python 3.6
+
+- Python 3.6.1 or higher, Python 3.7
 - Jupyter Notebook
 
 ## Introduction
 The graph-notebook provides a way to interact using a Jupyter notebook with any graph database that follows the Gremlin Server or RDF HTTP protocols. These databases could be running locally on your laptop, in a private data center or in the cloud. This project was initially created as a way to work with Amazon Neptune but is not limited to that database engine. For example you can connect to a Gremlin Server running on your laptop using this solution. The instructions below describe the process for connecting to Amazon Neptune. We encourage others to contribute configurations they find useful. There is an [`additional-databases`](additional-databases) folder where such information can be found. 
+
 
 ## Installation
 

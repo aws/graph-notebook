@@ -3,7 +3,17 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
+import os
+
 from .force import Force  # noqa F401
+
+
+def get_package_json():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, 'package.json'), 'r') as file:
+        package_json = json.load(file)
+    return package_json
 
 
 def _jupyter_nbextension_paths():

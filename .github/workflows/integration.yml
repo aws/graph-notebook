@@ -43,7 +43,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
-          pip install .
+          pip install -e .
       - name: Create Stack
         id: create-stack
         run: |
@@ -79,7 +79,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
-          pip install .
+          pip install -e .
       - name: Give user /etc/hosts permission
         run: |
           sudo chmod 777 /etc/hosts
