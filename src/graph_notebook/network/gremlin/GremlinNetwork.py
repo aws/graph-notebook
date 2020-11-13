@@ -15,7 +15,7 @@ from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
 
 logging.basicConfig()
-logger = logging.getLogger("gremlin_network")
+logger = logging.getLogger("graph_magic")
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
@@ -305,11 +305,15 @@ class GremlinNetwork(EventfulNetwork):
             # If the group_by_property is specified and it exists then assign that property to the group
             # If group_by_property is not specified but the T.Label exists the assign it to the group
             # If neither is true then do not assign group
+            for p in properties:
+                logger.debug(p)
             if self.group_by_property:
                 if self.group_by_property in properties:
                     group = str(properties[self.group_by_property])
+                elif T.label in properties:
+                    group = str(properties[T.label])
                 else:
-                    group = label
+                    group = ''
             else:
                 group = label
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}

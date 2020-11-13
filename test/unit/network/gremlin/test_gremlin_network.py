@@ -4,10 +4,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
-
+from gremlin_python.structure.graph import Path
+from gremlin_python.process.traversal import T
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
-from gremlin_python.structure.graph import Path
+
 
 
 class TestGremlinNetwork(unittest.TestCase):
@@ -85,6 +86,20 @@ class TestGremlinNetwork(unittest.TestCase):
             'type': 'Airport',
             'runways': '4',
             'code': 'SEA'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex['T.id'])
+        self.assertEqual(node['group'], 'airport')
+
+    def test_group_valueMap_true(self):
+        vertex = {
+                'T.id': '1234',
+                T.label: 'airport',
+                'type': 'Airport',
+                'runways': '4',
+                'code': 'SEA'
         }
 
         gn = GremlinNetwork()
@@ -179,7 +194,6 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_results([path])
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], "['ATL']")
-
 
 
 if __name__ == '__main__':
