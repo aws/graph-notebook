@@ -15,7 +15,11 @@ from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
 
 logging.basicConfig()
+<<<<<<< HEAD
 logger = logging.getLogger("graph_magic")
+=======
+logger = logging.getLogger("gremlin_network")
+>>>>>>> 93ef4f210ae7d23a5108385bda4d40527735a51b
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
