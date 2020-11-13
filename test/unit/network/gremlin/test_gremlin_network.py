@@ -10,7 +10,6 @@ from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
 
 
-
 class TestGremlinNetwork(unittest.TestCase):
     def test_add_vertex_with_callback(self):
         vertex = {
@@ -24,6 +23,7 @@ class TestGremlinNetwork(unittest.TestCase):
         reached_callback = {}
         expected_data = {
             'data': {
+                'group': 'airport',
                 'label': 'airport',
                 'properties': {
                     'T.id': '1234',
@@ -95,11 +95,11 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_group_valueMap_true(self):
         vertex = {
-                'T.id': '1234',
-                T.label: 'airport',
-                'type': 'Airport',
-                'runways': '4',
-                'code': 'SEA'
+            'T.id': '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
         }
 
         gn = GremlinNetwork()
@@ -174,7 +174,7 @@ class TestGremlinNetwork(unittest.TestCase):
                           'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
                           "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
-                         "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
                           'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork()
         gn.add_results([path])
@@ -188,7 +188,7 @@ class TestGremlinNetwork(unittest.TestCase):
                           'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
                           "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
-                         "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
                           'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork(group_by_property="code")
         gn.add_results([path])
