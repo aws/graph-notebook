@@ -12,7 +12,9 @@ from test.integration.NeptuneIntegrationWorkflowSteps import TEST_CONFIG_PATH
 class IntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         config = get_config(TEST_CONFIG_PATH)
+        cls.config = config
         cls.host = config.host
         cls.port = config.port
         cls.auth_mode = config.auth_mode

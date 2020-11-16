@@ -113,14 +113,25 @@ class Graph(Magics):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
+            print('set notebook config to:')
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
             self.graph_notebook_config = config
         elif line == 'reset':
             self.graph_notebook_config = get_config()
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        else:
+        elif line == 'silent':
+            """
+            silent option to that our neptune_menu extension can receive json instead
+            of python Configuration object
+            """
             config_dict = self.graph_notebook_config.to_dict()
             return print(json.dumps(config_dict, indent=2))
+        else:
+            config_dict = self.graph_notebook_config.to_dict()
+            print(json.dumps(config_dict, indent=2))
+
+        return self.graph_notebook_config
 
     @line_magic
     def graph_notebook_host(self, line):

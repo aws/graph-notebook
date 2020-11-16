@@ -133,7 +133,7 @@ define([
         console.log('creating neptune menu from config...');
         kernel.execute('%load_ext graph_notebook.magics');
         kernel.execute(
-            "%graph_notebook_config",
+            "%graph_notebook_config silent",
             callbacks);
     };
 
