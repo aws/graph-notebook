@@ -9,7 +9,7 @@ from test.integration.graph_notebook.GraphNotebookIntegrationTest import GraphNo
 class TestGraphMagic(GraphNotebookIntegrationTest):
     def tearDown(self) -> None:
         delete_query = "g.V('graph-notebook-test').drop()"
-        self.ip.run_cell_magic('gremlin', f'query', delete_query)
+        self.ip.run_cell_magic('gremlin', 'query', delete_query)
 
     def test_status(self):
         res = self.ip.run_line_magic('status', '')
