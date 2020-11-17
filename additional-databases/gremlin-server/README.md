@@ -30,7 +30,7 @@ Several of the steps below are optional but please read each step carefully and 
 
 
 ### Connecting to a local Gremlin Server from Jupyter
-1. In the Jupyter Notebook disable SSL using `%%graph_notebook_config` and change the host to `localhost`
+1. In the Jupyter Notebook disable SSL using `%%graph_notebook_config` and change the host to `localhost`. Keep the other defaults even though they are not used for configuring the Gremlin Server.
   ```
   %%graph_notebook_config
 {
