@@ -2,7 +2,7 @@
 
 ![Gremlin](https://github.com/aws/graph-notebook/blob/main/images/gremlin-notebook.png?raw=true, "Picture of Gremlin holding a notebook")
 
-These notes explain how to connect the graph-notebook to a Gremlin server running locally on the same machine. The same steps should also work if you have a remote Gremlin Server. In such cases `localhost` should be replaced with the DNS or IP address of the remote server. It is assumed the [graph-notebook installation](https://github.com/aws/graph-notebook/blob/main/README.md) has been completed and the Jupyter environment is running before following these steps. 
+These notes explain how to connect the graph-notebook to a Gremlin server running locally on the same machine. The same steps should also work if you have a remote Gremlin Server. In such cases `localhost` should be replaced with the DNS or IP address of the remote server. It is assumed the [graph-notebook installation](https://github.com/aws/graph-notebook/blob/main/README.md) has been completed and the Jupyter environment is running before following these steps.
 
 ### Gremlin Server Configuration
 Several of the steps below are optional but please read each step carefully and decide if you want to apply it.
