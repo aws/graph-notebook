@@ -9,10 +9,6 @@ import unittest
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
-from graph_notebook.configuration.generate_config import generate_default_config
-from graph_notebook.configuration.get_config import get_config
-from test.integration import TEST_CONFIG_PATH
-
 
 class GraphNotebookTest(unittest.TestCase):
     @classmethod
