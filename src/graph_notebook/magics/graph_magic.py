@@ -21,7 +21,7 @@ from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
 
 import graph_notebook
-from graph_notebook.configuration.generate_config import generate_default_config
+from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION
 from graph_notebook.decorators.decorators import display_exceptions
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
@@ -97,7 +97,8 @@ class Graph(Magics):
         super(Graph, self).__init__(shell)
 
         try:
-            self.graph_notebook_config = get_config()
+            self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
+            self.graph_notebook_config = get_config(self.config_location)
         except FileNotFoundError:
             self.graph_notebook_config = generate_default_config()
             print(
@@ -117,7 +118,7 @@ class Graph(Magics):
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
             self.graph_notebook_config = config
         elif line == 'reset':
-            self.graph_notebook_config = get_config()
+            self.graph_notebook_config = get_config(self.config_location)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'silent':

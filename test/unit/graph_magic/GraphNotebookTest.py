@@ -9,6 +9,7 @@ import unittest
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
+from graph_notebook.configuration.generate_config import generate_default_config
 from graph_notebook.configuration.get_config import get_config
 from test.integration import TEST_CONFIG_PATH
 
@@ -22,5 +23,5 @@ class GraphNotebookTest(unittest.TestCase):
             ip = TerminalInteractiveShell().instance()
 
         ip.magic('load_ext graph_notebook.magics')
-        cls.config = get_config(TEST_CONFIG_PATH)
+        cls.config = ip.run_line_magic('graph_notebook_config', '')
         cls.ip = ip
