@@ -20,6 +20,29 @@ Instructions for connecting to the following graph databases:
 
 We encourage others to contribute configurations they find useful. There is an [`additional-databases`](https://github.com/aws/graph-notebook/blob/main/additional-databases) folder where more information can be found.
 
+## Features
+
+#### Notebook cell 'magic' extensions in the IPython 3 kernel
+`%%sparql` - Executes a SPARQL query against your configured database endpoint.
+
+`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to what the Gremlin console would return.
+
+**TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you write good code.
+
+#### Notebook cell 'magic' extensions in the IPython 3 kernel
+`%graph_notebook_config` - Returns a JSON object that contains connection information for your host.
+
+`%query_mode` - Lets you set the query mode for your queries to one of:
+
+* `query` (the default) : executes the query against the normal SPARQL or Gremlin endpoint
+* `explain` : Returns an explanation of the query plan instead of the query's results (valid for both SPARQL and Gremlin).
+* `profile` : Returns a profile of the query's operation, but does not actually execute the query (valid only for Gremlin).
+
+`%seed` - Provides a form to add data to your graph without the use of a bulk loader. both SPARQL and Gremlin have an airport routes dataset.
+
+**TIP** :point_right: You can list all the magics installed in the Python 3 kernel using the `%lsmagic` command.
+
+
 ## Prerequisites
 
 You will need:
