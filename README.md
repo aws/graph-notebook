@@ -29,7 +29,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 **TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you write good code.
 
-#### Notebook cell 'magic' extensions in the IPython 3 kernel
+#### Notebook line 'magic' extensions in the IPython 3 kernel
 `%graph_notebook_config` - Returns a JSON object that contains connection information for your host.
 
 `%query_mode` - Lets you set the query mode for your queries to one of:
