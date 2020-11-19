@@ -89,7 +89,7 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=T.label):
+                 group_by_property=T_LABEL):
         if graph is None:
             graph = MultiDiGraph()
         self.label_max_length = label_max_length
@@ -286,6 +286,8 @@ class GremlinNetwork(EventfulNetwork):
                 elif str(k) == T_ID:
                     node_id = str(v[k])
                 properties[k] = v[k]
+                if str(k) == self.group_by_property:
+                    group = str(v[k])
 
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be dedubed to the same vertex.
@@ -299,21 +301,6 @@ class GremlinNetwork(EventfulNetwork):
                     title += str(v[key])
                 label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
-            # If the group_by_property is specified and it exists then assign that property to the group
-            # If group_by_property is not specified but the T.Label exists the assign it to the group
-            # If neither is true then do not assign group
-            for p in properties:
-                logger.debug(p)
-            group = str(properties[self.group_by_property]) if self.group_by_property in properties else ''
-            '''if self.group_by_property:
-                if self.group_by_property in properties:
-                    group = str(properties[self.group_by_property])
-                elif T.label in properties:
-                    group = str(properties[T.label])
-                else:
-                    group = ''
-            else:
-                group = label'''
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
             node_id = str(v)
