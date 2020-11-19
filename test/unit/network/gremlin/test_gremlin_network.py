@@ -13,8 +13,8 @@ from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
 class TestGremlinNetwork(unittest.TestCase):
     def test_add_vertex_with_callback(self):
         vertex = {
-            'T.id': '1234',
-            'T.label': 'airport',
+            T.id: '1234',
+            T.label: 'airport',
             'type': 'Airport',
             'runways': '4',
             'code': 'SEA'
@@ -26,8 +26,8 @@ class TestGremlinNetwork(unittest.TestCase):
                 'group': 'airport',
                 'label': 'airport',
                 'properties': {
-                    'T.id': '1234',
-                    'T.label': 'airport',
+                    T.id: '1234',
+                    T.label: 'airport',
                     'code': 'SEA',
                     'runways': '4',
                     'type': 'Airport'},
@@ -42,7 +42,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(callbacks={EVENT_ADD_NODE: [add_node_callback]})
         gn.add_vertex(vertex)
         self.assertTrue(reached_callback[EVENT_ADD_NODE])
-        node = gn.graph.nodes.get(vertex['T.id'])
+        node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(expected_data['data']['properties'], node['properties'])
 
     def test_add_path_with_integer(self):
@@ -81,21 +81,7 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_group_without_groupby(self):
         vertex = {
-            'T.id': '1234',
-            'T.label': 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork()
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex['T.id'])
-        self.assertEqual(node['group'], 'airport')
-
-    def test_group_valueMap_true(self):
-        vertex = {
-            'T.id': '1234',
+            T.id: '1234',
             T.label: 'airport',
             'type': 'Airport',
             'runways': '4',
@@ -104,19 +90,33 @@ class TestGremlinNetwork(unittest.TestCase):
 
         gn = GremlinNetwork()
         gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex['T.id'])
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], 'airport')
+
+    def test_group_valueMap_true(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], 'airport')
 
     def test_group_without_groupby_list(self):
         vertex = {
-            'T.id': '1234',
-            'T.label': 'airport',
+            T.id: '1234',
+            T.label: 'airport',
             'code': ['SEA']
         }
 
         gn = GremlinNetwork()
         gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex['T.id'])
+        node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], 'airport')
 
     def test_group_without_groupby_choose_label(self):
@@ -169,12 +169,12 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_add_path_without_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
-                          "T.label": 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
-                          "T.id:": '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
+                          T.label: 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          T.id: '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
                           'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
-                          "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
-                          "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          T.label: 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                          T.id: '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
                           'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork()
         gn.add_results([path])
@@ -183,12 +183,12 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_add_path_with_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
-                          "T.label": 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
-                          "T.id:": '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
+                          T.label: 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          T.id: '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
                           'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
-                          "T.label": 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
-                          "T.id": '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
+                          T.label: 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                          T.id: '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
                           'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork(group_by_property="code")
         gn.add_results([path])

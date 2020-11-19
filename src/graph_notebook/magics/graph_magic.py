@@ -251,7 +251,7 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
-        parser.add_argument('-g', '--groupby', default='', help='group by property')
+        parser.add_argument('-g', '--group-by', default='T.label', help='group by property')
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
@@ -294,8 +294,9 @@ class Graph(Magics):
 
             try:
                 groupby=None
-                if args.groupby and args.groupby != '':
-                    groupby=args.groupby
+                if args.group_by and args.group_by != '':
+                    groupby=args.group_by
+                logger.debug(f'groupby: {groupby}')
                 gn = GremlinNetwork(group_by_property=groupby)
                 if args.path_pattern == '':
                     gn.add_results(res)

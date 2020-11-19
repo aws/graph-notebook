@@ -15,7 +15,7 @@ from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
 
 logging.basicConfig()
-logger = logging.getLogger("graph_magic")
+logger = logging.getLogger(__file__)
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
@@ -89,14 +89,11 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=None):
+                 group_by_property=T.label):
         if graph is None:
             graph = MultiDiGraph()
         self.label_max_length = label_max_length
-        if group_by_property:
-            self.group_by_property = group_by_property
-        else:
-            self.group_by_property = T_LABEL
+        self.group_by_property = group_by_property
         super().__init__(graph, callbacks)
 
     def add_results_with_pattern(self, results, pattern_list: list):
@@ -307,7 +304,8 @@ class GremlinNetwork(EventfulNetwork):
             # If neither is true then do not assign group
             for p in properties:
                 logger.debug(p)
-            if self.group_by_property:
+            group = str(properties[self.group_by_property]) if self.group_by_property in properties else ''
+            '''if self.group_by_property:
                 if self.group_by_property in properties:
                     group = str(properties[self.group_by_property])
                 elif T.label in properties:
@@ -315,7 +313,7 @@ class GremlinNetwork(EventfulNetwork):
                 else:
                     group = ''
             else:
-                group = label
+                group = label'''
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
             node_id = str(v)
@@ -323,7 +321,6 @@ class GremlinNetwork(EventfulNetwork):
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data = {'title': title, 'label': label, 'group': ''}
 
-        logger.debug(data)
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):
