@@ -374,7 +374,7 @@ def install_npm(path=None, build_dir=None, source_dir=None, build_cmd='build', f
             if force or is_stale(node_modules, pjoin(node_package, 'package.json')):
                 log.info('Installing build dependencies with npm.  This may '
                          'take a while...')
-                run(npm_cmd + ['ci'], cwd=node_package)
+                run(npm_cmd + ['install'], cwd=node_package)
             if build_dir and source_dir and not force:
                 should_build = is_stale(build_dir, source_dir)
             else:

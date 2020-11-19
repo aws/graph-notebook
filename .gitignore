@@ -25,3 +25,4 @@ src/graph_notebook/widgets/lib/
 # npm
 node_modules/
 node_modules/.package-lock.json
+src/graph_notebook/widgets/package-lock.json

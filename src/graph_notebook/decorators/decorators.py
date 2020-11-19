@@ -21,17 +21,24 @@ def display_exceptions(func):
     def do_display_exceptions(*args, **kwargs):
         clear_output()
         tab = widgets.Tab()
+
         try:
             return func(*args, **kwargs)
         except KeyboardInterrupt:
             print('Keyboard interrupt detected.')
             return  # we must return since we have halted the kernel interrupt here. Otherwise the interrupt will not work.
         except HTTPError as http_ex:
+            caught_ex = http_ex
             raw_html = http_ex_to_html(http_ex)
         except GremlinServerError as gremlin_ex:
+            caught_ex = gremlin_ex
             raw_html = gremlin_server_error_to_html(gremlin_ex)
         except Exception as e:
+            caught_ex = e
             raw_html = exception_to_html(e)
+
+        if 'local_ns' in kwargs:
+            kwargs['local_ns']['graph_notebook_error'] = caught_ex
 
         html = HTML(raw_html)
         html_output = widgets.Output(layout={'overflow': 'scroll'})
