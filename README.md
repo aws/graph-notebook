@@ -27,7 +27,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to what the Gremlin console would return.
 
-**TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you write good code.
+**TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
 `%graph_notebook_config` - Returns a JSON object that contains connection information for your host.
