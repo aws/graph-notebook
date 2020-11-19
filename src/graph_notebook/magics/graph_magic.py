@@ -105,7 +105,6 @@ class Graph(Magics):
             print(
                 'Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
         self.max_results = DEFAULT_MAX_RESULTS
-        self.mode = QueryMode.DEFAULT
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         logger.setLevel(logging.ERROR)
 
@@ -810,11 +809,6 @@ class Graph(Magics):
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
-
-    @line_magic
-    def query_mode(self, line):
-        self.mode = str_to_query_mode(line)
-        print(f'Query mode set to {self.mode.value}')
 
     @line_magic
     @display_exceptions
