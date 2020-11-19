@@ -90,6 +90,7 @@ def str_to_query_mode(s: str) -> QueryMode:
     return QueryMode.DEFAULT
 
 
+# noinspection PyTypeChecker
 @magics_class
 class Graph(Magics):
     def __init__(self, shell):
@@ -559,16 +560,17 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
-    def load(self, line, local_ns: dict = None):
+    def load(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', '--source', default='s3://')
         parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
-        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES)
+        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default='')
         parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
         parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
-        parser.add_argument('--fail-on-error', action='store_true', default=True)
+        parser.add_argument('--fail-on-failure', action='store_true', default=False)
         parser.add_argument('--update-single-cardinality', action='store_true', default=True)
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--run', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
 
@@ -742,6 +744,8 @@ class Graph(Magics):
                     print(httpEx.response.content.decode('utf-8'))
 
         button.on_click(on_button_clicked)
+        if args.run:
+            on_button_clicked(None)
 
     @line_magic
     @display_exceptions
