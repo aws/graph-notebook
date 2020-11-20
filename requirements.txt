@@ -3,13 +3,14 @@ SPARQLWrapper==1.8.4
 networkx==2.4
 Jinja2==2.10.1
 jupyter
-notebook<=5.7.8
-ipywidgets
+notebook==5.7.10
+ipywidgets==7.5.1
 jupyter-contrib-nbextensions
 widgetsnbextension
 gremlinpython
-requests
+requests==2.24.0
 
 # requirements for testing
 boto3==1.15.15
 botocore==1.18.18
+ipython==7.16.1

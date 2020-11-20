@@ -43,7 +43,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
-          pip install .
+          pip install -e .
       - name: Create Stack
         id: create-stack
         run: |
@@ -79,7 +79,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
-          pip install .
+          pip install -e .
       - name: Give user /etc/hosts permission
         run: |
           sudo chmod 777 /etc/hosts
@@ -97,7 +97,16 @@ jobs:
             --pattern "*network*.py" \
             --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
             --aws-region ${{ secrets.AWS_REGION }}
+      - name: Run Notebook Tests
+        run: |
+          python test/integration/NeptuneIntegrationWorkflowSteps.py \
+            run-tests \
+            --pattern "*graph_notebook.py" \
+            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
+            --aws-region ${{ secrets.AWS_REGION }}
       - name: Run IAM Tests
+        env:
+          GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
           python test/integration/NeptuneIntegrationWorkflowSteps.py \
             run-tests \

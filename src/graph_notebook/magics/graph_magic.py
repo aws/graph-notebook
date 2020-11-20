@@ -16,12 +16,12 @@ from enum import Enum
 import ipywidgets as widgets
 from gremlin_python.driver.protocol import GremlinServerError
 from IPython.core.display import HTML, display_html, display
-from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic)
+from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
 
 import graph_notebook
-from graph_notebook.configuration.generate_config import generate_default_config
+from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION
 from graph_notebook.decorators.decorators import display_exceptions
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
@@ -33,9 +33,9 @@ from graph_notebook.sparql.status import do_sparql_status, do_sparql_cancel
 from graph_notebook.system.database_reset import perform_database_reset, initiate_database_reset
 from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.gremlin.client_provider.factory import create_client_provider
-from graph_notebook.request_param_generator.sparql_request_generator import SPARQLRequestGenerator
 from graph_notebook.request_param_generator.factory import create_request_generator
-from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load
+from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load, VALID_FORMATS, \
+    PARALLELISM_OPTIONS, PARALLELISM_HIGH
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.status.get_status import get_status
@@ -62,12 +62,22 @@ GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cance
 SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %sparql_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
 
+LOADER_FORMAT_CHOICES = ['']
+LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
+
 
 class QueryMode(Enum):
     DEFAULT = 'query'
     EXPLAIN = 'explain'
     PROFILE = 'profile'
     EMPTY = ''
+
+
+def store_to_ns(key: str, value, ns: dict = None):
+    if key == '' or ns is None:
+        return
+
+    ns[key] = value
 
 
 def str_to_query_mode(s: str) -> QueryMode:
@@ -80,6 +90,7 @@ def str_to_query_mode(s: str) -> QueryMode:
     return QueryMode.DEFAULT
 
 
+# noinspection PyTypeChecker
 @magics_class
 class Graph(Magics):
     def __init__(self, shell):
@@ -87,12 +98,13 @@ class Graph(Magics):
         super(Graph, self).__init__(shell)
 
         try:
-            self.graph_notebook_config = get_config()
+            self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
+            self.graph_notebook_config = get_config(self.config_location)
         except FileNotFoundError:
             self.graph_notebook_config = generate_default_config()
-            print('Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
+            print(
+                'Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
         self.max_results = DEFAULT_MAX_RESULTS
-        self.mode = QueryMode.DEFAULT
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         logger.setLevel(logging.ERROR)
 
@@ -102,14 +114,25 @@ class Graph(Magics):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
+            print('set notebook config to:')
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
             self.graph_notebook_config = config
         elif line == 'reset':
-            self.graph_notebook_config = get_config()
+            self.graph_notebook_config = get_config(self.config_location)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        else:
+        elif line == 'silent':
+            """
+            silent option to that our neptune_menu extension can receive json instead
+            of python Configuration object
+            """
             config_dict = self.graph_notebook_config.to_dict()
             return print(json.dumps(config_dict, indent=2))
+        else:
+            config_dict = self.graph_notebook_config.to_dict()
+            print(json.dumps(config_dict, indent=2))
+
+        return self.graph_notebook_config
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -122,24 +145,34 @@ class Graph(Magics):
         print(f'set host to {line}')
 
     @cell_magic
+    @needs_local_scope
     @display_exceptions
-    def sparql(self, line='', cell=''):
+    def sparql(self, line='', cell='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('query_mode', nargs='?', default='query',
+                            help='query mode (default=query) [query|explain]')
+        parser.add_argument('--expand-all', action='store_true')
+
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                      self.graph_notebook_config.iam_credentials_provider_type,
                                                      command='sparql')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+        mode = str_to_query_mode(args.query_mode)
 
-        if line != '':
-            mode = str_to_query_mode(line)
-        else:
-            mode = self.mode
         tab = widgets.Tab()
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
-            html_raw = sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                      self.graph_notebook_config.ssl, request_generator)
+            res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                    self.graph_notebook_config.ssl, request_generator)
+            store_to_ns(args.store_to, res, local_ns)
+            if 'error' in res:
+                html = error_template.render(error=json.dumps(res['error'], indent=2))
+            else:
+                html = sparql_explain_template.render(table=res)
             explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
-                display(HTML(html_raw))
+                display(HTML(html))
 
             tab.children = [explain_output]
             tab.set_title(0, 'Explain')
@@ -150,6 +183,7 @@ class Graph(Magics):
                 'Accept': 'application/sparql-results+json'}
             res = do_sparql_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                   self.graph_notebook_config.ssl, request_generator, headers)
+            store_to_ns(args.store_to, res, local_ns)
             titles = []
             children = []
 
@@ -216,8 +250,9 @@ class Graph(Magics):
                 display(HTML(table_html))
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def sparql_status(self, line=''):
+    def sparql_status(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
                             help='The ID of a running SPARQL query. Only displays the status of the specified query.')
@@ -225,6 +260,7 @@ class Graph(Magics):
                             help='Tells the status command to cancel a query. This parameter does not take a value')
         parser.add_argument('-s', '--silent', action='store_true',
                             help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
@@ -242,17 +278,19 @@ class Graph(Magics):
                 res = do_sparql_cancel(self.graph_notebook_config.host, self.graph_notebook_config.port,
                                        self.graph_notebook_config.ssl, request_generator, args.queryId, args.silent)
 
+        store_to_ns(args.store_to, res, local_ns)
         print(json.dumps(res, indent=2))
 
     @cell_magic
+    @needs_local_scope
     @display_exceptions
-    def gremlin(self, line, cell):
+    def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', default='T.label', help='group by property')
-
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
@@ -261,30 +299,41 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                          self.graph_notebook_config.iam_credentials_provider_type)
-            raw_html = gremlin_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                       self.graph_notebook_config.ssl, request_generator)
+
+            query_res = do_gremlin_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                           self.graph_notebook_config.ssl, request_generator)
+            if 'explain' in query_res:
+                html = pre_container_template.render(content=query_res['explain'])
+            else:
+                html = pre_container_template.render(content='No explain found')
+
             explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
-                display(HTML(raw_html))
+                display(HTML(html))
             tab.children = [explain_output]
             tab.set_title(0, 'Explain')
             display(tab)
         elif mode == QueryMode.PROFILE:
             request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                          self.graph_notebook_config.iam_credentials_provider_type)
-            raw_html = gremlin_profile(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                       self.graph_notebook_config.ssl, request_generator)
+
+            query_res = do_gremlin_profile(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                           self.graph_notebook_config.ssl, request_generator)
+            if 'profile' in query_res:
+                html = pre_container_template.render(content=query_res['profile'])
+            else:
+                html = pre_container_template.render(content='No profile found')
             profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with profile_output:
-                display(HTML(raw_html))
+                display(HTML(html))
             tab.children = [profile_output]
             tab.set_title(0, 'Profile')
             display(tab)
         else:
             client_provider = create_client_provider(self.graph_notebook_config.auth_mode,
                                                      self.graph_notebook_config.iam_credentials_provider_type)
-            res = do_gremlin_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                   self.graph_notebook_config.ssl, client_provider)
+            query_res = do_gremlin_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                         self.graph_notebook_config.ssl, client_provider)
             children = []
             titles = []
 
@@ -299,10 +348,10 @@ class Graph(Magics):
                 logger.debug(f'groupby: {groupby}')
                 gn = GremlinNetwork(group_by_property=groupby)
                 if args.path_pattern == '':
-                    gn.add_results(res)
+                    gn.add_results(query_res)
                 else:
                     pattern = parse_pattern_list_str(args.path_pattern)
-                    gn.add_results_with_pattern(res, pattern)
+                    gn.add_results_with_pattern(query_res, pattern)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:
                     f = Force(network=gn, options=self.graph_notebook_vis_options)
@@ -318,13 +367,16 @@ class Graph(Magics):
             display(tab)
 
             table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-            table_html = gremlin_table_template.render(guid=table_id, results=res)
+            table_html = gremlin_table_template.render(guid=table_id, results=query_res)
             with table_output:
                 display(HTML(table_html))
 
+        store_to_ns(args.store_to, query_res, local_ns)
+
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def gremlin_status(self, line=''):
+    def gremlin_status(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
                             help='The ID of a running Gremlin query. Only displays the status of the specified query.')
@@ -332,6 +384,7 @@ class Graph(Magics):
                             help='Required for cancellation. Parameter has no corresponding value.')
         parser.add_argument('-w', '--includeWaiting', action='store_true',
                             help='(Optional) Normally, only running queries are included in the response. When the includeWaiting parameter is specified, the status of all waiting queries is also returned.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
@@ -353,6 +406,7 @@ class Graph(Magics):
                                         request_generator, args.queryId)
 
         print(json.dumps(res, indent=2))
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -509,8 +563,22 @@ class Graph(Magics):
         return res
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def load(self, line):
+    def load(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--source', default='s3://')
+        parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
+        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default='')
+        parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
+        parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
+        parser.add_argument('--fail-on-failure', action='store_true', default=False)
+        parser.add_argument('--update-single-cardinality', action='store_true', default=True)
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--run', action='store_true', default=False)
+
+        args = parser.parse_args(line.split())
+
         # since this can be a long-running task, freezing variables in the case
         # that a user alters them in another command.
         host = self.graph_notebook_config.host
@@ -519,56 +587,55 @@ class Graph(Magics):
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
-        load_role_arn = self.graph_notebook_config.load_from_s3_arn
         region = self.graph_notebook_config.aws_region
 
         button = widgets.Button(description="Submit")
         output = widgets.Output()
         source = widgets.Text(
-            value='s3://',
+            value=args.source,
             placeholder='Type something',
             description='Source:',
             disabled=False,
         )
 
         arn = widgets.Text(
-            value=load_role_arn,
+            value=args.loader_arn,
             placeholder='Type something',
             description='Load ARN:',
             disabled=False
         )
 
         source_format = widgets.Dropdown(
-            options=['', 'csv', 'ntriples', 'nquads', 'rdfxml', 'turtle'],
-            value='',  # blank so the user has to choose a format instead of risking the default one being incorrect.
+            options=LOADER_FORMAT_CHOICES,
+            value=args.format,
             description='Format: ',
             disabled=False
         )
 
         region_box = widgets.Text(
             value=region,
-            placeholder='us-east-1',
+            placeholder=args.region,
             description='AWS Region:',
             disabled=False
         )
 
         fail_on_error = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
-            value='TRUE',
+            value=str(args.fail_on_failure).upper(),
             description='Fail on Failure: ',
             disabled=False
         )
 
         parallelism = widgets.Dropdown(
-            options=['LOW', 'MEDIUM', 'HIGH', 'OVERSUBSCRIBE'],
-            value='HIGH',
+            options=PARALLELISM_OPTIONS,
+            value=args.parallelism,
             description='Parallelism :',
             disabled=False
         )
 
         update_single_cardinality = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
-            value='FALSE',
+            value=str(args.update_single_cardinality).upper(),
             description='Update Single Cardinality:',
             disabled=False,
         )
@@ -578,7 +645,7 @@ class Graph(Magics):
         source_format_hbox = widgets.HBox([source_format])
 
         display(source_hbox, source_format_hbox, region_box, arn_hbox, fail_on_error, parallelism,
-                 update_single_cardinality, button, output)
+                update_single_cardinality, button, output)
 
         def on_button_clicked(b):
             source_hbox.children = (source,)
@@ -616,6 +683,7 @@ class Graph(Magics):
                                       arn.value,
                                       fail_on_error.value, parallelism.value, update_single_cardinality.value,
                                       request_generator)
+                store_to_ns(args.store_to, load_result, local_ns)
 
                 source_hbox.close()
                 source_format_hbox.close()
@@ -681,10 +749,17 @@ class Graph(Magics):
                     print(httpEx.response.content.decode('utf-8'))
 
         button.on_click(on_button_clicked)
+        if args.run:
+            on_button_clicked(None)
 
     @line_magic
     @display_exceptions
-    def load_ids(self, line):
+    @needs_local_scope
+    def load_ids(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='')
+        args = parser.parse_args(line.split())
+
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_loader_jobs(self.graph_notebook_config.host, self.graph_notebook_config.port,
@@ -701,18 +776,34 @@ class Graph(Magics):
         vbox = widgets.VBox(labels)
         display(vbox)
 
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = res
+
     @line_magic
     @display_exceptions
-    def load_status(self, line):
+    @needs_local_scope
+    def load_status(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='')
+        args = parser.parse_args(line.split())
+
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_load_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
                               self.graph_notebook_config.ssl, request_generator, line)
         print(json.dumps(res, indent=2))
 
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = res
+
     @line_magic
     @display_exceptions
-    def cancel_load(self, line):
+    @needs_local_scope
+    def cancel_load(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='')
+        args = parser.parse_args(line.split())
+
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = cancel_load(self.graph_notebook_config.host, self.graph_notebook_config.port,
@@ -722,10 +813,8 @@ class Graph(Magics):
         else:
             print('Something went wrong cancelling bulk load job.')
 
-    @line_magic
-    def query_mode(self, line):
-        self.mode = str_to_query_mode(line)
-        print(f'Query mode set to {self.mode.value}')
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = res
 
     @line_magic
     @display_exceptions
@@ -900,31 +989,3 @@ class Graph(Magics):
         else:
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
-
-
-def gremlin_explain(query, host, port, use_ssl, request_param_generator):
-    result = do_gremlin_explain(query, host, port, use_ssl, request_param_generator)
-    if 'explain' in result:
-        html = pre_container_template.render(content=result['explain'])
-    else:
-        html = pre_container_template.render(content='No explain found')
-    return html
-
-
-def gremlin_profile(query, host, port, use_ssl, request_param_generator):
-    result = do_gremlin_profile(query, host, port, use_ssl, request_param_generator)
-    if 'profile' in result:
-        html = pre_container_template.render(content=result['profile'])
-    else:
-        html = pre_container_template.render(content='No profile found')
-    return html
-
-
-def sparql_explain(query, host, port, use_ssl, request_param_generator=SPARQLRequestGenerator()):
-    res = do_sparql_explain(query, host, port, use_ssl, request_param_generator)
-    if 'error' in res:
-        html = error_template.render(error=json.dumps(res['error'], indent=2))
-    else:
-        html = sparql_explain_template.render(table=res)
-
-    return html

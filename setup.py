@@ -79,6 +79,8 @@ setup(
         'jupyter>=1.0.0'
     ],
     package_data={
+        'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
+                           'graph_notebook/widgets/labextension/*.tgz'],
         '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
     },
     cmdclass=cmd_class,
