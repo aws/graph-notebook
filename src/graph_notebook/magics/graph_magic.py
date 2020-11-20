@@ -342,11 +342,8 @@ class Graph(Magics):
             children.append(table_output)
 
             try:
-                groupby=None
-                if args.group_by and args.group_by != '':
-                    groupby=args.group_by
-                logger.debug(f'groupby: {groupby}')
-                gn = GremlinNetwork(group_by_property=groupby)
+                logger.debug(f'groupby: {args.group_by}')
+                gn = GremlinNetwork(group_by_property=args.group_by)
                 if args.path_pattern == '':
                     gn.add_results(query_res)
                 else:
