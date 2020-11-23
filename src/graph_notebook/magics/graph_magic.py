@@ -796,13 +796,14 @@ class Graph(Magics):
     @needs_local_scope
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = cancel_load(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                          self.graph_notebook_config.ssl, request_generator, line)
+                          self.graph_notebook_config.ssl, request_generator, args.load_id)
         if res:
             print('Cancelled successfully.')
         else:
