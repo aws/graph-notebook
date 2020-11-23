@@ -35,7 +35,7 @@ from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.gremlin.client_provider.factory import create_client_provider
 from graph_notebook.request_param_generator.factory import create_request_generator
 from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load, VALID_FORMATS, \
-    PARALLELISM_OPTIONS, PARALLELISM_HIGH
+    PARALLELISM_OPTIONS, PARALLELISM_HIGH, FINAL_LOAD_STATUSES
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.status.get_status import get_status
@@ -728,7 +728,7 @@ class Graph(Magics):
                         job_status_output.clear_output()
                         with job_status_output:
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
-                            if interval_check_response["payload"]["overallStatus"]["status"] == 'LOAD_COMPLETED':
+                            if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
                                 interval_output.close()
                                 print('Done.')
                                 return
@@ -778,13 +778,14 @@ class Graph(Magics):
     @needs_local_scope
     def load_status(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_load_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                              self.graph_notebook_config.ssl, request_generator, line)
+                              self.graph_notebook_config.ssl, request_generator, args.load_id)
         print(json.dumps(res, indent=2))
 
         if args.store_to != '' and local_ns is not None:
@@ -795,13 +796,14 @@ class Graph(Magics):
     @needs_local_scope
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = cancel_load(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                          self.graph_notebook_config.ssl, request_generator, line)
+                          self.graph_notebook_config.ssl, request_generator, args.load_id)
         if res:
             print('Cancelled successfully.')
         else:
