@@ -35,7 +35,7 @@ from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.gremlin.client_provider.factory import create_client_provider
 from graph_notebook.request_param_generator.factory import create_request_generator
 from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load, VALID_FORMATS, \
-    PARALLELISM_OPTIONS, PARALLELISM_HIGH
+    PARALLELISM_OPTIONS, PARALLELISM_HIGH, FINAL_LOAD_STATUSES
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.status.get_status import get_status
@@ -728,7 +728,7 @@ class Graph(Magics):
                         job_status_output.clear_output()
                         with job_status_output:
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
-                            if interval_check_response["payload"]["overallStatus"]["status"] == 'LOAD_COMPLETED':
+                            if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
                                 interval_output.close()
                                 print('Done.')
                                 return
