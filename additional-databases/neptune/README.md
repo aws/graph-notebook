@@ -13,25 +13,29 @@ Make sure the EC2 instance is in the same VPC group as your Neptune cluster. To 
 Lastly, make sure you save the key-pair file (.pem) and note the directory for use in the next step.
 
 ### Part 2: Set up an SSH tunnel.
-This step can vary depending on if you are running Windows or Mac.
+This step can vary depending on if you are running <b>Windows</b> or <b>Mac</b>.
 
-<b>Windows</b>
+1. Modify your hosts file to map localhost to your Neptune endpoint. 
 
-First, modify your hosts file as an Administrator (C:\Windows\System32\drivers\etc\hosts) to map localhost to your Neptune endpoint:
+    <b>Windows: </b> Open the hosts file as an Administrator (C:\Windows\System32\drivers\etc\hosts)
 
-127.0.0.1   localhost   your-Neptune-endpoint-here
+    <b>MacOS: </b> Open Terminal and type in the command: `sudo nano /etc/hosts`
 
-Next, open Command Prompt as an Administrator and navigate to the directory where you saved the EC2 key-pair file.  Run the following command:
+    Then add the following line to the hosts file.
+    `127.0.0.1   localhost   your-Neptune-endpoint-here`
 
-`ssh -i keypairfilename.pem ec2-user@yourec2instanceendpoint -N -L 8182:yourneptuneendpoint:8182`
+2. Open Command Prompt as an Administrator (or Terminal for MacOS) and navigate to the directory where you saved the EC2 key-pair file.  Run the following command:
 
-The -N flag will log you in instead of prompting for the information already included as part of your command when logging into EC2. An initial successful connection will ask you if you want to continue connecting? Type yes and enter.  
+    `ssh -i path/to/keypairfilename.pem ec2-user@yourec2instanceendpoint -N -L 8182:yourneptuneendpoint:8182`
 
-To test the success of your local graph-notebook connection to Amazon Neptune, open a browser and navigate to:
 
-`https://yourneptunendpoint:8182/status` 
+    The -N flag will log you in instead of prompting for the information already included as part of your command when logging into EC2. An initial successful connection will ask you if you want to continue connecting? Type yes and enter.  
 
-You should see a report, similar to the one below, indicating the status and details of your specific cluster:
+    To test the success of your local graph-notebook connection to Amazon Neptune, open a browser and navigate to:
+
+    `https://yourneptunendpoint:8182/status` 
+
+    You should see a report, similar to the one below, indicating the status and details of your specific cluster:
 
 ```
 {
@@ -54,3 +58,24 @@ You should see a report, similar to the one below, indicating the status and det
 ```
 
 Now, you should be able to run queries from your local Jupyter graph notebook to your Neptune clusters!  When you're ready to close the connection, use Ctrl+D to exit.
+
+### Troubleshooting
+
+If you're having trouble with seeing a successful status to Neptune, try the following:
+
+<b>EC2 login: </b> make sure your key-pair (.pem) file is valid.  Use a basic form of the ssh command to see if you can login to EC2.
+`ssh -i path/to/keypairfilename.pem ec2-user@yourec2instanceendpoint` 
+
+A successful login with the above command will show a login confirmation like the one below:
+```
+Last login: Tue Dec 15 21:22:56 2020 from X.X.X.X
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+```
+<b>DNS flush: </b> after setting your hosts file, do a DNS flush to make sure your changes are reflected in the DNS.
+
+<b> HTTPS: </b> Check that when you connect to Neptune via a browser that you're using `https://` in the URL.
