@@ -28,7 +28,7 @@ class EnvCredentialsProvider(CredentialsProviderBase):
         self.loaded = True
         return
 
-    def get_iam_credentials(self, service=None) -> Credentials:
+    def get_iam_credentials(self) -> Credentials:
         if not self.loaded:
             self.load_iam_credentials()
 
