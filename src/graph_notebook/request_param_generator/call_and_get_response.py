@@ -6,11 +6,17 @@ SPDX-License-Identifier: Apache-2.0
 import requests
 
 
-def call_and_get_response(method: str, action: str, host: str, port: str, request_param_generator, use_ssl: bool, query='', extra_headers={}):
+def call_and_get_response(method: str, action: str, host: str, port: str, request_param_generator, use_ssl: bool,
+                          query='', extra_headers=None):
+    if extra_headers is None:
+        extra_headers = {}
+
     method = method.upper()
     protocol = 'https' if use_ssl else 'http'
 
-    request_params = request_param_generator.generate_request_params(method=method, action=action, query=query, host=host, port=port, protocol=protocol, headers=extra_headers)
+    request_params = request_param_generator.generate_request_params(method=method, action=action, query=query,
+                                                                     host=host, port=port, protocol=protocol,
+                                                                     headers=extra_headers)
     headers = request_params['headers'] if request_params['headers'] is not None else {}
 
     if method == 'GET':
