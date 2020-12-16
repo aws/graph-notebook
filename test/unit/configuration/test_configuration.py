@@ -50,7 +50,7 @@ class TestGenerateConfiguration(unittest.TestCase):
                             config.load_from_s3_arn, config.aws_region)
         c.write_to_file(self.test_file_path)
         config_from_file = get_config(self.test_file_path)
-        self.assert_configs_are_equal(config, config_from_file)
+        self.assertEqual(config.to_dict(), config_from_file.to_dict())
 
     def test_generate_configuration_override_defaults(self):
         auth_mode = AuthModeEnum.IAM
@@ -65,8 +65,4 @@ class TestGenerateConfiguration(unittest.TestCase):
                             config.load_from_s3_arn, config.aws_region)
         c.write_to_file(self.test_file_path)
         config_from_file = get_config(self.test_file_path)
-        self.assert_configs_are_equal(config, config_from_file)
-
-    def assert_configs_are_equal(self, config1: Configuration, config2: Configuration):
-        for k in config1.__dict__:
-            self.assertEqual(config1.__dict__[k], config2.__dict__[k])
+        self.assertEqual(config.to_dict(), config_from_file.to_dict())

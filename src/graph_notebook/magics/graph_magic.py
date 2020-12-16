@@ -152,7 +152,7 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
         parser.add_argument('--endpoint-prefix', '-e', default='',
-                            help='prefix path to sparql endpoint. For example, "foo/bar". The queried path would then be /foo/bar/sparql')
+                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be /foo/bar/sparql')
         parser.add_argument('--expand-all', action='store_true')
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
