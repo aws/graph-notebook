@@ -13,6 +13,8 @@ import urllib
 logging.basicConfig()
 logger = logging.getLogger("graph_magic")
 
+NEPTUNE_SERVICE = 'neptune-db'
+
 
 # Key derivation functions. See:
 # https://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python
@@ -104,40 +106,36 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
         additional_headers = []
 
     signing_region = signing_region.lower()
-    service = 'neptune-db'
-
     if use_ssl:
         protocol = 'https'
     else:
         protocol = 'http'
 
     # this is always http right now
-    endpoint = f'{protocol}://{host}:{port}'
+    endpoint = f'{protocol}://{host}:{port}' if port != '' else f'{protocol}://{host}'
 
     # get canonical_uri and payload
-    canonical_uri, payload = get_canonical_uri_and_payload(query_type, query)
+    (canonical_uri, payload) = get_canonical_uri_and_payload(query_type, query)
 
-    if 'content-type' in additional_headers and additional_headers['content-type'] == 'application/json':
-        request_parameters = payload if type(payload) is str else json.dumps(payload)
-    else:
-        request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
-        request_parameters = request_parameters.replace('%27', '%22')
     t = datetime.datetime.utcnow()
     amz_date = t.strftime('%Y%m%dT%H%M%SZ')
     date_stamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope
 
     method = method.upper()
     if method == 'GET' or method == 'DELETE':
+        request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
+        request_parameters = request_parameters.replace('%27', '%22')
         canonical_querystring = normalize_query_string(request_parameters)
     elif method == 'POST':
         canonical_querystring = ''
+        request_parameters = payload if type(payload) is str else json.dumps(payload)
     else:
         raise ValueError('method %s is not valid when creating canonical request' % method)
 
     # Step 4: Create the canonical headers and signed headers. Header names
     # must be trimmed and lowercase, and sorted in code point order from
     # low to high. Note that there is a trailing \n.
-    canonical_headers = f'host:{host}:{port}\nx-amz-date:{amz_date}\n'
+    canonical_headers = f'host:{host}:{port}\nx-amz-date:{amz_date}\n' if port != '' else f'host:{host}\nx-amz-date:{amz_date}\n'
 
     # Step 5: Create the list of signed headers. This lists the headers
     # in the canonical_headers list, delimited with ";" and in alpha order.
@@ -164,13 +162,13 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
     # Match the algorithm to the hashing algorithm you use, either SHA-1 or
     # SHA-256 (recommended)
     algorithm = 'AWS4-HMAC-SHA256'
-    credential_scope = date_stamp + '/' + signing_region + '/' + service + '/' + 'aws4_request'
+    credential_scope = date_stamp + '/' + signing_region + '/' + NEPTUNE_SERVICE + '/' + 'aws4_request'
     string_to_sign = algorithm + '\n' + amz_date + '\n' + credential_scope + '\n' + hashlib.sha256(
         canonical_request.encode('utf-8')).hexdigest()
 
     # ************* TASK 3: CALCULATE THE SIGNATURE *************
     # Create the signing key using the function defined above.
-    signing_key = get_signature_key(signing_secret, date_stamp, signing_region, service)
+    signing_key = get_signature_key(signing_secret, date_stamp, signing_region, NEPTUNE_SERVICE)
 
     # Sign the string_to_sign using the signing_key
     signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
@@ -193,7 +191,7 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
         }
     elif method == 'POST':
         headers = {
-            'content-type': 'application/x-www-form-urlencoded',
+            'content-type': 'application/json',
             'x-amz-date': amz_date,
             'Authorization': authorization_header,
         }
@@ -210,8 +208,9 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
     # ************* SEND THE REQUEST *************
     request_url = endpoint + canonical_uri
 
-    return {
+    params = {
         'url': request_url,
         'headers': headers,
-        'params': request_parameters
+        'params': post_payload
     }
+    return params
