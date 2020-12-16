@@ -114,9 +114,9 @@ class Graph(Magics):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
+            self.graph_notebook_config = config
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-            self.graph_notebook_config = config
         elif line == 'reset':
             self.graph_notebook_config = get_config(self.config_location)
             print('reset notebook config to:')
@@ -151,6 +151,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
+        parser.add_argument('--endpoint-prefix', '-e', default='',
+                            help='prefix path to sparql endpoint. For example, "foo/bar". The queried path would then be /foo/bar/sparql')
         parser.add_argument('--expand-all', action='store_true')
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
@@ -160,11 +162,13 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
+        endpoint_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
+
         tab = widgets.Tab()
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                    self.graph_notebook_config.ssl, request_generator)
+                                    self.graph_notebook_config.ssl, request_generator, endpoint_prefix)
             store_to_ns(args.store_to, res, local_ns)
             if 'error' in res:
                 html = error_template.render(error=json.dumps(res['error'], indent=2))
@@ -182,7 +186,7 @@ class Graph(Magics):
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
                 'Accept': 'application/sparql-results+json'}
             res = do_sparql_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                  self.graph_notebook_config.ssl, request_generator, headers)
+                                  self.graph_notebook_config.ssl, request_generator, headers, endpoint_prefix)
             store_to_ns(args.store_to, res, local_ns)
             titles = []
             children = []
@@ -818,6 +822,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
+        parser.add_argument('--endpoint-prefix', '-e', default='',
+                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be /foo/bar/sparql for sparql seed commands')
         parser.add_argument('--run', action='store_true')
         args = parser.parse_args(line.split())
 
@@ -875,6 +881,9 @@ class Graph(Magics):
             with progress_output:
                 display(progress)
 
+            # TODO: gremlin_prefix path is not supported yet
+            sparql_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
+
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
@@ -918,7 +927,7 @@ class Graph(Magics):
                     request_generator = create_request_generator(auth_mode,
                                                                  self.graph_notebook_config.iam_credentials_provider_type)
                     try:
-                        do_sparql_query(q['content'], host, port, ssl, request_generator)
+                        do_sparql_query(q['content'], host, port, ssl, request_generator, path_prefix=sparql_prefix)
                     except HTTPError as httpEx:
                         # attempt to turn response into json
                         try:

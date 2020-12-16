@@ -34,7 +34,7 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
-def do_sparql_query(query, host, port, use_ssl, request_param_generator, extra_headers=None):
+def do_sparql_query(query, host, port, use_ssl, request_param_generator, extra_headers=None, path_prefix: str = ''):
     if extra_headers is None:
         extra_headers = {}
     logger.debug(f'query={query}, endpoint={host}, port={port}')
@@ -47,7 +47,8 @@ def do_sparql_query(query, host, port, use_ssl, request_param_generator, extra_h
     elif action == 'sparqlupdate':
         data['update'] = query
 
-    res = call_and_get_response('post', SPARQL_ACTION, host, port, request_param_generator, use_ssl, data, extra_headers)
+    sparql_path = SPARQL_ACTION if path_prefix == '' else f'{path_prefix}/{SPARQL_ACTION}'
+    res = call_and_get_response('post', sparql_path, host, port, request_param_generator, use_ssl, data, extra_headers)
     try:
         content = res.json()  # attempt to return json, otherwise we will return the content string.
     except Exception:
@@ -56,7 +57,7 @@ def do_sparql_query(query, host, port, use_ssl, request_param_generator, extra_h
 
 
 def do_sparql_explain(query: str, host: str, port: str, use_ssl: bool, request_param_generator,
-                      accept_type='text/html'):
+                      accept_type='text/html', path_prefix: str = ''):
     query_type = get_query_type(query)
     action = query_type_to_action(query_type)
 
@@ -73,6 +74,6 @@ def do_sparql_explain(query: str, host: str, port: str, use_ssl: bool, request_p
         'Accept': accept_type
     }
 
-    res = call_and_get_response('post', SPARQL_ACTION, host, port, request_param_generator, use_ssl, data,
+    res = call_and_get_response('post', f'{path_prefix}/{SPARQL_ACTION}', host, port, request_param_generator, use_ssl, data,
                                 extra_headers)
     return res.content.decode('utf-8')
