@@ -74,6 +74,7 @@ def do_sparql_explain(query: str, host: str, port: str, use_ssl: bool, request_p
         'Accept': accept_type
     }
 
-    res = call_and_get_response('post', f'{path_prefix}/{SPARQL_ACTION}', host, port, request_param_generator, use_ssl, data,
+    sparql_path = SPARQL_ACTION if path_prefix == '' else f'{path_prefix}/{SPARQL_ACTION}'
+    res = call_and_get_response('post', sparql_path, host, port, request_param_generator, use_ssl, data,
                                 extra_headers)
     return res.content.decode('utf-8')
