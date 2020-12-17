@@ -22,6 +22,7 @@ This step can vary depending on if you are running <b>Windows</b> or <b>MacOS</b
     <b>MacOS: </b> Open Terminal and type in the command: `sudo nano /etc/hosts`
 
     Add the following line to the hosts file, replacing the text with your Neptune endpoint address.
+    
     `127.0.0.1   localhost   YourNeptuneEndpoint`
 
 2. Open Command Prompt as an Administrator for Windows or Terminal for MacOS and run the following command. For Windows, you may need to run SSH from C:\Users\YourUsername\
@@ -63,6 +64,7 @@ Now, you should be able to run queries from your local Jupyter graph notebook to
 If you're having trouble with seeing Neptune status, try the following:
 
 <b>EC2 login: </b> make sure your key-pair (.pem) file is valid.  Use a basic form of the ssh command to see if you can login to EC2.
+
 `ssh -i path/to/keypairfilename.pem ec2-user@yourec2instanceendpoint` 
 
 A successful login with the above command will show a login confirmation like the one below:
