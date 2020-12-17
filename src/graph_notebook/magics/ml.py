@@ -344,14 +344,14 @@ def wait_for_endpoint(job_id: str, config: Configuration, request_param_generato
 
 def neptune_ml_endpoint(args: argparse.Namespace, request_param_generator,
                         config: Configuration, output: widgets.Output, params):
-    if params is None or params == '' or params == {}:
-        params = {
-            "id": args.job_id,
-            "mlModelTrainingJobId": args.model_job_id,
-            'instanceType': args.instance_type
-        }
-
     if args.which_sub == 'create':
+        if params is None or params == '' or params == {}:
+            params = {
+                "id": args.job_id,
+                "mlModelTrainingJobId": args.model_job_id,
+                'instanceType': args.instance_type
+            }
+
         create_endpoint_job = start_create_endpoint(config.host, str(config.port), config.ssl,
                                                     request_param_generator, params)
 
