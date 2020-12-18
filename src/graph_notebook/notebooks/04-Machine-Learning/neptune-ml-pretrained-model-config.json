@@ -1,8 +1,8 @@
 {
   "models": {
-      "node_classification": "s3://aws-neptune-customer-samples/v4/neptune-ml/pretrained-models/node-classification/model.tar.gz",
-        "node_regression": "s3://aws-neptune-customer-samples/v4/neptune-ml/pretrained-models/node-regression/model.tar.gz",
-        "link_prediction": "s3://aws-neptune-customer-samples/v4/neptune-ml/pretrained-models/link-prediction/model.tar.gz"
+      "node_classification": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/node-classification/model.tar.gz",
+        "node_regression": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/node-regression/model.tar.gz",
+        "link_prediction": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/link-prediction/model.tar.gz"
     },
     "container_images": {
     "us-west-1":"763104351884.dkr.ecr.us-west-1.amazonaws.com/pytorch-inference:1.5.0-cpu-py3",

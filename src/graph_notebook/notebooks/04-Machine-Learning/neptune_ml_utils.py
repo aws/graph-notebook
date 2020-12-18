@@ -5,19 +5,22 @@ import os
 import requests
 import json
 import zipfile
+import logging
+import time
 from time import strftime, gmtime, sleep
-from requests_aws4auth import AWS4Auth
+from botocore.auth import SigV4Auth
+from botocore.awsrequest import AWSRequest
 from datetime import datetime
 from urllib.parse import urlparse
 
 # How often to check the status
 UPDATE_DELAY_SECONDS = 15
 
-
-def get_auth_header(service: str):
-    credentials = boto3.Session().get_credentials().get_frozen_credentials()
-    return AWS4Auth(credentials.secret_key, credentials.access_key,
-                    boto3.Session().region_name, service)
+def signed_request(method, url, data=None, params=None, headers=None, service=None):
+    creds = boto3.Session().get_credentials().get_frozen_credentials()
+    request = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
+    SigV4Auth(creds, service, boto3.Session().region_name).add_auth(request)
+    return requests.request(method=method, url=url, headers=dict(request.headers), data=data)
 
 
 def load_configuration():
@@ -31,45 +34,61 @@ def load_configuration():
             iam = False
     return host, port, iam
 
+def get_host():
+    host, port, iam = load_configuration()
+    return host
+
+def get_iam():
+    host, port, iam = load_configuration()
+    return iam
+
+def get_training_job_name(prefix: str):
+    return f'{prefix}-{int(time.time())}'
 
 def check_ml_enabled():
-    host, port, use_iam = load_configuration()
-    response = requests.get(
-        url=f'https://{host}:{port}/ml/modeltraining', headers={'content-type': 'application/json'}, auth=get_auth_header('neptune-db')
-    )
+    host, port, use_iam = load_configuration()  
+    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
 Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
     else:
         print("This Neptune cluster is configured to use Neptune ML")
-
+        
+def get_export_service_host():
+    with open('/home/ec2-user/.bashrc') as f:
+        data = f.readlines()
+    for d in data:
+        if str.startswith(d, 'export NEPTUNE_EXPORT_API_URI'):
+            parts = d.split('=')
+            if len(parts)==2:
+                path=urlparse(parts[1].rstrip())
+                return path.hostname
+    logging.error("Unable to determine the Neptune Export Service Endpoint. You will need to enter this assign this manually.")
+    return None
 
 def delete_pretrained_data(setup_node_classification: bool,
                            setup_node_regression: bool, setup_link_prediction: bool):
 
     host, port, use_iam = load_configuration()
-    auth = get_auth_header('neptune-db')
     if setup_node_classification:
-        response = requests.post(
+        response = signed_request("POST", service='neptune-db',
             url=f'https://{host}:{port}/gremlin',
             headers={'content-type': 'application/json'},
-            auth=auth,
             data=json.dumps({'gremlin': "g.V('movie_1', 'movie_7', 'movie_15').properties('genre').drop()"}))
+        
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_node_regression:
-        response = requests.post(
+        response = signed_request("POST", service='neptune-db',
             url=f'https://{host}:{port}/gremlin',
             headers={'content-type': 'application/json'},
-            auth=auth,
             data=json.dumps({'gremlin': "g.V('user_1').out('wrote').properties('score').drop()"}))
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_link_prediction:
-        response = requests.post(
+        response = signed_request("POST", service='neptune-db',
             url=f'https://{host}:{port}/gremlin',
             headers={'content-type': 'application/json'},
-            auth=auth,
             data=json.dumps({'gremlin': "g.V('user_1').outE('rated').drop()"}))
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
@@ -77,14 +96,16 @@ def delete_pretrained_data(setup_node_classification: bool,
 
 def delete_pretrained_endpoints(endpoints: dict):
     sm = boto3.client("sagemaker")
-    if 'classification_endpoint_name' in endpoints and endpoints['classification_endpoint_name']:
-        print(endpoints['classification_endpoint_name']["EndpointName"])
-        sm.delete_endpoint(EndpointName=endpoints['classification_endpoint_name']["EndpointName"])
-    if 'regression_endpoint_name' in endpoints and endpoints['regression_endpoint_name']:
-        sm.delete_endpoint(EndpointName=endpoints['regression_endpoint_name']["EndpointName"])
-    if 'prediction_endpoint_name' in endpoints and endpoints['prediction_endpoint_name']:
-        sm.delete_endpoint(EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
-    print(f'Endpoint(s) have been deleted')
+    try:
+        if 'classification_endpoint_name' in endpoints and endpoints['classification_endpoint_name']:
+            sm.delete_endpoint(EndpointName=endpoints['classification_endpoint_name']["EndpointName"])
+        if 'regression_endpoint_name' in endpoints and endpoints['regression_endpoint_name']:
+            sm.delete_endpoint(EndpointName=endpoints['regression_endpoint_name']["EndpointName"])
+        if 'prediction_endpoint_name' in endpoints and endpoints['prediction_endpoint_name']:
+            sm.delete_endpoint(EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
+        print(f'Endpoint(s) have been deleted')
+    except Exception as e:
+        logging.error(e)
 
 
 def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
@@ -92,9 +113,8 @@ def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
     if neptune_iam_role_arn:
         query_string = f'?neptuneIamRoleArn={neptune_iam_role_arn}'
     host, port, use_iam = load_configuration()
-    response = requests.delete(
-        url=f'https://{host}:{port}/ml/endpoints/{training_job_name}{query_string}', headers={'content-type': 'application/json'}, auth=get_auth_header('neptune-db')
-    )
+    response = signed_request("DELETE", service='neptune-db',
+        url=f'https://{host}:{port}/ml/endpoints/{training_job_name}{query_string}', headers={'content-type': 'application/json'})
     if response.status_code != 200:
         print(response.content.decode('utf-8'))
     else:
@@ -103,14 +123,21 @@ def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
 
 
 def prepare_movielens_data(s3_bucket_uri: str):
-    return MovieLensProcessor().prepare_movielens_data(s3_bucket_uri)
+    try:
+        return MovieLensProcessor().prepare_movielens_data(s3_bucket_uri)
+    except Exception as e:
+        logging.error(e)
+
 
 
 def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bool,
                                setup_node_regression: bool, setup_link_prediction: bool):
     delete_pretrained_data(setup_node_classification,
                            setup_node_regression, setup_link_prediction)
-    return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification, setup_node_regression, setup_link_prediction)
+    try:
+        return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification, setup_node_regression, setup_link_prediction)
+    except Exception as e:
+        logging.error(e)
 
 
 class MovieLensProcessor:
@@ -345,30 +372,15 @@ class PretrainedModels:
         return name
 
     def __get_neptune_ml_role(self):
-        client = boto3.client("neptune")
-        host, port, use_iam = load_configuration()
-        host_portions = host.split('.')
-        if len(host_portions) == 0:
-            raise ValueError("Host name is incorrect")
-
-        cluster_id = host_portions[0]
-        neptune_cluster = client.describe_db_clusters(
-            DBClusterIdentifier=cluster_id)
-        if 'DBClusters' not in neptune_cluster or len(neptune_cluster) == 0:
-            raise ValueError(
-                "Neptune Cluster can not be found for this notebook configuration")
-        db_parameters_group = neptune_cluster['DBClusters'][0]['DBClusterParameterGroup']
-        neptune_parameters = client.describe_db_cluster_parameters(
-            DBClusterParameterGroupName=db_parameters_group)
-        if 'Parameters' not in neptune_parameters or len(neptune_parameters) == 0:
-            raise ValueError(
-                "DB Cluster Parameters can not be found for this notebook configuration")
-        neptune_ml_role = [d for d in neptune_parameters['Parameters']
-                           if d['ParameterName'] == 'neptune_ml_iam_role']
-        if len(neptune_ml_role) == 0 or not neptune_ml_role[0]['ParameterValue']:
-            raise ValueError(
-                "Neptune ML Role can not be found for this clusters configuration parameters.")
-        return neptune_ml_role[0]['ParameterValue']
+        with open('/home/ec2-user/.bashrc') as f:
+            data = f.readlines()
+        for d in data:
+            if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
+                parts = d.split('=')
+                if len(parts)==2:
+                    return parts[1].rstrip()
+        logging.error("Unable to determine the Neptune ML IAM Role.")
+        return None
 
     def __copy_s3(self, s3_bucket_uri: str, source_s3_uri: str):
         path = urlparse(s3_bucket_uri, allow_fragments=False)
