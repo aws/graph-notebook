@@ -29,8 +29,6 @@ def generate_neptune_ml_parser():
     export_start_parser = export_sub_parsers.add_parser('start', help='start a new exporter job')
     export_start_parser.add_argument('--export-url', type=str,
                                      help='api gateway endpoint to call the exporter such as foo.execute-api.us-east-1.amazonaws.com/v1')
-    export_start_parser.add_argument('--export-url-version', type=str, default='v1',
-                                     help='version string for exporter. For example: v1')
     export_start_parser.add_argument('--export-iam', action='store_true',
                                      help='flag for whether to sign requests to the export url with SigV4')
     export_start_parser.add_argument('--export-no-ssl', action='store_true',
@@ -47,8 +45,6 @@ def generate_neptune_ml_parser():
     export_status_parser.add_argument('--job-id', type=str, help='job id to check the status of')
     export_status_parser.add_argument('--export-url', type=str,
                                       help='api gateway endpoint to call the exporter such as foo.execute-api.us-east-1.amazonaws.com/v1')
-    export_status_parser.add_argument('--export-url-version', type=str, default='v1',
-                                      help='version string for exporter. For example: v1')
     export_status_parser.add_argument('--export-iam', action='store_true',
                                       help='flag for whether to sign requests to the export url with SigV4')
     export_status_parser.add_argument('--export-no-ssl', action='store_true',
@@ -66,9 +62,10 @@ def generate_neptune_ml_parser():
     dataprocessing_subparsers = parser_dataprocessing.add_subparsers(help='dataprocessing sub-command',
                                                                      dest='which_sub')
     dataprocessing_start_parser = dataprocessing_subparsers.add_parser('start', help='start a new dataprocessing job')
-    dataprocessing_start_parser.add_argument('--job-id', type=str, default='the unique identifier for for this processing job')
-    dataprocessing_start_parser.add_argument('--s3-input', type=str, default='input data location in s3')
-    dataprocessing_start_parser.add_argument('--s3-processed', type=str, default='processed data location in s3')
+    dataprocessing_start_parser.add_argument('--job-id', type=str,
+                                             default='the unique identifier for for this processing job')
+    dataprocessing_start_parser.add_argument('--s3-input-uri', type=str, default='input data location in s3')
+    dataprocessing_start_parser.add_argument('--s3-processed-uri', type=str, default='processed data location in s3')
     dataprocessing_start_parser.add_argument('--config-file-name', type=str, default='')
     dataprocessing_start_parser.add_argument('--store-to', type=str, default='',
                                              help='store result to this variable')
@@ -98,7 +95,7 @@ def generate_neptune_ml_parser():
     training_start_parser = training_subparsers.add_parser('start', help='start a new training job')
     training_start_parser.add_argument('--job-id', type=str, default='')
     training_start_parser.add_argument('--data-processing-id', type=str, default='')
-    training_start_parser.add_argument('--s3-location', type=str, default='')
+    training_start_parser.add_argument('--s3-output-uri', type=str, default='')
     training_start_parser.add_argument('--instance-type', type=str, default='')
     training_start_parser.add_argument('--store-to', type=str, default='', help='store result to this variable')
     training_start_parser.add_argument('--wait', action='store_true',
@@ -149,16 +146,15 @@ def generate_neptune_ml_parser():
     return parser
 
 
-def neptune_ml_export_start(params, export_url: str, export_version: str,
-                            export_ssl: bool = True, creds: Credentials = None):
+def neptune_ml_export_start(params, export_url: str, export_ssl: bool = True, creds: Credentials = None):
     if type(params) is str:
         params = json.loads(params)
 
-    job = start_export(export_url, export_version, params, export_ssl, creds)
+    job = start_export(export_url, params, export_ssl, creds)
     return job
 
 
-def wait_for_export(export_url: str, version: str, job_id: str, output: widgets.Output,
+def wait_for_export(export_url: str, job_id: str, output: widgets.Output,
                     export_ssl: bool = True, wait_interval: int = DEFAULT_WAIT_INTERVAL,
                     wait_timeout: int = DEFAULT_WAIT_TIMEOUT, creds: Credentials = None):
     job_id_output = widgets.Output()
@@ -173,14 +169,14 @@ def wait_for_export(export_url: str, version: str, job_id: str, output: widgets.
         beginning_time = datetime.datetime.utcnow()
         while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
             update_widget_output.clear_output()
-            print('checking for latest status...')
-            export_status = get_export_status(export_url, version, export_ssl, job_id, creds)
+            print('Checking for latest status...')
+            export_status = get_export_status(export_url, export_ssl, job_id, creds)
             if export_status['status'] in ['succeeded', 'failed']:
-                print('export is finished')
+                print('Export is finished')
                 return export_status
             else:
-                print(f'status is {export_status["status"]}')
-                print(f'waiting for {wait_interval} before checking again...')
+                print(f'Status is {export_status["status"]}')
+                print(f'Waiting for {wait_interval} before checking again...')
                 time.sleep(wait_interval)
 
 
@@ -193,21 +189,19 @@ def neptune_ml_export(args: argparse.Namespace, config: Configuration, output: w
     export_ssl = not args.export_no_ssl
     if args.which_sub == 'start':
         if cell == '':
-            return 'cell body must have json payload or reference notebook variable using syntax ${payload_var}'
-        export_job = neptune_ml_export_start(cell, args.export_url, args.export_url_version,
-                                             export_ssl, creds)
+            return 'Cell body must have json payload or reference notebook variable using syntax ${payload_var}'
+        export_job = neptune_ml_export_start(cell, args.export_url, export_ssl, creds)
         if args.wait:
-            return wait_for_export(args.export_url, args.export_url_version, export_job['jobId'],
+            return wait_for_export(args.export_url, export_job['jobId'],
                                    output, export_ssl, args.wait_interval, args.wait_timeout, creds)
         else:
             return export_job
     elif args.which_sub == 'status':
         if args.wait:
-            status = wait_for_export(args.export_url, args.export_url_version, args.job_id,
-                                     output, export_ssl, args.wait_interval, args.wait_timeout, creds)
+            status = wait_for_export(args.export_url, args.job_id, output, export_ssl, args.wait_interval,
+                                     args.wait_timeout, creds)
         else:
-            status = get_export_status(args.export_url, args.export_url_version, export_ssl,
-                                       args.job_id, creds)
+            status = get_export_status(args.export_url, export_ssl, args.job_id, creds)
         return status
 
 
@@ -227,11 +221,11 @@ def wait_for_dataprocessing(job_id: str, config: Configuration, request_param_ge
             update_status_output.clear_output()
             status = get_processing_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
             if status['status'] in ['Completed', 'Failed']:
-                print('dataprocessing is finished')
+                print('Data processing is finished')
                 return status
             else:
-                print(f'status is {status["status"]}')
-                print(f'waiting for {wait_interval} before checking again...')
+                print(f'Status is {status["status"]}')
+                print(f'Waiting for {wait_interval} before checking again...')
                 time.sleep(wait_interval)
 
 
@@ -240,8 +234,8 @@ def neptune_ml_dataprocessing(args: argparse.Namespace, request_param_generator,
     if args.which_sub == 'start':
         if params is None or params == '' or params == {}:
             params = {
-                'inputDataS3Location': args.s3_input,
-                'processedDataS3Location': args.s3_processed,
+                'inputDataS3Location': args.s3_input_uri,
+                'processedDataS3Location': args.s3_processed_uri,
                 'id': args.job_id,
                 'configFileName': args.config_file_name
             }
@@ -250,7 +244,7 @@ def neptune_ml_dataprocessing(args: argparse.Namespace, request_param_generator,
                                               request_param_generator, params)
         job_id = params['id']
         if args.wait:
-            print('wait flag is on, waiting for dataprocessing job to finish...')
+            print('Wait flag is on, waiting for dataprocessing job to finish...')
             return wait_for_dataprocessing(job_id, config, request_param_generator,
                                            output, args.wait_interval, args.wait_timeout)
         else:
@@ -263,7 +257,7 @@ def neptune_ml_dataprocessing(args: argparse.Namespace, request_param_generator,
             return get_processing_status(config.host, str(config.port), config.ssl, request_param_generator,
                                          args.job_id)
     else:
-        return f'sub parser "{args.which} {args.which_sub}" was not recognized'
+        return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
 def wait_for_training(job_id: str, config: Configuration, request_param_generator, output: widgets.Output,
@@ -282,11 +276,11 @@ def wait_for_training(job_id: str, config: Configuration, request_param_generato
             update_status_output.clear_output()
             status = get_training_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
             if status['status'] in ['Completed', 'Failed']:
-                print('dataprocessing is finished')
+                print('Training is finished')
                 return status
             else:
-                print(f'status is {status["status"]}')
-                print(f'waiting for {wait_interval} before checking again...')
+                print(f'Status is {status["status"]}')
+                print(f'Waiting for {wait_interval} before checking again...')
                 time.sleep(wait_interval)
 
 
@@ -298,7 +292,7 @@ def neptune_ml_training(args: argparse.Namespace, request_param_generator, confi
                 "id": args.job_id,
                 "dataProcessingJobId": args.data_processing_id,
                 "trainingInstanceType": args.instance_type,
-                "trainModelS3Location": args.s3_location
+                "trainModelS3Location": args.s3_output_uri
             }
 
         training_job = start_training(config.host, str(config.port), config.ssl, request_param_generator, params)
@@ -315,7 +309,7 @@ def neptune_ml_training(args: argparse.Namespace, request_param_generator, confi
             return get_training_status(config.host, str(config.port), config.ssl, request_param_generator,
                                        args.job_id)
     else:
-        return f'sub parser "{args.which} {args.which_sub}" was not recognized'
+        return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
 def wait_for_endpoint(job_id: str, config: Configuration, request_param_generator, output: widgets.Output,
@@ -334,11 +328,11 @@ def wait_for_endpoint(job_id: str, config: Configuration, request_param_generato
             update_status_output.clear_output()
             status = get_endpoint_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
             if status['status'] in ['InService', 'Failed']:
-                print('dataprocessing is finished')
+                print('Endpoint creation is finished')
                 return status
             else:
-                print(f'status is {status["status"]}')
-                print(f'waiting for {wait_interval} before checking again...')
+                print(f'Status is {status["status"]}')
+                print(f'Waiting for {wait_interval} before checking again...')
                 time.sleep(wait_interval)
 
 
@@ -367,7 +361,7 @@ def neptune_ml_endpoint(args: argparse.Namespace, request_param_generator,
         else:
             return get_endpoint_status(config.host, str(config.port), config.ssl, request_param_generator, args.job_id)
     else:
-        return f'sub parser "{args.which} {args.which_sub}" was not recognized'
+        return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
 def neptune_ml_magic_handler(args, request_param_generator, config: Configuration, output: widgets.Output,

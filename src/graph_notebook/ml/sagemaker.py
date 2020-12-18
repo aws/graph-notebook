@@ -16,7 +16,7 @@ EXTRA_HEADERS = {'content-type': 'application/json'}
 UPDATE_DELAY_SECONDS = 60
 
 
-def start_export(export_host: str, version: str, export_params: dict, use_ssl: bool,
+def start_export(export_host: str, export_params: dict, use_ssl: bool,
                  creds: Credentials = None) -> dict:
     auth = None
     if creds is not None:
@@ -24,21 +24,21 @@ def start_export(export_host: str, version: str, export_params: dict, use_ssl: b
                         session_token=creds.token)
 
     protocol = 'https' if use_ssl else 'http'
-    url = f'{protocol}://{export_host}/{version}/{EXPORT_ACTION}'
+    url = f'{protocol}://{export_host}/{EXPORT_ACTION}'
     res = requests.post(url, json=export_params, headers=EXTRA_HEADERS, auth=auth)
     res.raise_for_status()
     job = res.json()
     return job
 
 
-def get_export_status(export_host: str, version: str, use_ssl: bool, job_id: str, creds: Credentials = None):
+def get_export_status(export_host: str, use_ssl: bool, job_id: str, creds: Credentials = None):
     auth = None
     if creds is not None:
         auth = AWS4Auth(creds.key, creds.secret, creds.region, EXPORT_SERVICE_NAME,
                         session_token=creds.token)
 
     protocol = 'https' if use_ssl else 'http'
-    url = f'{protocol}://{export_host}/{version}/{EXPORT_ACTION}/{job_id}'
+    url = f'{protocol}://{export_host}/{EXPORT_ACTION}/{job_id}'
     res = requests.get(url, headers=EXTRA_HEADERS, auth=auth)
     res.raise_for_status()
     job = res.json()
