@@ -244,7 +244,6 @@ def neptune_ml_dataprocessing(args: argparse.Namespace, request_param_generator,
                                               request_param_generator, params)
         job_id = params['id']
         if args.wait:
-            print('Wait flag is on, waiting for dataprocessing job to finish...')
             return wait_for_dataprocessing(job_id, config, request_param_generator,
                                            output, args.wait_interval, args.wait_timeout)
         else:
