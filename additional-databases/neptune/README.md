@@ -1,5 +1,5 @@
 ## Connecting graph notebook locally to Amazon Neptune (first-time setup)
-When using the graph notebook locally to connect to an Amazon Neptune database for the first time, there are a few additional steps. This section assumes that you've already installed & configured [graph-notebook](https://github.com/aws/graph-notebook#installation) locally. Note that this wiki is not an official recommendation on network setups as there are many ways to connect to Amazon Neptune from outside of the VPC, such as setting up a load balancer or VPC peering.
+When using the graph notebook locally to connect to an Amazon Neptune database for the first time, there are a few additional steps. This section assumes that you've already installed & configured [graph-notebook](https://github.com/aws/graph-notebook#installation) locally. Note that this README is not an official recommendation on network setups as there are many ways to connect to Amazon Neptune from outside of the VPC, such as setting up a load balancer or VPC peering.
 
 Amazon Neptune DB clusters can only be created in an Amazon Virtual Private Cloud (VPC).  One way to connect to Amazon Neptune from outside of the VPC is to set up an Amazon EC2 instance as a proxy server within the same VPC. With this approach, you will also want to set up an SSH tunnel to securely forward traffic to the VPC. 
 
