@@ -36,7 +36,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config --host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" --iam_credentials_provider "" --load_from_s3_arn "" --config_destination="{self.test_file_path}" ')
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
-        self.assert_configs_are_equal(expected_config, config)
+        self.assertEqual(expected_config.to_dict(), config.to_dict())
 
     def generate_config_from_main_and_test(self, source_config: Configuration):
         # This will run the main method that our install script runs on a Sagemaker notebook.
@@ -45,8 +45,4 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config --host "{source_config.host}" --port "{source_config.port}" --auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" --iam_credentials_provider "{source_config.iam_credentials_provider_type.value}" --load_from_s3_arn "{source_config.load_from_s3_arn}" --config_destination="{self.test_file_path}" ')
         self.assertEqual(result, 0)
         config = get_config(self.test_file_path)
-        self.assert_configs_are_equal(source_config, config)
-
-    def assert_configs_are_equal(self, config1: Configuration, config2: Configuration):
-        for k in config1.__dict__:
-            self.assertEqual(config1.__dict__[k], config2.__dict__[k])
+        self.assertEqual(source_config.to_dict(), config.to_dict())
