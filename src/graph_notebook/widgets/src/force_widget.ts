@@ -567,7 +567,10 @@ export class ForceView extends DOMWidgetView {
    */
   buildTableRows(data: DynamicObject): Array<HTMLElement> {
     const rows: Array<HTMLElement> = new Array<HTMLElement>();
-    Object.entries(data).forEach((entry: Array<any>) => {
+    const sorted = Object.entries(data).sort((a, b) => {
+        return a[0].localeCompare(b[0]);
+    });
+    sorted.forEach((entry: Array<any>) => {
       const row = document.createElement("tr");
       const property = document.createElement("td");
       const value = document.createElement("td");
