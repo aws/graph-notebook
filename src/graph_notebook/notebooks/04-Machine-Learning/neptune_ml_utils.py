@@ -62,7 +62,7 @@ def get_export_service_host():
             parts = d.split('=')
             if len(parts)==2:
                 path=urlparse(parts[1].rstrip())
-                return path.hostname
+                return path.hostname + "/v1"
     logging.error("Unable to determine the Neptune Export Service Endpoint. You will need to enter this assign this manually.")
     return None
 
