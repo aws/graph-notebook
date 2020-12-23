@@ -169,7 +169,7 @@ class Graph(Magics):
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                    self.graph_notebook_config.ssl, request_generator, endpoint_prefix)
+                                    self.graph_notebook_config.ssl, request_generator, path_prefix=endpoint_prefix)
             store_to_ns(args.store_to, res, local_ns)
             if 'error' in res:
                 html = error_template.render(error=json.dumps(res['error'], indent=2))
