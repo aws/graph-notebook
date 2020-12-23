@@ -488,12 +488,13 @@ export class ForceView extends DOMWidgetView {
     }
 
     if (nodeID !== undefined && nodeID !== null && node.id === nodeID) {
-      node.color = this.searchMatchColorNode;
+      if (!node.group) {
+        node.color = this.searchMatchColorNode;
+      }
     } else {
       node.color = this.visOptions.nodes.color;
     }
-
-    node.font = { color: "black" };
+    node.borderWidth = 0
     this.nodeDataset.update(node);
     this.vis?.stopSimulation();
     this.selectedNodeID = "";
@@ -607,7 +608,6 @@ export class ForceView extends DOMWidgetView {
     if (node === null) {
       return;
     }
-
     if (node.label !== undefined && node.label !== "") {
       this.detailsText.innerText = "Details - " + node.title;
     } else {
@@ -615,7 +615,13 @@ export class ForceView extends DOMWidgetView {
     }
 
     this.buildGraphPropertiesTable(node);
-    node.font = { color: "white" };
+    if (node.group) {
+        node.font = { bold: true };
+        node.opacity = 1
+        node.borderWidth= 3
+    } else {
+        node.font = { color: "white" };
+    }
     this.nodeDataset.update(node);
     this.vis?.stopSimulation();
     this.selectedNodeID = nodeID;
@@ -672,11 +678,9 @@ export class ForceView extends DOMWidgetView {
       this.nodeDataset.forEach((item, id) => {
         if (this.search(text, item, 0)) {
           const nodeID = id.toString();
-          // if (selectedNodes[nodeID])
           nodeUpdate.push({
             id: nodeID,
             borderWidth: 3,
-            color: this.searchMatchColorNode,
           });
           nodeIDs[id.toString()] = true;
         }
@@ -693,7 +697,18 @@ export class ForceView extends DOMWidgetView {
           edgeIDs[id.toString()] = true;
         }
       });
-    }
+    } else {
+        //Reset the opacity and border width
+        this.nodeDataset.forEach((item, id) => {
+          const nodeID = id.toString();
+          nodeUpdate.push({
+            id: nodeID,
+            opacity: 1,
+            borderWidth: 0
+          });
+          nodeIDs[id.toString()] = true;
+        })
+      };
 
     // check current matched nodes and clear all nodes which are no longer matches
     this.nodeIDSearchMatches.forEach((value) => {
@@ -706,10 +721,7 @@ export class ForceView extends DOMWidgetView {
           borderWidth: selected
             ? this.visOptions["nodes"]["borderWidthSelected"]
             : 0,
-          color: selected
-            ? this.visOptions["nodes"]["color"]["highlight"]
-            : this.searchMatchColorNode,
-        });
+          opacity: 0.35        });
       }
     });
 
