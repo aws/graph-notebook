@@ -464,7 +464,7 @@ class PretrainedModels:
                 f"Node Classification Endpoint Name: {classification_endpoint_name['EndpointName']}")
         if regression_endpoint_name:
             print(
-                f"Node Classification Endpoint Name: {regression_endpoint_name['EndpointName']}")
+                f"Node Regression Endpoint Name: {regression_endpoint_name['EndpointName']}")
         if prediction_endpoint_name:
             print(
                 f"Link Prediction Endpoint Name: {prediction_endpoint_name['EndpointName']}")
