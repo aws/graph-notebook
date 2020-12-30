@@ -22,11 +22,27 @@ class AuthModeEnum(Enum):
 DEFAULT_AUTH_MODE = AuthModeEnum.DEFAULT
 
 
+class SparqlSection(object):
+    """
+    Used for sparql-specific settings in a notebook's configuration
+    """
+    def __init__(self, endpoint_prefix: str):
+        """
+        :param endpoint_prefix: used to specify the base-path of the api being connected to do get to its
+                     corresponding sparql endpoint.
+        """
+        self.endpoint_prefix = endpoint_prefix
+
+    def to_dict(self):
+        return self.__dict__
+
+
 class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT,
                  iam_credentials_provider_type: IAMAuthCredentialsProvider = DEFAULT_IAM_CREDENTIALS_PROVIDER,
-                 load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1'):
+                 load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1',
+                 sparql_section: SparqlSection = None):
         self.host = host
         self.port = port
         self.auth_mode = auth_mode
@@ -34,6 +50,7 @@ class Configuration(object):
         self.load_from_s3_arn = load_from_s3_arn
         self.ssl = ssl
         self.aws_region = aws_region
+        self.sparql = sparql_section if sparql_section is not None else SparqlSection(endpoint_prefix='')
 
     def to_dict(self) -> dict:
         return {
@@ -43,7 +60,8 @@ class Configuration(object):
             'iam_credentials_provider_type': self.iam_credentials_provider_type.value,
             'load_from_s3_arn': self.load_from_s3_arn,
             'ssl': self.ssl,
-            'aws_region': self.aws_region
+            'aws_region': self.aws_region,
+            'sparql': self.sparql.to_dict()
         }
 
     def write_to_file(self, file_path=DEFAULT_CONFIG_LOCATION):
