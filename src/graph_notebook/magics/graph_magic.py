@@ -23,6 +23,7 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION
 from graph_notebook.decorators.decorators import display_exceptions
+from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.sparql.table import get_rows_and_columns
@@ -35,7 +36,7 @@ from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.gremlin.client_provider.factory import create_client_provider
 from graph_notebook.request_param_generator.factory import create_request_generator
 from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load, VALID_FORMATS, \
-    PARALLELISM_OPTIONS, PARALLELISM_HIGH
+    PARALLELISM_OPTIONS, PARALLELISM_HIGH, FINAL_LOAD_STATUSES
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.status.get_status import get_status
@@ -114,9 +115,9 @@ class Graph(Magics):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
+            self.graph_notebook_config = config
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-            self.graph_notebook_config = config
         elif line == 'reset':
             self.graph_notebook_config = get_config(self.config_location)
             print('reset notebook config to:')
@@ -151,6 +152,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
+        parser.add_argument('--endpoint-prefix', '-e', default='',
+                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be /foo/bar/sparql')
         parser.add_argument('--expand-all', action='store_true')
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
@@ -160,11 +163,13 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
+        endpoint_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
+
         tab = widgets.Tab()
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                    self.graph_notebook_config.ssl, request_generator)
+                                    self.graph_notebook_config.ssl, request_generator, path_prefix=endpoint_prefix)
             store_to_ns(args.store_to, res, local_ns)
             if 'error' in res:
                 html = error_template.render(error=json.dumps(res['error'], indent=2))
@@ -182,7 +187,7 @@ class Graph(Magics):
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
                 'Accept': 'application/sparql-results+json'}
             res = do_sparql_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                  self.graph_notebook_config.ssl, request_generator, headers)
+                                  self.graph_notebook_config.ssl, request_generator, headers, endpoint_prefix)
             store_to_ns(args.store_to, res, local_ns)
             titles = []
             children = []
@@ -736,7 +741,7 @@ class Graph(Magics):
                         job_status_output.clear_output()
                         with job_status_output:
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
-                            if interval_check_response["payload"]["overallStatus"]["status"] == 'LOAD_COMPLETED':
+                            if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
                                 interval_output.close()
                                 print('Done.')
                                 return
@@ -786,13 +791,14 @@ class Graph(Magics):
     @needs_local_scope
     def load_status(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_load_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                              self.graph_notebook_config.ssl, request_generator, line)
+                              self.graph_notebook_config.ssl, request_generator, args.load_id)
         print(json.dumps(res, indent=2))
 
         if args.store_to != '' and local_ns is not None:
@@ -803,13 +809,14 @@ class Graph(Magics):
     @needs_local_scope
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = cancel_load(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                          self.graph_notebook_config.ssl, request_generator, line)
+                          self.graph_notebook_config.ssl, request_generator, args.load_id)
         if res:
             print('Cancelled successfully.')
         else:
@@ -824,6 +831,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
+        parser.add_argument('--endpoint-prefix', '-e', default='',
+                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be /foo/bar/sparql for sparql seed commands')
         parser.add_argument('--run', action='store_true')
         args = parser.parse_args(line.split())
 
@@ -881,6 +890,9 @@ class Graph(Magics):
             with progress_output:
                 display(progress)
 
+            # TODO: gremlin_prefix path is not supported yet
+            sparql_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
+
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
@@ -924,7 +936,7 @@ class Graph(Magics):
                     request_generator = create_request_generator(auth_mode,
                                                                  self.graph_notebook_config.iam_credentials_provider_type)
                     try:
-                        do_sparql_query(q['content'], host, port, ssl, request_generator)
+                        do_sparql_query(q['content'], host, port, ssl, request_generator, path_prefix=sparql_prefix)
                     except HTTPError as httpEx:
                         # attempt to turn response into json
                         try:
@@ -991,3 +1003,20 @@ class Graph(Magics):
         else:
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
+
+    @line_cell_magic
+    @display_exceptions
+    @needs_local_scope
+    def neptune_ml(self, line, cell='', local_ns: dict = None):
+        parser = generate_neptune_ml_parser()
+        args = parser.parse_args(line.split())
+        logger.info(f'received call to neptune_ml with details: {args.__dict__}, cell={cell}, local_ns={local_ns}')
+        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
+                                                     self.graph_notebook_config.iam_credentials_provider_type)
+        main_output = widgets.Output()
+        display(main_output)
+        res = neptune_ml_magic_handler(args, request_generator, self.graph_notebook_config, main_output, cell, local_ns)
+        message = json.dumps(res, indent=2) if type(res) is dict else res
+        store_to_ns(args.store_to, res, local_ns)
+        with main_output:
+            print(message)

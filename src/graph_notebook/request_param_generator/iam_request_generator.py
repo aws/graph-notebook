@@ -17,4 +17,5 @@ class IamRequestGenerator(object):
         else:
             use_ssl = False
 
-        return make_signed_request(method, action, query, host, port, credentials.key, credentials.secret, credentials.region, use_ssl, credentials.token, additional_headers=headers)
+        return make_signed_request(method, action, query, host, port, credentials.key, credentials.secret,
+                                   credentials.region, use_ssl, credentials.token, additional_headers=headers)

@@ -330,6 +330,8 @@ def main():
     parser_run_tests.add_argument('--iam', action='store_true')
     parser_run_tests.add_argument('--cfn-stack-name', type=str, default='')
     parser_run_tests.add_argument('--aws-region', type=str, default='us-east-1')
+    parser_run_tests.add_argument('--skip-config-generation', action='store_true',
+                                  help=f'skips config generation for testing, using the one found under {TEST_CONFIG_PATH}')
 
     args = parser.parse_args()
 
@@ -341,12 +343,13 @@ def main():
     elif args.which == SUBPARSER_DELETE_CFN:
         delete_stack(args.cfn_stack_name, cfn_client)
     elif args.which == SUBPARSER_RUN_TESTS:
-        loop_until_stack_is_complete(args.cfn_stack_name, cfn_client)
-        stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
-        cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
-        set_iam_auth_on_neptune_cluster(cluster_identifier, args.iam, neptune_client)
-        config = generate_config_from_stack(stack, args.aws_region, args.iam)
-        config.write_to_file(TEST_CONFIG_PATH)
+        if not args.skip_config_generation:
+            loop_until_stack_is_complete(args.cfn_stack_name, cfn_client)
+            stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
+            cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
+            set_iam_auth_on_neptune_cluster(cluster_identifier, args.iam, neptune_client)
+            config = generate_config_from_stack(stack, args.aws_region, args.iam)
+            config.write_to_file(TEST_CONFIG_PATH)
         run_integration_tests(args.pattern)
     elif args.which == SUBPARSER_ENABLE_IAM:
         cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)

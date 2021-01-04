@@ -6,9 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 import datetime
 import hashlib
 import hmac
+import json
 import logging
 import urllib
-
 
 logging.basicConfig()
 logger = logging.getLogger("graph_magic")
@@ -69,6 +69,19 @@ def get_canonical_uri_and_payload(query_type, query):
     elif query_type == "system":
         canonical_uri = "/system/"
         payload = query
+
+    elif query_type.startswith("ml"):
+        canonical_uri = f'/{query_type}'
+        payload = query
+
+    elif query_type.startswith("ml/dataprocessing"):
+        canonical_uri = f'/{query_type}'
+        payload = query
+
+    elif query_type.startswith("ml/endpoints"):
+        canonical_uri = f'/{query_type}'
+        payload = query
+
     else:
         raise ValueError('query_type %s is not valid' % query_type)
 
@@ -85,7 +98,8 @@ def normalize_query_string(query):
     return normalized
 
 
-def make_signed_request(method, query_type, query, host, port, signing_access_key, signing_secret, signing_region, use_ssl=False, signing_token='', additional_headers=None):
+def make_signed_request(method, query_type, query, host, port, signing_access_key, signing_secret, signing_region,
+                        use_ssl=False, signing_token='', additional_headers=None):
     if additional_headers is None:
         additional_headers = []
 
@@ -103,8 +117,11 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
     # get canonical_uri and payload
     canonical_uri, payload = get_canonical_uri_and_payload(query_type, query)
 
-    request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
-    request_parameters = request_parameters.replace('%27', '%22')
+    if 'content-type' in additional_headers and additional_headers['content-type'] == 'application/json':
+        request_parameters = payload if type(payload) is str else json.dumps(payload)
+    else:
+        request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
+        request_parameters = request_parameters.replace('%27', '%22')
     t = datetime.datetime.utcnow()
     amz_date = t.strftime('%Y%m%dT%H%M%SZ')
     date_stamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope

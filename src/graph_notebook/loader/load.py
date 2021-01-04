@@ -20,8 +20,23 @@ VALID_FORMATS = [FORMAT_CSV, FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMA
 PARALLELISM_OPTIONS = [PARALLELISM_LOW, PARALLELISM_MEDIUM, PARALLELISM_HIGH, PARALLELISM_OVERSUBSCRIBE]
 LOADER_ACTION = 'loader'
 
+FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
+                       'LOAD_COMMITTED_W_WRITE_CONFLICTS',
+                       'LOAD_CANCELLED_BY_USER',
+                       'LOAD_CANCELLED_DUE_TO_ERRORS',
+                       'LOAD_FAILED',
+                       'LOAD_UNEXPECTED_ERROR',
+                       'LOAD_DATA_DEADLOCK',
+                       'LOAD_DATA_FAILED_DUE_TO_FEED_MODIFIED_OR_DELETED',
+                       'LOAD_S3_READ_ERROR',
+                       'LOAD_S3_ACCESS_DENIED_ERROR',
+                       'LOAD_IN_QUEUE',
+                       'LOAD_FAILED_BECAUSE_DEPENDENCY_NOT_SATISFIED',
+                       'LOAD_FAILED_INVALID_REQUEST', ]
 
-def do_load(host, port, load_format, use_ssl, source, region, arn, fail_on_error, parallelism, update_single_cardinality, request_param_generator):
+
+def do_load(host, port, load_format, use_ssl, source, region, arn, fail_on_error, parallelism,
+            update_single_cardinality, request_param_generator):
     payload = {
         'source': source,
         'format': load_format,
