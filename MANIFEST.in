@@ -1,0 +1,15 @@
+include tsconfig.json
+include package.json
+include webpack.config.js
+
+# Javascript files
+recursive-include src/graph_notebook/widgets *
+prune src/graph_notebook/widgets/node_modules
+prune coverage
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .ipynb_checkpoints

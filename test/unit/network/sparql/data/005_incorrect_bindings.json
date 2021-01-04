@@ -1,0 +1,27 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "p",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/class/Airport"
+        }
+      }
+    ]
+  }
+}

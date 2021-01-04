@@ -1,0 +1,335 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#Class"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Person"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Ora Lassila"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Wally"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Waldemort"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "object": {
+          "type": "literal",
+          "value": "male"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Wally"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Ora"
+        }
+      },
+      {
+        "subject": {
+          "type": "bnode",
+          "value": "b255789583"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "subject": {
+          "type": "bnode",
+          "value": "b255789583"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Marcia Lassila"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Coco"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "object": {
+          "type": "literal",
+          "value": "female"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Coco"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "object": {
+          "type": "bnode",
+          "value": "b255789583"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Person"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Susan Laurenson"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#Class"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Dog"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Dog"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "Peppermint"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/gender"
+        },
+        "object": {
+          "type": "literal",
+          "value": "female"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Peppy"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://lassila.org/example/owner"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://lassila.org/example/Nana"
+        }
+      }
+    ]
+  }
+}

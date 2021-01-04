@@ -1,0 +1,12 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+Type: Jupyter Notebook Extension
+Compatibility: 5.x, 6.x
+Name: neptune_menu
+Main: main.js
+Link: README.md
+Description: |
+  Adds a menu item for Neptune related options along-side File, Edit, etc.
+Parameters:
+- none

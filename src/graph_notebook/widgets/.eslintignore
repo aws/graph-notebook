@@ -1,0 +1,7 @@
+node_modules
+nbextension
+dist
+docs
+lib
+coverage
+**/*.d.ts

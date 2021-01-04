@@ -1,0 +1,57 @@
+<div class="table-div">
+    <link rel="stylesheet" type="text/css" href="/static/datatables.css">
+    <style>
+        #{{guid}} * {
+              font-size: 1em !important;
+              font-family: "Courier New", Courier, monospace !important;
+        }
+
+        .sorting, .sorting_asc, .sorting_desc {
+            background : none !important;
+        }
+
+        .dataTable {
+            width: 100%
+        }
+    </style>
+    <table id="{{guid}}" class="nowrap dt-left">
+        <thead>
+        <tr>
+            <th></th>
+            <th style="text-align: left">Console</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in results %}
+        <tr class="result-row dt-left">
+            <td>{{loop.index}}</td>
+            <td style="text-align: left; width: 100%;">
+                {{r|e}}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script type="text/javascript">
+        require(["datatables"], function (datatables) {
+            var dt = $('#{{guid}}').DataTable({
+                scrollY: true,
+                scrollX: true,
+                columnDefs: [
+                    {targets: [0], width: "5%"},
+                    {targets: [1], minWidth: "95%"}
+                ]
+            });
+
+            var wrapper = $('#{{guid}}_wrapper');
+            var inner = wrapper.find('.dataTables_scrollHeadInner');
+            inner.css('width', '100%');
+
+            var scrollTable = inner.find('.dataTable');
+            scrollTable.css('width', '100%');
+
+            $('#{{guid}}').css('width', 'auto');
+
+        })
+    </script>
+</div>

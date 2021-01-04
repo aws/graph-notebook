@@ -1,0 +1,83 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/class/Airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://example/prop"
+        },
+        "object": {
+          "type": "literal",
+          "value": "value1"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://example/prop"
+        },
+        "object": {
+          "type": "literal",
+          "value": "value2"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "literal",
+          "value": "propLiteral"
+        },
+        "object": {
+          "type": "literal",
+          "value": "value3"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        },
+        "predicate": {
+          "type": "literal",
+          "value": "propLiteral"
+        },
+        "object": {
+          "type": "literal",
+          "value": "value4"
+        }
+      }
+    ]
+  }
+}

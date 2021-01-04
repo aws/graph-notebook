@@ -1,0 +1,12 @@
+<div>
+    {% block style %}
+    <style>
+    #pre-error{
+        overflow:scroll;
+    }
+    </style>
+    {% endblock %}
+    <pre id="pre-error">
+{{ error|e }}
+    </pre>
+</div>

@@ -1,0 +1,1418 @@
+{
+  "head": {
+    "vars": [
+      "subject",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/class/Airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "object": {
+          "type": "literal",
+          "value": "JFK"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/type"
+        },
+        "object": {
+          "type": "literal",
+          "value": "airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/code"
+        },
+        "object": {
+          "type": "literal",
+          "value": "JFK"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/desc"
+        },
+        "object": {
+          "type": "literal",
+          "value": "New York John F. Kennedy International Airport"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/icao"
+        },
+        "object": {
+          "type": "literal",
+          "value": "KJFK"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/region"
+        },
+        "object": {
+          "type": "literal",
+          "value": "US-NY"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/runways"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "4"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/longest"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "14511"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/elev"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "12"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/country"
+        },
+        "object": {
+          "type": "literal",
+          "value": "US"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/city"
+        },
+        "object": {
+          "type": "literal",
+          "value": "New York"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/lat"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#double",
+          "type": "literal",
+          "value": "40.63980103"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/datatypeProperty/lon"
+        },
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#double",
+          "type": "literal",
+          "value": "-73.77890015"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/1"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/3"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/4"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/5"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/6"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/7"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/8"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/9"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/10"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/11"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/13"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/15"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/16"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/17"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/18"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/19"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/20"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/21"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/22"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/23"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/24"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/25"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/26"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/27"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/28"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/29"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/30"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/31"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/33"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/34"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/37"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/38"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/40"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/41"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/42"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/43"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/45"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/46"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/47"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/48"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/49"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/50"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/51"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/52"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/53"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/54"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/58"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/59"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/60"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/61"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/64"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/67"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/68"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/69"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/70"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/73"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/74"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/75"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/76"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/77"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/79"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/80"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/83"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/84"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/85"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/88"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/90"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/91"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/92"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/93"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/96"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/97"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/99"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/100"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/103"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/105"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/106"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/107"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/108"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/109"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/112"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/122"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/126"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/128"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/131"
+        }
+      },
+      {
+        "subject": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/12"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
+        },
+        "object": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/132"
+        }
+      }
+    ]
+  }
+}
