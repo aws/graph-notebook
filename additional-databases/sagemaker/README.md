@@ -5,4 +5,4 @@ Use the sample lifecycle configuration in this folder, [`install-graph-notebook-
 
 After you create a lifecycle configuration on SageMaker, you can create new notebook instances by specifying a saved lifecycle configuration:
 
-[create-a-notebook]
+![create-a-notebook](/././images/Create-Notebook-Instance.png)
