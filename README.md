@@ -27,9 +27,9 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to what the Gremlin console would return.
 
-`%%graph_notebook_config` - Sets the executing notebook's configuration to the JSON payload provided in the cell body.
+`%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
 
-`%%graph_notebook_vis_options` - Sets the executing notebook's vis.js options to the JSON payload provided in the cell body.
+`%%graph_notebook_vis_options` - Sets the executing notebook's [vis.js options](https://visjs.github.io/vis-network/docs/network/physics.html) to the JSON payload provided in the cell body.
 
 `%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
 
@@ -47,13 +47,14 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%load_status` - Get the status of a provided `load_id`. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
 
-`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set or tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning). 
+[Documentation](https://aws.amazon.com/neptune/machine-learning/)
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
 `%seed` - Provides a form to add data to your graph without the use of a bulk loader. both SPARQL and Gremlin have an airport routes dataset.
 
-`%graph_notebook_config` - Returns a JSON object that contains connection information for your host.
+`%graph_notebook_config` - Returns a JSON payload that contains connection information for your host.
 
 `%graph_notebook_host` - Set the host endpoint to send queries to.
 
