@@ -349,8 +349,9 @@ class Graph(Magics):
 
             try:
                 logger.debug(f'groupby: {args.group_by}')
+                logger.debug(f'ignore_groups: {args.ignore_groups}')
                 if args.ignore_groups:
-                    gn = GremlinNetwork()
+                    gn = GremlinNetwork(ignore_groups=args.ignore_groups)
                 else:
                     gn = GremlinNetwork(group_by_property=args.group_by)
 
