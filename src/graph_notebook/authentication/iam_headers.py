@@ -42,6 +42,14 @@ def get_canonical_uri_and_payload(query_type, query):
         canonical_uri = '/sparql/status/'
         payload = query
 
+    elif query_type == 'openCypher':
+        canonical_uri = '/openCypher/'
+        payload = query
+
+    elif query_type == 'openCypher/status':
+        canonical_uri = '/openCypher/status/'
+        payload = query
+
     elif query_type == 'gremlin':
         canonical_uri = '/gremlin'
         payload = {}

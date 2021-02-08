@@ -26,6 +26,7 @@ from graph_notebook.decorators.decorators import display_exceptions
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
+from graph_notebook.opencypher import do_opencypher_explain, do_opencypher_query
 from graph_notebook.sparql.table import get_rows_and_columns
 from graph_notebook.gremlin.query import do_gremlin_query, do_gremlin_explain, do_gremlin_profile
 from graph_notebook.gremlin.status import do_gremlin_status, do_gremlin_cancel
@@ -47,6 +48,8 @@ sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
 gremlin_table_template = retrieve_template("gremlin_table.html")
+opencypher_table_template = retrieve_template("opencypher_table.html")
+opencypher_explain_template = retrieve_template("opencypher_explain.html")
 pre_container_template = retrieve_template("pre_container.html")
 loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
@@ -91,7 +94,6 @@ def str_to_query_mode(s: str) -> QueryMode:
     return QueryMode.DEFAULT
 
 
-# noinspection PyTypeChecker
 @magics_class
 class Graph(Magics):
     def __init__(self, shell):
@@ -285,6 +287,101 @@ class Graph(Magics):
 
         store_to_ns(args.store_to, res, local_ns)
         print(json.dumps(res, indent=2))
+
+    @cell_magic
+    def oc(self, line='', cell=''):
+        self.opencypher(line, cell)
+
+    @cell_magic
+    @display_exceptions
+    def opencypher(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('query_mode', nargs='?', default='query',
+                            help='query mode (default=query) [query|explain]')
+
+        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
+                                                     self.graph_notebook_config.iam_credentials_provider_type,
+                                                     command='opencypher')
+        args = parser.parse_args(line.split())
+        mode = str_to_query_mode(args.query_mode)
+
+        tab = widgets.Tab()
+        logger.debug(f'using mode={mode}')
+        if mode == QueryMode.EXPLAIN:
+            html_raw = do_opencypher_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                             self.graph_notebook_config.ssl, request_generator)
+            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            with explain_output:
+                display(HTML(html_raw))
+
+            tab.children = [explain_output]
+            tab.set_title(0, 'Explain')
+            display(tab)
+        else:
+            headers = {'Accept': 'application/sparql-results+json'}
+            res = do_opencypher_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                      self.graph_notebook_config.ssl, request_generator, headers)
+            titles = []
+            children = []
+
+            display(tab)
+            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            # Assign an empty value so we can always display to table output.
+            table_html = ""
+
+            # some issues with displaying a datatable when not wrapped in an hbox and displayed last
+            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+            titles.append('Table')
+            children.append(hbox)
+
+            rows_and_columns = get_rows_and_columns(res)
+            if rows_and_columns is not None:
+                table_id = f"table-{str(uuid.uuid4())[:8]}"
+                table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                              rows=rows_and_columns['rows'], guid=table_id)
+
+            with table_output:
+                display(HTML(table_html))
+
+            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            with json_output:
+                print(json.dumps(res, indent=2))
+            children.append(json_output)
+            titles.append('JSON')
+
+            tab.children = children
+            for i in range(len(titles)):
+                tab.set_title(i, titles[i])
+
+    @line_magic
+    @display_exceptions
+    def opencypher_status(self, line=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-q', '--queryId', default='',
+                            help='The ID of a running OpenCypher query. Only displays the status of the specified query.')
+        parser.add_argument('-c', '--cancelQuery', action='store_true',
+                            help='Tells the status command to cancel a query. This parameter does not take a value')
+        parser.add_argument('-s', '--silent', action='store_true',
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+        args = parser.parse_args(line.split())
+
+        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
+                                                     self.graph_notebook_config.iam_credentials_provider_type)
+
+        if not args.cancelQuery:
+            res = do_sparql_status(args.queryId, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                   self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                   request_generator)
+
+        else:
+            if args.queryId is '':
+                print(SPARQL_CANCEL_HINT_MSG)
+                return
+            else:
+                res = do_sparql_cancel(args.queryId, args.silent, self.graph_notebook_config.host,
+                                       self.graph_notebook_config.port,
+                                       self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                       request_generator)
 
     @cell_magic
     @needs_local_scope
@@ -974,11 +1071,15 @@ class Graph(Magics):
 
     @line_magic
     def enable_debug(self, line):
-        logger.setLevel(logging.DEBUG)
+        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+        for l in loggers:
+            l.setLevel(logging.DEBUG)
 
     @line_magic
     def disable_debug(self, line):
-        logger.setLevel(logging.ERROR)
+        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+        for l in loggers:
+            l.setLevel(logging.ERROR)
 
     @line_magic
     def graph_notebook_version(self, line):

@@ -13,6 +13,11 @@ def _jupyter_nbextension_paths():
             require="gremlin_syntax/main"),
         dict(
             section="notebook",
+            src="opencypher_syntax/static",
+            dest="opencypher_syntax",
+            require="opencypher_syntax/main"),
+        dict(
+            section="notebook",
             src="sparql_syntax/static",
             dest="sparql_syntax",
             require="sparql_syntax/main"),
