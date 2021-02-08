@@ -79,12 +79,10 @@ setup(
         'jupyter>=1.0.0',
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
-<<<<<<< HEAD
         'neo4j'
-=======
         'boto3>=1.17.58',
         'ipython>=7.16.1'
->>>>>>> rebase from 2.1.2
+        'neo4j'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',

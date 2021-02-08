@@ -135,4 +135,3 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
 
     def test_opencypher_bolt_query_with_cancellation(self):
         pass
-
