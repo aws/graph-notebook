@@ -296,7 +296,7 @@ class Graph(Magics):
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', default='T.label', help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
-        parser.add_argument('--ignore-groups', action='store_true', help="Ignore all grouping options")
+        parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
@@ -349,10 +349,8 @@ class Graph(Magics):
 
             try:
                 logger.debug(f'groupby: {args.group_by}')
-                if args.ignore_groups:
-                    gn = GremlinNetwork()
-                else:
-                    gn = GremlinNetwork(group_by_property=args.group_by)
+                logger.debug(f'ignore_groups: {args.ignore_groups}')
+                gn = GremlinNetwork(group_by_property=args.group_by, ignore_groups=args.ignore_groups)
 
                 if args.path_pattern == '':
                     gn.add_results(query_res)

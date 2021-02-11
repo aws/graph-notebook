@@ -195,6 +195,25 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], "['ATL']")
 
+    def test_ignore_group(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(ignore_groups=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '')
+
+        gn = GremlinNetwork(group_by_property="code", ignore_groups=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '')
+
 
 if __name__ == '__main__':
     unittest.main()

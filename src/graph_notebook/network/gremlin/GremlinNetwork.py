@@ -89,11 +89,12 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=T_LABEL):
+                 group_by_property=T_LABEL, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         self.label_max_length = label_max_length
         self.group_by_property = group_by_property
+        self.ignore_groups=ignore_groups
         super().__init__(graph, callbacks)
 
     def add_results_with_pattern(self, results, pattern_list: list):
@@ -308,6 +309,8 @@ class GremlinNetwork(EventfulNetwork):
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data = {'title': title, 'label': label, 'group': ''}
 
+        if self.ignore_groups:
+            data['group'] = ''
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):
