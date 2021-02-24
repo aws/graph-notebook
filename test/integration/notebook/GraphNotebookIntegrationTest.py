@@ -24,5 +24,8 @@ class GraphNotebookIntegrationTest(IntegrationTest):
             ip = TerminalInteractiveShell().instance()
         self.ip = ip
 
-        self.ip.magic('load_ext graph_notebook.magics')
+        self.ip.magic('reload_ext graph_notebook.magics')
         self.ip.run_cell_magic('graph_notebook_config', '', json.dumps(self.config.to_dict()))
+
+        if 'graph_notebook_error' in self.ip.user_ns:
+            del self.ip.user_ns['graph_notebook_error']

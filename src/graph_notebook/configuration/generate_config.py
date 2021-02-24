@@ -26,6 +26,7 @@ class SparqlSection(object):
     """
     Used for sparql-specific settings in a notebook's configuration
     """
+
     def __init__(self, endpoint_prefix: str):
         """
         :param endpoint_prefix: used to specify the base-path of the api being connected to do get to its

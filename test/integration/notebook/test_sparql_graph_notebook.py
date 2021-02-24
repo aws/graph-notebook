@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from test.integration.notebook.GraphNotebookIntegrationTest import GraphNotebookIntegrationTest
 
 
-class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
+class TestGraphMagicSPARQL(GraphNotebookIntegrationTest):
     def test_sparql_query(self):
         query = 'SELECT * WHERE {?s ?o ?p } LIMIT 1'
         store_to_var = 'sparql_res'

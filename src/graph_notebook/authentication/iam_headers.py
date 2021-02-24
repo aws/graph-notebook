@@ -129,7 +129,7 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
         request_parameters = payload if type(payload) is str else json.dumps(payload)
     else:
         request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
-        request_parameters = request_parameters.replace('%27', '%22')
+        # request_parameters = request_parameters.replace('%27', '%22')
     t = datetime.datetime.utcnow()
     amz_date = t.strftime('%Y%m%dT%H%M%SZ')
     date_stamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope

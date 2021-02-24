@@ -26,7 +26,8 @@ from graph_notebook.decorators.decorators import display_exceptions
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
-from graph_notebook.opencypher import do_opencypher_explain, do_opencypher_query
+from graph_notebook.opencypher import do_opencypher_query, do_opencypher_status
+from graph_notebook.opencypher.status import do_opencypher_cancel
 from graph_notebook.sparql.table import get_rows_and_columns
 from graph_notebook.gremlin.query import do_gremlin_query, do_gremlin_explain, do_gremlin_profile
 from graph_notebook.gremlin.status import do_gremlin_status, do_gremlin_cancel
@@ -64,7 +65,8 @@ DEFAULT_MAX_RESULTS = 1000
 
 GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %gremlin_status --cancelQuery --queryId my-query-id'''
 SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %sparql_status --cancelQuery --queryId my-query-id'''
-SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %opencypher_status --cancelQuery --queryId my-query-id'''
+SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL', 'openCypher']
 
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
@@ -289,99 +291,63 @@ class Graph(Magics):
         print(json.dumps(res, indent=2))
 
     @cell_magic
-    def oc(self, line='', cell=''):
-        self.opencypher(line, cell)
+    @needs_local_scope
+    @display_exceptions
+    def oc(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
 
     @cell_magic
+    @needs_local_scope
     @display_exceptions
-    def opencypher(self, line='', cell=''):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('query_mode', nargs='?', default='query',
-                            help='query mode (default=query) [query|explain]')
-
-        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
-                                                     self.graph_notebook_config.iam_credentials_provider_type,
-                                                     command='opencypher')
-        args = parser.parse_args(line.split())
-        mode = str_to_query_mode(args.query_mode)
-
-        tab = widgets.Tab()
-        logger.debug(f'using mode={mode}')
-        if mode == QueryMode.EXPLAIN:
-            html_raw = do_opencypher_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                             self.graph_notebook_config.ssl, request_generator)
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            with explain_output:
-                display(HTML(html_raw))
-
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
-        else:
-            headers = {'Accept': 'application/sparql-results+json'}
-            res = do_opencypher_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                      self.graph_notebook_config.ssl, request_generator, headers)
-            titles = []
-            children = []
-
-            display(tab)
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            # Assign an empty value so we can always display to table output.
-            table_html = ""
-
-            # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
-            titles.append('Table')
-            children.append(hbox)
-
-            rows_and_columns = get_rows_and_columns(res)
-            if rows_and_columns is not None:
-                table_id = f"table-{str(uuid.uuid4())[:8]}"
-                table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
-
-            with table_output:
-                display(HTML(table_html))
-
-            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            with json_output:
-                print(json.dumps(res, indent=2))
-            children.append(json_output)
-            titles.append('JSON')
-
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
+    def opencypher(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def opencypher_status(self, line=''):
+    def oc_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def opencypher_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def gremlin_status(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
-                            help='The ID of a running OpenCypher query. Only displays the status of the specified query.')
+                            help='The ID of a running Gremlin query. Only displays the status of the specified query.')
         parser.add_argument('-c', '--cancelQuery', action='store_true',
-                            help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+                            help='Required for cancellation. Parameter has no corresponding value.')
+        parser.add_argument('-w', '--includeWaiting', action='store_true',
+                            help='(Optional) Normally, only running queries are included in the response. When the includeWaiting parameter is specified, the status of all waiting queries is also returned.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                      self.graph_notebook_config.iam_credentials_provider_type)
 
         if not args.cancelQuery:
-            res = do_sparql_status(args.queryId, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                   self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
-                                   request_generator)
+            res = do_gremlin_status(self.graph_notebook_config.host,
+                                    self.graph_notebook_config.port,
+                                    self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                    request_generator, args.queryId, args.includeWaiting)
 
         else:
-            if args.queryId is '':
-                print(SPARQL_CANCEL_HINT_MSG)
+            if args.queryId == '':
+                print(GREMLIN_CANCEL_HINT_MSG)
                 return
             else:
-                res = do_sparql_cancel(args.queryId, args.silent, self.graph_notebook_config.host,
-                                       self.graph_notebook_config.port,
-                                       self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
-                                       request_generator)
+                res = do_gremlin_cancel(self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                        self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                        request_generator, args.queryId)
+
+        print(json.dumps(res, indent=2))
+        store_to_ns(args.store_to, res, local_ns)
 
     @cell_magic
     @needs_local_scope
@@ -468,41 +434,6 @@ class Graph(Magics):
                 display(HTML(table_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
-
-    @line_magic
-    @needs_local_scope
-    @display_exceptions
-    def gremlin_status(self, line='', local_ns: dict = None):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-q', '--queryId', default='',
-                            help='The ID of a running Gremlin query. Only displays the status of the specified query.')
-        parser.add_argument('-c', '--cancelQuery', action='store_true',
-                            help='Required for cancellation. Parameter has no corresponding value.')
-        parser.add_argument('-w', '--includeWaiting', action='store_true',
-                            help='(Optional) Normally, only running queries are included in the response. When the includeWaiting parameter is specified, the status of all waiting queries is also returned.')
-        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
-        args = parser.parse_args(line.split())
-
-        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
-                                                     self.graph_notebook_config.iam_credentials_provider_type)
-
-        if not args.cancelQuery:
-            res = do_gremlin_status(self.graph_notebook_config.host,
-                                    self.graph_notebook_config.port,
-                                    self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
-                                    request_generator, args.queryId, args.includeWaiting)
-
-        else:
-            if args.queryId == '':
-                print(GREMLIN_CANCEL_HINT_MSG)
-                return
-            else:
-                res = do_gremlin_cancel(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                        self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
-                                        request_generator, args.queryId)
-
-        print(json.dumps(res, indent=2))
-        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1021,11 +952,38 @@ class Graph(Magics):
                                 print(content)
                             progress.close()
                             return
-                else:
+                elif language == 'sparql':
                     request_generator = create_request_generator(auth_mode,
                                                                  self.graph_notebook_config.iam_credentials_provider_type)
                     try:
                         do_sparql_query(q['content'], host, port, ssl, request_generator, path_prefix=sparql_prefix)
+                    except HTTPError as httpEx:
+                        # attempt to turn response into json
+                        try:
+                            error = json.loads(httpEx.response.content.decode('utf-8'))
+                            content = json.dumps(error, indent=2)
+                        except Exception:
+                            content = {
+                                'error': httpEx
+                            }
+                        with output:
+                            print(content)
+                        progress.close()
+                        return
+                    except Exception as ex:
+                        content = {
+                            'error': str(ex)
+                        }
+                        with output:
+                            print(content)
+
+                        progress.close()
+                        return
+                else:
+                    request_generator = create_request_generator(auth_mode,
+                                                                 self.graph_notebook_config.iam_credentials_provider_type)
+                    try:
+                        do_opencypher_query(q['content'], host, port, ssl, request_generator)
                     except HTTPError as httpEx:
                         # attempt to turn response into json
                         try:
@@ -1113,3 +1071,89 @@ class Graph(Magics):
         store_to_ns(args.store_to, res, local_ns)
         with main_output:
             print(message)
+
+    def handle_opencypher_query(self, line, cell, local_ns):
+        """
+        This method in its own handler so that the magics %%opencypher and %%oc can both call it
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+
+        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
+                                                     self.graph_notebook_config.iam_credentials_provider_type,
+                                                     command='opencypher')
+        args = parser.parse_args(line.split())
+        mode = str_to_query_mode(args.query_mode)
+
+        tab = widgets.Tab()
+        logger.debug(f'using mode={mode}')
+        headers = {'Accept': 'application/sparql-results+json'}
+        res = do_opencypher_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                  self.graph_notebook_config.ssl, request_generator, headers)
+        titles = []
+        children = []
+
+        display(tab)
+        table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        # Assign an empty value so we can always display to table output.
+        table_html = ""
+
+        # some issues with displaying a datatable when not wrapped in an hbox and displayed last
+        hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+        titles.append('Table')
+        children.append(hbox)
+
+        rows_and_columns = get_rows_and_columns(res)
+        if rows_and_columns is not None:
+            table_id = f"table-{str(uuid.uuid4())[:8]}"
+            table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                          rows=rows_and_columns['rows'], guid=table_id)
+
+        with table_output:
+            display(HTML(table_html))
+
+        json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        with json_output:
+            print(json.dumps(res, indent=2))
+        children.append(json_output)
+        titles.append('JSON')
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        store_to_ns(args.store_to, res, local_ns)
+
+    def handle_opencypher_status(self, line, local_ns):
+        """
+        This is refactored into its own handler method so that we can invoke is from
+        %opencypher_status or from %oc_status
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-q', '--queryId', default='',
+                            help='The ID of a running OpenCypher query. Only displays the status of the specified query.')
+        parser.add_argument('-c', '--cancelQuery', action='store_true',
+                            help='Tells the status command to cancel a query. This parameter does not take a value')
+        parser.add_argument('-s', '--silent', action='store_true',
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
+                                                     self.graph_notebook_config.iam_credentials_provider_type)
+
+        if not args.cancelQuery:
+            res = do_opencypher_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                       self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                       request_generator, args.queryId)
+
+        else:
+            if args.queryId == '':
+                print(OPENCYPHER_CANCEL_HINT_MSG)
+                return
+            else:
+                res = do_opencypher_cancel(self.graph_notebook_config.host,
+                                           self.graph_notebook_config.port,
+                                           self.graph_notebook_config.ssl, self.graph_notebook_config.auth_mode,
+                                           request_generator, args.queryId, args.silent)
+        store_to_ns(args.store_to, res, local_ns)
+        print(json.dumps(res, indent=2))

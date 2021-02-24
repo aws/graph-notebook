@@ -21,9 +21,6 @@ def do_sparql_status(host, port, use_ssl, request_param_generator, query_id=None
     try:
         content = res.json()  # attempt to return json, otherwise we will return the content string.
     except Exception:
-        """When a invalid UUID is supplied, status servlet returns an empty string.
-        See https://sim.amazon.com/issues/NEPTUNE-16137
-        """
         content = 'UUID is invalid.'
     return content
 
@@ -42,8 +39,5 @@ def do_sparql_cancel(host, port, use_ssl, request_param_generator, query_id, sil
     try:
         content = res.json()
     except Exception:
-        """When a invalid UUID is supplied, status servlet returns an empty string.
-        See https://sim.amazon.com/issues/NEPTUNE-16137
-        """
         content = 'UUID is invalid.'
     return content
