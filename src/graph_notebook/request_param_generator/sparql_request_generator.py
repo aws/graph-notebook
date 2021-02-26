@@ -13,8 +13,7 @@ class SPARQLRequestGenerator(object):
         if 'Content-Type' not in headers:
             headers['Content-Type'] = "application/x-www-form-urlencoded"
 
-        action_segment = 'sparql' if not action.endswith('sparql') else action
-        url = f'{protocol}://{host}:{port}/{action_segment}'
+        url = f'{protocol}://{host}:{port}/{action}'
         return {
             'method': method,
             'url': url,

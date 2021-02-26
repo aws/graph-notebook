@@ -29,7 +29,7 @@ from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str
 from graph_notebook.sparql.table import get_rows_and_columns
 from graph_notebook.gremlin.query import do_gremlin_query, do_gremlin_explain, do_gremlin_profile
 from graph_notebook.gremlin.status import do_gremlin_status, do_gremlin_cancel
-from graph_notebook.sparql.query import get_query_type, do_sparql_query, do_sparql_explain
+from graph_notebook.sparql.query import get_query_type, do_sparql_query, do_sparql_explain, SPARQL_ACTION
 from graph_notebook.sparql.status import do_sparql_status, do_sparql_cancel
 from graph_notebook.system.database_reset import perform_database_reset, initiate_database_reset
 from graph_notebook.visualization.template_retriever import retrieve_template
@@ -152,8 +152,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
-        parser.add_argument('--endpoint-prefix', '-e', default='',
-                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be /foo/bar/sparql')
+        parser.add_argument('--path', '-p', default='',
+                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be host:port/foo/bar')
         parser.add_argument('--expand-all', action='store_true')
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
@@ -162,14 +162,14 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
-
-        endpoint_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
-
         tab = widgets.Tab()
+
+        path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
+
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                    self.graph_notebook_config.ssl, request_generator, path_prefix=endpoint_prefix)
+                                    self.graph_notebook_config.ssl, request_generator, path=path)
             store_to_ns(args.store_to, res, local_ns)
             if 'error' in res:
                 html = error_template.render(error=json.dumps(res['error'], indent=2))
@@ -187,7 +187,7 @@ class Graph(Magics):
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
                 'Accept': 'application/sparql-results+json'}
             res = do_sparql_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                  self.graph_notebook_config.ssl, request_generator, headers, endpoint_prefix)
+                                  self.graph_notebook_config.ssl, request_generator, headers, path=path)
             store_to_ns(args.store_to, res, local_ns)
             titles = []
             children = []
@@ -294,7 +294,8 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
-        parser.add_argument('-g', '--group-by', default='T.label', help='Property used to group nodes (e.g. code, T.region) default is T.label')
+        parser.add_argument('-g', '--group-by', default='T.label',
+                            help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
@@ -829,8 +830,9 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
-        parser.add_argument('--endpoint-prefix', '-e', default='',
-                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be /foo/bar/sparql for sparql seed commands')
+        # TODO: Gremlin paths are not yet supported.
+        parser.add_argument('--path', '-p', default=SPARQL_ACTION,
+                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
         args = parser.parse_args(line.split())
 
@@ -888,9 +890,6 @@ class Graph(Magics):
             with progress_output:
                 display(progress)
 
-            # TODO: gremlin_prefix path is not supported yet
-            sparql_prefix = args.endpoint_prefix if args.endpoint_prefix != '' else self.graph_notebook_config.sparql.endpoint_prefix
-
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
@@ -934,7 +933,7 @@ class Graph(Magics):
                     request_generator = create_request_generator(auth_mode,
                                                                  self.graph_notebook_config.iam_credentials_provider_type)
                     try:
-                        do_sparql_query(q['content'], host, port, ssl, request_generator, path_prefix=sparql_prefix)
+                        do_sparql_query(q['content'], host, port, ssl, request_generator, path=args.path)
                     except HTTPError as httpEx:
                         # attempt to turn response into json
                         try:

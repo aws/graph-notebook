@@ -15,3 +15,19 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
         sparql_res = self.ip.user_ns[store_to_var]
         self.assertTrue(sparql_res.startswith('<!DOCTYPE html>'))
         self.assertTrue('</table>' in sparql_res)
+
+    def test_load_sparql_config(self):
+        config = '''{
+              "host": "localhost",
+              "port": 3030,
+              "auth_mode": "DEFAULT",
+              "iam_credentials_provider_type": "ENV",
+              "load_from_s3_arn": "",
+              "ssl": false,
+              "aws_region": "us-west-2",
+              "sparql": {
+                "path": "/query"
+              }
+            }'''
+
+        self.ip.run_cell_magic('graph_notebook_config', '', config)

@@ -137,6 +137,28 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
   "aws_region": "us-east-1"
 }
 ```
+
+You can also make use of namespaces for Blazegraph by specifying the path `graph-notebook` should use when querying your SPARQL like below:
+
+```
+%%graph_notebook_config
+
+{
+  "host": "localhost",
+  "port": 9999,
+  "auth_mode": "DEFAULT",
+  "iam_credentials_provider_type": "ENV",
+  "load_from_s3_arn": "",
+  "ssl": false,
+  "aws_region": "us-west-2",
+  "sparql": {
+    "path": "blazegraph/namespace/foo/sparql"
+  }
+}
+```
+
+This will result in the url `localhost:9999/blazegraph/namespace/foo/sparql` being used when executing any `%%sparql` magic commands. 
+
 To setup a new local Blazegraph database for use with the graph notebook, check out the [Quick Start](https://github.com/blazegraph/database/wiki/Quick_Start) from Blazegraph.
 
 ### Amazon Neptune
