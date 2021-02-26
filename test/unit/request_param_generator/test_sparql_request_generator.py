@@ -29,7 +29,7 @@ class TestSparqlRequestGenerator(unittest.TestCase):
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        expected_url = f'{protocol}://{host}:{port}/sparql'
+        expected_url = f'{protocol}://{host}:{port}/{action}'
         self.assertEqual(request_params['method'], method)
         self.assertEqual(request_params['url'], expected_url)
         self.assertEqual(request_params['headers'], expected_headers)
@@ -51,7 +51,7 @@ class TestSparqlRequestGenerator(unittest.TestCase):
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        expected_url = f'{protocol}://{host}:{port}/sparql'
+        expected_url = f'{protocol}://{host}:{port}/{action}'
         self.assertEqual(request_params['method'], method)
         self.assertEqual(request_params['url'], expected_url)
         self.assertEqual(request_params['headers'], expected_headers)
