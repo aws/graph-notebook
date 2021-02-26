@@ -14,7 +14,7 @@ class TestSparqlQuery(IntegrationTest):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
         request_generator = SPARQLRequestGenerator()
 
-        res = do_sparql_query(query, self.host, self.port, self.ssl, request_generator, path='ds/query')
+        res = do_sparql_query(query, self.host, self.port, self.ssl, request_generator)
         self.assertEqual(type(res), dict)
         self.assertTrue('s' in res['head']['vars'])
         self.assertTrue('p' in res['head']['vars'])
