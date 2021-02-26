@@ -9,6 +9,7 @@ import os
 from enum import Enum
 
 from graph_notebook.authentication.iam_credentials_provider.credentials_factory import IAMAuthCredentialsProvider
+from graph_notebook.sparql.query import SPARQL_ACTION
 
 DEFAULT_IAM_CREDENTIALS_PROVIDER = IAMAuthCredentialsProvider.ROLE
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
@@ -26,12 +27,18 @@ class SparqlSection(object):
     """
     Used for sparql-specific settings in a notebook's configuration
     """
-    def __init__(self, endpoint_prefix: str):
+
+    def __init__(self, path: str = SPARQL_ACTION, endpoint_prefix: str = ''):
         """
-        :param endpoint_prefix: used to specify the base-path of the api being connected to do get to its
+        :param path: used to specify the base-path of the api being connected to do get to its
                      corresponding sparql endpoint.
         """
-        self.endpoint_prefix = endpoint_prefix
+
+        if endpoint_prefix != '':
+            print('endpoint_prefix has been deprecated and will be removed in version 2.0.20 or greater.')
+            if path == '':
+                path = f'{endpoint_prefix}/sparql'
+        self.path = path
 
     def to_dict(self):
         return self.__dict__
@@ -50,7 +57,7 @@ class Configuration(object):
         self.load_from_s3_arn = load_from_s3_arn
         self.ssl = ssl
         self.aws_region = aws_region
-        self.sparql = sparql_section if sparql_section is not None else SparqlSection(endpoint_prefix='')
+        self.sparql = sparql_section if sparql_section is not None else SparqlSection()
 
     def to_dict(self) -> dict:
         return {
