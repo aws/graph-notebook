@@ -19,7 +19,7 @@ like in the following example that connect to `http://localhost:3030/ds/sparql`:
   "ssl": false,
   "aws_region": "",
   "sparql": {
-    "endpoint_prefix": "ds"
+    "path": "ds/sparql"
   }
 }
 ```
