@@ -2,6 +2,17 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
+## Release 2.0.9 (Mar 3, 2021)
+
+#### New Notebooks under 03-Sample-Applications
+Added new sample application notebooks for the following use cases: 
+- Fraud Graph
+- Knowledge Graph
+- Identity Graph
+
+#### Other updates:
+- Fixed issue where --ignore-groups was not being honored
+- Changed SPARQL path parameter in %%graph-notebook-config command to no longer append /sparql to the end, which should give support to more SPARQL 1.1 endpoints
 
 ## Release 2.0.7 (Feb 1, 2021)
 
