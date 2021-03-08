@@ -4,15 +4,16 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Release 2.0.9 (Mar 3, 2021)
 
-#### New Notebooks under 03-Sample-Applications
-Added new sample application notebooks for the following use cases: 
+- Fixed issue where --ignore-groups was not being honored [Link to PR](https://github.com/aws/graph-notebook/pull/66)
+- Changed SPARQL path parameter in %%graph-notebook-config command to no longer append /sparql to the end, which should give support to more SPARQL 1.1 endpoints [Link to PR](https://github.com/aws/graph-notebook/pull/75)
+
+#### New Notebooks and Datasets
+Added new sample application notebooks and `%seed` datasets under [03-Sample-Applications](src/graph_notebook/notebooks/03-Sample-Applications) for the following use cases: 
 - Fraud Graph
 - Knowledge Graph
 - Identity Graph
 
-#### Other updates:
-- Fixed issue where --ignore-groups was not being honored
-- Changed SPARQL path parameter in %%graph-notebook-config command to no longer append /sparql to the end, which should give support to more SPARQL 1.1 endpoints
+[Link to PR](https://github.com/aws/graph-notebook/pull/77)
 
 ## Release 2.0.7 (Feb 1, 2021)
 
