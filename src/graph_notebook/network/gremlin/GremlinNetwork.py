@@ -8,7 +8,7 @@ import json
 import uuid
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_LABEL_MAX_LENGTH
 from gremlin_python.process.traversal import T
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
@@ -21,7 +21,6 @@ INVALID_VERTEX_ERROR = ValueError("when adding a vertex, object must be of type 
 INVALID_VERTEX_PATH_PATTERN_ERROR = ValueError("found vertex pattern on an Edge object")
 SAME_DIRECTION_ADJACENT_VERTICES = ValueError("Found two vertices with the same direction")
 
-DEFAULT_LABEL_MAX_LENGTH = 10
 TO_DISABLED = {"to": {"enabled": False}}
 UNDIRECTED_EDGE = {
     "arrows": TO_DISABLED

@@ -12,10 +12,5 @@ class IamRequestGenerator(object):
 
     def generate_request_params(self, method, action, query, host, port, protocol, headers=None):
         credentials = self.credentials_provider.get_iam_credentials()
-        if protocol in ['https', 'wss']:
-            use_ssl = True
-        else:
-            use_ssl = False
-
         return make_signed_request(method, action, query, host, port, credentials.key, credentials.secret,
-                                   credentials.region, use_ssl, credentials.token, additional_headers=headers)
+                                   credentials.region, protocol, credentials.token, additional_headers=headers)

@@ -5,6 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 
+from neo4j import GraphDatabase
+
+from graph_notebook.opencypher.client_provider.default_client import AbstractCypherClientProvider
 from graph_notebook.request_param_generator.call_and_get_response import call_and_get_response
 
 logging.basicConfig()
@@ -27,3 +30,21 @@ def do_opencypher_query(query, host, port, use_ssl, request_param_generator, ext
     res = call_and_get_response('post', OPENCYPHER_ACTION, host, port, request_param_generator, use_ssl, data,
                                 extra_headers)
     return res.json()
+
+
+def _run_bolt_transaction(transaction, query, kwargs):
+    res = transaction.run(query, **kwargs)
+    return res
+
+
+def get_bolt_client(host, port, use_ssl, client_provider: AbstractCypherClientProvider):
+    return client_provider.get_driver(host, port, use_ssl)
+
+
+def do_opencypher_bolt_query(query, host, port, use_ssl: bool, client_provider: AbstractCypherClientProvider, **kwargs):
+    driver = get_bolt_client(host, port, use_ssl, client_provider)
+    with driver.session() as session:
+        res = session.run(query, kwargs)
+        data = res.data()
+    driver.close()
+    return data

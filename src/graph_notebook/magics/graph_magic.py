@@ -27,6 +27,8 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.opencypher import do_opencypher_query, do_opencypher_status
+from graph_notebook.opencypher.client_provider.factory import create_opencypher_client_provider
+from graph_notebook.opencypher.query import do_opencypher_bolt_query
 from graph_notebook.opencypher.status import do_opencypher_cancel
 from graph_notebook.sparql.table import get_rows_and_columns
 from graph_notebook.gremlin.query import do_gremlin_query, do_gremlin_explain, do_gremlin_profile
@@ -1077,21 +1079,41 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
+
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
 
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                      self.graph_notebook_config.iam_credentials_provider_type,
                                                      command='opencypher')
         args = parser.parse_args(line.split())
-        mode = str_to_query_mode(args.query_mode)
 
         tab = widgets.Tab()
-        logger.debug(f'using mode={mode}')
-        headers = {'Accept': 'application/sparql-results+json'}
-        res = do_opencypher_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
-                                  self.graph_notebook_config.ssl, request_generator, headers)
+
         titles = []
         children = []
+        if args.mode == 'query':
+            headers = {'Accept': 'application/sparql-results+json'}
+            res = do_opencypher_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
+                                      self.graph_notebook_config.ssl, request_generator, headers)
+            rows_and_columns = get_rows_and_columns(res)
+        elif args.mode == 'bolt':
+            client_provider = create_opencypher_client_provider(self.graph_notebook_config.auth_mode,
+                                                                self.graph_notebook_config.iam_credentials_provider_type)
+
+            res = do_opencypher_bolt_query(cell, self.graph_notebook_config.host,
+                                           self.graph_notebook_config.port,
+                                           self.graph_notebook_config.ssl, client_provider)
+            rows = []
+            columns = set()
+            for r in res:
+                row = []
+                for key, item in r.items():
+                    columns.add(key)
+                    row.append(item)
+                rows.append(row)
+
+            rows_and_columns = {'columns': columns, 'rows': rows}
 
         display(tab)
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
@@ -1103,14 +1125,10 @@ class Graph(Magics):
         titles.append('Table')
         children.append(hbox)
 
-        rows_and_columns = get_rows_and_columns(res)
         if rows_and_columns is not None:
             table_id = f"table-{str(uuid.uuid4())[:8]}"
             table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
                                                           rows=rows_and_columns['rows'], guid=table_id)
-
-        with table_output:
-            display(HTML(table_html))
 
         json_output = widgets.Output(layout=DEFAULT_LAYOUT)
         with json_output:
@@ -1121,6 +1139,10 @@ class Graph(Magics):
         tab.children = children
         for i in range(len(titles)):
             tab.set_title(i, titles[i])
+
+        if table_html != "":
+            with table_output:
+                display(HTML(table_html))
         store_to_ns(args.store_to, res, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):

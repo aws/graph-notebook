@@ -13,7 +13,7 @@ require(['notebook/js/codecell'], function(codecell) {
                 let patch = {
                     CodeCell:{
                         cm_config:{
-                            smartIndent: true,
+                            smartIndent: false,
                         }
                     }
                 };

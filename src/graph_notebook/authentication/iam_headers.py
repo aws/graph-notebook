@@ -101,25 +101,18 @@ def normalize_query_string(query):
           for s in query.split('&')
           if len(s) > 0)
 
-    normalized = '&'.join('%s=%s' % (p[0], p[1] if len(p) > 1 else '')
+    normalized = '&'.join(f'%s=%s' % (p[0], p[1] if len(p) > 1 else '')
                           for p in sorted(kv))
     return normalized
 
 
 def make_signed_request(method, query_type, query, host, port, signing_access_key, signing_secret, signing_region,
-                        use_ssl=False, signing_token='', additional_headers=None):
+                        protocol, signing_token='', additional_headers=None):
     if additional_headers is None:
-        additional_headers = []
+        additional_headers = {}
 
     signing_region = signing_region.lower()
     service = 'neptune-db'
-
-    if use_ssl:
-        protocol = 'https'
-    else:
-        protocol = 'http'
-
-    # this is always http right now
     endpoint = f'{protocol}://{host}:{port}'
 
     # get canonical_uri and payload
@@ -129,7 +122,6 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
         request_parameters = payload if type(payload) is str else json.dumps(payload)
     else:
         request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
-        # request_parameters = request_parameters.replace('%27', '%22')
     t = datetime.datetime.utcnow()
     amz_date = t.strftime('%Y%m%dT%H%M%SZ')
     date_stamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope
@@ -145,7 +137,7 @@ def make_signed_request(method, query_type, query, host, port, signing_access_ke
     # Step 4: Create the canonical headers and signed headers. Header names
     # must be trimmed and lowercase, and sorted in code point order from
     # low to high. Note that there is a trailing \n.
-    canonical_headers = f'host:{host}:{port}\nx-amz-date:{amz_date}\n'
+    canonical_headers = 'host:{host}:{port}\nx-amz-date:{amz_date}\n'
 
     # Step 5: Create the list of signed headers. This lists the headers
     # in the canonical_headers list, delimited with ";" and in alpha order.

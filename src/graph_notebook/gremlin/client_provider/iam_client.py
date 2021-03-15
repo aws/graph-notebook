@@ -37,8 +37,9 @@ class IamClientProvider(object):
 
     def get_client(self, host, port, use_ssl) -> Client:
         credentials = self.credentials_provider.get_iam_credentials()
+        protocol = 'https' if use_ssl else 'http'
         request_params = make_signed_request('get', 'gremlin', '', host, port, credentials.key,
-                                             credentials.secret, credentials.region, use_ssl,
+                                             credentials.secret, credentials.region, protocol,
                                              credentials.token)
         ws_url = request_params['url'].strip('/').replace('http', 'ws')
         signed_ws_request = httpclient.HTTPRequest(ws_url, headers=request_params['headers'])

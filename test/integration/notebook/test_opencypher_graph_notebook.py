@@ -26,6 +26,14 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
         oc_res = self.ip.user_ns[store_to_var]
         self.assertTrue('n' in oc_res['head']['vars'])
 
+    def test_oc_query_bolt(self):
+        query = 'MATCH(n) RETURN n LIMIT 100'
+        store_to_var = 'oc_res'
+        self.ip.run_cell_magic('oc', f'bolt --store-to {store_to_var}', query)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        oc_res = self.ip.user_ns[store_to_var]
+        self.assertTrue('n' in oc_res['head']['vars'])
+
     def test_oc_query_malformed(self):
         query = 'This is invalid'
         self.ip.run_cell_magic('oc', '', query)
