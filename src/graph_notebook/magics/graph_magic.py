@@ -741,6 +741,9 @@ class Graph(Magics):
                         with job_status_output:
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
                             if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
+                                execution_time = interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                execution_time_statement = '<1 second' if execution_time == 0 else f'{execution_time} seconds'
+                                print('Total execution time: ' + execution_time_statement)
                                 interval_output.close()
                                 print('Done.')
                                 return
