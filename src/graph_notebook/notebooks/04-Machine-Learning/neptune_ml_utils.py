@@ -15,6 +15,8 @@ from urllib.parse import urlparse
 
 # How often to check the status
 UPDATE_DELAY_SECONDS = 15
+HOME_DIRECTORY = os.path.expanduser("~")
+
 
 def signed_request(method, url, data=None, params=None, headers=None, service=None):
     creds = boto3.Session().get_credentials().get_frozen_credentials()
@@ -24,7 +26,7 @@ def signed_request(method, url, data=None, params=None, headers=None, service=No
 
 
 def load_configuration():
-    with open('/home/ec2-user/graph_notebook_config.json') as f:
+    with open(f'{HOME_DIRECTORY}/graph_notebook_config.json') as f:
         data = json.load(f)
         host = data['host']
         port = data['port']
@@ -34,62 +36,69 @@ def load_configuration():
             iam = False
     return host, port, iam
 
+
 def get_host():
     host, port, iam = load_configuration()
     return host
+
 
 def get_iam():
     host, port, iam = load_configuration()
     return iam
 
+
 def get_training_job_name(prefix: str):
     return f'{prefix}-{int(time.time())}'
 
+
 def check_ml_enabled():
-    host, port, use_iam = load_configuration()  
-    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
+    host, port, use_iam = load_configuration()
+    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='ml-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
 Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
     else:
         print("This Neptune cluster is configured to use Neptune ML")
-        
+
+
 def get_export_service_host():
-    with open('/home/ec2-user/.bashrc') as f:
+    with open(f'{HOME_DIRECTORY}/.bashrc') as f:
         data = f.readlines()
     for d in data:
         if str.startswith(d, 'export NEPTUNE_EXPORT_API_URI'):
             parts = d.split('=')
-            if len(parts)==2:
-                path=urlparse(parts[1].rstrip())
+            if len(parts) == 2:
+                path = urlparse(parts[1].rstrip())
                 return path.hostname + "/v1"
-    logging.error("Unable to determine the Neptune Export Service Endpoint. You will need to enter this assign this manually.")
+    logging.error(
+        "Unable to determine the Neptune Export Service Endpoint. You will need to enter this assign this manually.")
     return None
+
 
 def delete_pretrained_data(setup_node_classification: bool,
                            setup_node_regression: bool, setup_link_prediction: bool):
-
     host, port, use_iam = load_configuration()
     if setup_node_classification:
-        response = signed_request("POST", service='neptune-db',
-            url=f'https://{host}:{port}/gremlin',
-            headers={'content-type': 'application/json'},
-            data=json.dumps({'gremlin': "g.V('movie_1', 'movie_7', 'movie_15').properties('genre').drop()"}))
-        
+        response = signed_request("POST", service='ml-db',
+                                  url=f'https://{host}:{port}/gremlin',
+                                  headers={'content-type': 'application/json'},
+                                  data=json.dumps(
+                                      {'gremlin': "g.V('movie_1', 'movie_7', 'movie_15').properties('genre').drop()"}))
+
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_node_regression:
-        response = signed_request("POST", service='neptune-db',
-            url=f'https://{host}:{port}/gremlin',
-            headers={'content-type': 'application/json'},
-            data=json.dumps({'gremlin': "g.V('user_1').out('wrote').properties('score').drop()"}))
+        response = signed_request("POST", service='ml-db',
+                                  url=f'https://{host}:{port}/gremlin',
+                                  headers={'content-type': 'application/json'},
+                                  data=json.dumps({'gremlin': "g.V('user_1').out('wrote').properties('score').drop()"}))
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_link_prediction:
-        response = signed_request("POST", service='neptune-db',
-            url=f'https://{host}:{port}/gremlin',
-            headers={'content-type': 'application/json'},
-            data=json.dumps({'gremlin': "g.V('user_1').outE('rated').drop()"}))
+        response = signed_request("POST", service='ml-db',
+                                  url=f'https://{host}:{port}/gremlin',
+                                  headers={'content-type': 'application/json'},
+                                  data=json.dumps({'gremlin': "g.V('user_1').outE('rated').drop()"}))
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
 
@@ -113,8 +122,9 @@ def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
     if neptune_iam_role_arn:
         query_string = f'?neptuneIamRoleArn={neptune_iam_role_arn}'
     host, port, use_iam = load_configuration()
-    response = signed_request("DELETE", service='neptune-db',
-        url=f'https://{host}:{port}/ml/endpoints/{training_job_name}{query_string}', headers={'content-type': 'application/json'})
+    response = signed_request("DELETE", service='ml-db',
+                              url=f'https://{host}:{port}/ml/endpoints/{training_job_name}{query_string}',
+                              headers={'content-type': 'application/json'})
     if response.status_code != 200:
         print(response.content.decode('utf-8'))
     else:
@@ -129,28 +139,28 @@ def prepare_movielens_data(s3_bucket_uri: str):
         logging.error(e)
 
 
-
 def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bool,
                                setup_node_regression: bool, setup_link_prediction: bool):
     delete_pretrained_data(setup_node_classification,
                            setup_node_regression, setup_link_prediction)
     try:
-        return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification, setup_node_regression, setup_link_prediction)
+        return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification,
+                                                             setup_node_regression, setup_link_prediction)
     except Exception as e:
         logging.error(e)
 
 
 class MovieLensProcessor:
-    raw_directory = r'/home/ec2-user/data/raw'
-    formatted_directory = r'/home/ec2-user/data/formatted'
+    raw_directory = fr'{HOME_DIRECTORY}/data/raw'
+    formatted_directory = fr'{HOME_DIRECTORY}/data/formatted'
 
     def __download_and_unzip(self):
-        if not os.path.exists('/home/ec2-user/data'):
-            os.makedirs('/home/ec2-user/data')
-        if not os.path.exists('/home/ec2-user/data/raw'):
-            os.makedirs('/home/ec2-user/data/raw')
-        if not os.path.exists('/home/ec2-user/data/formatted'):
-            os.makedirs('/home/ec2-user/data/formatted')
+        if not os.path.exists(f'{HOME_DIRECTORY}/data'):
+            os.makedirs(f'{HOME_DIRECTORY}/data')
+        if not os.path.exists(f'{HOME_DIRECTORY}/data/raw'):
+            os.makedirs(f'{HOME_DIRECTORY}/data/raw')
+        if not os.path.exists(f'{HOME_DIRECTORY}/data/formatted'):
+            os.makedirs(f'{HOME_DIRECTORY}/data/formatted')
         # Download the MovieLens dataset
         url = 'http://files.grouplens.org/datasets/movielens/ml-100k.zip'
         r = requests.get(url, allow_redirects=True)
@@ -163,7 +173,7 @@ class MovieLensProcessor:
         # process the movies_vertex.csv
         print('Processing Movies', end='\r')
         movies_df = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.item'), sep='|',  encoding='ISO-8859-1',
+            self.raw_directory, 'ml-100k/u.item'), sep='|', encoding='ISO-8859-1',
             names=['~id', 'title', 'release_date', 'video_release_date', 'imdb_url',
                    'unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
                    'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
@@ -218,7 +228,7 @@ class MovieLensProcessor:
         # Create ratings vertices and add edges on both sides
         print('Processing Ratings', end='\r')
         ratings_vertices = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.data'), sep='\t',  encoding='ISO-8859-1',
+            self.raw_directory, 'ml-100k/u.data'), sep='\t', encoding='ISO-8859-1',
             names=['~from', '~to', 'score:Int', 'timestamp'])
         ratings_vertices['~from'] = ratings_vertices['~from'].apply(
             lambda x: f'user_{x}')
@@ -232,10 +242,10 @@ class MovieLensProcessor:
 
         dict = {}
         for index, row in ratings_vertices.iterrows():
-            dict[index*2] = {'~id': uuid.uuid4(), '~label': 'wrote',
-                             '~from': row['~from'], '~to': row['~id']}
-            dict[index*2 + 1] = {'~id': uuid.uuid4(), '~label': 'about',
-                                 '~from': row['~id'], '~to': row['~to']}
+            dict[index * 2] = {'~id': uuid.uuid4(), '~label': 'wrote',
+                               '~from': row['~from'], '~to': row['~id']}
+            dict[index * 2 + 1] = {'~id': uuid.uuid4(), '~label': 'about',
+                                   '~from': row['~id'], '~to': row['~to']}
         rating_edges_df = pd.DataFrame.from_dict(dict, "index")
 
         # Remove the from and to columns and write this out as a vertex now
@@ -259,7 +269,7 @@ class MovieLensProcessor:
         # User Vertices - Load, rename column with type, and save
 
         user_df = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.user'), sep='|',  encoding='ISO-8859-1',
+            self.raw_directory, 'ml-100k/u.user'), sep='|', encoding='ISO-8859-1',
             names=['~id', 'age:Int', 'gender', 'occupation', 'zip_code'])
         user_df['~id'] = user_df['~id'].apply(
             lambda x: f'user_{x}')
@@ -279,7 +289,7 @@ class MovieLensProcessor:
                     self.formatted_directory, file), bucket, f'{file_path}/{file}')
 
     def prepare_movielens_data(self, s3_bucket: str):
-        bucket_name = f'{s3_bucket}/neptune-formatted/movielens-100k'
+        bucket_name = f'{s3_bucket}/ml-formatted/movielens-100k'
         self.__download_and_unzip()
         self.__process_movies_genres()
         self.__process_users()
@@ -372,12 +382,12 @@ class PretrainedModels:
         return name
 
     def __get_neptune_ml_role(self):
-        with open('/home/ec2-user/.bashrc') as f:
+        with open(f'{HOME_DIRECTORY}/.bashrc') as f:
             data = f.readlines()
         for d in data:
             if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
                 parts = d.split('=')
-                if len(parts)==2:
+                if len(parts) == 2:
                     return parts[1].rstrip()
         logging.error("Unable to determine the Neptune ML IAM Role.")
         return None

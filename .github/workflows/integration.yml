@@ -82,36 +82,15 @@ jobs:
         run: |
           sudo chmod 777 /etc/hosts
       - name: Run Basic Tests
+        env:
+          GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
-          python test/integration/NeptuneIntegrationWorkflowSteps.py \
-            run-tests \
-            --pattern "*without_iam.py" \
-            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
-            --aws-region ${{ secrets.AWS_REGION }}
-      - name: Run Networkx Tests
-        run: |
-          python test/integration/NeptuneIntegrationWorkflowSteps.py \
-            run-tests \
-            --pattern "*network*.py" \
-            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
-            --aws-region ${{ secrets.AWS_REGION }}
-      - name: Run Notebook Tests
-        run: |
-          python test/integration/NeptuneIntegrationWorkflowSteps.py \
-            run-tests \
-            --pattern "*graph_notebook.py" \
-            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
-            --aws-region ${{ secrets.AWS_REGION }}
+          pytest test/integration/without_iam
       - name: Run IAM Tests
         env:
           GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
-          python test/integration/NeptuneIntegrationWorkflowSteps.py \
-            run-tests \
-            --pattern "*with_iam.py" \
-            --iam \
-            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
-            --aws-region ${{ secrets.AWS_REGION }}
+          pytest test/integration/iam
       - name: Cleanup
         run: |
           python test/integration/NeptuneIntegrationWorkflowSteps.py \
