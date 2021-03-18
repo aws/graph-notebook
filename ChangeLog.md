@@ -8,7 +8,7 @@ This section contains the list of changes which will be included in the next rel
 
 ## Release 2.0.10 (Mar 18, 2021)
 
-- Print execution time when running %load command ([#82](https://github.com/aws/graph-notebook/pull/82))
+- Print execution time when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/82))
 
 ## Release 2.0.9 (Mar 3, 2021)
 
