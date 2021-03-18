@@ -2,6 +2,14 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
+## Upcoming
+
+This section contains the list of changes which will be included in the next release
+
+## Release 2.0.10 (Mar 18, 2021)
+
+- Print execution time when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/82))
+
 ## Release 2.0.9 (Mar 3, 2021)
 
 - Fixed issue where --ignore-groups was not being honored [Link to PR](https://github.com/aws/graph-notebook/pull/66)
