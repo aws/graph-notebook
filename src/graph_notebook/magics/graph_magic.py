@@ -36,7 +36,7 @@ from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.gremlin.client_provider.factory import create_client_provider
 from graph_notebook.request_param_generator.factory import create_request_generator
 from graph_notebook.loader.load import do_load, get_loader_jobs, get_load_status, cancel_load, VALID_FORMATS, \
-    PARALLELISM_OPTIONS, PARALLELISM_HIGH, FINAL_LOAD_STATUSES
+    PARALLELISM_OPTIONS, PARALLELISM_HIGH, FINAL_LOAD_STATUSES, LOAD_JOB_MODES, MODE_AUTO
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.status.get_status import get_status
@@ -582,6 +582,9 @@ class Graph(Magics):
         parser.add_argument('--update-single-cardinality', action='store_true', default=True)
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--run', action='store_true', default=False)
+        parser.add_argument('-m', '--mode', choices=LOAD_JOB_MODES, default=MODE_AUTO)
+        parser.add_argument('-q', '--queue-request', action='store_true', default=False)
+        parser.add_argument('-d', '--dependencies', default='')
 
         args = parser.parse_args(line.split())
 
@@ -614,7 +617,7 @@ class Graph(Magics):
         source_format = widgets.Dropdown(
             options=LOADER_FORMAT_CHOICES,
             value=args.format,
-            description='Format: ',
+            description='Format:',
             disabled=False
         )
 
@@ -635,7 +638,7 @@ class Graph(Magics):
         parallelism = widgets.Dropdown(
             options=PARALLELISM_OPTIONS,
             value=args.parallelism,
-            description='Parallelism :',
+            description='Parallelism:',
             disabled=False
         )
 
@@ -646,12 +649,33 @@ class Graph(Magics):
             disabled=False,
         )
 
+        mode = widgets.Dropdown(
+            options=LOAD_JOB_MODES,
+            value=args.mode,
+            description='Mode:',
+            disabled=False
+        )
+
+        queue_request = widgets.Dropdown(
+            options=['TRUE', 'FALSE'],
+            value=str(args.queue_request).upper(),
+            description='Queue Request:',
+            disabled=False,
+        )
+
+        dependencies = widgets.Text(
+            value=args.dependencies,
+            placeholder='[\"load_A_id\", \"load_B_id\"]',
+            description='Dependencies:',
+            disabled=False
+        )
+
         source_hbox = widgets.HBox([source])
         arn_hbox = widgets.HBox([arn])
         source_format_hbox = widgets.HBox([source_format])
 
-        display(source_hbox, source_format_hbox, region_box, arn_hbox, fail_on_error, parallelism,
-                update_single_cardinality, button, output)
+        display(source_hbox, source_format_hbox, region_box, arn_hbox, mode, fail_on_error, parallelism,
+                update_single_cardinality, queue_request, dependencies, button, output)
 
         def on_button_clicked(b):
             source_hbox.children = (source,)
@@ -686,8 +710,9 @@ class Graph(Magics):
             logger.info(f'using source_exp: {source_exp}')
             try:
                 load_result = do_load(host, port, source_format.value, ssl, str(source_exp), region_box.value,
-                                      arn.value,
+                                      arn.value, mode.value,
                                       fail_on_error.value, parallelism.value, update_single_cardinality.value,
+                                      queue_request.value, dependencies.value,
                                       request_generator)
                 store_to_ns(args.store_to, load_result, local_ns)
 
@@ -695,9 +720,12 @@ class Graph(Magics):
                 source_format_hbox.close()
                 region_box.close()
                 arn_hbox.close()
+                mode.close()
                 fail_on_error.close()
                 parallelism.close()
                 update_single_cardinality.close()
+                queue_request.close()
+                dependencies.close()
                 button.close()
                 output.close()
 
