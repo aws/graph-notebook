@@ -795,12 +795,17 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', default='', help='loader id to check status for')
         parser.add_argument('--store-to', type=str, default='')
+        parser.add_argument('--details', action='store_true', default=False)
+        parser.add_argument('--errors', action='store_true', default=False)
+        parser.add_argument('--page', '-p', default='1', help='The error page number. Only valid when the --errors option is set.')
+        parser.add_argument('--errorsPerPage', '-e', default='10', help='The number of errors per each page. Only valid when the --errors option is set.')
         args = parser.parse_args(line.split())
 
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_load_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                              self.graph_notebook_config.ssl, request_generator, args.load_id)
+                              self.graph_notebook_config.ssl, request_generator, args.load_id, args.details, args.errors
+                              args.page, args,errorsPerPage)
         print(json.dumps(res, indent=2))
 
         if args.store_to != '' and local_ns is not None:
