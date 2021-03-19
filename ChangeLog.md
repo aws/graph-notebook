@@ -4,7 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-This section contains the list of changes which will be included in the next release
+- Add support for Mode, queueRequest, and Dependencies parameters when running %load command
 
 ## Release 2.0.10 (Mar 18, 2021)
 

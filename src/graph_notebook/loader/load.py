@@ -16,6 +16,11 @@ PARALLELISM_MEDIUM = 'MEDIUM'
 PARALLELISM_HIGH = 'HIGH'
 PARALLELISM_OVERSUBSCRIBE = 'OVERSUBSCRIBE'
 
+MODE_RESUME = 'RESUME'
+MODE_NEW = 'NEW'
+MODE_AUTO = 'AUTO'
+
+LOAD_JOB_MODES = [MODE_RESUME, MODE_NEW, MODE_AUTO]
 VALID_FORMATS = [FORMAT_CSV, FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 PARALLELISM_OPTIONS = [PARALLELISM_LOW, PARALLELISM_MEDIUM, PARALLELISM_HIGH, PARALLELISM_OVERSUBSCRIBE]
 LOADER_ACTION = 'loader'
@@ -34,20 +39,25 @@ FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
                        'LOAD_FAILED_BECAUSE_DEPENDENCY_NOT_SATISFIED',
                        'LOAD_FAILED_INVALID_REQUEST', ]
 
+def do_load(host, port, load_format, use_ssl, source, region, arn, mode, fail_on_error, parallelism,
+            update_single_cardinality, queue_request, dependencies, request_param_generator):
 
-def do_load(host, port, load_format, use_ssl, source, region, arn, fail_on_error, parallelism,
-            update_single_cardinality, request_param_generator):
     payload = {
         'source': source,
         'format': load_format,
+        'mode': mode,
         'region': region,
         'failOnError': fail_on_error,
         'parallelism': parallelism,
-        'updateSingleCardinalityProperties': update_single_cardinality
+        'updateSingleCardinalityProperties': update_single_cardinality,
+        'queueRequest': queue_request
     }
 
     if arn != '':
         payload['iamRoleArn'] = arn
+
+    if dependencies != '':
+        payload['dependencies'] = dependencies
 
     res = call_and_get_response('post', LOADER_ACTION, host, port, request_param_generator, use_ssl, payload)
     return res.json()
