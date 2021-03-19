@@ -804,7 +804,7 @@ class Graph(Magics):
         credentials_provider_mode = self.graph_notebook_config.iam_credentials_provider_type
         request_generator = create_request_generator(self.graph_notebook_config.auth_mode, credentials_provider_mode)
         res = get_load_status(self.graph_notebook_config.host, self.graph_notebook_config.port,
-                              self.graph_notebook_config.ssl, request_generator, args.load_id, args.details, args.errors
+                              self.graph_notebook_config.ssl, request_generator, args.load_id, args.details, args.errors,
                               args.page, args,errorsPerPage)
         print(json.dumps(res, indent=2))
 
