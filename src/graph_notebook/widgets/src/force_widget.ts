@@ -490,6 +490,7 @@ export class ForceView extends DOMWidgetView {
     if (nodeID !== undefined && nodeID !== null && node.id === nodeID) {
       if (!node.group) {
         node.color = this.searchMatchColorNode;
+        node.font = { color: "black" };
       }
     } else {
       node.color = this.visOptions.nodes.color;

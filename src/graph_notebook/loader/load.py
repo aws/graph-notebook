@@ -68,9 +68,13 @@ def get_loader_jobs(host, port, use_ssl, request_param_generator):
     return res.json()
 
 
-def get_load_status(host, port, use_ssl, request_param_generator, id):
+def get_load_status(host, port, use_ssl, request_param_generator, id, loader_details, loader_errors, loader_page, loader_epp):
     payload = {
-        'loadId': id
+        'loadId': id,
+        'details': loader_details,
+        'errors': loader_errors,
+        'page': loader_page,
+        'errorsPerPage': loader_epp
     }
     res = call_and_get_response('get', LOADER_ACTION, host, port, request_param_generator, use_ssl, payload)
     return res.json()
