@@ -56,7 +56,7 @@ def do_load(host, port, load_format, use_ssl, source, region, arn, mode, fail_on
     if arn != '':
         payload['iamRoleArn'] = arn
 
-    if dependencies != '':
+    if dependencies != '[\"\"]':
         payload['dependencies'] = dependencies
 
     res = call_and_get_response('post', LOADER_ACTION, host, port, request_param_generator, use_ssl, payload)
@@ -68,14 +68,20 @@ def get_loader_jobs(host, port, use_ssl, request_param_generator):
     return res.json()
 
 
-def get_load_status(host, port, use_ssl, request_param_generator, id, loader_details, loader_errors, loader_page, loader_epp):
+def get_load_status(host, port, use_ssl, request_param_generator, id,
+                    loader_details=False, loader_errors=False, loader_page=1, loader_epp=10):
     payload = {
         'loadId': id,
-        'details': loader_details,
-        'errors': loader_errors,
-        'page': loader_page,
-        'errorsPerPage': loader_epp
     }
+
+    if loader_details:
+        payload['details'] = loader_details
+
+    if loader_errors:
+        payload['errors'] = loader_errors
+        payload['page'] = loader_page
+        payload['errorsPerPage'] = loader_epp
+
     res = call_and_get_response('get', LOADER_ACTION, host, port, request_param_generator, use_ssl, payload)
     return res.json()
 
