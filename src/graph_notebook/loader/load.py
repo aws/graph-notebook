@@ -3,6 +3,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 from graph_notebook.request_param_generator.call_and_get_response import call_and_get_response
 
 FORMAT_CSV = 'csv'
@@ -56,8 +57,8 @@ def do_load(host, port, load_format, use_ssl, source, region, arn, mode, fail_on
     if arn != '':
         payload['iamRoleArn'] = arn
 
-    if dependencies != '[\"\"]':
-        payload['dependencies'] = dependencies
+    if dependencies:
+        payload['dependencies'] = json.dumps(dependencies)
 
     res = call_and_get_response('post', LOADER_ACTION, host, port, request_param_generator, use_ssl, payload)
     return res.json()

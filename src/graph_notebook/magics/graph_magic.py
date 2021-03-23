@@ -684,6 +684,8 @@ class Graph(Magics):
             source_format_hbox.children = (source_format,)
             dep_hbox.children = (dependencies,)
 
+            dependencies_list = list(filter(None, dependencies.value.split('\n')))
+
             validated = True
             validation_label_style = DescriptionStyle(color='red')
             if not (source.value.startswith('s3://') and len(source.value) > 7) and not source.value.startswith('/'):
@@ -704,7 +706,7 @@ class Graph(Magics):
                 arn_validation_label = widgets.HTML('<p style="color:red;">Load ARN must start with "arn:aws"</p>')
                 arn_hbox.children += (arn_validation_label,)
 
-            if not len(dependencies.value.split("\n")) < 64:
+            if not len(dependencies_list) < 64:
                 validated = False
                 dep_validation_label = widgets.HTML('<p style="color:red;">A maximum of 64 jobs may be queued at once.</p>')
                 dep_hbox.children += (dep_validation_label,)
@@ -716,11 +718,10 @@ class Graph(Magics):
                 source.value)  # replace any env variables in source.value with their values, can use $foo or ${foo}. Particularly useful for ${AWS_REGION}
             logger.info(f'using source_exp: {source_exp}')
             try:
-                dependencies_list_as_string = '[\"' + '\",\"'.join(dependencies.value.split("\n")) + '\"]'
                 load_result = do_load(host, port, source_format.value, ssl, str(source_exp), region_box.value,
                                       arn.value, mode.value,
                                       fail_on_error.value, parallelism.value, update_single_cardinality.value,
-                                      queue_request.value, dependencies_list_as_string,
+                                      queue_request.value, dependencies_list,
                                       request_generator)
                 store_to_ns(args.store_to, load_result, local_ns)
 
