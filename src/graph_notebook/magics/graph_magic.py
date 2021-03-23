@@ -584,7 +584,7 @@ class Graph(Magics):
         parser.add_argument('--run', action='store_true', default=False)
         parser.add_argument('-m', '--mode', choices=LOAD_JOB_MODES, default=MODE_AUTO)
         parser.add_argument('-q', '--queue-request', action='store_true', default=False)
-        parser.add_argument('-d', '--dependencies', default='')
+        parser.add_argument('-d', '--dependencies', action='append', default=[])
 
         args = parser.parse_args(line.split())
 
@@ -663,9 +663,9 @@ class Graph(Magics):
             disabled=False,
         )
 
-        dependencies = widgets.Text(
-            value=args.dependencies,
-            placeholder='[\"load_A_id\", \"load_B_id\"]',
+        dependencies = widgets.Textarea(
+            value="\n".join(args.dependencies),
+            placeholder='load_A_id\nload_B_id',
             description='Dependencies:',
             disabled=False
         )
@@ -673,14 +673,16 @@ class Graph(Magics):
         source_hbox = widgets.HBox([source])
         arn_hbox = widgets.HBox([arn])
         source_format_hbox = widgets.HBox([source_format])
+        dep_hbox = widgets.HBox([dependencies])
 
         display(source_hbox, source_format_hbox, region_box, arn_hbox, mode, fail_on_error, parallelism,
-                update_single_cardinality, queue_request, dependencies, button, output)
+                update_single_cardinality, queue_request, dep_hbox, button, output)
 
         def on_button_clicked(b):
             source_hbox.children = (source,)
             arn_hbox.children = (arn,)
             source_format_hbox.children = (source_format,)
+            dep_hbox.children = (dependencies,)
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -702,6 +704,11 @@ class Graph(Magics):
                 arn_validation_label = widgets.HTML('<p style="color:red;">Load ARN must start with "arn:aws"</p>')
                 arn_hbox.children += (arn_validation_label,)
 
+            if not len(dependencies.value.split("\n")) < 64:
+                validated = False
+                dep_validation_label = widgets.HTML('<p style="color:red;">A maximum of 64 jobs may be queued at once.</p>')
+                dep_hbox.children += (dep_validation_label,)
+
             if not validated:
                 return
 
@@ -709,10 +716,11 @@ class Graph(Magics):
                 source.value)  # replace any env variables in source.value with their values, can use $foo or ${foo}. Particularly useful for ${AWS_REGION}
             logger.info(f'using source_exp: {source_exp}')
             try:
+                dependencies_list_as_string = '[\"' + '\",\"'.join(dependencies.value.split("\n")) + '\"]'
                 load_result = do_load(host, port, source_format.value, ssl, str(source_exp), region_box.value,
                                       arn.value, mode.value,
                                       fail_on_error.value, parallelism.value, update_single_cardinality.value,
-                                      queue_request.value, dependencies.value,
+                                      queue_request.value, dependencies_list_as_string,
                                       request_generator)
                 store_to_ns(args.store_to, load_result, local_ns)
 
@@ -725,7 +733,7 @@ class Graph(Magics):
                 parallelism.close()
                 update_single_cardinality.close()
                 queue_request.close()
-                dependencies.close()
+                dep_hbox.close()
                 button.close()
                 output.close()
 
