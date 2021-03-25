@@ -6,9 +6,11 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 This section contains the list of changes which will be included in the next release
 
-## Release 2.0.11 (Mar 25, 2021)
+## Release 2.0.12 (Mar 25, 2021)
 
+- Add default parameters for `get_load_status`
 - Add ipython as a dependency in `setup.py` ([Link to PT](https://github.com/aws/graph-notebook/pull/95))
+- Add parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage`
 
 ## Release 2.0.10 (Mar 18, 2021)
 
