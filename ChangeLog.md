@@ -6,6 +6,10 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 This section contains the list of changes which will be included in the next release
 
+## Release 2.0.11 (Mar 25, 2021)
+
+- Add ipython as a dependency in `setup.py` ([Link to PT](https://github.com/aws/graph-notebook/pull/95))
+
 ## Release 2.0.10 (Mar 18, 2021)
 
 - Print execution time when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/82))
