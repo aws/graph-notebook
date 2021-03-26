@@ -43,7 +43,6 @@ FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
 
 def do_load(host, port, load_format, use_ssl, source, region, arn, fail_on_error, request_param_generator, mode="AUTO",
             parallelism="HIGH", update_single_cardinality="FALSE", queue_request="FALSE", dependencies=[]):
-
     payload = {
         'source': source,
         'format': load_format,

@@ -722,6 +722,7 @@ class Graph(Magics):
                                       arn.value, fail_on_error.value, request_generator, mode=mode.value,
                                       parallelism=parallelism.value, update_single_cardinality=update_single_cardinality.value,
                                       queue_request=queue_request.value, dependencies=dependencies_list)
+
                 store_to_ns(args.store_to, load_result, local_ns)
 
                 source_hbox.close()
