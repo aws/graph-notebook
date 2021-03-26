@@ -719,10 +719,9 @@ class Graph(Magics):
             logger.info(f'using source_exp: {source_exp}')
             try:
                 load_result = do_load(host, port, source_format.value, ssl, str(source_exp), region_box.value,
-                                      arn.value, mode.value,
-                                      fail_on_error.value, parallelism.value, update_single_cardinality.value,
-                                      queue_request.value, dependencies_list,
-                                      request_generator)
+                                      arn.value, fail_on_error.value, request_generator, mode=mode.value,
+                                      parallelism=parallelism.value, update_single_cardinality=update_single_cardinality.value,
+                                      queue_request=queue_request.value, dependencies=dependencies_list)
                 store_to_ns(args.store_to, load_result, local_ns)
 
                 source_hbox.close()

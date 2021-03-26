@@ -40,8 +40,9 @@ FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
                        'LOAD_FAILED_BECAUSE_DEPENDENCY_NOT_SATISFIED',
                        'LOAD_FAILED_INVALID_REQUEST', ]
 
-def do_load(host, port, load_format, use_ssl, source, region, arn, mode, fail_on_error, parallelism,
-            update_single_cardinality, queue_request, dependencies, request_param_generator):
+
+def do_load(host, port, load_format, use_ssl, source, region, arn, fail_on_error, request_param_generator, mode="AUTO",
+            parallelism="HIGH", update_single_cardinality="FALSE", queue_request="FALSE", dependencies=[]):
 
     payload = {
         'source': source,
