@@ -8,6 +8,7 @@ from gremlin_python.structure.graph import Path
 from gremlin_python.process.traversal import T
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
+from gremlin_python.structure.graph import Vertex
 
 
 class TestGremlinNetwork(unittest.TestCase):
@@ -212,6 +213,40 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property="code", ignore_groups=True)
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '')
+
+    def test_group_returnvertex_groupby_notspecified(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'vertex')
+
+    def test_group_returnvertex_groupby_label(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property="label")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'vertex')
+
+        gn = GremlinNetwork(group_by_property="T.label")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'vertex')
+
+    def test_group_returnvertex_groupby_id(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property="id")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], '1')
+
+        gn = GremlinNetwork(group_by_property="T.id")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '')
 
 

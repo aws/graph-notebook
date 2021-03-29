@@ -271,7 +271,15 @@ class GremlinNetwork(EventfulNetwork):
         if type(v) is Vertex:
             node_id = v.id
             title = v.label
-            group = v.label
+            if self.group_by_property in [T_LABEL, 'label']:
+                # This sets the group key to the label if either "label" is passed in or
+                # T.label is set in order to handle the default case of grouping by label
+                # when no explicit key is specified
+                group = v.label
+            elif self.group_by_property == 'id':
+                group = v.id
+            else:
+                group = ''
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data = {'label': label, 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
         elif type(v) is dict:
