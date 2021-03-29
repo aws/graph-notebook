@@ -69,7 +69,7 @@ def get_loader_jobs(host, port, use_ssl, request_param_generator):
     return res.json()
 
 
-def get_load_status(host, port, use_ssl, request_param_generator, id, loader_details, loader_errors, loader_page, loader_epp):
+def get_load_status(host, port, use_ssl, request_param_generator, id, loader_details="FALSE", loader_errors="FALSE", loader_page=1, loader_epp=10):
     payload = {
         'loadId': id,
         'details': loader_details,
