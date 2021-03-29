@@ -78,8 +78,7 @@ setup(
         'widgetsnbextension',
         'jupyter>=1.0.0',
         'requests-aws4auth==1.0.1',
-        'botocore>=1.19.37',
-        'ipython>=7.16.1'
+        'botocore>=1.19.37'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
