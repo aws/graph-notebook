@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from gremlin_python.structure.io.graphsonV3d0 import MapType
-
+from graph_notebook.gremlin.client_provider.utils_tinkerpop import HashableDict
 
 # Original code from Tinkerpop 3.4.1
 #
@@ -30,6 +30,10 @@ from gremlin_python.structure.io.graphsonV3d0 import MapType
 #                 x = x + 2
 #         return new_dict
 
+
+# Backport from TinkerPop 3.5.0 pre-release
+# https://github.com/apache/tinkerpop/blob/master/gremlin-python/src/main/python/gremlin_python/structure/io/graphsonV3d0.py#L474
+# https://github.com/apache/tinkerpop/pull/1314/files
 class MapType_patch:
     @classmethod
     def objectify(cls, l, reader):  # noqa E741
@@ -37,11 +41,7 @@ class MapType_patch:
         if len(l) > 0:
             x = 0
             while x < len(l):
-                tmp = reader.toObject(l[x])
-                # Avoid keys that are dicts by making them tuples
-                if type(tmp) == dict:
-                    tmp = tuple([(k, v) for k, v in tmp.items()])
-                new_dict[tmp] = reader.toObject(l[x + 1])
+                new_dict[HashableDict.of(reader.toObject(l[x]))] = reader.toObject(l[x + 1])
                 x = x + 2
         return new_dict
 
