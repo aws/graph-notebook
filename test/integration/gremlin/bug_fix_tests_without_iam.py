@@ -65,13 +65,12 @@ class TestBugFixes(IntegrationTest):
         """
         results = do_gremlin_query(query, self.host, self.port, self.ssl, self.client_provider)
         keys_are_hashable = True
-        for x in results:
-            for key in x.keys():
-                try:
-                    hash(key)
-                except TypeError:
-                    keys_are_hashable = False
-                    break
+        for key in results[0].keys():
+            try:
+                hash(key)
+            except TypeError:
+                keys_are_hashable = False
+                break
         self.assertEqual(keys_are_hashable, True)
 
     def test_do_gremlin_query_with_list_as_key(self):
@@ -82,11 +81,10 @@ class TestBugFixes(IntegrationTest):
         """
         results = do_gremlin_query(query, self.host, self.port, self.ssl, self.client_provider)
         keys_are_hashable = True
-        for x in results:
-            for key in x.keys():
-                try:
-                    hash(key)
-                except TypeError:
-                    keys_are_hashable = False
-                    break
+        for key in results[0].keys():
+            try:
+                hash(key)
+            except TypeError:
+                keys_are_hashable = False
+                break
         self.assertEqual(keys_are_hashable, True)
