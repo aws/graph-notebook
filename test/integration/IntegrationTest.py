@@ -9,7 +9,7 @@ from botocore.session import get_session
 
 from graph_notebook.configuration.generate_config import Configuration, AuthModeEnum
 from graph_notebook.configuration.get_config import get_config
-from graph_notebook.neptune.client import Client, ClientBuilder
+from graph_notebook.neptune.client import ClientBuilder
 from test.integration.NeptuneIntegrationWorkflowSteps import TEST_CONFIG_PATH
 
 

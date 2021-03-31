@@ -55,8 +55,8 @@ with open("README.md", "r") as fh:
 
 setup(
     name='graph-notebook',
-    author='amazon-ml',
-    author_email='amazon-ml-pypi@amazon.com',
+    author='amazon-neptune',
+    author_email='amazon-neptune-pypi@amazon.com',
     description='jupyter notebook extension to connect to graph databases',
     long_description=long_description,
     long_description_content_type='text/markdown',
