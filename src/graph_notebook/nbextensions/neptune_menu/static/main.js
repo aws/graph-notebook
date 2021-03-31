@@ -105,7 +105,7 @@ define([
     let host='', port='', iam='off', ssl='on';
 
     function configCallback(data){
-        console.log('ml menu callback...');
+        console.log('neptune menu callback...');
         const raw = data['content']['text'];
         const config = JSON.parse(raw);
         host = config['host'];
@@ -127,10 +127,10 @@ define([
     const createMenu = (kernel) => {
         console.log("kernel type is ", kernel.name);
         if(kernel.name === "gremlin_kernel" || kernel.name === "sparql_kernel"){
-            console.log("skipping ml menu creation");
+            console.log("skipping neptune menu creation");
             return;
         }
-        console.log('creating ml menu from config...');
+        console.log('creating neptune menu from config...');
         kernel.execute('%load_ext graph_notebook.magics');
         kernel.execute(
             "%graph_notebook_config silent",

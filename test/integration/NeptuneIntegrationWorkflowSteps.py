@@ -62,7 +62,7 @@ def set_iam_auth_on_neptune_cluster(cluster_identifier: str, iam_value: bool, ne
 
     response = neptune_client.modify_db_cluster(DBClusterIdentifier=cluster_identifier,
                                                 EnableIAMDatabaseAuthentication=iam_value, ApplyImmediately=True)
-    logging.info(f'modified ml cluster {cluster_identifier} to set iam auth to {iam_value}: {response}')
+    logging.info(f'modified neptune cluster {cluster_identifier} to set iam auth to {iam_value}: {response}')
 
     # wait for authentication setting to show as changed:
     while cluster['IAMDatabaseAuthenticationEnabled'] != iam_value:

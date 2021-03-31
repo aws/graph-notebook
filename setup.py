@@ -92,7 +92,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License'
     ],
-    keywords='jupyter ml gremlin sparql',
+    keywords='jupyter neptune gremlin sparql',
     tests_require=[
         'pytest'
     ]
