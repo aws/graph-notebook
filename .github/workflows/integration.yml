@@ -86,15 +86,22 @@ jobs:
       - name: Give user /etc/hosts permission
         run: |
           sudo chmod 777 /etc/hosts
-      - uses: actions/download-artifact@master
-        with:
-          name: graph_notebook_config_integration_test.json
-          path: /tmp/graph_notebook_config_integration_test.json
+      - name: Generate test configuration
+        run: |
+          python test/integration/NeptuneIntegrationWorkflowSteps.py generate-config \
+            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
+            --aws-region ${{ secrets.AWS_REGION }}
       - name: Run Basic Tests
         env:
           GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
           pytest test/integration/without_iam
+      - name: Generate iam test configuration
+        run: |
+          python test/integration/NeptuneIntegrationWorkflowSteps.py generate-config \
+            --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
+            --aws-region ${{ secrets.AWS_REGION }} \
+            --iam
       - name: Run IAM Tests
         env:
           GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json

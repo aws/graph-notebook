@@ -20,6 +20,7 @@ from graph_notebook.configuration.generate_config import AuthModeEnum, Configura
 SUBPARSER_CREATE_CFN = 'create-cfn-stack'
 SUBPARSER_DELETE_CFN = 'delete-cfn-stack'
 SUBPARSER_RUN_TESTS = 'run-tests'
+SUBPARSER_GENERATE_CONFIG = 'generate-config'
 SUBPARSER_ENABLE_IAM = 'toggle-cluster-iam'
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -321,6 +322,13 @@ def main():
     delete_parser.add_argument('--cfn-stack-name', type=str, default='')
     delete_parser.add_argument('--aws-region', type=str, default='us-east-1')
 
+    # sub parser generate config
+    config_parser = subparsers.add_parser(SUBPARSER_GENERATE_CONFIG,
+                                          help='generate test configuration from supplied cfn stack')
+    config_parser.add_argument('--cfn-stack-name', type=str, default='')
+    config_parser.add_argument('--aws-region', type=str, default='us-east-1')
+    config_parser.add_argument('--iam', action='store_true')
+
     args = parser.parse_args()
 
     cfn_client = boto3.client('cloudformation', region_name=args.aws_region)
@@ -335,6 +343,9 @@ def main():
         set_iam_auth_on_neptune_cluster(cluster_identifier, True, neptune_client)
         logging.info('waiting for one minute while change is applied...')
         time.sleep(60)
+    elif args.which == SUBPARSER_GENERATE_CONFIG:
+        stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
+        generate_config_from_stack(stack, args.aws_region, args.iam)
 
 
 if __name__ == '__main__':
