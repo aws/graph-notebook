@@ -16,6 +16,7 @@ class TestLoadWithIAM(IntegrationTest):
         assert self.config.load_from_s3_arn != ''
         self.client = self.client_builder.with_iam(get_session()).build()
 
+    @pytest.mark.neptune
     def test_iam_load(self):
         load_format = 'turtle'
         source = TEST_BULKLOAD_SOURCE % (self.config.aws_region, 'turtle')
@@ -49,6 +50,7 @@ class TestLoadWithIAM(IntegrationTest):
         cancelled_status = res.json()
         assert 'LOAD_CANCELLED_BY_USER' in cancelled_status['payload']['feedCount'][-1]
 
+    @pytest.mark.neptune
     def test_iam_load_status(self):
         res = self.client.load_status()  # This should only give a list of load ids
         assert res.status_code == 200

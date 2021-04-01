@@ -4,8 +4,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytest
 
-from graph_notebook.status.get_status import get_status
-
 from test.integration import IntegrationTest
 
 

@@ -17,7 +17,7 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
         self.ip.run_cell_magic('sparql', f'--store-to {store_to_var}', query)
         self.assertFalse('graph_notebook_error' in self.ip.user_ns)
         sparql_res = self.ip.user_ns[store_to_var]
-        self.assertEqual(['s', 'o','p'], sparql_res['head']['vars'])
+        self.assertEqual(['s', 'o', 'p'], sparql_res['head']['vars'])
 
     @pytest.mark.jupyter
     @pytest.mark.sparql

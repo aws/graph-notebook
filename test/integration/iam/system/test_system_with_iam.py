@@ -54,7 +54,7 @@ class TestStatusWithIAM(IntegrationTest):
                     time.sleep(5)  # wait momentarily until we obtain the status again
                 else:
                     break
-            except:
+            except Exception:
                 time.sleep(5)
 
         assert status.status_code == 200
