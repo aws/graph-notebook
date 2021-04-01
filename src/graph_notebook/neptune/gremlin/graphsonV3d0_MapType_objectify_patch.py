@@ -4,7 +4,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from gremlin_python.structure.io.graphsonV3d0 import MapType
-from graph_notebook.gremlin.client_provider.hashable_dict_patch import HashableDict
+from graph_notebook.neptune.gremlin.hashable_dict_patch import HashableDict
+
 
 # Original code from Tinkerpop 3.4.1
 #

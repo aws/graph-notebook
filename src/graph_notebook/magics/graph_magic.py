@@ -115,20 +115,18 @@ class Graph(Magics):
         # You must call the parent constructor
         super(Graph, self).__init__(shell)
 
+        self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
-            config = get_config(self.config_location)
-            self.graph_notebook_config = config
-
             self.client: Client = None
-            self._generate_client_from_config(config)
-
+            self.graph_notebook_config = get_config(self.config_location)
         except FileNotFoundError:
-            self.graph_notebook_config = generate_default_config()
             print(
                 'Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
+
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
+        self._generate_client_from_config(self.graph_notebook_config)
         logger.setLevel(logging.ERROR)
 
     def _generate_client_from_config(self, config: Configuration):
