@@ -441,8 +441,6 @@ class Graph(Magics):
     @display_exceptions
     def status(self, line):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
-        logger.info(
-            f'used credentials_provider_mode={self.graph_notebook_config.iam_credentials_provider_type.name} and auth_mode={self.graph_notebook_config.auth_mode.name} to make status request')
         status_res = self.client.status()
         status_res.raise_for_status()
         res = status_res.json()
@@ -460,8 +458,6 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         generate_token = args.generate_token
         skip_prompt = args.yes
-        logger.info(
-            f'used credentials_provider_mode={self.graph_notebook_config.iam_credentials_provider_type.name} and auth_mode={self.graph_notebook_config.auth_mode.name} to make system request')
         if generate_token is False and args.token == '':
             if skip_prompt:
                 initiate_res = self.client.initiate_reset()
