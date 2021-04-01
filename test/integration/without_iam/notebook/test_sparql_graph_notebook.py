@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytest
 
-from test.integration.without_iam.notebook import GraphNotebookIntegrationTest
+from test.integration import GraphNotebookIntegrationTest
 
 
 class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
