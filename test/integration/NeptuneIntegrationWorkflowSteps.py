@@ -349,6 +349,5 @@ def main():
         config.write_to_file(TEST_CONFIG_PATH)
 
 
-
 if __name__ == '__main__':
     main()
