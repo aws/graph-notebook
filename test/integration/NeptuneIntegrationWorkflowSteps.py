@@ -268,7 +268,7 @@ def generate_config_from_stack(stack: dict, region: str, iam: bool) -> Configura
         file.writelines(new_lines)
 
     auth = AuthModeEnum.IAM if iam else AuthModeEnum.DEFAULT
-    conf = Configuration(details['endpoint'], 80, auth.ENV, details['loader_arn'], ssl=True, aws_region=region)
+    conf = Configuration(details['endpoint'], 80, auth, details['loader_arn'], ssl=True, aws_region=region)
     logging.info(f'generated configuration for test run: {conf.to_dict()}')
     return conf
 
