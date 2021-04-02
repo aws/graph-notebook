@@ -53,7 +53,7 @@ def get_training_job_name(prefix: str):
 
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
-    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='ml-db')
+    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
 Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
@@ -79,7 +79,7 @@ def delete_pretrained_data(setup_node_classification: bool,
                            setup_node_regression: bool, setup_link_prediction: bool):
     host, port, use_iam = load_configuration()
     if setup_node_classification:
-        response = signed_request("POST", service='ml-db',
+        response = signed_request("POST", service='neptune-db',
                                   url=f'https://{host}:{port}/gremlin',
                                   headers={'content-type': 'application/json'},
                                   data=json.dumps(
@@ -88,14 +88,14 @@ def delete_pretrained_data(setup_node_classification: bool,
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_node_regression:
-        response = signed_request("POST", service='ml-db',
+        response = signed_request("POST", service='neptune-db',
                                   url=f'https://{host}:{port}/gremlin',
                                   headers={'content-type': 'application/json'},
                                   data=json.dumps({'gremlin': "g.V('user_1').out('wrote').properties('score').drop()"}))
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
     if setup_link_prediction:
-        response = signed_request("POST", service='ml-db',
+        response = signed_request("POST", service='neptune-db',
                                   url=f'https://{host}:{port}/gremlin',
                                   headers={'content-type': 'application/json'},
                                   data=json.dumps({'gremlin': "g.V('user_1').outE('rated').drop()"}))
@@ -122,7 +122,7 @@ def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
     if neptune_iam_role_arn:
         query_string = f'?neptuneIamRoleArn={neptune_iam_role_arn}'
     host, port, use_iam = load_configuration()
-    response = signed_request("DELETE", service='ml-db',
+    response = signed_request("DELETE", service='neptune-db',
                               url=f'https://{host}:{port}/ml/endpoints/{training_job_name}{query_string}',
                               headers={'content-type': 'application/json'})
     if response.status_code != 200:
@@ -289,7 +289,7 @@ class MovieLensProcessor:
                     self.formatted_directory, file), bucket, f'{file_path}/{file}')
 
     def prepare_movielens_data(self, s3_bucket: str):
-        bucket_name = f'{s3_bucket}/ml-formatted/movielens-100k'
+        bucket_name = f'{s3_bucket}/neptune-formatted/movielens-100k'
         self.__download_and_unzip()
         self.__process_movies_genres()
         self.__process_users()

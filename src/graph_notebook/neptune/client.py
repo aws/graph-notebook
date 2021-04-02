@@ -60,7 +60,7 @@ FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
                        'LOAD_FAILED_INVALID_REQUEST', ]
 
 EXPORT_SERVICE_NAME = 'execute-api'
-EXPORT_ACTION = 'ml-export'
+EXPORT_ACTION = 'neptune-export'
 EXTRA_HEADERS = {'content-type': 'application/json'}
 SPARQL_ACTION = 'sparql'
 
