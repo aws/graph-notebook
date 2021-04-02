@@ -345,6 +345,8 @@ def main():
         time.sleep(60)
     elif args.which == SUBPARSER_GENERATE_CONFIG:
         stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
+        cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
+        set_iam_auth_on_neptune_cluster(cluster_identifier, args.iam, neptune_client)
         config = generate_config_from_stack(stack, args.aws_region, args.iam)
         config.write_to_file(TEST_CONFIG_PATH)
 
