@@ -345,7 +345,9 @@ def main():
         time.sleep(60)
     elif args.which == SUBPARSER_GENERATE_CONFIG:
         stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
-        generate_config_from_stack(stack, args.aws_region, args.iam)
+        config = generate_config_from_stack(stack, args.aws_region, args.iam)
+        config.write_to_file(TEST_CONFIG_PATH)
+
 
 
 if __name__ == '__main__':

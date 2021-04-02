@@ -4,14 +4,15 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-- Add support for Mode, queueRequest, and Dependencies parameters when running %load command
-- Add support for list and dict as map keys in Python Gremlin
+- Add support for Mode, queueRequest, and Dependencies parameters when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/91))
+- Add support for list and dict as map keys in Python Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/100))
+- Refactor modules that call to Neptune or other SPARQL/Gremlin endpoints to use a unified client object ([Link to PR](https://github.com/aws/graph-notebook/pull/104))
 
 ## Release 2.0.12 (Mar 25, 2021)
 
- - Add default parameters for `get_load_status`
- - Add ipython as a dependency in `setup.py` ([Link to PT](https://github.com/aws/graph-notebook/pull/95))
- - Add parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage`
+ - Add default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
+ - Add ipython as a dependency in `setup.py` ([Link to PR](https://github.com/aws/graph-notebook/pull/95))
+ - Add parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage` ([Link to PR](https://github.com/aws/graph-notebook/pull/88))
 
 ## Release 2.0.10 (Mar 18, 2021)
 
