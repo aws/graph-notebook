@@ -185,14 +185,13 @@ class Client(object):
         return self._query_status('gremlin', query_id=query_id, cancelQuery=True)
 
     def gremlin_explain(self, query: str) -> requests.Response:
-        url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/explain'
-        data = {'gremlin': query}
-        req = self._prepare_request('POST', url, data=json.dumps(data))
-        res = self._http_session.send(req)
-        return res
+        return self._gremlin_query_plan(query, 'explain')
 
     def gremlin_profile(self, query: str) -> requests.Response:
-        url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/profile'
+        return self._gremlin_query_plan(query, 'profile')
+
+    def _gremlin_query_plan(self, query: str, plan_type: str, ) -> requests.Response:
+        url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/{plan_type}'
         data = {'gremlin': query}
         req = self._prepare_request('POST', url, data=json.dumps(data))
         res = self._http_session.send(req)
@@ -206,7 +205,7 @@ class Client(object):
 
     def load(self, source: str, source_format: str, iam_role_arn: str, region: str, **kwargs) -> requests.Response:
         """
-        For a full list of allow parameters, see aws documentation on the Neptune loader
+        For a full list of allowed parameters, see aws documentation on the Neptune loader
         endpoint: https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-load.html
         """
         payload = {
