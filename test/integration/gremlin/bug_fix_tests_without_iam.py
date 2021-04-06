@@ -10,6 +10,7 @@ from graph_notebook.gremlin.query import do_gremlin_query
 
 from test.integration import IntegrationTest
 
+
 logger = logging.getLogger('TestUnhashableTypeDict')
 
 
@@ -52,7 +53,7 @@ class TestBugFixes(IntegrationTest):
             except Exception as e:
                 logger.error(f'query {query} failed due to {e}')
 
-    def test_do_gremlin_query(self):
+    def test_do_gremlin_query_with_map_as_key(self):
         query = """
         g.V().hasLabel("Interest").as("int")
             .in("interested")
@@ -63,5 +64,27 @@ class TestBugFixes(IntegrationTest):
             .groupCount().unfold()
         """
         results = do_gremlin_query(query, self.host, self.port, self.ssl, self.client_provider)
+        keys_are_hashable = True
+        for key in results[0].keys():
+            try:
+                hash(key)
+            except TypeError:
+                keys_are_hashable = False
+                break
+        self.assertEqual(keys_are_hashable, True)
 
-        self.assertEqual(results, [{(('int', 4), ('exp', 'P1')): 1}])
+    def test_do_gremlin_query_with_list_as_key(self):
+        query = """
+        g.V('m1').group()
+            .by(out().fold())
+            .by(out().count())
+        """
+        results = do_gremlin_query(query, self.host, self.port, self.ssl, self.client_provider)
+        keys_are_hashable = True
+        for key in results[0].keys():
+            try:
+                hash(key)
+            except TypeError:
+                keys_are_hashable = False
+                break
+        self.assertEqual(keys_are_hashable, True)
