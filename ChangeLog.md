@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 
 - Add support for Mode, queueRequest, and Dependencies parameters when running %load command
+- Add metadata output tab for magic queries
 
 ## Release 2.0.12 (Mar 25, 2021)
 

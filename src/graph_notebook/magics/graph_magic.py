@@ -11,6 +11,8 @@ import json
 import time
 import os
 import uuid
+import sys
+import re
 from enum import Enum
 
 import ipywidgets as widgets
@@ -163,37 +165,54 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         tab = widgets.Tab()
+        titles = []
+        children = []
+
+        metadata = {
+            "Query mode": args.query_mode,
+            "Total execution time (ms)": "N/A",
+            "# of results": "N/A",
+            "Response size (bytes)": "N/A",
+            "Results size (bytes)": "N/A"
+        }
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
 
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
+            query_start = time.time() * 1000
             res = do_sparql_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                     self.graph_notebook_config.ssl, request_generator, path=path)
+            query_time = float(time.time() * 1000 - query_start)
             store_to_ns(args.store_to, res, local_ns)
+
+            metadata["Total execution time (ms)"] = query_time
+            metadata["Response size (bytes)"] = sys.getsizeof(json.dumps(res))
+
+            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            titles.append('Explain')
+            children.append(explain_output)
+
             if 'error' in res:
                 html = error_template.render(error=json.dumps(res['error'], indent=2))
             else:
                 html = sparql_explain_template.render(table=res)
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
                 display(HTML(html))
 
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
                 'Accept': 'application/sparql-results+json'}
+            query_start = time.time()*1000
             res = do_sparql_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                   self.graph_notebook_config.ssl, request_generator, headers, path=path)
+            query_time = float(time.time()*1000 - query_start)
+            metadata["Total execution time (ms)"] = query_time
             store_to_ns(args.store_to, res, local_ns)
-            titles = []
-            children = []
 
-            display(tab)
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
             # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
@@ -206,6 +225,10 @@ class Graph(Magics):
                 hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
                 titles.append('Table')
                 children.append(hbox)
+
+                metadata["# of results"] = len(res['results']['bindings'])
+                metadata["Results size (bytes)"] = sys.getsizeof(json.dumps(res['results']['bindings']))
+                metadata["Response size (bytes)"] = sys.getsizeof(json.dumps(res))
 
                 expand_all = line == '--expand-all'
                 sn = SPARQLNetwork(expand_all=expand_all)
@@ -232,8 +255,14 @@ class Graph(Magics):
                 # of showing a tsv with each line being a result binding in addition to new ones.
                 if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
                     lines = []
+                    bind_size = 0
                     for b in res['results']['bindings']:
-                        lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                        bind_s = b["subject"]["value"]
+                        bind_p = b["predicate"]["value"]
+                        bind_o = b["object"]["value"]
+                        bind_size += sys.getsizeof(bind_s) + sys.getsizeof(bind_p) + sys.getsizeof(bind_o)
+                        lines.append(f'{bind_s}\t{bind_p}\t{bind_o}')
+                    #metadata['Results size (bytes)'] = bind_size
                     raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
                     with raw_output:
                         html = sparql_construct_template.render(lines=lines)
@@ -247,12 +276,20 @@ class Graph(Magics):
             children.append(json_output)
             titles.append('JSON')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        metadata_html = pre_container_template.render(content=json.dumps(metadata, indent=4))
+        with metadata_output:
+            display(HTML(metadata_html))
 
     @line_magic
     @needs_local_scope
@@ -303,46 +340,104 @@ class Graph(Magics):
         logger.debug(f'Arguments {args}')
 
         tab = widgets.Tab()
+        children = []
+        titles = []
+        # TODO: Find a way to get the metadata in the profile query response when doing default/explain queries
+        metadata = {
+            "Query mode": args.query_mode,
+            "Query execution time (ms)": "N/A",
+            "Total execution time (ms)": "N/A",
+            "# of predicates": "N/A",
+            "# of results": "N/A",
+            "Response size (bytes)": "N/A",
+            "Serialization execution time (ms)": "N/A",
+            "Results size (bytes)": "N/A"
+        }
+
         if mode == QueryMode.EXPLAIN:
             request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                          self.graph_notebook_config.iam_credentials_provider_type)
-
+            query_start = time.time() * 1000.0
             query_res = do_gremlin_explain(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                            self.graph_notebook_config.ssl, request_generator)
+            query_time = float(time.time() * 1000.0 - query_start)
+            metadata["Total execution time (ms)"] = query_time
+            query_memory_size = sys.getsizeof(json.dumps(query_res))
+            metadata["Response size (bytes)"] = query_memory_size
+            # # of predicates
+            predicates_regex = re.search(r'# of predicates: (.*?)\n', query_res['explain'])
+            if predicates_regex:
+                metadata["# of predicates"] = predicates_regex.group(1)
+            else:
+                metadata["# of predicates"] = "N/A"
+
+            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(explain_output)
+            titles.append('Explain')
+
             if 'explain' in query_res:
                 html = pre_container_template.render(content=query_res['explain'])
             else:
                 html = pre_container_template.render(content='No explain found')
-
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
                 display(HTML(html))
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         elif mode == QueryMode.PROFILE:
             request_generator = create_request_generator(self.graph_notebook_config.auth_mode,
                                                          self.graph_notebook_config.iam_credentials_provider_type)
 
+            query_start = time.time() * 1000.0
             query_res = do_gremlin_profile(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                            self.graph_notebook_config.ssl, request_generator)
+            query_time = float(time.time() * 1000.0 - query_start)
+
+            query_res_profile = query_res['profile']
+            # Query execution time in Neptune DB
+            querytime_regex = re.search(r'Query Execution: (.*?)\n', query_res_profile)
+            if querytime_regex:
+                metadata["Query execution time (ms)"] = querytime_regex.group(1)
+            # Total query execution time
+            metadata["Total execution time (ms)"] = query_time
+            # # of predicates
+            predicates_regex = re.search(r'# of predicates: (.*?)\n', query_res_profile)
+            if predicates_regex:
+                metadata["# of predicates"] = predicates_regex.group(1)
+            # Count of results
+            count_regex = re.search(r'Count: (.*?)\n', query_res_profile)
+            if count_regex:
+                metadata["# of results"] = count_regex.group(1)
+            # Size of actual query response
+            metadata["Response size (bytes)"] = sys.getsizeof(json.dumps(query_res))
+            # Serialization
+            serialization_regex = re.search(r'Serialization: (.*?)\n', query_res_profile)
+            if serialization_regex:
+                metadata["Serialization execution time (ms)"] = serialization_regex.group(1)
+            # Size of results returned
+            results_size_regex = re.search(r'Response size (bytes): (.*?)\n', query_res_profile)
+            if results_size_regex:
+                metadata["Results size (bytes)"] = results_size_regex.group(1)
+
+            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(profile_output)
+            titles.append('Profile')
+
             if 'profile' in query_res:
                 html = pre_container_template.render(content=query_res['profile'])
             else:
                 html = pre_container_template.render(content='No profile found')
-            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with profile_output:
                 display(HTML(html))
-            tab.children = [profile_output]
-            tab.set_title(0, 'Profile')
-            display(tab)
         else:
             client_provider = create_client_provider(self.graph_notebook_config.auth_mode,
                                                      self.graph_notebook_config.iam_credentials_provider_type)
+            query_start = time.time()*1000.0
             query_res = do_gremlin_query(cell, self.graph_notebook_config.host, self.graph_notebook_config.port,
                                          self.graph_notebook_config.ssl, client_provider)
-            children = []
-            titles = []
+            query_time = float(time.time() * 1000.0 - query_start)
+            metadata["Total execution time (ms)"] = query_time
+            query_results_num = len(query_res)
+            metadata["# of results"] = query_results_num
+            query_memory_size = sys.getsizeof(query_res)
+            metadata["Response size (bytes)"] = query_memory_size
 
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Console')
@@ -367,15 +462,22 @@ class Graph(Magics):
             except ValueError as value_error:
                 logger.debug(f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-            display(tab)
-
             table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
             table_html = gremlin_table_template.render(guid=table_id, results=query_res)
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        metadata_html = pre_container_template.render(content=json.dumps(metadata, indent=4))
+        with metadata_output:
+            display(HTML(metadata_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
