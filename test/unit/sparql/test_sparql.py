@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import unittest
 
-from graph_notebook.sparql.query import get_query_type, query_type_to_action
+from graph_notebook.magics.graph_magic import get_query_type, query_type_to_action
 
 
 class TestSparql(unittest.TestCase):

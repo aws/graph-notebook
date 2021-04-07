@@ -6,12 +6,8 @@ import time
 from IPython.core.display import display
 from ipywidgets import widgets
 
-from graph_notebook.authentication.iam_credentials_provider.credentials_factory import credentials_provider_factory
-from graph_notebook.authentication.iam_credentials_provider.credentials_provider import Credentials
-from graph_notebook.configuration.generate_config import Configuration, AuthModeEnum
 from graph_notebook.magics.parsing import str_to_namespace_var
-from graph_notebook.ml.sagemaker import start_export, get_export_status, start_processing_job, get_processing_status, \
-    start_training, get_training_status, start_create_endpoint, get_endpoint_status, EXPORT_SERVICE_NAME
+from graph_notebook.neptune.client import Client
 
 logger = logging.getLogger("neptune_ml_magic_handler")
 
@@ -146,17 +142,26 @@ def generate_neptune_ml_parser():
     return parser
 
 
-def neptune_ml_export_start(params, export_url: str, export_ssl: bool = True, creds: Credentials = None):
+def neptune_ml_export_start(client: Client, params, export_url: str, export_ssl: bool = True):
     if type(params) is str:
         params = json.loads(params)
 
-    job = start_export(export_url, params, export_ssl, creds)
+    export_res = client.export(export_url, params, export_ssl)
+    export_res.raise_for_status()
+    job = export_res.json()
     return job
 
 
-def wait_for_export(export_url: str, job_id: str, output: widgets.Output,
+def neptune_ml_export_status(client: Client, export_url: str, job_id: str, export_ssl: bool = True):
+    res = client.export_status(export_url, job_id, export_ssl)
+    res.raise_for_status()
+    job = res.json()
+    return job
+
+
+def wait_for_export(client: Client, export_url: str, job_id: str, output: widgets.Output,
                     export_ssl: bool = True, wait_interval: int = DEFAULT_WAIT_INTERVAL,
-                    wait_timeout: int = DEFAULT_WAIT_TIMEOUT, creds: Credentials = None):
+                    wait_timeout: int = DEFAULT_WAIT_TIMEOUT):
     job_id_output = widgets.Output()
     update_widget_output = widgets.Output()
     with output:
@@ -170,7 +175,9 @@ def wait_for_export(export_url: str, job_id: str, output: widgets.Output,
         while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
             update_widget_output.clear_output()
             print('Checking for latest status...')
-            export_status = get_export_status(export_url, export_ssl, job_id, creds)
+            status_res = client.export_status(export_url, job_id, export_ssl)
+            status_res.raise_for_status()
+            export_status = status_res.json()
             if export_status['status'] in ['succeeded', 'failed']:
                 print('Export is finished')
                 return export_status
@@ -180,32 +187,30 @@ def wait_for_export(export_url: str, job_id: str, output: widgets.Output,
                 time.sleep(wait_interval)
 
 
-def neptune_ml_export(args: argparse.Namespace, config: Configuration, output: widgets.Output, cell: str):
-    auth_mode = AuthModeEnum.IAM if args.export_iam else AuthModeEnum.DEFAULT
-    creds = None
-    if auth_mode == AuthModeEnum.IAM:
-        creds = credentials_provider_factory(config.iam_credentials_provider_type).get_iam_credentials()
-
+def neptune_ml_export(args: argparse.Namespace, client: Client, output: widgets.Output,
+                      cell: str):
     export_ssl = not args.export_no_ssl
     if args.which_sub == 'start':
         if cell == '':
             return 'Cell body must have json payload or reference notebook variable using syntax ${payload_var}'
-        export_job = neptune_ml_export_start(cell, args.export_url, export_ssl, creds)
+        export_job = neptune_ml_export_start(client, cell, args.export_url, export_ssl)
         if args.wait:
-            return wait_for_export(args.export_url, export_job['jobId'],
-                                   output, export_ssl, args.wait_interval, args.wait_timeout, creds)
+            return wait_for_export(client, args.export_url, export_job['jobId'],
+                                   output, export_ssl, args.wait_interval, args.wait_timeout)
         else:
             return export_job
     elif args.which_sub == 'status':
         if args.wait:
-            status = wait_for_export(args.export_url, args.job_id, output, export_ssl, args.wait_interval,
-                                     args.wait_timeout, creds)
+            status = wait_for_export(client, args.export_url, args.job_id, output, export_ssl, args.wait_interval,
+                                     args.wait_timeout)
         else:
-            status = get_export_status(args.export_url, export_ssl, args.job_id, creds)
+            status_res = client.export_status(args.export_url, args.job_id, export_ssl)
+            status_res.raise_for_status()
+            status = status_res.json()
         return status
 
 
-def wait_for_dataprocessing(job_id: str, config: Configuration, request_param_generator, output: widgets.Output,
+def wait_for_dataprocessing(job_id: str, client: Client, output: widgets.Output,
                             wait_interval: int = DEFAULT_WAIT_INTERVAL, wait_timeout: int = DEFAULT_WAIT_TIMEOUT):
     job_id_output = widgets.Output()
     update_status_output = widgets.Output()
@@ -219,7 +224,9 @@ def wait_for_dataprocessing(job_id: str, config: Configuration, request_param_ge
         beginning_time = datetime.datetime.utcnow()
         while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
             update_status_output.clear_output()
-            status = get_processing_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
+            status_res = client.dataprocessing_job_status(job_id)
+            status_res.raise_for_status()
+            status = status_res.json()
             if status['status'] in ['Completed', 'Failed']:
                 print('Data processing is finished')
                 return status
@@ -229,37 +236,34 @@ def wait_for_dataprocessing(job_id: str, config: Configuration, request_param_ge
                 time.sleep(wait_interval)
 
 
-def neptune_ml_dataprocessing(args: argparse.Namespace, request_param_generator, output: widgets.Output,
-                              config: Configuration, params: dict = None):
+def neptune_ml_dataprocessing(args: argparse.Namespace, client, output: widgets.Output, params: dict = None):
     if args.which_sub == 'start':
         if params is None or params == '' or params == {}:
             params = {
-                'inputDataS3Location': args.s3_input_uri,
-                'processedDataS3Location': args.s3_processed_uri,
                 'id': args.job_id,
                 'configFileName': args.config_file_name
             }
 
-        processing_job = start_processing_job(config.host, str(config.port), config.ssl,
-                                              request_param_generator, params)
+        processing_job_res = client.dataprocessing_start(args.s3_input_uri, args.s3_processed_uri, **params)
+        processing_job_res.raise_for_status()
+        processing_job = processing_job_res.json()
         job_id = params['id']
         if args.wait:
-            return wait_for_dataprocessing(job_id, config, request_param_generator,
-                                           output, args.wait_interval, args.wait_timeout)
+            return wait_for_dataprocessing(job_id, client, output, args.wait_interval, args.wait_timeout)
         else:
             return processing_job
     elif args.which_sub == 'status':
         if args.wait:
-            return wait_for_dataprocessing(args.job_id, config, request_param_generator, output, args.wait_interval,
-                                           args.wait_timeout)
+            return wait_for_dataprocessing(args.job_id, client, output, args.wait_interval, args.wait_timeout)
         else:
-            return get_processing_status(config.host, str(config.port), config.ssl, request_param_generator,
-                                         args.job_id)
+            processing_status = client.dataprocessing_job_status(args.job_id)
+            processing_status.raise_for_status()
+            return processing_status.json()
     else:
         return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
-def wait_for_training(job_id: str, config: Configuration, request_param_generator, output: widgets.Output,
+def wait_for_training(job_id: str, client: Client, output: widgets.Output,
                       wait_interval: int = DEFAULT_WAIT_INTERVAL, wait_timeout: int = DEFAULT_WAIT_TIMEOUT):
     job_id_output = widgets.Output()
     update_status_output = widgets.Output()
@@ -273,7 +277,9 @@ def wait_for_training(job_id: str, config: Configuration, request_param_generato
         beginning_time = datetime.datetime.utcnow()
         while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
             update_status_output.clear_output()
-            status = get_training_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
+            training_status_res = client.modeltraining_job_status(job_id)
+            training_status_res.raise_for_status()
+            status = training_status_res.json()
             if status['status'] in ['Completed', 'Failed']:
                 print('Training is finished')
                 return status
@@ -283,35 +289,34 @@ def wait_for_training(job_id: str, config: Configuration, request_param_generato
                 time.sleep(wait_interval)
 
 
-def neptune_ml_training(args: argparse.Namespace, request_param_generator, config: Configuration,
-                        output: widgets.Output, params):
+def neptune_ml_training(args: argparse.Namespace, client: Client, output: widgets.Output, params):
     if args.which_sub == 'start':
         if params is None or params == '' or params == {}:
             params = {
                 "id": args.job_id,
                 "dataProcessingJobId": args.data_processing_id,
                 "trainingInstanceType": args.instance_type,
-                "trainModelS3Location": args.s3_output_uri
             }
 
-        training_job = start_training(config.host, str(config.port), config.ssl, request_param_generator, params)
+        start_training_res = client.modeltraining_start(args.job_id, args.s3_output_uri, **params)
+        start_training_res.raise_for_status()
+        training_job = start_training_res.json()
         if args.wait:
-            return wait_for_training(training_job['id'], config, request_param_generator, output, args.wait_interval,
-                                     args.wait_timeout)
+            return wait_for_training(training_job['id'], client, output, args.wait_interval, args.wait_timeout)
         else:
             return training_job
     elif args.which_sub == 'status':
         if args.wait:
-            return wait_for_training(args.job_id, config, request_param_generator, output, args.wait_interval,
-                                     args.wait_timeout)
+            return wait_for_training(args.job_id, client, output, args.wait_interval, args.wait_timeout)
         else:
-            return get_training_status(config.host, str(config.port), config.ssl, request_param_generator,
-                                       args.job_id)
+            training_status_res = client.modeltraining_job_status(args.job_id)
+            training_status_res.raise_for_status()
+            return training_status_res.json()
     else:
         return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
-def wait_for_endpoint(job_id: str, config: Configuration, request_param_generator, output: widgets.Output,
+def wait_for_endpoint(job_id: str, client: Client, output: widgets.Output,
                       wait_interval: int = DEFAULT_WAIT_INTERVAL, wait_timeout: int = DEFAULT_WAIT_TIMEOUT):
     job_id_output = widgets.Output()
     update_status_output = widgets.Output()
@@ -325,7 +330,9 @@ def wait_for_endpoint(job_id: str, config: Configuration, request_param_generato
         beginning_time = datetime.datetime.utcnow()
         while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
             update_status_output.clear_output()
-            status = get_endpoint_status(config.host, str(config.port), config.ssl, request_param_generator, job_id)
+            endpoint_status_res = client.endpoints_status(job_id)
+            endpoint_status_res.raise_for_status()
+            status = endpoint_status_res.json()
             if status['status'] in ['InService', 'Failed']:
                 print('Endpoint creation is finished')
                 return status
@@ -335,47 +342,44 @@ def wait_for_endpoint(job_id: str, config: Configuration, request_param_generato
                 time.sleep(wait_interval)
 
 
-def neptune_ml_endpoint(args: argparse.Namespace, request_param_generator,
-                        config: Configuration, output: widgets.Output, params):
+def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widgets.Output, params):
     if args.which_sub == 'create':
         if params is None or params == '' or params == {}:
             params = {
                 "id": args.job_id,
-                "mlModelTrainingJobId": args.model_job_id,
                 'instanceType': args.instance_type
             }
 
-        create_endpoint_job = start_create_endpoint(config.host, str(config.port), config.ssl,
-                                                    request_param_generator, params)
-
+        create_endpoint_res = client.endpoints_create(args.model_job_id, **params)
+        create_endpoint_res.raise_for_status()
+        create_endpoint_job = create_endpoint_res.json()
         if args.wait:
-            return wait_for_endpoint(create_endpoint_job['id'], config, request_param_generator, output,
-                                     args.wait_interval, args.wait_timeout)
+            return wait_for_endpoint(create_endpoint_job['id'], client, output, args.wait_interval, args.wait_timeout)
         else:
             return create_endpoint_job
     elif args.which_sub == 'status':
         if args.wait:
-            return wait_for_endpoint(args.job_id, config, request_param_generator, output,
-                                     args.wait_interval, args.wait_timeout)
+            return wait_for_endpoint(args.job_id, client, output, args.wait_interval, args.wait_timeout)
         else:
-            return get_endpoint_status(config.host, str(config.port), config.ssl, request_param_generator, args.job_id)
+            endpoint_status = client.endpoints_status(args.job_id)
+            endpoint_status.raise_for_status()
+            return endpoint_status.json()
     else:
         return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
-def neptune_ml_magic_handler(args, request_param_generator, config: Configuration, output: widgets.Output,
-                             cell: str = '', local_ns: dict = None) -> any:
+def neptune_ml_magic_handler(args, client: Client, output: widgets.Output, cell: str = '', local_ns: dict = None):
     if local_ns is None:
         local_ns = {}
     cell = str_to_namespace_var(cell, local_ns)
 
     if args.which == 'export':
-        return neptune_ml_export(args, config, output, cell)
+        return neptune_ml_export(args, client, output, cell)
     elif args.which == 'dataprocessing':
-        return neptune_ml_dataprocessing(args, request_param_generator, output, config, cell)
+        return neptune_ml_dataprocessing(args, client, output, cell)
     elif args.which == 'training':
-        return neptune_ml_training(args, request_param_generator, config, output, cell)
+        return neptune_ml_training(args, client, output, cell)
     elif args.which == 'endpoint':
-        return neptune_ml_endpoint(args, request_param_generator, config, output, cell)
+        return neptune_ml_endpoint(args, client, output, cell)
     else:
         return f'sub parser {args.which} was not recognized'

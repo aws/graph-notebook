@@ -35,4 +35,4 @@ jobs:
           python -m graph_notebook.notebooks.install
       - name: Test with pytest
         run: |
-          pytest
+          pytest test/unit

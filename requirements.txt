@@ -9,8 +9,9 @@ jupyter-contrib-nbextensions
 widgetsnbextension
 gremlinpython
 requests==2.24.0
+ipython==7.16.1
 
 # requirements for testing
 boto3==1.15.15
 botocore==1.18.18
-ipython==7.16.1
+pytest==6.2.2
