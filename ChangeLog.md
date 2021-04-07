@@ -8,10 +8,6 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Add support for list and dict as map keys in Python Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/100))
 - Refactor modules that call to Neptune or other SPARQL/Gremlin endpoints to use a unified client object ([Link to PR](https://github.com/aws/graph-notebook/pull/104))
 - Added an additional notebook under [02-Visualization](src/graph_notebook/notebooks/02-Visualization) demonstrating how to use the visualzation grouping and coloring options in Gremlin. ([Link to PR](https://github.com/aws/graph-notebook/pull/107))
-
-
-- Added an additional notebook under [02-Visualization](src/graph_notebook/notebooks/02-Visualization) demonstrating how to use the visualzation grouping and coloring options in Gremlin.
-
 ## Release 2.0.12 (Mar 25, 2021)
 
  - Add default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
