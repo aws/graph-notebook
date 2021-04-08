@@ -7,7 +7,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Add support for Mode, queueRequest, and Dependencies parameters when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/91))
 - Add support for list and dict as map keys in Python Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/100))
 - Refactor modules that call to Neptune or other SPARQL/Gremlin endpoints to use a unified client object ([Link to PR](https://github.com/aws/graph-notebook/pull/104))
-- Add metadata output tab for magic queries ([Link to PR]())
+- Add metadata output tab for magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/108))
 
 ## Release 2.0.12 (Mar 25, 2021)
 
