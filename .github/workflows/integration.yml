@@ -4,10 +4,11 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - austinkline/localtests
-
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - '**.py'
+      - './requirements.txt'
 jobs:
   gremlin-tests:
     runs-on: ubuntu-latest
