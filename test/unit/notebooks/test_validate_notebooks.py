@@ -27,6 +27,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/Blog Workbench Visualization.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/EPL-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/EPL-SPARQL.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Visualization/Visualization-Grouping-Coloring-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/00-Sample-Applications-Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/01-Fraud-Graphs/01-Building-a-Fraud-Graph-Application.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application.ipynb',
