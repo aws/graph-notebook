@@ -11,6 +11,8 @@ import json
 import time
 import os
 import uuid
+import sys
+import re
 from enum import Enum
 
 import ipywidgets as widgets
@@ -21,6 +23,7 @@ from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
+from datetime import timedelta
 
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, AuthModeEnum, \
@@ -37,6 +40,7 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
+from graph_notebook.magics.metadata import Metric, Metadata
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -105,6 +109,19 @@ def query_type_to_action(query_type):
     else:
         # TODO: check explicitly for all query types, raise exception for invalid query
         return 'sparqlupdate'
+
+
+def set_request_metrics(metadata: Metadata, time_elapsed: timedelta = None, status: int = None, status_ok: str = None,
+                        content: any = None):
+    if time_elapsed:
+        metadata.set_metric_value('request_time', 1000 * time_elapsed.total_seconds())
+    if status:
+        metadata.set_metric_value('status', status)
+    if status_ok:
+        metadata.set_metric_value('status_ok', status_ok)
+    if content:
+        metadata.set_metric_value('resp_size', sys.getsizeof(content))
+    return metadata
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -201,22 +218,36 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         tab = widgets.Tab()
+        titles = []
+        children = []
+
+        sparql_metadata = Metadata()
+
+        mode_metric = Metric('mode', 'Query mode', args.query_mode)
+        request_time_metric = Metric('request_time', 'Request execution time (ms)')
+        status_metric = Metric('status', 'Status code')
+        status_ok_metric = Metric('status_ok', 'Status OK?')
+        results_metric = Metric('results', '# of results')
+        resp_size_metric = Metric('resp_size', 'Response content size (bytes)')
+        sparql_metadata.bulk_insert_metrics([mode_metric, request_time_metric, status_metric, status_ok_metric,
+                                             results_metric, resp_size_metric])
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
+            sparql_metadata = set_request_metrics(metadata=sparql_metadata,
+                                                  time_elapsed=res.elapsed, status=res.status_code,
+                                                  status_ok=res.ok, content=res.content)
             explain = res.content.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
-            html = sparql_explain_template.render(table=explain)
             explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            titles.append('Explain')
+            children.append(explain_output)
+            html = sparql_explain_template.render(table=explain)
             with explain_output:
                 display(HTML(html))
-
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -224,12 +255,12 @@ class Graph(Magics):
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
             query_res.raise_for_status()
+            sparql_metadata = set_request_metrics(metadata=sparql_metadata,
+                                                  time_elapsed=query_res.elapsed, status=query_res.status_code,
+                                                  status_ok=query_res.ok, content=query_res.content)
             res = query_res.json()
             store_to_ns(args.store_to, res, local_ns)
-            titles = []
-            children = []
 
-            display(tab)
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
@@ -243,6 +274,8 @@ class Graph(Magics):
                 hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
                 titles.append('Table')
                 children.append(hbox)
+
+                sparql_metadata.set_metric_value('results', len(res['results']['bindings']))
 
                 sn = SPARQLNetwork(expand_all=args.expand_all)
                 sn.extract_prefix_declarations_from_query(cell)
@@ -283,12 +316,20 @@ class Graph(Magics):
             children.append(json_output)
             titles.append('JSON')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        children.append(metadata_output)
+        titles.append('Query Metadata')
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        with metadata_output:
+            display(HTML(sparql_metadata.to_html()))
 
     @line_magic
     @needs_local_scope
@@ -337,40 +378,89 @@ class Graph(Magics):
         logger.debug(f'Arguments {args}')
 
         tab = widgets.Tab()
+        children = []
+        titles = []
+
+        gremlin_metadata = Metadata()
+
+        mode_metric = Metric('mode', 'Query mode', args.query_mode)
+        query_time = Metric('query_time', 'Query execution time (ms)')
+        request_time = Metric('request_time', 'Request execution time (ms)')
+        status_metric = Metric('status', 'Status code')
+        status_ok_metric = Metric('status_ok', 'Status OK?')
+        predicates = Metric('predicates', '# of predicates')
+        results_metric = Metric('results', '# of results')
+        resp_size_metric = Metric('resp_size', 'Response size (bytes)')
+        seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
+        results_size_metric = Metric('results_size', 'Results size (bytes)')
+        gremlin_metadata.bulk_insert_metrics([mode_metric, query_time, request_time, status_metric, status_ok_metric,
+                                              predicates, results_metric, resp_size_metric, seri_time_metric,
+                                              results_size_metric])
+
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
+            gremlin_metadata = set_request_metrics(metadata=gremlin_metadata,
+                                                   time_elapsed=res.elapsed, status=res.status_code,
+                                                   status_ok=res.ok, content=res.content)
             query_res = res.content.decode('utf-8')
+            predicates_regex = re.search(r'# of predicates: (.*?)\n', query_res)
+            if predicates_regex:
+                gremlin_metadata.set_metric_value('predicates', int(predicates_regex.group(1)))
+            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(explain_output)
+            titles.append('Explain')
             if 'Neptune Gremlin Explain' in query_res:
                 html = pre_container_template.render(content=query_res)
             else:
                 html = pre_container_template.render(content='No explain found')
-
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
                 display(HTML(html))
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         elif mode == QueryMode.PROFILE:
             res = self.client.gremlin_profile(cell)
             res.raise_for_status()
+            gremlin_metadata = set_request_metrics(metadata=gremlin_metadata,
+                                                   time_elapsed=res.elapsed, status=res.status_code,
+                                                   status_ok=res.ok, content=res.content)
             query_res = res.content.decode('utf-8')
+
+            # Query execution time in Neptune DB
+            querytime_regex = re.search(r'Query Execution: (.*?)\n', query_res)
+            if querytime_regex:
+                gremlin_metadata.set_metric_value('query_time', float(querytime_regex.group(1)))
+            # # of predicates
+            predicates_regex = re.search(r'# of predicates: (.*?)\n', query_res)
+            if predicates_regex:
+                gremlin_metadata.set_metric_value('predicates', int(predicates_regex.group(1)))
+            # Count of results
+            count_regex = re.search(r'Count: (.*?)\n', query_res)
+            if count_regex:
+                gremlin_metadata.set_metric_value('results', int(count_regex.group(1)))
+            # Serialization
+            serialization_regex = re.search(r'Serialization: (.*?)\n', query_res)
+            if serialization_regex:
+                gremlin_metadata.set_metric_value('seri_time', float(serialization_regex.group(1)))
+            # Size of results returned
+            results_size_regex = re.search(r'Response size (bytes): (.*?)\n', query_res)
+            if results_size_regex:
+                gremlin_metadata.set_metric_value('results_size', int(results_size_regex.group(1)))
+
+            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(profile_output)
+            titles.append('Profile')
             if 'Neptune Gremlin Profile' in query_res:
                 html = pre_container_template.render(content=query_res)
             else:
                 html = pre_container_template.render(content='No profile found')
-            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with profile_output:
                 display(HTML(html))
-            tab.children = [profile_output]
-            tab.set_title(0, 'Profile')
-            display(tab)
         else:
+            query_start = time.time()*1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             query_res = self.client.gremlin_query(cell)
-            children = []
-            titles = []
-
+            query_time = time.time()*1000 - query_start
+            gremlin_metadata.set_metric_value('request_time', query_time)
+            gremlin_metadata.set_metric_value('resp_size', sys.getsizeof(query_res))
+            gremlin_metadata.set_metric_value('results', len(query_res))
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Console')
             children.append(table_output)
@@ -394,15 +484,22 @@ class Graph(Magics):
             except ValueError as value_error:
                 logger.debug(f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-            display(tab)
-
             table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
             table_html = gremlin_table_template.render(guid=table_id, results=query_res)
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        with metadata_output:
+            display(HTML(gremlin_metadata.to_html()))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
