@@ -110,7 +110,7 @@ def create_sparql_metadata_obj(q_mode: str) -> Metadata:
 
 
 def build_sparql_metadata_from_query(query_type: str, res: Response, results: any = None, scd_query: bool = False) -> Metadata:
-    if query_type is 'explain':
+    if query_type == 'explain':
         sparql_metadata = create_sparql_metadata_obj('explain')
         sparql_metadata.set_request_metrics(res)
         return sparql_metadata
@@ -123,12 +123,12 @@ def build_sparql_metadata_from_query(query_type: str, res: Response, results: an
 
 
 def build_gremlin_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
-    if query_type is 'explain':
+    if query_type == 'explain':
         gremlin_metadata = create_gremlin_metadata_obj('explain')
         gremlin_metadata.set_request_metrics(res)
         gremlin_metadata.set_metric_value('predicates', int(re.search(r'# of predicates: (.*?)\n', results).group(1)))
         return gremlin_metadata
-    elif query_type is 'profile':
+    elif query_type == 'profile':
         gremlin_metadata = create_gremlin_metadata_obj('profile')
         gremlin_metadata.set_request_metrics(res)
         gremlin_metadata.set_gremlin_profile_metrics(results)
