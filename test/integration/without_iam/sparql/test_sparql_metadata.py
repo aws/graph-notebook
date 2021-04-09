@@ -36,6 +36,7 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
         self.assertIsInstance(meta_dict["Response content size (bytes)"], int)
 
     @pytest.mark.sparql
+    @pytest.mark.neptune
     def test_sparql_explain_query_metadata(self):
         query = '''
                 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>

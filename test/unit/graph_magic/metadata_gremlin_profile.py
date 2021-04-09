@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import unittest
 
-from graph_notebook.magics.metadata import Metric, Metadata
+from graph_notebook.magics.metadata import Metric, Metadata, set_gremlin_profile_metrics
 
 
 class TestMetadataClassFunctions(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestMetadataClassFunctions(unittest.TestCase):
         seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
         results_size_metric = Metric('results_size', 'Results size (bytes)')
         gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric, results_size_metric])
-        gremlin_metadata.set_gremlin_profile_metrics(profile)
+        gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=profile)
 
         self.assertEqual(time_expected, query_time.value)
         self.assertEqual(predicates_expected, predicates.value)

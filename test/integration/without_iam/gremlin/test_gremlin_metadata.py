@@ -27,6 +27,7 @@ class TestMetadataClassFunctions(DataDrivenGremlinTest):
         self.assertIsInstance(meta_dict["Response size (bytes)"], int)
 
     @pytest.mark.gremlin
+    @pytest.mark.neptune
     def test_gremlin_explain_query_metadata(self):
         query = "g.V().has('airport','code','CZM').out('route').path().by('code')"
         res = self.client.gremlin_explain(query)
@@ -42,6 +43,7 @@ class TestMetadataClassFunctions(DataDrivenGremlinTest):
         self.assertIsInstance(meta_dict["Response size (bytes)"], int)
 
     @pytest.mark.gremlin
+    @pytest.mark.neptune
     def test_gremlin_profile_query_metadata(self):
         query = "g.V().has('airport','code','CZM').out('route').path().by('code')"
         res = self.client.gremlin_profile(query)
