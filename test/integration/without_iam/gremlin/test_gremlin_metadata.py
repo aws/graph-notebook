@@ -24,7 +24,7 @@ class TestMetadataClassFunctions(DataDrivenGremlinTest):
         self.assertEqual(meta_dict["Query mode"], "query")
         self.assertIsInstance(meta_dict["Request execution time (ms)"], float)
         self.assertEqual(meta_dict["# of results"], 11)
-        self.assertEqual(meta_dict["Response size (bytes)"], 208)
+        self.assertIsInstance(meta_dict["Response size (bytes)"], int)
 
     @pytest.mark.gremlin
     def test_gremlin_explain_query_metadata(self):
@@ -39,7 +39,7 @@ class TestMetadataClassFunctions(DataDrivenGremlinTest):
         self.assertEqual(meta_dict["Status code"], 200)
         self.assertEqual(meta_dict["Status OK?"], True)
         self.assertEqual(meta_dict["# of predicates"], 18)
-        self.assertEqual(meta_dict["Response size (bytes)"], 2943)
+        self.assertIsInstance(meta_dict["Response size (bytes)"], int)
 
     @pytest.mark.gremlin
     def test_gremlin_profile_query_metadata(self):
@@ -56,4 +56,4 @@ class TestMetadataClassFunctions(DataDrivenGremlinTest):
         self.assertEqual(meta_dict["Status OK?"], True)
         self.assertEqual(meta_dict["# of predicates"], 18)
         self.assertEqual(meta_dict["# of results"], 11)
-        self.assertEqual(meta_dict["Response size (bytes)"], 4210)
+        self.assertIsInstance(meta_dict["Response size (bytes)"], int)

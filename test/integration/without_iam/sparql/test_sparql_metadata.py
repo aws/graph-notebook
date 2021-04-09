@@ -24,7 +24,7 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
         self.assertEqual(meta_dict["Status code"], 200)
         self.assertEqual(meta_dict["Status OK?"], True)
         self.assertEqual(meta_dict["# of results"], 100)
-        self.assertEqual(meta_dict["Response content size (bytes)"], 36399)
+        self.assertIsInstance(meta_dict["Response content size (bytes)"], int)
 
     @pytest.mark.sparql
     def test_sparql_explain_query_metadata(self):
@@ -37,4 +37,4 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
         self.assertIsInstance(meta_dict["Request execution time (ms)"], float)
         self.assertEqual(meta_dict["Status code"], 200)
         self.assertEqual(meta_dict["Status OK?"], True)
-        self.assertEqual(meta_dict["Response content size (bytes)"], 1991)
+        self.assertIsInstance(meta_dict["Response content size (bytes)"], int)
