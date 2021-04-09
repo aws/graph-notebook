@@ -6,11 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 import time
 import pytest
 
-from test.integration import IntegrationTest
+from test.integration import DataDrivenGremlinTest
 from graph_notebook.magics.metadata import build_gremlin_metadata_from_query
 
 
-class TestMetadataClassFunctions(IntegrationTest):
+class TestMetadataClassFunctions(DataDrivenGremlinTest):
 
     @pytest.mark.gremlin
     def test_gremlin_default_query_metadata(self):
@@ -46,7 +46,7 @@ class TestMetadataClassFunctions(IntegrationTest):
         query = "g.V().has('airport','code','CZM').out('route').path().by('code')"
         res = self.client.gremlin_profile(query)
         query_res = res.content.decode('utf-8')
-        gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res, res=res)
+        gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
         meta_dict = gremlin_metadata.to_dict()
 
         self.assertEqual(meta_dict["Query mode"], "profile")

@@ -16,7 +16,7 @@ class DataDrivenSparqlTest(IntegrationTest):
     def setUp(self) -> None:
         super().setUp()
 
-        airport_queries = get_queries('sparql', 'epl')
+        airport_queries = get_queries('sparql', 'airports')
         for q in airport_queries:
             try:  # we are deciding to try except because we do not know if the database we are connecting to has a partially complete set of airports data or not.
                 res = self.client.sparql(q['content'].strip())

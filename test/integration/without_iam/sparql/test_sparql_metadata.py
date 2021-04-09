@@ -5,11 +5,11 @@ SPDX-License-Identifier: Apache-2.0
 
 import pytest
 
-from test.integration import IntegrationTest
+from test.integration import DataDrivenSparqlTest
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query
 
 
-class TestMetadataClassFunctions(IntegrationTest):
+class TestMetadataClassFunctions(DataDrivenSparqlTest):
 
     @pytest.mark.sparql
     def test_sparql_default_query_metadata(self):
@@ -30,7 +30,7 @@ class TestMetadataClassFunctions(IntegrationTest):
     def test_sparql_explain_query_metadata(self):
         query = "SELECT ?s ?p ?o {?s ?p ?o} LIMIT 100"
         res = self.client.sparql_explain(query)
-        sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=res)
+        sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
         meta_dict = sparql_metadata.to_dict()
 
         self.assertEqual(meta_dict["Query mode"], "explain")
