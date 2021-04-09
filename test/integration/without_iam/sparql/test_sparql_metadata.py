@@ -13,7 +13,16 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
 
     @pytest.mark.sparql
     def test_sparql_default_query_metadata(self):
-        query = "SELECT ?s ?p ?o {?s ?p ?o} LIMIT 100"
+        query = '''
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX so: <https://schema.org/>
+                SELECT ?city
+                WHERE {
+                    ?s a so:City .
+                    ?s rdfs:label ?city
+                    FILTER contains(?city,"ou")
+                }
+                '''
         res = self.client.sparql(query)
         results = res.json()
         sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=res, results=results, scd_query=True)
@@ -23,12 +32,21 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
         self.assertIsInstance(meta_dict["Request execution time (ms)"], float)
         self.assertEqual(meta_dict["Status code"], 200)
         self.assertEqual(meta_dict["Status OK?"], True)
-        self.assertEqual(meta_dict["# of results"], 100)
+        self.assertEqual(meta_dict["# of results"], 2)
         self.assertIsInstance(meta_dict["Response content size (bytes)"], int)
 
     @pytest.mark.sparql
     def test_sparql_explain_query_metadata(self):
-        query = "SELECT ?s ?p ?o {?s ?p ?o} LIMIT 100"
+        query = '''
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX so: <https://schema.org/>
+                SELECT ?city
+                WHERE {
+                    ?s a so:City .
+                    ?s rdfs:label ?city
+                    FILTER contains(?city,"ou")
+                }
+                '''
         res = self.client.sparql_explain(query)
         sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
         meta_dict = sparql_metadata.to_dict()
