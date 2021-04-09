@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
+import yaml
 import sys
 import re
 from typing import List
@@ -53,8 +54,18 @@ class Metadata(object):
     def to_json(self):
         return json.dumps(self.to_dict(), indent=4)
 
+    def format_dict(self):
+        out_string = ""
+        m_dict = self.to_dict()
+        metric_name_max_len = max(map(len, self.to_dict().keys()))
+        format_string = '{{key:{}}} | {{value}}'.format(metric_name_max_len)
+        for metric, value in m_dict.items():
+            out_string += format_string.format(key=metric, value=value)
+            out_string += "\n"
+        return out_string
+
     def to_html(self):
-        return pre_container_template.render(content=self.to_json())
+        return pre_container_template.render(content=self.format_dict())
 
 
 def set_gremlin_profile_metrics(gremlin_metadata: Metadata, profile_str: str) -> Metadata:
@@ -88,8 +99,15 @@ def create_gremlin_metadata_obj(q_mode: str) -> Metadata:
     resp_size_metric = Metric('resp_size', 'Response size (bytes)')
     seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
     results_size_metric = Metric('results_size', 'Results size (bytes)')
-    metadata_obj.bulk_insert_metrics([mode_metric, query_time, request_time, status_metric, status_ok_metric,
-                                      predicates, results_metric, resp_size_metric, seri_time_metric, results_size_metric])
+    if q_mode == 'explain':
+        metadata_obj.bulk_insert_metrics([mode_metric, request_time, status_metric, status_ok_metric,
+                                          predicates, resp_size_metric])
+    elif q_mode == 'profile':
+        metadata_obj.bulk_insert_metrics([mode_metric, query_time, request_time, status_metric, status_ok_metric,
+                                          predicates, results_metric, resp_size_metric, seri_time_metric,
+                                          results_size_metric])
+    else:
+        metadata_obj.bulk_insert_metrics([mode_metric, request_time, results_metric, resp_size_metric])
     return metadata_obj
 
 
@@ -101,8 +119,12 @@ def create_sparql_metadata_obj(q_mode: str) -> Metadata:
     status_ok_metric = Metric('status_ok', 'Status OK?')
     results_metric = Metric('results', '# of results')
     resp_size_metric = Metric('resp_size', 'Response content size (bytes)')
-    metadata_obj.bulk_insert_metrics([mode_metric, request_time_metric, status_metric, status_ok_metric,
-                                      results_metric, resp_size_metric])
+    if q_mode == 'explain':
+        metadata_obj.bulk_insert_metrics([mode_metric, request_time_metric, status_metric, status_ok_metric,
+                                          resp_size_metric])
+    else:
+        metadata_obj.bulk_insert_metrics([mode_metric, request_time_metric, status_metric, status_ok_metric,
+                                          results_metric, resp_size_metric])
     return metadata_obj
 
 
