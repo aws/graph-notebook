@@ -37,6 +37,7 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
+from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -201,22 +202,24 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         tab = widgets.Tab()
+        titles = []
+        children = []
+
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
+            sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
             explain = res.content.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
-            html = sparql_explain_template.render(table=explain)
             explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            titles.append('Explain')
+            children.append(explain_output)
+            html = sparql_explain_template.render(table=explain)
             with explain_output:
                 display(HTML(html))
-
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -224,12 +227,9 @@ class Graph(Magics):
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
             query_res.raise_for_status()
-            res = query_res.json()
-            store_to_ns(args.store_to, res, local_ns)
-            titles = []
-            children = []
+            results = query_res.json()
+            store_to_ns(args.store_to, results, local_ns)
 
-            display(tab)
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
@@ -244,10 +244,13 @@ class Graph(Magics):
                 titles.append('Table')
                 children.append(hbox)
 
+                sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results,
+                                                        scd_query=True)
+
                 sn = SPARQLNetwork(expand_all=args.expand_all)
                 sn.extract_prefix_declarations_from_query(cell)
                 try:
-                    sn.add_results(res)
+                    sn.add_results(results)
                 except ValueError as value_error:
                     logger.debug(value_error)
 
@@ -258,7 +261,7 @@ class Graph(Magics):
                     children.append(f)
                     logger.debug('added sparql network to tabs')
 
-                rows_and_columns = get_rows_and_columns(res)
+                rows_and_columns = get_rows_and_columns(results)
                 if rows_and_columns is not None:
                     table_id = f"table-{str(uuid.uuid4())[:8]}"
                     table_html = sparql_table_template.render(columns=rows_and_columns['columns'],
@@ -268,7 +271,7 @@ class Graph(Magics):
                 # of showing a tsv with each line being a result binding in addition to new ones.
                 if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
                     lines = []
-                    for b in res['results']['bindings']:
+                    for b in results['results']['bindings']:
                         lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
                     raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
                     with raw_output:
@@ -276,19 +279,29 @@ class Graph(Magics):
                         display(HTML(html))
                     children.append(raw_output)
                     titles.append('Raw')
+            else:
+                sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
 
             json_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with json_output:
-                print(json.dumps(res, indent=2))
+                print(json.dumps(results, indent=2))
             children.append(json_output)
             titles.append('JSON')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        children.append(metadata_output)
+        titles.append('Query Metadata')
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        with metadata_output:
+            display(HTML(sparql_metadata.to_html()))
 
     @line_magic
     @needs_local_scope
@@ -337,40 +350,42 @@ class Graph(Magics):
         logger.debug(f'Arguments {args}')
 
         tab = widgets.Tab()
+        children = []
+        titles = []
+
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
+            gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
+            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(explain_output)
+            titles.append('Explain')
             if 'Neptune Gremlin Explain' in query_res:
                 html = pre_container_template.render(content=query_res)
             else:
                 html = pre_container_template.render(content='No explain found')
-
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with explain_output:
                 display(HTML(html))
-            tab.children = [explain_output]
-            tab.set_title(0, 'Explain')
-            display(tab)
         elif mode == QueryMode.PROFILE:
             res = self.client.gremlin_profile(cell)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
+            gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
+            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(profile_output)
+            titles.append('Profile')
             if 'Neptune Gremlin Profile' in query_res:
                 html = pre_container_template.render(content=query_res)
             else:
                 html = pre_container_template.render(content='No profile found')
-            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
             with profile_output:
                 display(HTML(html))
-            tab.children = [profile_output]
-            tab.set_title(0, 'Profile')
-            display(tab)
         else:
+            query_start = time.time()*1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             query_res = self.client.gremlin_query(cell)
-            children = []
-            titles = []
-
+            query_time = time.time()*1000 - query_start
+            gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res, query_time=query_time)
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Console')
             children.append(table_output)
@@ -394,15 +409,22 @@ class Graph(Magics):
             except ValueError as value_error:
                 logger.debug(f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-            tab.children = children
-            for i in range(len(titles)):
-                tab.set_title(i, titles[i])
-            display(tab)
-
             table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
             table_html = gremlin_table_template.render(guid=table_id, results=query_res)
             with table_output:
                 display(HTML(table_html))
+
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+        display(tab)
+
+        with metadata_output:
+            display(HTML(gremlin_metadata.to_html()))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
