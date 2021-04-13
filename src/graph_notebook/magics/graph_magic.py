@@ -228,7 +228,6 @@ class Graph(Magics):
             results = query_res.json()
             store_to_ns(args.store_to, results, local_ns)
 
-            # table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
             # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
@@ -377,10 +376,7 @@ class Graph(Magics):
             query_time = time.time() * 1000 - query_start
             gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                  query_time=query_time)
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Console')
-            children.append(table_output)
-
             try:
                 logger.debug(f'groupby: {args.group_by}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
