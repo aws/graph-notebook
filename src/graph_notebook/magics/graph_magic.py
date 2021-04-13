@@ -205,6 +205,8 @@ class Graph(Magics):
         titles = []
         children = []
 
+        first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        children.append(first_tab_output)
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
@@ -214,12 +216,8 @@ class Graph(Magics):
             sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
             explain = res.content.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Explain')
-            children.append(explain_output)
-            html = sparql_explain_template.render(table=explain)
-            with explain_output:
-                display(HTML(html))
+            first_tab_html = sparql_explain_template.render(table=explain)
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -230,22 +228,18 @@ class Graph(Magics):
             results = query_res.json()
             store_to_ns(args.store_to, results, local_ns)
 
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            # table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
             # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
-            table_html = ""
+            first_tab_html = ""
             query_type = get_query_type(cell)
             if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
                 logger.debug('creating sparql network...')
 
-                # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-                hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
                 titles.append('Table')
-                children.append(hbox)
-
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results,
-                                                        scd_query=True)
+                                                                   scd_query=True)
 
                 sn = SPARQLNetwork(expand_all=args.expand_all)
                 sn.extract_prefix_declarations_from_query(cell)
@@ -264,8 +258,8 @@ class Graph(Magics):
                 rows_and_columns = get_rows_and_columns(results)
                 if rows_and_columns is not None:
                     table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    table_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
+                    first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
+                                                                  rows=rows_and_columns['rows'], guid=table_id)
 
                 # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result pattern
                 # of showing a tsv with each line being a result binding in addition to new ones.
@@ -288,9 +282,6 @@ class Graph(Magics):
             children.append(json_output)
             titles.append('JSON')
 
-            with table_output:
-                display(HTML(table_html))
-
         metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(metadata_output)
         titles.append('Query Metadata')
@@ -298,10 +289,14 @@ class Graph(Magics):
         tab.children = children
         for i in range(len(titles)):
             tab.set_title(i, titles[i])
+
         display(tab)
 
         with metadata_output:
             display(HTML(sparql_metadata.to_html()))
+
+        with first_tab_output:
+            display(HTML(first_tab_html))
 
     @line_magic
     @needs_local_scope
@@ -353,39 +348,35 @@ class Graph(Magics):
         children = []
         titles = []
 
+        first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        children.append(first_tab_output)
+
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
             gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
-            explain_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            children.append(explain_output)
             titles.append('Explain')
             if 'Neptune Gremlin Explain' in query_res:
-                html = pre_container_template.render(content=query_res)
+                first_tab_html = pre_container_template.render(content=query_res)
             else:
-                html = pre_container_template.render(content='No explain found')
-            with explain_output:
-                display(HTML(html))
+                first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
             res = self.client.gremlin_profile(cell)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
             gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
-            profile_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            children.append(profile_output)
             titles.append('Profile')
             if 'Neptune Gremlin Profile' in query_res:
-                html = pre_container_template.render(content=query_res)
+                first_tab_html = pre_container_template.render(content=query_res)
             else:
-                html = pre_container_template.render(content='No profile found')
-            with profile_output:
-                display(HTML(html))
+                first_tab_html = pre_container_template.render(content='No profile found')
         else:
-            query_start = time.time()*1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
+            query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             query_res = self.client.gremlin_query(cell)
-            query_time = time.time()*1000 - query_start
-            gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res, query_time=query_time)
+            query_time = time.time() * 1000 - query_start
+            gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
+                                                                 query_time=query_time)
             table_output = widgets.Output(layout=DEFAULT_LAYOUT)
             titles.append('Console')
             children.append(table_output)
@@ -410,9 +401,7 @@ class Graph(Magics):
                 logger.debug(f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
             table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-            table_html = gremlin_table_template.render(guid=table_id, results=query_res)
-            with table_output:
-                display(HTML(table_html))
+            first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
 
         metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
         titles.append('Query Metadata')
@@ -425,6 +414,9 @@ class Graph(Magics):
 
         with metadata_output:
             display(HTML(gremlin_metadata.to_html()))
+
+        with first_tab_output:
+            display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
