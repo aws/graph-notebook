@@ -285,7 +285,11 @@ class Graph(Magics):
         children.append(metadata_output)
         titles.append('Query Metadata')
 
-        tab.children = children
+        if first_tab_html == "":
+            tab.children = children[1:]  # the first tab is empty, remove it and proceed
+        else:
+            tab.children = children
+
         for i in range(len(titles)):
             tab.set_title(i, titles[i])
 
@@ -294,8 +298,9 @@ class Graph(Magics):
         with metadata_output:
             display(HTML(sparql_metadata.to_html()))
 
-        with first_tab_output:
-            display(HTML(first_tab_html))
+        if first_tab_html != "":
+            with first_tab_output:
+                display(HTML(first_tab_html))
 
     @line_magic
     @needs_local_scope
