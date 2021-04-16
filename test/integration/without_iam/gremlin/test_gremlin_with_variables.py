@@ -14,7 +14,7 @@ class TestGremlinQueryWithVariables(DataDrivenGremlinTest):
     @pytest.mark.gremlin
     def test_gremlin_query_with_variables(self):
 
-        expected_result = "['DFW', 'LAX', 'PHX', 'DEN']"
+        expected_result = ['DFW', 'LAX', 'PHX', 'DEN']
 
         test_ns = {'c': 'code', 'r': 'route', 'santa_fe': 'SAF'}
         test_cell = "g.V().has('${c}','${santa_fe}').out('${r}').values('${c}')"

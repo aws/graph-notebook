@@ -13,23 +13,21 @@ class TestSparqlQueryWithVariables(DataDrivenSparqlTest):
 
     @pytest.mark.sparql
     def test_sparql_query_with_variables(self):
-        expected_result = {'head': {'vars': ['team', 'city']}, 'results': {'bindings': [{'team': {'type': 'literal', 'value': 'Manchester United'}, 'city': {'type': 'literal', 'value': 'Manchester'}}]}}
+        expected_result = "{'head': {'vars': ['city']}, 'results': {'bindings': [{'city': {'type': 'literal', 'value': 'Southampton'}}, {'city': {'type': 'literal', 'value': 'Bournemouth'}}]}}"
 
-        test_ns = {'h': 'homeStadium', 'l': 'location', 'mann_u': 'Manchester United'}
+        test_ns = {'city_prefix': 'ou'}
         test_cell = '''
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                    PREFIX soco: <http://www.example.com/soccer/ontology/>
-                    PREFIX socr: <http://www.example.com/soccer/resource#>
                     PREFIX so: <https://schema.org/>
 
-                    SELECT ?team ?city
+                    SELECT ?city
                     WHERE {
-                        VALUES ?team {"${mann_u}"}
-                        ?s soco:${h}/so:${l} ?o .
-                        ?s rdfs:label ?team .
-                        ?o rdfs:label ?city
+                        ?s a so:City .
+                        ?s rdfs:label ?city
+                        FILTER contains(?city,"${city_prefix}")
                     }
                     '''
+
         new_cell = inject_vars_into_query(test_cell, test_ns)
         res = self.client.sparql(new_cell)
         results = res.json()
