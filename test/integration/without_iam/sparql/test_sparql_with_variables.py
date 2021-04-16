@@ -13,7 +13,7 @@ class TestSparqlQueryWithVariables(DataDrivenSparqlTest):
 
     @pytest.mark.sparql
     def test_sparql_query_with_variables(self):
-        expected_result = "{'head': {'vars': ['city']}, 'results': {'bindings': [{'city': {'type': 'literal', 'value': 'Southampton'}}, {'city': {'type': 'literal', 'value': 'Bournemouth'}}]}}"
+        expected_result = {'head': {'vars': ['city']}, 'results': {'bindings': [{'city': {'type': 'literal', 'value': 'Southampton'}}, {'city': {'type': 'literal', 'value': 'Bournemouth'}}]}}
 
         test_ns = {'city_prefix': 'ou'}
         test_cell = '''
