@@ -32,7 +32,7 @@ class TestCellVariableInjectionFunction(unittest.TestCase):
         cell_expected = '''
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                     PREFIX so: <https://schema.org/>
-                    
+
                     SELECT ?city
                     WHERE {
                         ?s a so:City .
@@ -45,7 +45,7 @@ class TestCellVariableInjectionFunction(unittest.TestCase):
         test_cell = '''
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                     PREFIX so: <https://schema.org/>
-                    
+
                     SELECT ?city
                     WHERE {
                         ?s a so:City .

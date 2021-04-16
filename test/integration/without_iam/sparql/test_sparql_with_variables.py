@@ -21,7 +21,7 @@ class TestSparqlQueryWithVariables(DataDrivenSparqlTest):
                     PREFIX soco: <http://www.example.com/soccer/ontology/>
                     PREFIX socr: <http://www.example.com/soccer/resource#>
                     PREFIX so: <https://schema.org/>
-        
+
                     SELECT ?team ?city
                     WHERE {
                         VALUES ?team {"${mann_u}"}
