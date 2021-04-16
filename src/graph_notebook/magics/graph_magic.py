@@ -11,6 +11,7 @@ import json
 import time
 import os
 import uuid
+import re
 from enum import Enum
 
 import ipywidgets as widgets
@@ -106,6 +107,16 @@ def query_type_to_action(query_type):
     else:
         # TODO: check explicitly for all query types, raise exception for invalid query
         return 'sparqlupdate'
+
+
+def inject_vars_into_query(cell, local_ns):
+    variable_regex = re.compile(r'\$\{(.*?)}')
+    try:
+        cell = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), cell)
+        return cell
+    except KeyError as key_error:
+        print(f'Terminated query due to undefined variable: {key_error}')
+        return None
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -204,6 +215,10 @@ class Graph(Magics):
         tab = widgets.Tab()
         titles = []
         children = []
+
+        cell = inject_vars_into_query(cell, local_ns)
+        if cell is None:
+            return
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
@@ -349,6 +364,10 @@ class Graph(Magics):
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
+
+        cell = inject_vars_into_query(cell, local_ns)
+        if cell is None:
+            return
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
