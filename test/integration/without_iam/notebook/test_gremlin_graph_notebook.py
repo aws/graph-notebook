@@ -29,13 +29,13 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
     @pytest.mark.jupyter
     @pytest.mark.gremlin
     def test_gremlin_query_with_variables(self):
-        self.ip.user_ns['a_var'] = 'a_value'
-        expected = self.ip.user_ns['a_var']
-        query = "g.addV('${a_var}')"
+        label = 'graph-notebook-test'
+        self.ip.user_ns['test_var'] = label
+        query = "g.addV('${test_var}')"
 
         store_to_var = 'gremlin_res'
         self.ip.run_cell_magic('gremlin', f'query --store-to {store_to_var}', query)
         self.assertFalse('graph_notebook_error' in self.ip.user_ns)
         gremlin_res = self.ip.user_ns[store_to_var]
 
-        self.assertEqual(gremlin_res[0].label, expected)
+        self.assertEqual(gremlin_res[0].label, label)
