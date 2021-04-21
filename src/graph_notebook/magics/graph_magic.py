@@ -11,7 +11,6 @@ import json
 import time
 import os
 import uuid
-import re
 from enum import Enum
 
 import ipywidgets as widgets
@@ -26,7 +25,7 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, AuthModeEnum, \
     Configuration
-from graph_notebook.decorators.decorators import display_exceptions
+from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION
@@ -109,16 +108,6 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
-def inject_vars_into_query(cell, local_ns):
-    variable_regex = re.compile(r'\$\{(.*?)}')
-    try:
-        cell = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), cell)
-        return cell
-    except KeyError as key_error:
-        print(f'Terminated query due to undefined variable: {key_error}')
-        return None
-
-
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -156,6 +145,7 @@ class Graph(Magics):
 
         self.client = builder.build()
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_config(self, line='', cell=''):
@@ -197,6 +187,7 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
+    @magic_variables
     def sparql(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -215,10 +206,6 @@ class Graph(Magics):
         tab = widgets.Tab()
         titles = []
         children = []
-
-        cell = inject_vars_into_query(cell, local_ns)
-        if cell is None:
-            return
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
@@ -345,6 +332,7 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
+    @magic_variables
     def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -364,10 +352,6 @@ class Graph(Magics):
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
-
-        cell = inject_vars_into_query(cell, local_ns)
-        if cell is None:
-            return
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
@@ -1081,6 +1065,7 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
@@ -1096,6 +1081,7 @@ class Graph(Magics):
     @line_cell_magic
     @display_exceptions
     @needs_local_scope
+    @magic_variables
     def neptune_ml(self, line, cell='', local_ns: dict = None):
         parser = generate_neptune_ml_parser()
         args = parser.parse_args(line.split())

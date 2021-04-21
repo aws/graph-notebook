@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import functools
 import json
+import re
 
 from IPython.core.display import HTML, display, clear_output
 
@@ -49,6 +50,27 @@ def display_exceptions(func):
         display(tab)
 
     return do_display_exceptions
+
+
+def magic_variables(func):
+    @functools.wraps(func)
+    def use_magic_variables(*args, **kwargs):
+        local_ns = kwargs['local_ns']
+        args = list(args)
+        variable_regex = re.compile(r'\$\{(.*?)}')
+        try:
+            # If we want to use custom line magic variables with the same syntax:
+            # line_string = args[1]
+            # args[1] = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), line_string)
+            if len(args) > 2:
+                cell_string = args[2]
+                args[2] = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), cell_string)
+            return func(*args, **kwargs)
+        except KeyError as key_error:
+            print(f'Terminated query due to undefined variable: {key_error}')
+            return
+
+    return use_magic_variables
 
 
 def http_ex_to_html(http_ex: HTTPError):
