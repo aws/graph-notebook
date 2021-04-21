@@ -34,6 +34,18 @@ class TestCellVariableInjectionFunction(unittest.TestCase):
         def sparql_mock(self_var, line, cell, local_ns: dict = None):
             return cell
 
+        cell_orig = '''
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                        PREFIX so: <https://schema.org/>
+
+                        SELECT ?city
+                        WHERE {
+                            ?s a so:City .
+                            ?s rdfs:label ?city
+                            FILTER contains(?city,"${city_prefix}")
+                        }
+                        '''
+
         cell_expected = '''
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                         PREFIX so: <https://schema.org/>
@@ -46,35 +58,25 @@ class TestCellVariableInjectionFunction(unittest.TestCase):
                         }
                         '''
 
-        self.assertEqual(sparql_mock('', '',
-                        '''
-                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                        PREFIX so: <https://schema.org/>
-
-                        SELECT ?city
-                        WHERE {
-                            ?s a so:City .
-                            ?s rdfs:label ?city
-                            FILTER contains(?city,"${city_prefix}")
-                        }
-                        ''', local_ns={'city_prefix': 'ou'}), cell_expected)
+        self.assertEqual(sparql_mock('', '', cell_orig, local_ns={'city_prefix': 'ou'}), cell_expected)
 
     def test_invalid_sparql_variable_injection(self):
         @magic_variables
         def sparql_mock(self_var, line, cell, local_ns: dict = None):
             return cell
 
+        cell_orig = '''
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    PREFIX so: <https://schema.org/>
+
+                    SELECT ?city
+                    WHERE {
+                        ?s a so:City .
+                        ?s rdfs:label ?city
+                        FILTER contains(?city,"${not_a_city_prefix}")
+                    }
+                    '''
+
         cell_expected = None
 
-        self.assertEqual(sparql_mock('', '',
-                        '''
-                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                        PREFIX so: <https://schema.org/>
-
-                        SELECT ?city
-                        WHERE {
-                            ?s a so:City .
-                            ?s rdfs:label ?city
-                            FILTER contains(?city,"${not_a_city_prefix}")
-                        }
-                        ''', local_ns={'city_prefix': 'ou'}), cell_expected)
+        self.assertEqual(sparql_mock('', '', cell_orig, local_ns={'city_prefix': 'ou'}), cell_expected)
