@@ -4,6 +4,10 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 2.1.1 (April 22, 2021)
+
+- Fix bug in `%neptune_ml export ...` logic where the iam setting for the exporter endpoint wasn't getting picked up properly
+
 ## Release 2.1.0 (April 15, 2021)
 
 - Add support for Mode, queueRequest, and Dependencies parameters when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/91))

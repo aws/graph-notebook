@@ -67,13 +67,12 @@ SPARQL_ACTION = 'sparql'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', auth=None, session: Session = None):
+                 sparql_path: str = '/sparql', session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.region = region
-        self._auth = auth
         self._session = session
 
         self._http_protocol = 'https' if self.ssl else 'http'
@@ -434,7 +433,7 @@ class Client(object):
 
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
-        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
+        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers)
         if self._session is not None:
             credentials = self._session.get_credentials()
             frozen_creds = credentials.get_frozen_credentials()
