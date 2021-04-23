@@ -4,10 +4,11 @@ import datetime
 import logging
 import time
 from IPython.core.display import display
+from botocore.session import get_session
 from ipywidgets import widgets
 
 from graph_notebook.magics.parsing import str_to_namespace_var
-from graph_notebook.neptune.client import Client
+from graph_notebook.neptune.client import Client, ClientBuilder
 
 logger = logging.getLogger("neptune_ml_magic_handler")
 
@@ -189,22 +190,34 @@ def wait_for_export(client: Client, export_url: str, job_id: str, output: widget
 
 def neptune_ml_export(args: argparse.Namespace, client: Client, output: widgets.Output,
                       cell: str):
+    # since the exporter is a different host than Neptune, it's IAM auth setting can be different
+    # than the client we're using to connect to Neptune. Because of this, need o recreate out client before calling
+    # any exporter urls to ensure we're signing any requests that we need to.
+    builder = ClientBuilder().with_host(client.host)\
+                            .with_port(client.port)\
+                            .with_region(client.region)\
+                            .with_tls(client.ssl)
+
+    if args.export_iam:
+        builder = builder.with_iam(get_session())
+    export_client = builder.build()
+
     export_ssl = not args.export_no_ssl
     if args.which_sub == 'start':
         if cell == '':
             return 'Cell body must have json payload or reference notebook variable using syntax ${payload_var}'
-        export_job = neptune_ml_export_start(client, cell, args.export_url, export_ssl)
+        export_job = neptune_ml_export_start(export_client, cell, args.export_url, export_ssl)
         if args.wait:
-            return wait_for_export(client, args.export_url, export_job['jobId'],
+            return wait_for_export(export_client, args.export_url, export_job['jobId'],
                                    output, export_ssl, args.wait_interval, args.wait_timeout)
         else:
             return export_job
     elif args.which_sub == 'status':
         if args.wait:
-            status = wait_for_export(client, args.export_url, args.job_id, output, export_ssl, args.wait_interval,
+            status = wait_for_export(export_client, args.export_url, args.job_id, output, export_ssl, args.wait_interval,
                                      args.wait_timeout)
         else:
-            status_res = client.export_status(args.export_url, args.job_id, export_ssl)
+            status_res = export_client.export_status(args.export_url, args.job_id, export_ssl)
             status_res.raise_for_status()
             status = status_res.json()
         return status
