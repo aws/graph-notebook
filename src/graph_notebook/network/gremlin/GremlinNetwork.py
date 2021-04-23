@@ -54,6 +54,13 @@ E_PATTERNS = [PathPattern.E, PathPattern.IN_E, PathPattern.OUT_E]
 
 
 def generate_id_from_dict(data: dict) -> str:
+    # Handle cases where user requests '~label' or '~id' in valueMap step, since json can't serialize non-string keys
+    if T.label in data.keys():
+        data['label'] = data[T.label]
+        del data[T.label]
+    if T.id in data.keys():
+        data['id'] = data[T.id]
+        del data[T.id]
     data_str = json.dumps(data, default=str)
     hashed = hashlib.md5(data_str.encode())
     generate_id = hashed.hexdigest()
@@ -93,8 +100,11 @@ class GremlinNetwork(EventfulNetwork):
         if graph is None:
             graph = MultiDiGraph()
         self.label_max_length = label_max_length
-        self.group_by_property = group_by_property
-        self.ignore_groups=ignore_groups
+        try:
+            self.group_by_property = json.loads(group_by_property)
+        except ValueError:
+            self.group_by_property = group_by_property
+        self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
     def add_results_with_pattern(self, results, pattern_list: list):
@@ -271,35 +281,53 @@ class GremlinNetwork(EventfulNetwork):
         if type(v) is Vertex:
             node_id = v.id
             title = v.label
-            if self.group_by_property in [T_LABEL, 'label']:
-                # This sets the group key to the label if either "label" is passed in or
-                # T.label is set in order to handle the default case of grouping by label
-                # when no explicit key is specified
-                group = v.label
-            elif self.group_by_property == 'id':
-                group = v.id
-            else:
-                group = ''
+            vertex_dict = v.__dict__
+            if not isinstance(self.group_by_property, dict) or 'keys' not in dir(v):  # Handle string format group_by
+                if self.group_by_property in [T_LABEL, 'label']:  # this handles if it's just a string
+                    # This sets the group key to the label if either "label" is passed in or
+                    # T.label is set in order to handle the default case of grouping by label
+                    # when no explicit key is specified
+                    group = v.label
+                elif self.group_by_property == 'id':
+                    group = v.id
+                else:
+                    group = ''
+            else:  # handle dict format group_by
+                if v.label in self.group_by_property:
+                    group = vertex_dict[self.group_by_property[v.label]['groupby']]
+                elif v.id in self.group_by_property:
+                    group = vertex_dict[self.group_by_property[v.id]['groupby']]
+                else:
+                    group = ''
+
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data = {'label': label, 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
         elif type(v) is dict:
             properties = {}
-
             title = ''
             label = ''
             group = ''
+            # Before looping though properties, we first search for T.label in vertex dict, then set title = T.label
+            # Otherwise, we will hit KeyError if we don't iterate through T.label first to set the title
+            # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
+            if T.label in v.keys():
+                title = str(v[T.label])
+                label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             for k in v:
-                if str(k) == T_LABEL:
-                    title = str(v[k])
-                    label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-                elif str(k) == T_ID:
+                if str(k) == T_ID:
                     node_id = str(v[k])
                 properties[k] = v[k]
-                if str(k) == self.group_by_property:
+                if isinstance(self.group_by_property, dict):
+                    try:
+                        if str(k) == self.group_by_property[title]['groupby']:
+                            group = str(v[k])
+                    except KeyError:
+                        continue
+                elif str(k) == self.group_by_property:
                     group = str(v[k])
 
             # handle when there is no id in a node. In this case, we will generate one which
-            # is consistently regenerated so that duplicate dicts will be dedubed to the same vertex.
+            # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
                 node_id = f'{generate_id_from_dict(v)}'
 
