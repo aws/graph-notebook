@@ -54,13 +54,10 @@ E_PATTERNS = [PathPattern.E, PathPattern.IN_E, PathPattern.OUT_E]
 
 
 def generate_id_from_dict(data: dict) -> str:
-    # Handle cases where user requests '~label' or '~id' in valueMap step, since json can't serialize non-string keys
+    # Handle cases where user requests '~label' in valueMap step, since json can't serialize non-string keys
     if T.label in data.keys():
         data['label'] = data[T.label]
         del data[T.label]
-    if T.id in data.keys():
-        data['id'] = data[T.id]
-        del data[T.id]
     data_str = json.dumps(data, default=str)
     hashed = hashlib.md5(data_str.encode())
     generate_id = hashed.hexdigest()
@@ -282,7 +279,7 @@ class GremlinNetwork(EventfulNetwork):
             node_id = v.id
             title = v.label
             vertex_dict = v.__dict__
-            if not isinstance(self.group_by_property, dict) or 'keys' not in dir(v):  # Handle string format group_by
+            if not isinstance(self.group_by_property, dict):  # Handle string format group_by
                 if self.group_by_property in [T_LABEL, 'label']:  # this handles if it's just a string
                     # This sets the group key to the label if either "label" is passed in or
                     # T.label is set in order to handle the default case of grouping by label
@@ -293,11 +290,18 @@ class GremlinNetwork(EventfulNetwork):
                 else:
                     group = ''
             else:  # handle dict format group_by
-                if v.label in self.group_by_property:
-                    group = vertex_dict[self.group_by_property[v.label]['groupby']]
-                elif v.id in self.group_by_property:
-                    group = vertex_dict[self.group_by_property[v.id]['groupby']]
-                else:
+                print(self.group_by_property)
+                try:
+                    if str(v.label) in self.group_by_property:
+                        if self.group_by_property[str(v.label)]['groupby'] in [T_LABEL, 'label']:
+                            group = v.label
+                        else:
+                            group = vertex_dict[self.group_by_property[str(v.label)]['groupby']]
+                    elif str(v.id) in self.group_by_property:
+                        group = vertex_dict[self.group_by_property[str(v.id)]['groupby']]
+                    else:
+                        group = ''
+                except KeyError:
                     group = ''
 
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'

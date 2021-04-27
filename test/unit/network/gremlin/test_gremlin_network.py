@@ -526,6 +526,8 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_group_returnvertex_groupby_label(self):
         vertex = Vertex(id='1')
+        print(vertex.label)
+        print(vertex.id)
 
         gn = GremlinNetwork(group_by_property="label")
         gn.add_vertex(vertex)
@@ -533,6 +535,21 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['group'], 'vertex')
 
         gn = GremlinNetwork(group_by_property="T.label")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'vertex')
+
+    def test_group_returnvertex_groupby_label_properties_json(self):
+        vertex = Vertex(id='1')
+        print(vertex.label)
+        print(vertex.id)
+
+        gn = GremlinNetwork(group_by_property='{"vertex":{"groupby":"label"}}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'vertex')
+
+        gn = GremlinNetwork(group_by_property='{"vertex":{"groupby":"T.label"}}')
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], 'vertex')
@@ -546,6 +563,19 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['group'], '1')
 
         gn = GremlinNetwork(group_by_property="T.id")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], '')
+
+    def test_group_returnvertex_groupby_id_properties_json(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property='{"vertex":{"groupby":"id"}}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], '1')
+
+        gn = GremlinNetwork(group_by_property='{"vertex":{"groupby":"T.id"}}')
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '')
