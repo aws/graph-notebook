@@ -184,10 +184,10 @@ class Graph(Magics):
         self._generate_client_from_config(self.graph_notebook_config)
         print(f'set host to {line}')
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
-    @magic_variables
     def sparql(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -329,10 +329,10 @@ class Graph(Magics):
         store_to_ns(args.store_to, res, local_ns)
         print(json.dumps(res, indent=2))
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
-    @magic_variables
     def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -1078,10 +1078,10 @@ class Graph(Magics):
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
 
+    @magic_variables
     @line_cell_magic
     @display_exceptions
     @needs_local_scope
-    @magic_variables
     def neptune_ml(self, line, cell='', local_ns: dict = None):
         parser = generate_neptune_ml_parser()
         args = parser.parse_args(line.split())
