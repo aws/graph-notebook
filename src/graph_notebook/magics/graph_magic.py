@@ -25,7 +25,7 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, AuthModeEnum, \
     Configuration
-from graph_notebook.decorators.decorators import display_exceptions
+from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION
@@ -145,6 +145,7 @@ class Graph(Magics):
 
         self.client = builder.build()
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_config(self, line='', cell=''):
@@ -183,6 +184,7 @@ class Graph(Magics):
         self._generate_client_from_config(self.graph_notebook_config)
         print(f'set host to {line}')
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
@@ -332,6 +334,7 @@ class Graph(Magics):
         store_to_ns(args.store_to, res, local_ns)
         print(json.dumps(res, indent=2))
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
@@ -1067,6 +1070,7 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
@@ -1079,6 +1083,7 @@ class Graph(Magics):
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
 
+    @magic_variables
     @line_cell_magic
     @display_exceptions
     @needs_local_scope

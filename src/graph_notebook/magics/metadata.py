@@ -4,7 +4,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-import yaml
 import sys
 import re
 from typing import List
