@@ -526,8 +526,6 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_group_returnvertex_groupby_label(self):
         vertex = Vertex(id='1')
-        print(vertex.label)
-        print(vertex.id)
 
         gn = GremlinNetwork(group_by_property="label")
         gn.add_vertex(vertex)
@@ -541,8 +539,6 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_group_returnvertex_groupby_label_properties_json(self):
         vertex = Vertex(id='1')
-        print(vertex.label)
-        print(vertex.id)
 
         gn = GremlinNetwork(group_by_property='{"vertex":{"groupby":"label"}}')
         gn.add_vertex(vertex)

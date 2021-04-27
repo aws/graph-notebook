@@ -290,7 +290,6 @@ class GremlinNetwork(EventfulNetwork):
                 else:
                     group = ''
             else:  # handle dict format group_by
-                print(self.group_by_property)
                 try:
                     if str(v.label) in self.group_by_property:
                         if self.group_by_property[str(v.label)]['groupby'] in [T_LABEL, 'label']:
