@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 
-from py2neo import Graph
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, Driver
 
 
 class AbstractCypherClientProvider(ABC):
     @abstractmethod
-    def get_driver(self, host: str, port: str, ssl: bool) -> GraphDatabase.driver:
+    def get_driver(self, host: str, port: str, ssl: bool, user: str = 'neo4j', password: str = 'neo4j') -> GraphDatabase.driver:
         pass
 
 
@@ -16,7 +15,7 @@ class CypherClientProvider(AbstractCypherClientProvider):
     connection to the configured endpoint without any authentication settings
     """
 
-    def get_driver(self, host: str, port: str, ssl: bool) -> Graph:
+    def get_driver(self, host: str, port: str, ssl: bool, user: str = 'neo4j', password: str = 'neo4j') -> Driver:
         uri = f'bolt://{host}:{port}'
-        driver = GraphDatabase.driver(uri, auth=('neo4j', 'password'), encrypted=ssl)
+        driver = GraphDatabase.driver(uri, auth=(user, password), encrypted=ssl)
         return driver

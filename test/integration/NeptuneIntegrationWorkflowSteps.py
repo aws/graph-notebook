@@ -15,12 +15,12 @@ import unittest
 import boto3 as boto3
 import requests
 
-from graph_notebook.authentication.iam_credentials_provider.credentials_factory import IAMAuthCredentialsProvider
 from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration
 
 SUBPARSER_CREATE_CFN = 'create-cfn-stack'
 SUBPARSER_DELETE_CFN = 'delete-cfn-stack'
 SUBPARSER_RUN_TESTS = 'run-tests'
+SUBPARSER_GENERATE_CONFIG = 'generate-config'
 SUBPARSER_ENABLE_IAM = 'toggle-cluster-iam'
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -177,8 +177,8 @@ def get_stack_details_to_run(stack: dict, region: str = 'us-east-1', timeout_min
             ip = network_interface['PrivateIpAddresses'][0]['Association']['PublicIp']
             logging.info(f'checking if ip {ip} can be used ')
 
+            url = f'https://{ip}:80/status'
             try:
-                url = f'https://{ip}:80/status'
                 logging.info(f'checking ip address {ip}, url={url}')
                 # hard-coded to port 80 since that's what this CFN stack uses for its load balancer
                 requests.get(url, verify=False, timeout=5)  # an exception is thrown if the host cannot be reached.
@@ -268,8 +268,7 @@ def generate_config_from_stack(stack: dict, region: str, iam: bool) -> Configura
         file.writelines(new_lines)
 
     auth = AuthModeEnum.IAM if iam else AuthModeEnum.DEFAULT
-    conf = Configuration(details['endpoint'], 80, auth, IAMAuthCredentialsProvider.ENV, details['loader_arn'],
-                         ssl=True, aws_region=region)
+    conf = Configuration(details['endpoint'], 80, auth, details['loader_arn'], ssl=True, aws_region=region)
     logging.info(f'generated configuration for test run: {conf.to_dict()}')
     return conf
 
@@ -323,15 +322,12 @@ def main():
     delete_parser.add_argument('--cfn-stack-name', type=str, default='')
     delete_parser.add_argument('--aws-region', type=str, default='us-east-1')
 
-    # sub parser for running tests
-    parser_run_tests = subparsers.add_parser(SUBPARSER_RUN_TESTS,
-                                             help='run tests with the pattern *_without_iam.py')
-    parser_run_tests.add_argument('--pattern', type=str),
-    parser_run_tests.add_argument('--iam', action='store_true')
-    parser_run_tests.add_argument('--cfn-stack-name', type=str, default='')
-    parser_run_tests.add_argument('--aws-region', type=str, default='us-east-1')
-    parser_run_tests.add_argument('--skip-config-generation', action='store_true',
-                                  help=f'skips config generation for testing, using the one found under {TEST_CONFIG_PATH}')
+    # sub parser generate config
+    config_parser = subparsers.add_parser(SUBPARSER_GENERATE_CONFIG,
+                                          help='generate test configuration from supplied cfn stack')
+    config_parser.add_argument('--cfn-stack-name', type=str, default='')
+    config_parser.add_argument('--aws-region', type=str, default='us-east-1')
+    config_parser.add_argument('--iam', action='store_true')
 
     args = parser.parse_args()
 
@@ -342,20 +338,17 @@ def main():
         handle_create_cfn_stack(stack_name, args.cfn_template_url, args.cfn_s3_bucket, cfn_client, args.cfn_runner_role)
     elif args.which == SUBPARSER_DELETE_CFN:
         delete_stack(args.cfn_stack_name, cfn_client)
-    elif args.which == SUBPARSER_RUN_TESTS:
-        if not args.skip_config_generation:
-            loop_until_stack_is_complete(args.cfn_stack_name, cfn_client)
-            stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
-            cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
-            set_iam_auth_on_neptune_cluster(cluster_identifier, args.iam, neptune_client)
-            config = generate_config_from_stack(stack, args.aws_region, args.iam)
-            config.write_to_file(TEST_CONFIG_PATH)
-        run_integration_tests(args.pattern)
     elif args.which == SUBPARSER_ENABLE_IAM:
         cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
         set_iam_auth_on_neptune_cluster(cluster_identifier, True, neptune_client)
         logging.info('waiting for one minute while change is applied...')
         time.sleep(60)
+    elif args.which == SUBPARSER_GENERATE_CONFIG:
+        stack = get_cfn_stack_details(args.cfn_stack_name, cfn_client)
+        cluster_identifier = get_neptune_identifier_from_cfn(args.cfn_stack_name, cfn_client)
+        set_iam_auth_on_neptune_cluster(cluster_identifier, args.iam, neptune_client)
+        config = generate_config_from_stack(stack, args.aws_region, args.iam)
+        config.write_to_file(TEST_CONFIG_PATH)
 
 
 if __name__ == '__main__':

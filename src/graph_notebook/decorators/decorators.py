@@ -19,7 +19,7 @@ error_template = retrieve_template("error.html")
 def display_exceptions(func):
     @functools.wraps(func)
     def do_display_exceptions(*args, **kwargs):
-        clear_output(True)
+        clear_output()
         tab = widgets.Tab()
 
         try:

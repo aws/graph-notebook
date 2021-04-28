@@ -6,12 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 import json
 import uuid
+import logging
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_LABEL_MAX_LENGTH
+from graph_notebook.network.EventfulNetwork import EventfulNetwork
 from gremlin_python.process.traversal import T
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
+
+logging.basicConfig()
+logger = logging.getLogger(__file__)
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
@@ -21,6 +25,7 @@ INVALID_VERTEX_ERROR = ValueError("when adding a vertex, object must be of type 
 INVALID_VERTEX_PATH_PATTERN_ERROR = ValueError("found vertex pattern on an Edge object")
 SAME_DIRECTION_ADJACENT_VERTICES = ValueError("Found two vertices with the same direction")
 
+DEFAULT_LABEL_MAX_LENGTH = 10
 TO_DISABLED = {"to": {"enabled": False}}
 UNDIRECTED_EDGE = {
     "arrows": TO_DISABLED
@@ -83,10 +88,13 @@ class GremlinNetwork(EventfulNetwork):
     You can find more details on this in our design doc for visualization here: https://quip-amazon.com/R1jbA8eECdDd
     """
 
-    def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH):
+    def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
+                 group_by_property=T_LABEL, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         self.label_max_length = label_max_length
+        self.group_by_property = group_by_property
+        self.ignore_groups=ignore_groups
         super().__init__(graph, callbacks)
 
     def add_results_with_pattern(self, results, pattern_list: list):
@@ -263,13 +271,23 @@ class GremlinNetwork(EventfulNetwork):
         if type(v) is Vertex:
             node_id = v.id
             title = v.label
+            if self.group_by_property in [T_LABEL, 'label']:
+                # This sets the group key to the label if either "label" is passed in or
+                # T.label is set in order to handle the default case of grouping by label
+                # when no explicit key is specified
+                group = v.label
+            elif self.group_by_property == 'id':
+                group = v.id
+            else:
+                group = ''
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-            data = {'label': label, 'title': title, 'properties': {'id': node_id, 'label': title}}
+            data = {'label': label, 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
         elif type(v) is dict:
             properties = {}
 
             title = ''
             label = ''
+            group = ''
             for k in v:
                 if str(k) == T_LABEL:
                     title = str(v[k])
@@ -277,6 +295,8 @@ class GremlinNetwork(EventfulNetwork):
                 elif str(k) == T_ID:
                     node_id = str(v[k])
                 properties[k] = v[k]
+                if str(k) == self.group_by_property:
+                    group = str(v[k])
 
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be dedubed to the same vertex.
@@ -290,12 +310,15 @@ class GremlinNetwork(EventfulNetwork):
                     title += str(v[key])
                 label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
-            data = {'properties': properties, 'label': label, 'title': title}
+            data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
             node_id = str(v)
             title = str(v)
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-            data = {'title': title, 'label': label}
+            data = {'title': title, 'label': label, 'group': ''}
+
+        if self.ignore_groups:
+            data['group'] = ''
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):

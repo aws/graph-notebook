@@ -8,7 +8,6 @@ import unittest
 
 from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration
 from graph_notebook.configuration.get_config import get_config
-from graph_notebook.authentication.iam_credentials_provider.credentials_factory import IAMAuthCredentialsProvider
 
 
 class TestGenerateConfigurationMain(unittest.TestCase):
@@ -24,11 +23,11 @@ class TestGenerateConfigurationMain(unittest.TestCase):
             os.remove(self.test_file_path)
 
     def test_generate_configuration_main_defaults(self):
-        expected_config = Configuration(self.host, self.port, AuthModeEnum.DEFAULT, IAMAuthCredentialsProvider.ROLE, '', True)
+        expected_config = Configuration(self.host, self.port, AuthModeEnum.DEFAULT, '', True)
         self.generate_config_from_main_and_test(expected_config)
 
     def test_generate_configuration_main_override_defaults(self):
-        expected_config = Configuration(self.host, self.port, AuthModeEnum.IAM, IAMAuthCredentialsProvider.ROLE, 'loader_arn', False)
+        expected_config = Configuration(self.host, self.port, AuthModeEnum.IAM, 'loader_arn', False)
         self.generate_config_from_main_and_test(expected_config)
 
     def test_generate_configuration_main_empty_args(self):
@@ -42,7 +41,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         # This will run the main method that our install script runs on a Sagemaker notebook.
         # The return code should be 0, but more importantly, we need to assert that the
         # Configuration object we get from the resulting file is what we expect.
-        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config --host "{source_config.host}" --port "{source_config.port}" --auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" --iam_credentials_provider "{source_config.iam_credentials_provider_type.value}" --load_from_s3_arn "{source_config.load_from_s3_arn}" --config_destination="{self.test_file_path}" ')
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config --host "{source_config.host}" --port "{source_config.port}" --auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" --load_from_s3_arn "{source_config.load_from_s3_arn}" --config_destination="{self.test_file_path}" ')
         self.assertEqual(result, 0)
         config = get_config(self.test_file_path)
         self.assertEqual(source_config.to_dict(), config.to_dict())

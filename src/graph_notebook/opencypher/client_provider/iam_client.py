@@ -19,7 +19,7 @@ class IAMCypherClientProvider(AbstractCypherClientProvider):
     def __init__(self, credentials_provider: CredentialsProviderBase):
         self.credentials_provider = credentials_provider
 
-    def get_driver(self, host: str, port: str, ssl: bool) -> GraphDatabase.driver:
+    def get_driver(self, host: str, port: str, ssl: bool, user: str = 'neo4j', password: str = 'neo4j') -> GraphDatabase.driver:
         creds = self.credentials_provider.get_iam_credentials()
         uri = f'bolt://{host}:{port}'
 

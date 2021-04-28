@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from networkx import MultiDiGraph
 from rdflib.namespace import RDF, RDFS, OWL, XSD, SKOS, DOAP, FOAF, DC, DCTERMS, VOID
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_LABEL_MAX_LENGTH
+from graph_notebook.network.EventfulNetwork import EventfulNetwork
 
 NAMESPACE_RDFS = str(RDFS.uri)
 NAMESPACE_RDF = str(RDF.uri)
@@ -33,6 +33,7 @@ PREFIX_VOID = 'void'
 RDFS_LABEL = f'{NAMESPACE_RDFS}label'
 RDF_TYPE = f'{NAMESPACE_RDF}type'
 NODE_TYPES = ['uri', 'bnode']
+DEFAULT_LABEL_MAX_LENGTH = 10
 
 InvalidBindingsCombinationError = ValueError('Bindings must be either "subject" "predicate" "object" or "s" "p" "o"')
 

@@ -20,17 +20,6 @@ class TestGetDataSets(unittest.TestCase):
         self.assertEqual(3, len(queries))
         self.assertEqual('0_nodes.txt', queries[0]['name'])
 
-    def test_get_data_sets_opencypher(self):
-        data_sets = get_data_sets('opencypher')
-        self.assertTrue('epl' in data_sets)
-
-    # def test_get_queries_opencypher(self):
-    #     language = 'gremlin'
-    #     name = 'airports'
-    #     queries = get_queries(language, name)
-    #     self.assertEqual(3, len(queries))
-    #     self.assertEqual('0_nodes.txt', queries[0]['name'])
-
     def test_get_data_sets_sparql(self):
         data_sets = get_data_sets('sparql')
         self.assertTrue('airports' in data_sets)
