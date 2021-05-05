@@ -9,6 +9,7 @@ import argparse
 import logging
 import json
 import time
+import datetime
 import os
 import uuid
 from enum import Enum
@@ -823,7 +824,12 @@ class Graph(Magics):
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
                             if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
                                 execution_time = interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
-                                execution_time_statement = '<1 second' if execution_time == 0 else f'{execution_time} seconds'
+                                if execution_time == 0:
+                                    execution_time_statement = '<1 second'
+                                elif execution_time > 59:
+                                    execution_time_statement = str(datetime.timedelta(seconds=execution_time))
+                                else:
+                                    execution_time_statement = f'{execution_time} seconds'
                                 print('Total execution time: ' + execution_time_statement)
                                 interval_output.close()
                                 print('Done.')
