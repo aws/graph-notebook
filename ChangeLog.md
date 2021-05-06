@@ -6,7 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Add support for notebook variables in Sparql/Gremlin magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/113))
 - Add support for grouping by different properties per label in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/115))
 - Fix missing Boto3 dependency in setup.py ([Link to PR](https://github.com/aws/graph-notebook/pull/118))
-
+- Update %load execution time to HH:MM:SS format if over a minute ([Link to PR](https://github.com/aws/graph-notebook/pull/121))
 
 ## Release 2.1.1 (April 22, 2021)
 
