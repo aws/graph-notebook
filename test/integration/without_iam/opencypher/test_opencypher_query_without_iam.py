@@ -16,9 +16,12 @@ logger = logging.getLogger('TestOpenCypherStatusWithoutIam')
 
 
 class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
-    def do_opencypher_query_save_result(self, query, res):
+    def do_opencypher_query_save_result(self, query, res, bolt: bool = False):
         try:
-            res['result'] = self.client.opencyper_bolt(query)
+            if bolt:
+                res['result'] = self.client.opencyper_bolt(query)
+            else:
+                res['result'] = self.client.opencypher_http(query)
         except requests.HTTPError as exception:
             res['error'] = exception.response.json()
 
@@ -88,7 +91,7 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
         assert 'detailedMessage' in query_res['error']
         assert 'CancelledByUserException' == query_res['error']['code']
 
-    def test_do_sparql_status_and_cancel_silently(self):
+    def test_do_opencypher_status_and_cancel_silently(self):
         query = '''MATCH(a)-->(b)
                     MATCH(c)-->(d)
                     RETURN a,b,c,d'''
@@ -129,3 +132,7 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
         assert 'c' in query_res['result']['head']['vars']
         assert 'd' in query_res['result']['head']['vars']
         assert [] == query_res['result']['results']['bindings']
+
+    def test_opencypher_bolt_query_with_cancellation(self):
+        pass
+

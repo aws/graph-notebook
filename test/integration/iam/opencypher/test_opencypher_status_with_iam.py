@@ -2,11 +2,12 @@
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
-import json
 import threading
 
 import logging
 import time
+
+import pytest
 import requests
 from botocore.session import get_session
 
@@ -18,7 +19,9 @@ logger = logging.getLogger('TestOpenCypherStatusWithoutIam')
 class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
     def do_opencypher_query_save_result(self, query, res):
         try:
-            res['result'] = self.client.opencyper_bolt(query)
+            result = self.client.opencypher_http(query)
+            result.raise_for_status()
+            res['result'] = result.json()
         except requests.HTTPError as exception:
             res['error'] = exception.response.json()
 
@@ -51,21 +54,25 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
         self.assertEqual(err['detailedMessage'], expected_message)
 
     def test_do_opencypher_cancel_empty_query_id(self):
-        cancel_res = self.client.opencypher_cancel('')
-        assert cancel_res.status_code != 200
+        with pytest.raises(ValueError) as err:
+            self.client.opencypher_cancel('')
+        assert err.type is ValueError
 
     def test_do_opencypher_cancel_non_str_query_id(self):
-        cancel_res = self.client.opencypher_cancel(42)
-        assert cancel_res.status_code != 200
+        with pytest.raises(ValueError) as err:
+            self.client.opencypher_cancel(42)
+        assert err.type is ValueError
 
     def test_do_opencypher_status_and_cancel(self):
         query = '''MATCH(a)-->(b)
                     MATCH(c)-->(d)
-                    RETURN a,b,c,d'''
+                    MATCH(e)-->(f)
+                    RETURN a,b,c,d,e,f
+                    ORDER BY a'''
         query_res = {}
         oc_query_thread = threading.Thread(target=self.do_opencypher_query_save_result, args=(query, query_res,))
         oc_query_thread.start()
-        time.sleep(3)
+        time.sleep(1)
 
         status = self.client.opencypher_status()
         status_res = status.json()
@@ -82,7 +89,9 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
 
         assert query_id != ''
 
-        cancel_res = self.client.opencypher_cancel(query_id)
+        cancel = self.client.opencypher_cancel(query_id)
+        assert cancel.status_code == 200
+        cancel_res = cancel.json()
         assert type(cancel_res) is dict
         assert cancel_res['status'] == '200 OK'
 
@@ -97,12 +106,14 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
     def test_do_sparql_status_and_cancel_silently(self):
         query = '''MATCH(a)-->(b)
                     MATCH(c)-->(d)
-                    RETURN a,b,c,d'''
+                    MATCH(e)-->(f)
+                    RETURN a,b,c,d,e,f
+                    ORDER BY a'''
 
         query_res = {}
         oc_query_thread = threading.Thread(target=self.do_opencypher_query_save_result, args=(query, query_res,))
         oc_query_thread.start()
-        time.sleep(3)
+        time.sleep(1)
 
         query_id = ''
         status = self.client.opencypher_status(query_id)
@@ -123,7 +134,7 @@ class TestOpenCypherStatusWithIam(DataDrivenOpenCypherTest):
         assert query_id != ''
         self.assertNotEqual(query_id, '')
 
-        cancel = self.client.opencypher_cancel(query_id)
+        cancel = self.client.opencypher_cancel(query_id, silent=True)
         cancel_res = cancel.json()
         assert type(cancel_res) is dict
         assert cancel_res['status'] == '200 OK'

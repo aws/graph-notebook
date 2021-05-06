@@ -14,7 +14,8 @@ SPARQL_OPTIONS = ['SELECT',
                   'GRAPH',
                   'FILTER',
                   'ASK',
-                  'DESCRIBE']
+                  'DESCRIBE',
+                  'UNLOAD']
 GREMLIN_OPTIONS = [
     '.toString',
     '.tx',

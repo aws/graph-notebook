@@ -43,6 +43,7 @@ sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
 gremlin_table_template = retrieve_template("gremlin_table.html")
+opencypher_table_template = retrieve_template("opencypher_table.html")
 pre_container_template = retrieve_template("pre_container.html")
 loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
@@ -57,6 +58,7 @@ DEFAULT_MAX_RESULTS = 1000
 
 GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %gremlin_status --cancelQuery --queryId my-query-id'''
 SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %sparql_status --cancelQuery --queryId my-query-id'''
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
 
 LOADER_FORMAT_CHOICES = ['']
@@ -449,6 +451,30 @@ class Graph(Magics):
                 res = cancel_res.json()
         print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
+
+    @cell_magic
+    @needs_local_scope
+    @display_exceptions
+    def oc(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
+
+    @cell_magic
+    @needs_local_scope
+    @display_exceptions
+    def opencypher(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def oc_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def opencypher_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1093,3 +1119,93 @@ class Graph(Magics):
         store_to_ns(args.store_to, res, local_ns)
         with main_output:
             print(message)
+
+    def handle_opencypher_query(self, line, cell, local_ns):
+        """
+        This method in its own handler so that the magics %%opencypher and %%oc can both call it
+        """
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+        tab = widgets.Tab()
+
+        titles = []
+        children = []
+        if args.mode == 'query':
+            oc_http = self.client.opencypher_http(cell)
+            oc_http.raise_for_status()
+            res = oc_http.json()
+            rows_and_columns = get_rows_and_columns(res)
+        elif args.mode == 'bolt':
+            res = self.client.opencyper_bolt(cell)
+            rows = []
+            columns = set()
+            for r in res:
+                row = []
+                for key, item in r.items():
+                    columns.add(key)
+                    row.append(item)
+                rows.append(row)
+
+            rows_and_columns = {'columns': columns, 'rows': rows}
+
+        display(tab)
+        table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        # Assign an empty value so we can always display to table output.
+        table_html = ""
+
+        # some issues with displaying a datatable when not wrapped in an hbox and displayed last
+        hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+        titles.append('Table')
+        children.append(hbox)
+
+        if rows_and_columns is not None:
+            table_id = f"table-{str(uuid.uuid4())[:8]}"
+            table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                          rows=rows_and_columns['rows'], guid=table_id)
+
+        json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        with json_output:
+            print(json.dumps(res, indent=2))
+        children.append(json_output)
+        titles.append('JSON')
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+
+        if table_html != "":
+            with table_output:
+                display(HTML(table_html))
+        store_to_ns(args.store_to, res, local_ns)
+
+    def handle_opencypher_status(self, line, local_ns):
+        """
+        This is refactored into its own handler method so that we can invoke is from
+        %opencypher_status or from %oc_status
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-q', '--queryId', default='',
+                            help='The ID of a running OpenCypher query. Only displays the status of the specified query.')
+        parser.add_argument('-c', '--cancelQuery', action='store_true',
+                            help='Tells the status command to cancel a query. This parameter does not take a value')
+        parser.add_argument('-s', '--silent', action='store_true',
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        if not args.cancelQuery:
+            res = self.client.opencypher_status(args.queryId)
+            res.raise_for_status()
+        else:
+            if args.queryId == '':
+                print(OPENCYPHER_CANCEL_HINT_MSG)
+                return
+            else:
+                res = self.client.opencypher_cancel(args.queryId, args.silent)
+                res.raise_for_status()
+        js = res.json()
+        store_to_ns(args.store_to, js, local_ns)
+        print(json.dumps(js, indent=2))
