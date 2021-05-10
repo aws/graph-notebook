@@ -66,7 +66,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython',
+        'gremlinpython<3.5.*',
         'SPARQLWrapper==1.8.4',
         'tornado==4.5.3',
         'requests',
