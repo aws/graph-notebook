@@ -6,7 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Release 2.1.2 (May 10, 2021)
 
-- Pin gremlinpython to `<3.5.*`
+- Pin gremlinpython to `<3.5.*` ([Link to PR](https://github.com/aws/graph-notebook/pull/123))
 - Add support for notebook variables in Sparql/Gremlin magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/113))
 - Add support for grouping by different properties per label in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/115))
 - Fix missing Boto3 dependency in setup.py ([Link to PR](https://github.com/aws/graph-notebook/pull/118))

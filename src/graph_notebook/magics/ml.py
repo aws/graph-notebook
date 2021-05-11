@@ -3,11 +3,11 @@ import json
 import datetime
 import logging
 import time
+
 from IPython.core.display import display
 from botocore.session import get_session
 from ipywidgets import widgets
 
-from graph_notebook.magics.parsing import str_to_namespace_var
 from graph_notebook.neptune.client import Client, ClientBuilder
 
 logger = logging.getLogger("neptune_ml_magic_handler")
@@ -249,7 +249,7 @@ def wait_for_dataprocessing(job_id: str, client: Client, output: widgets.Output,
                 time.sleep(wait_interval)
 
 
-def neptune_ml_dataprocessing(args: argparse.Namespace, client, output: widgets.Output, params: dict = None):
+def neptune_ml_dataprocessing(args: argparse.Namespace, client, output: widgets.Output, params):
     if args.which_sub == 'start':
         if params is None or params == '' or params == {}:
             params = {
@@ -382,10 +382,6 @@ def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widget
 
 
 def neptune_ml_magic_handler(args, client: Client, output: widgets.Output, cell: str = '', local_ns: dict = None):
-    if local_ns is None:
-        local_ns = {}
-    cell = str_to_namespace_var(cell, local_ns)
-
     if args.which == 'export':
         return neptune_ml_export(args, client, output, cell)
     elif args.which == 'dataprocessing':
