@@ -64,7 +64,7 @@ def magic_variables(func):
             # args[1] = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), line_string)
             if len(args) > 2:
                 cell_string = args[2]
-                args[2] = variable_regex.sub(lambda m: str(local_ns[m.group(1)]), cell_string)
+                args[2] = variable_regex.sub(lambda m: json.dumps(local_ns[m.group(1)]) if type(local_ns[m.group(1)]) is dict else str(local_ns[m.group(1)]), cell_string)
             return func(*args, **kwargs)
         except KeyError as key_error:
             print(f'Terminated query due to undefined variable: {key_error}')
