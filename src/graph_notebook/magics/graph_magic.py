@@ -9,9 +9,11 @@ import argparse
 import logging
 import json
 import time
+import datetime
 import os
 import uuid
 from enum import Enum
+from json import JSONDecodeError
 
 import ipywidgets as widgets
 from SPARQLWrapper import SPARQLWrapper
@@ -25,7 +27,7 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, AuthModeEnum, \
     Configuration
-from graph_notebook.decorators.decorators import display_exceptions
+from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION
@@ -147,6 +149,7 @@ class Graph(Magics):
 
         self.client = builder.build()
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_config(self, line='', cell=''):
@@ -185,6 +188,7 @@ class Graph(Magics):
         self._generate_client_from_config(self.graph_notebook_config)
         print(f'set host to {line}')
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
@@ -229,6 +233,13 @@ class Graph(Magics):
             query_res.raise_for_status()
             results = query_res.json()
             store_to_ns(args.store_to, results, local_ns)
+            try:
+                res = query_res.json()
+            except JSONDecodeError:
+                res = query_res.content.decode('utf-8')
+            store_to_ns(args.store_to, res, local_ns)
+            titles = []
+            children = []
 
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
@@ -334,6 +345,7 @@ class Graph(Magics):
         store_to_ns(args.store_to, res, local_ns)
         print(json.dumps(res, indent=2))
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
@@ -342,7 +354,7 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
-        parser.add_argument('-g', '--group-by', default='T.label',
+        parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -356,7 +368,6 @@ class Graph(Magics):
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
-
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
@@ -846,7 +857,12 @@ class Graph(Magics):
                             print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
                             if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
                                 execution_time = interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
-                                execution_time_statement = '<1 second' if execution_time == 0 else f'{execution_time} seconds'
+                                if execution_time == 0:
+                                    execution_time_statement = '<1 second'
+                                elif execution_time > 59:
+                                    execution_time_statement = str(datetime.timedelta(seconds=execution_time))
+                                else:
+                                    execution_time_statement = f'{execution_time} seconds'
                                 print('Total execution time: ' + execution_time_statement)
                                 interval_output.close()
                                 print('Done.')
@@ -1093,6 +1109,7 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
+    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
@@ -1105,6 +1122,7 @@ class Graph(Magics):
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
 
+    @magic_variables
     @line_cell_magic
     @display_exceptions
     @needs_local_scope

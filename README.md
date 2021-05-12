@@ -27,18 +27,40 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to what the Gremlin console would return.
 
+`%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
+
+`%%graph_notebook_vis_options` - Sets the executing notebook's [vis.js options](https://visjs.github.io/vis-network/docs/network/physics.html) to the JSON payload provided in the cell body.
+
+`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
+
+
 **TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
-`%graph_notebook_config` - Returns a JSON object that contains connection information for your host.
+`%gremlin_status` - Obtain the status of Gremlin queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/gremlin-api-status.html)
 
-`%query_mode` - Lets you set the query mode for your queries to one of:
+`%sparql_status` - Obtain the status of SPARQL queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-api-status.html)
 
-* `query` (the default) : executes the query against the normal SPARQL or Gremlin endpoint
-* `explain` : Returns an explanation of the query plan instead of the query's results (valid for both SPARQL and Gremlin).
-* `profile` : Returns a profile of the query's operation, but does not actually execute the query (valid only for Gremlin).
+`%load` - Generate a form to submit a bulk loader job. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html)
+
+`%load_ids` - Get ids of bulk load jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
+
+`%load_status` - Get the status of a provided `load_id`. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
+
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning). 
+[Documentation](https://aws.amazon.com/neptune/machine-learning/)
+
+`%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
 `%seed` - Provides a form to add data to your graph without the use of a bulk loader. both SPARQL and Gremlin have an airport routes dataset.
+
+`%graph_notebook_config` - Returns a JSON payload that contains connection information for your host.
+
+`%graph_notebook_host` - Set the host endpoint to send queries to.
+
+`%graph_notebook_version` - Print the version of the `graph-notebook` package
+
+`%graph_notebook_vis_options` - Print the Vis.js options being used for rendered graphs
 
 **TIP** :point_right: You can list all the magics installed in the Python 3 kernel using the `%lsmagic` command.
 
@@ -115,6 +137,28 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
   "aws_region": "us-east-1"
 }
 ```
+
+You can also make use of namespaces for Blazegraph by specifying the path `graph-notebook` should use when querying your SPARQL like below:
+
+```
+%%graph_notebook_config
+
+{
+  "host": "localhost",
+  "port": 9999,
+  "auth_mode": "DEFAULT",
+  "iam_credentials_provider_type": "ENV",
+  "load_from_s3_arn": "",
+  "ssl": false,
+  "aws_region": "us-west-2",
+  "sparql": {
+    "path": "blazegraph/namespace/foo/sparql"
+  }
+}
+```
+
+This will result in the url `localhost:9999/blazegraph/namespace/foo/sparql` being used when executing any `%%sparql` magic commands. 
+
 To setup a new local Blazegraph database for use with the graph notebook, check out the [Quick Start](https://github.com/blazegraph/database/wiki/Quick_Start) from Blazegraph.
 
 ### Amazon Neptune

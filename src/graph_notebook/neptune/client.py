@@ -12,7 +12,6 @@ from boto3 import Session
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
-from neo4j import GraphDatabase
 from tornado import httpclient
 
 import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
@@ -68,13 +67,12 @@ SPARQL_ACTION = 'sparql'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', auth=None, session: Session = None):
+                 sparql_path: str = '/sparql', session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.region = region
-        self._auth = auth
         self._session = session
 
         self._http_protocol = 'https' if self.ssl else 'http'
@@ -197,58 +195,6 @@ class Client(object):
         req = self._prepare_request('POST', url, data=json.dumps(data))
         res = self._http_session.send(req)
         return res
-
-    def opencypher_http(self, query: str, headers: dict = None) -> requests.Response:
-        if headers is None:
-            headers = {}
-
-        if 'content-type' not in headers:
-            headers['content-type'] = 'application/x-www-form-urlencoded'
-
-        url = f'{self._http_protocol}://{self.host}:{self.port}/openCypher'
-        data = {
-            'query': query
-        }
-
-        req = self._prepare_request('POST', url, data=data, headers=headers)
-        res = self._http_session.send(req)
-        return res
-
-    def opencyper_bolt(self, query: str, **kwargs):
-        driver = self.get_opencypher_driver()
-        with driver.session() as session:
-            res = session.run(query, kwargs)
-            data = res.data()
-        driver.close()
-        return data
-
-    def opencypher_status(self, query_id: str = ''):
-        return self._query_status('openCypher', query_id=query_id)
-
-    def opencypher_cancel(self, query_id, silent: bool = False):
-        if type(query_id) is not str or query_id == '':
-            raise ValueError('query_id must be a non-empty string')
-
-        return self._query_status('openCypher', query_id=query_id, cancelQuery=True, silent=silent)
-
-    def get_opencypher_driver(self, user: str = 'neo4j', password: str = 'password'):
-        url = f'bolt://{self.host}:{self.port}'
-
-        if self._session:
-            method = 'POST'
-            headers = {
-                'HttpMethod': method,
-                'Host': url
-            }
-            aws_request = self._get_aws_request('POST', url)
-            for item in aws_request.headers.items():
-                headers[item[0]] = item[1]
-
-            auth_str = json.dumps(headers)
-            password = auth_str
-
-        driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
-        return driver
 
     def status(self) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/status'
@@ -487,21 +433,17 @@ class Client(object):
 
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
-        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
+        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers)
         if self._session is not None:
-            aws_request = self._get_aws_request(method, url, data=data, params=params, headers=headers)
-            request.headers = dict(aws_request.headers)
+            credentials = self._session.get_credentials()
+            frozen_creds = credentials.get_frozen_credentials()
+
+            req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
+            SigV4Auth(frozen_creds, service, self.region).add_auth(req)
+            prepared_iam_req = req.prepare()
+            request.headers = dict(prepared_iam_req.headers)
 
         return request.prepare()
-
-    def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
-        credentials = self._session.get_credentials()
-        frozen_creds = credentials.get_frozen_credentials()
-
-        req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
-        SigV4Auth(frozen_creds, service, self.region).add_auth(req)
-        prepared_iam_req = req.prepare()
-        return prepared_iam_req
 
     def _ensure_http_session(self):
         if not self._http_session:

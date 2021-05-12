@@ -66,20 +66,25 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython',
+        'gremlinpython<3.5.*',
         'SPARQLWrapper==1.8.4',
         'tornado==4.5.3',
         'requests',
         'ipywidgets',
         'networkx==2.4',
-        'Jinja2==2.10.1',
+        'Jinja2==2.11.3',
         'notebook',
         'jupyter-contrib-nbextensions',
         'widgetsnbextension',
         'jupyter>=1.0.0',
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
+<<<<<<< HEAD
         'neo4j'
+=======
+        'boto3>=1.17.58',
+        'ipython>=7.16.1'
+>>>>>>> rebase from 2.1.2
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
@@ -93,4 +98,7 @@ setup(
         'License :: OSI Approved :: Apache Software License'
     ],
     keywords='jupyter neptune gremlin sparql',
+    tests_require=[
+        'pytest'
+    ]
 )

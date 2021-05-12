@@ -1,4 +1,5 @@
 import boto3
+import uuid
 import pandas as pd
 import os
 import requests
@@ -19,8 +20,7 @@ HOME_DIRECTORY = os.path.expanduser("~")
 
 def signed_request(method, url, data=None, params=None, headers=None, service=None):
     creds = boto3.Session().get_credentials().get_frozen_credentials()
-    request = AWSRequest(method=method, url=url, data=data,
-                         params=params, headers=headers)
+    request = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
     SigV4Auth(creds, service, boto3.Session().region_name).add_auth(request)
     return requests.request(method=method, url=url, headers=dict(request.headers), data=data)
 
@@ -53,8 +53,7 @@ def get_training_job_name(prefix: str):
 
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
-    response = signed_request(
-        "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
+    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
 Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
@@ -108,14 +107,11 @@ def delete_pretrained_endpoints(endpoints: dict):
     sm = boto3.client("sagemaker")
     try:
         if 'classification_endpoint_name' in endpoints and endpoints['classification_endpoint_name']:
-            sm.delete_endpoint(
-                EndpointName=endpoints['classification_endpoint_name']["EndpointName"])
+            sm.delete_endpoint(EndpointName=endpoints['classification_endpoint_name']["EndpointName"])
         if 'regression_endpoint_name' in endpoints and endpoints['regression_endpoint_name']:
-            sm.delete_endpoint(
-                EndpointName=endpoints['regression_endpoint_name']["EndpointName"])
+            sm.delete_endpoint(EndpointName=endpoints['regression_endpoint_name']["EndpointName"])
         if 'prediction_endpoint_name' in endpoints and endpoints['prediction_endpoint_name']:
-            sm.delete_endpoint(
-                EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
+            sm.delete_endpoint(EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
         print(f'Endpoint(s) have been deleted')
     except Exception as e:
         logging.error(e)
@@ -211,7 +207,7 @@ class MovieLensProcessor:
             genre_lst = []
             for g in genres:
                 if row[g] == 1:
-                    genres_edges_df = genres_edges_df.append({'~id': f"{row['~id']}-included_in-{g}", '~label': 'included_in',
+                    genres_edges_df = genres_edges_df.append({'~id': uuid.uuid4(), '~label': 'included_in',
                                                               '~from': row['~id'], '~to': g}, ignore_index=True)
                     genre_lst.append(g)
             movies_df.loc[index, 'genre:String[]'] = ';'.join(genre_lst)
@@ -246,9 +242,9 @@ class MovieLensProcessor:
 
         dict = {}
         for index, row in ratings_vertices.iterrows():
-            dict[index * 2] = {'~id': f"{row['~from']}-wrote-{row['~id']}", '~label': 'wrote',
+            dict[index * 2] = {'~id': uuid.uuid4(), '~label': 'wrote',
                                '~from': row['~from'], '~to': row['~id']}
-            dict[index * 2 + 1] = {'~id': f"{row['~~id']}-about-{row['~to']}", '~label': 'about',
+            dict[index * 2 + 1] = {'~id': uuid.uuid4(), '~label': 'about',
                                    '~from': row['~id'], '~to': row['~to']}
         rating_edges_df = pd.DataFrame.from_dict(dict, "index")
 
@@ -263,7 +259,7 @@ class MovieLensProcessor:
 
         # Add ids to ratings edges
         rated_edges['~id'] = rated_edges['~from'].apply(
-            lambda x: f"{rated_edges['~from']}-rated-{rated_edges['~to']}")
+            lambda x: uuid.uuid4())
         rated_edges['~label'] = "rated"
         rated_edges.to_csv(os.path.join(self.formatted_directory,
                                         'rated_edges.csv'), index=False)
