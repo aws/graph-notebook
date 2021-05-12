@@ -20,6 +20,7 @@ class TestGremlin(IntegrationTest):
         self.assertEqual(type(results), list)
 
     @pytest.mark.gremlin
+    @pytest.mark.neptune
     def test_do_gremlin_explain(self):
         query = 'g.V().limit(1)'
         res = self.client.gremlin_explain(query)
@@ -28,6 +29,7 @@ class TestGremlin(IntegrationTest):
         self.assertTrue('Explain' in results)
 
     @pytest.mark.gremlin
+    @pytest.mark.neptune
     def test_do_gremlin_profile(self):
         query = 'g.V().limit(1)'
         res = self.client.gremlin_profile(query)

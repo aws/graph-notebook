@@ -13,6 +13,7 @@ import datetime
 import os
 import uuid
 from enum import Enum
+from json import JSONDecodeError
 
 import ipywidgets as widgets
 from SPARQLWrapper import SPARQLWrapper
@@ -230,6 +231,13 @@ class Graph(Magics):
             query_res.raise_for_status()
             results = query_res.json()
             store_to_ns(args.store_to, results, local_ns)
+            try:
+                res = query_res.json()
+            except JSONDecodeError:
+                res = query_res.content.decode('utf-8')
+            store_to_ns(args.store_to, res, local_ns)
+            titles = []
+            children = []
 
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
