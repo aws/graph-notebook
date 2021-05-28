@@ -79,9 +79,8 @@ setup(
         'jupyter>=1.0.0',
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
-        'neo4j'
         'boto3>=1.17.58',
-        'ipython>=7.16.1'
+        'ipython>=7.16.1',
         'neo4j'
     ],
     package_data={

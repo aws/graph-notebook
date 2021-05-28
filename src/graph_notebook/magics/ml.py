@@ -7,6 +7,7 @@ import time
 from IPython.core.display import display
 from botocore.session import get_session
 from ipywidgets import widgets
+from requests import Response
 
 from graph_notebook.neptune.client import Client, ClientBuilder
 
@@ -113,6 +114,47 @@ def generate_neptune_ml_parser():
     training_status_parser.add_argument('--wait-timeout', default=DEFAULT_WAIT_TIMEOUT, type=int,
                                         help='timeout while waiting for export job to complete')
 
+    # Being modeltransform subparsers
+    parser_modeltransform = subparsers.add_parser('modeltransform', help='modeltransform command help')
+
+    # create
+    modeltransform_subparsers = parser_modeltransform.add_subparsers(help='modeltransform subcommand help',
+                                                                     dest='which_sub')
+    modeltransform_create_parser = modeltransform_subparsers.add_parser('create', help='start a new modeltransform job')
+    modeltransform_create_parser.add_argument('--wait', action='store_true')
+    modeltransform_create_parser.add_argument('--store-to', default='', dest='store_to',
+                                              help='store result to this variable. If --wait is specified, will store the final status.')
+
+    # status
+    modeltransform_status_subparser = modeltransform_subparsers.add_parser('status',
+                                                                           help='get status of a modeltransform job')
+    modeltransform_status_subparser.add_argument('--job-id', type=str, required=True,
+                                                 help='modeltransform job-id to obtain the status of')
+    modeltransform_status_subparser.add_argument('--iam-role-arn', '-i', type=str, default='',
+                                                 help='iam role arn to use for modeltransform')
+    modeltransform_status_subparser.add_argument('--wait', action='store_true')
+    modeltransform_status_subparser.add_argument('--store-to', default='', dest='store_to',
+                                                 help='store result to this variable. If --wait is specified, will store the final status.')
+
+    # list
+    modeltransform_list_subparser = modeltransform_subparsers.add_parser('list',
+                                                                         help='obtain list of modeltransform jobs')
+    modeltransform_list_subparser.add_argument('--max-items', type=int, help='max number of items to obtain',
+                                               default=10)
+    modeltransform_list_subparser.add_argument('--iam-role-arn', '-i', type=str, default='',
+                                               help='iam role arn to use for modeltransform')
+    modeltransform_list_subparser.add_argument('--store-to', default='', dest='store_to',
+                                               help='store result to this variable.')
+
+    # stop
+    modeltransform_stop_subparser = modeltransform_subparsers.add_parser('stop', help='stop a modeltransform job')
+    modeltransform_stop_subparser.add_argument('--job-id', type=str, help='modeltransform job id', default='')
+    modeltransform_stop_subparser.add_argument('--clean', action='store_true', help='flag ')
+    modeltransform_stop_subparser.add_argument('--iam-role-arn', '-i', type=str, default='',
+                                               help='iam role arn to use for modeltransform')
+    modeltransform_stop_subparser.add_argument('--store-to', default='', dest='store_to',
+                                               help='store result to this variable.')
+
     # Begin endpoint subparsers
     parser_endpoint = subparsers.add_parser('endpoint', help='endpoint command help')
     endpoint_subparsers = parser_endpoint.add_subparsers(help='endpoint sub-command help',
@@ -193,10 +235,10 @@ def neptune_ml_export(args: argparse.Namespace, client: Client, output: widgets.
     # since the exporter is a different host than Neptune, it's IAM auth setting can be different
     # than the client we're using to connect to Neptune. Because of this, need o recreate out client before calling
     # any exporter urls to ensure we're signing any requests that we need to.
-    builder = ClientBuilder().with_host(client.host)\
-                            .with_port(client.port)\
-                            .with_region(client.region)\
-                            .with_tls(client.ssl)
+    builder = ClientBuilder().with_host(client.host) \
+        .with_port(client.port) \
+        .with_region(client.region) \
+        .with_tls(client.ssl)
 
     if args.export_iam:
         builder = builder.with_iam(get_session())
@@ -214,7 +256,8 @@ def neptune_ml_export(args: argparse.Namespace, client: Client, output: widgets.
             return export_job
     elif args.which_sub == 'status':
         if args.wait:
-            status = wait_for_export(export_client, args.export_url, args.job_id, output, export_ssl, args.wait_interval,
+            status = wait_for_export(export_client, args.export_url, args.job_id, output, export_ssl,
+                                     args.wait_interval,
                                      args.wait_timeout)
         else:
             status_res = export_client.export_status(args.export_url, args.job_id, export_ssl)
@@ -381,7 +424,91 @@ def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widget
         return f'Sub parser "{args.which} {args.which_sub}" was not recognized'
 
 
-def neptune_ml_magic_handler(args, client: Client, output: widgets.Output, cell: str = '', local_ns: dict = None):
+def modeltransform_wait(job_id: str, client: Client, output: widgets.Output,
+                        wait_interval: int = DEFAULT_WAIT_INTERVAL, wait_timeout: int = DEFAULT_WAIT_TIMEOUT):
+    job_id_output = widgets.Output()
+    update_status_output = widgets.Output()
+    with output:
+        display(job_id_output, update_status_output)
+
+    with job_id_output:
+        print(f'Wait called on endpoint creation job {job_id}')
+
+    with update_status_output:
+        beginning_time = datetime.datetime.utcnow()
+        while datetime.datetime.utcnow() - beginning_time < (datetime.timedelta(seconds=wait_timeout)):
+            update_status_output.clear_output()
+            status_res = client.modeltransform_status(job_id)
+            status_res.raise_for_status()
+            status = status_res.json()
+            if status['status'] in ['Completed', 'Failed', 'Stopped']:
+                print('modeltransform is finished')
+                return status
+            else:
+                print(f'Status is {status["status"]}')
+                print(f'Waiting for {wait_interval} before checking again...')
+                time.sleep(wait_interval)
+
+
+def modeltransform_start(client: Client, params):
+    """
+    Starts a new modeltransform job. If Params is not empty, we will attempt to parse it into JSON
+    and use it as the command payload. Otherwise we will check args for the required parameters:
+    """
+
+    data = params if type(params) is dict else json.loads(params)
+    res: Response = client.modeltransform_create(**data)
+    res.raise_for_status()
+    return res.json()
+
+
+def modeltransform_status(args: argparse.Namespace, client: Client, output: widgets.Output):
+    if args.wait:
+        return modeltransform_wait(args.job_id, client, output)
+    else:
+        status_res = client.modeltransform_status(args.job_id)
+        status_res.raise_for_status()
+        return status_res.json()
+
+
+def modeltransform_list(client: Client):
+    list_res = client.modeltransform_list()
+    list_res.raise_for_status()
+    return list_res.json()
+
+
+def modeltransform_stop(args: argparse.Namespace, client: Client):
+    stop_res = client.modeltransform_stop(args.job_id)
+    stop_res.raise_for_status()
+    return f'Job cancelled, you can check its status by running the command "%neptune_ml modeltransform status {args.job_id}"'
+
+
+def neptune_ml_modeltransform(args: argparse.Namespace, client: Client, output: widgets.Output, params):
+    """
+    We have three possible variants when invoking the `%neptune_ml modeltransform` command:
+        - create
+        - status
+        - list
+        - stop
+
+    NOTE: If params is a non-empty string, we will attempt to use it as the payload for the query.
+    """
+    if args.which_sub == 'create':
+        create_res = modeltransform_start(client, params)
+        if args.wait:
+            return modeltransform_wait(create_res['id'], client, output)
+        else:
+            return create_res
+    elif args.which_sub == 'status':
+        return modeltransform_status(args, client, output)
+    elif args.which_sub == 'list':
+        return modeltransform_list(client)
+    elif args.which_sub == 'stop':
+        return modeltransform_stop(args, client)
+
+
+def neptune_ml_magic_handler(args, client: Client, output: widgets.Output, cell: str = ''):
+    logger.debug(f'neptune_ml_magic_handler called with cell: {cell}')
     if args.which == 'export':
         return neptune_ml_export(args, client, output, cell)
     elif args.which == 'dataprocessing':
@@ -390,5 +517,7 @@ def neptune_ml_magic_handler(args, client: Client, output: widgets.Output, cell:
         return neptune_ml_training(args, client, output, cell)
     elif args.which == 'endpoint':
         return neptune_ml_endpoint(args, client, output, cell)
+    elif args.which == 'modeltransform':
+        return neptune_ml_modeltransform(args, client, output, cell)
     else:
         return f'sub parser {args.which} was not recognized'

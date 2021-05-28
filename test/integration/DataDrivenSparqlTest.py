@@ -20,7 +20,6 @@ class DataDrivenSparqlTest(IntegrationTest):
         for q in epl_queries:
             try:  # we are deciding to try except because we do not know if the database we are connecting to has a partially complete set of airports data or not.
                 res = self.client.sparql(q['content'].strip())
-                print(res)
             except Exception as e:
                 logger.error(f'query {q["content"]} failed due to {e}')
                 continue

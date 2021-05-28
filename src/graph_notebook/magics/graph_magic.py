@@ -791,13 +791,14 @@ class Graph(Magics):
                     'failOnError': fail_on_error.value,
                     'parallelism': parallelism.value,
                     'updateSingleCardinalityProperties': update_single_cardinality.value,
-                    'queueRequest': queue_request.value
+                    'queueRequest': queue_request.value,
+                    'region': region
                 }
 
                 if dependencies:
                     kwargs['dependencies'] = dependencies_list
 
-                load_res = self.client.load(source.value, source_format.value, arn.value, region_box.value, **kwargs)
+                load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
                 load_res.raise_for_status()
                 load_result = load_res.json()
                 store_to_ns(args.store_to, load_result, local_ns)
@@ -1132,7 +1133,7 @@ class Graph(Magics):
         logger.info(f'received call to neptune_ml with details: {args.__dict__}, cell={cell}, local_ns={local_ns}')
         main_output = widgets.Output()
         display(main_output)
-        res = neptune_ml_magic_handler(args, self.client, main_output, cell, local_ns)
+        res = neptune_ml_magic_handler(args, self.client, main_output, cell)
         message = json.dumps(res, indent=2) if type(res) is dict else res
         store_to_ns(args.store_to, res, local_ns)
         with main_output:
