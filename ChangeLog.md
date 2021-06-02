@@ -3,7 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Support dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/124))
+- Support dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/126))
 
 ## Release 2.1.2 (May 10, 2021)
 
