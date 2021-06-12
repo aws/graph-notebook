@@ -130,7 +130,6 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_results([path])
         self.assertEqual(len(path), len(gn.graph.nodes))
 
-
     def test_group_with_groupby(self):
         vertex = {
             T.id: '1234',
