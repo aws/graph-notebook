@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Add new Gremlin magic query parameter to specify what propert(ies) to display on nodes ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
+- Support dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/126))
 
 ## Release 2.1.2 (May 10, 2021)
 
