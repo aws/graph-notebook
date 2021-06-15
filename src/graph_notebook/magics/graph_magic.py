@@ -1152,15 +1152,21 @@ class Graph(Magics):
 
         titles = []
         children = []
+        rows = []
+        columns = set()
         if args.mode == 'query':
             oc_http = self.client.opencypher_http(cell)
             oc_http.raise_for_status()
             res = oc_http.json()
-            rows_and_columns = get_rows_and_columns(res)
+            if res['results']:
+                for r in res['results']:
+                    row = []
+                    for key, item in r.items():
+                        columns.add(key)
+                        row.append(item)
+                    rows.append(row)
         elif args.mode == 'bolt':
             res = self.client.opencyper_bolt(cell)
-            rows = []
-            columns = set()
             for r in res:
                 row = []
                 for key, item in r.items():
@@ -1168,7 +1174,7 @@ class Graph(Magics):
                     row.append(item)
                 rows.append(row)
 
-            rows_and_columns = {'columns': columns, 'rows': rows}
+        rows_and_columns = {'columns': columns, 'rows': rows}
 
         display(tab)
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
