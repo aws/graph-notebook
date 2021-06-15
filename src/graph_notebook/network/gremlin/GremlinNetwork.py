@@ -284,12 +284,12 @@ class GremlinNetwork(EventfulNetwork):
             title = v.label
             vertex_dict = v.__dict__
             if not isinstance(self.group_by_property, dict):  # Handle string format group_by
-                if self.group_by_property in [T_LABEL, 'label']:  # this handles if it's just a string
+                if str(self.group_by_property) in [T_LABEL, 'label']:  # this handles if it's just a string
                     # This sets the group key to the label if either "label" is passed in or
                     # T.label is set in order to handle the default case of grouping by label
                     # when no explicit key is specified
                     group = v.label
-                elif self.group_by_property == 'id':
+                elif str(self.group_by_property) in [T_ID, 'id']:
                     group = v.id
                 else:
                     group = ''
@@ -298,15 +298,25 @@ class GremlinNetwork(EventfulNetwork):
                     if str(v.label) in self.group_by_property:
                         if self.group_by_property[str(v.label)] in [T_LABEL, 'label']:
                             group = v.label
+                        elif self.group_by_property[str(v.label)] in [T_ID, 'id']:
+                            group = v.id
                         else:
                             group = vertex_dict[self.group_by_property[str(v.label)]]
-                    elif str(v.id) in self.group_by_property:
-                        group = vertex_dict[self.group_by_property[str(v.id)]]
                     else:
                         group = ''
                 except KeyError:
                     group = ''
+
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
+
+            if self.display_property in [T_ID, 'id']:
+                label = str(node_id)
+            elif isinstance(self.display_property, dict):
+                try:
+                    if self.display_property[title] in [T_ID, 'id']:
+                        label = str(node_id)
+                except KeyError:
+                    pass
             data = {'label': label, 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
         elif type(v) is dict:
             properties = {}
