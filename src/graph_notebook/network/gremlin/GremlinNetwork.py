@@ -81,6 +81,11 @@ def get_id(element):
         return str(element)
 
 
+def strip_and_truncate_label(old_label: str, max_len: int):
+    label = str(old_label).strip("[]'")
+    return label if len(label) <= max_len else label[:max_len - 3] + '...'
+
+
 class GremlinNetwork(EventfulNetwork):
     """
     GremlinNetwork extends the Network class and uses the add_results method to parse two specific types of responses
@@ -96,7 +101,10 @@ class GremlinNetwork(EventfulNetwork):
                  group_by_property=T_LABEL, display_property=T_LABEL, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        self.label_max_length = label_max_length
+        if label_max_length < 3:
+            self.label_max_length = 3
+        else:
+            self.label_max_length = label_max_length
         try:
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
@@ -317,7 +325,7 @@ class GremlinNetwork(EventfulNetwork):
                         label = str(node_id)
                 except KeyError:
                     pass
-            data = {'label': label, 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
+            data = {'label': str(label).strip("[]'"), 'title': title, 'group': group, 'properties': {'id': node_id, 'label': title}}
         elif type(v) is dict:
             properties = {}
             title = ''
@@ -328,7 +336,7 @@ class GremlinNetwork(EventfulNetwork):
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
             if T.label in v.keys():
                 title = str(v[T.label])
-                label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
+                label = strip_and_truncate_label(title, self.label_max_length)
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
@@ -344,11 +352,11 @@ class GremlinNetwork(EventfulNetwork):
                 if isinstance(self.display_property, dict):
                     try:
                         if str(k) == self.display_property[title]:
-                            label = str(v[k]) if len(str(v[k])) <= self.label_max_length else str(v[k])[:self.label_max_length - 3] + '...'
+                            label = strip_and_truncate_label(str(v[k]), self.label_max_length)
                     except KeyError:
                         continue
                 elif str(k) == self.display_property:
-                    label = str(v[k]) if len(str(v[k])) <= self.label_max_length else str(v[k])[:self.label_max_length - 3] + '...'
+                    label = strip_and_truncate_label(str(v[k]), self.label_max_length)
 
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
