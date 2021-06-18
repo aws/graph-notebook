@@ -10,5 +10,5 @@ def _jupyter_nbextension_paths():
     return [dict(
         section="notebook",
         src="static",
-        dest="sparql_syntax",
-        require="sparql_syntax/main")]
+        dest="opencypher_syntax",
+        require="opencypher_syntax/main")]
