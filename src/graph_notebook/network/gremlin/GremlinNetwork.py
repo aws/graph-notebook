@@ -15,7 +15,7 @@ from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
 
 logging.basicConfig()
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("graph_magic")
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
@@ -380,6 +380,7 @@ class GremlinNetwork(EventfulNetwork):
 
         if self.ignore_groups:
             data['group'] = ''
+        logger.debug(data)
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):

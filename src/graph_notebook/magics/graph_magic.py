@@ -14,6 +14,7 @@ import os
 import uuid
 from enum import Enum
 from json import JSONDecodeError
+from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
 from SPARQLWrapper import SPARQLWrapper
@@ -1152,9 +1153,11 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-
+        parser.add_argument('-g', '--group-by', type=str, default='T.label',
+                            help='Property used to group nodes (e.g. code, ~id) default is ~label')
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
         tab = widgets.Tab()
 
@@ -1163,9 +1166,28 @@ class Graph(Magics):
         rows = []
         columns = set()
         if args.mode == 'query':
+            query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
+            query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
             res = oc_http.json()
+            oc_metadata = build_gremlin_metadata_from_query(query_type='query', results=res,
+                                                                 query_time=query_time)
+
+            try:
+                logger.debug(f'groupby: {args.group_by}')
+                logger.debug(f'ignore_groups: {args.ignore_groups}')
+                gn = OCNetwork(group_by_property=args.group_by, ignore_groups=args.ignore_groups)
+                gn.add_results(res)
+                logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                if len(gn.graph.nodes) > 0:
+                    f = Force(network=gn, options=self.graph_notebook_vis_options)
+                    titles.append('Graph')
+                    children.append(f)
+                    logger.debug('added network to tabs')
+            except ValueError as value_error:
+                logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
+
             if res['results']:
                 for r in res['results']:
                     row = []
@@ -1187,7 +1209,8 @@ class Graph(Magics):
         display(tab)
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
         # Assign an empty value so we can always display to table output.
-        table_html = ""
+        table_html = ""          
+
 
         # some issues with displaying a datatable when not wrapped in an hbox and displayed last
         hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
@@ -1205,6 +1228,10 @@ class Graph(Magics):
         children.append(json_output)
         titles.append('JSON')
 
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+
         tab.children = children
         for i in range(len(titles)):
             tab.set_title(i, titles[i])
@@ -1212,6 +1239,9 @@ class Graph(Magics):
         if table_html != "":
             with table_output:
                 display(HTML(table_html))
+
+        with metadata_output:
+            display(HTML(oc_metadata.to_html()))
         store_to_ns(args.store_to, res, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):
