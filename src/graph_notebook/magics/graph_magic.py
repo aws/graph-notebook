@@ -1145,8 +1145,8 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('-g', '--group-by', type=str, default='T.label',
-                            help='Property used to group nodes (e.g. code, ~id) default is ~label')
+        parser.add_argument('-g', '--group-by', type=str, default='~labels',
+                            help='Property used to group nodes (e.g. code, ~id, ~labels) default is ~label')
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")

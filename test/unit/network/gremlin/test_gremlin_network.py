@@ -66,8 +66,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], 'SEA')
 
-<<<<<<< HEAD
-=======
     def test_group_with_groupby_multiple_labels_with_same_property(self):
         vertex1 = {
             T.id: '1234',
@@ -172,7 +170,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], '')
         self.assertEqual(node2['group'], '')
 
->>>>>>> rebase from 2.1.2
     def test_group_nonexistent_groupby(self):
         vertex = {
             T.id: '1234',
@@ -187,8 +184,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], '')
 
-<<<<<<< HEAD
-=======
     def test_group_nonexistent_groupby_properties_json_single_label(self):
         vertex1 = {
             T.id: '1234',
@@ -267,7 +262,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'SEA')
         self.assertEqual(node2['group'], '')
 
->>>>>>> rebase from 2.1.2
     def test_group_without_groupby(self):
         vertex = {
             T.id: '1234',
@@ -282,8 +276,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], 'airport')
 
-<<<<<<< HEAD
-=======
     def test_group_without_groupby_multiple_labels(self):
         vertex1 = {
             T.id: '1234',
@@ -309,7 +301,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'airport')
         self.assertEqual(node2['group'], 'country')
 
->>>>>>> rebase from 2.1.2
     def test_group_valueMap_true(self):
         vertex = {
             T.id: '1234',
@@ -360,8 +351,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], "['SEA']")
 
-<<<<<<< HEAD
-=======
     def test_group_with_groupby_list_properties_json(self):
         vertex = {
             T.id: '1234',
@@ -374,7 +363,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], "['SEA']")
 
->>>>>>> rebase from 2.1.2
     def test_group_notokens_groupby(self):
         vertex = {
             'type': 'Airport',
@@ -427,8 +415,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], "['ATL']")
 
-<<<<<<< HEAD
-=======
     def test_add_path_with_groupby_multiple_labels(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
                           T.label: 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
@@ -477,7 +463,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], "['US-GA']")
         self.assertEqual(node2['group'], "['AN']")
 
->>>>>>> rebase from 2.1.2
     def test_ignore_group(self):
         vertex = {
             T.id: '1234',
@@ -497,8 +482,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], '')
 
-<<<<<<< HEAD
-=======
     def test_ignore_group_properties_json(self):
         vertex1 = {
             T.id: '1234',
@@ -533,7 +516,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], '')
         self.assertEqual(node2['group'], '')
 
->>>>>>> rebase from 2.1.2
     def test_group_returnvertex_groupby_notspecified(self):
         vertex = Vertex(id='1')
 
@@ -555,8 +537,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], 'vertex')
 
-<<<<<<< HEAD
-=======
     def test_group_returnvertex_groupby_label_properties_json(self):
         vertex = Vertex(id='1')
 
@@ -570,7 +550,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], 'vertex')
 
->>>>>>> rebase from 2.1.2
     def test_group_returnvertex_groupby_id(self):
         vertex = Vertex(id='1')
 
@@ -584,8 +563,6 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '')
 
-<<<<<<< HEAD
-=======
     def test_group_returnvertex_groupby_id_properties_json(self):
         vertex = Vertex(id='1')
 
@@ -598,8 +575,6 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '')
-
->>>>>>> rebase from 2.1.2
 
 if __name__ == '__main__':
     unittest.main()
