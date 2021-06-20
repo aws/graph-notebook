@@ -9,10 +9,7 @@ from test.integration import IntegrationTest
 
 class TestSparqlQuery(IntegrationTest):
     @pytest.mark.sparql
-<<<<<<< HEAD:test/integration/without_iam/sparql/test_sparql_query_without_iam.py
-=======
     @pytest.mark.neptune
->>>>>>> rebase from 2.1.2:test/integration/sparql/sparql_query_without_iam.py
     def test_do_sparql_query(self):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
 
@@ -26,10 +23,7 @@ class TestSparqlQuery(IntegrationTest):
         self.assertTrue('o' in res['head']['vars'])
 
     @pytest.mark.sparql
-<<<<<<< HEAD:test/integration/without_iam/sparql/test_sparql_query_without_iam.py
-=======
     @pytest.mark.neptune
->>>>>>> rebase from 2.1.2:test/integration/sparql/sparql_query_without_iam.py
     def test_do_sparql_explain(self):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
         query_res = self.client.sparql_explain(query)

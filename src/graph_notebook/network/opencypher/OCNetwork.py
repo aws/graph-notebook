@@ -81,11 +81,12 @@ class OCNetwork(EventfulNetwork):
                 group = ''
         else:  # handle dict format group_by
             try:
-                if str(node[LABEL_KEY]) in self.group_by_property:
-                    if self.group_by_property[LABEL_KEY]['groupby'] in [LABEL_KEY, 'label']:
+                if str(node[LABEL_KEY][0]) in self.group_by_property:
+                    key=node[LABEL_KEY][0]
+                    if self.group_by_property[key]['groupby'] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
                     else:
-                        group = node[PROPERTIES_KEY][self.group_by_property[LABEL_KEY]['groupby']]
+                        group = node[PROPERTIES_KEY][self.group_by_property[key]['groupby']]
                 elif ID_KEY in self.group_by_property:
                     group = node[ID_KEY]
                 else:
