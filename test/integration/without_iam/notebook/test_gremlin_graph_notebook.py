@@ -39,3 +39,17 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
         gremlin_res = self.ip.user_ns[store_to_var]
 
         self.assertEqual(gremlin_res[0].label, label)
+
+    @pytest.mark.jupyter
+    @pytest.mark.gremlin
+    def test_gremlin_query_with_variables_and_dict_access(self):
+        label = {'key1': {'key2': {'key3': 'value'}}}
+        self.ip.user_ns['test_dict'] = label
+        query = "g.addV('${test_dict['key1']['key2']['key3']}')"
+
+        store_to_var = 'gremlin_res'
+        self.ip.run_cell_magic('gremlin', f'query --store-to {store_to_var}', query)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        gremlin_res = self.ip.user_ns[store_to_var]
+
+        self.assertEqual(gremlin_res[0].label, 'value')

@@ -356,6 +356,10 @@ class Graph(Magics):
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
+        parser.add_argument('-d', '--display-property', type=str, default='T.label',
+                            help='Property to display the value of on each node, default is T.label')
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
@@ -368,6 +372,7 @@ class Graph(Magics):
 
         first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
         children.append(first_tab_output)
+
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
@@ -397,8 +402,11 @@ class Graph(Magics):
             titles.append('Console')
             try:
                 logger.debug(f'groupby: {args.group_by}')
+                logger.debug(f'display_property: {args.display_property}')
+                logger.debug(f'label_max_length: {args.label_max_length}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
-                gn = GremlinNetwork(group_by_property=args.group_by, ignore_groups=args.ignore_groups)
+                gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                    label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
 
                 if args.path_pattern == '':
                     gn.add_results(query_res)
