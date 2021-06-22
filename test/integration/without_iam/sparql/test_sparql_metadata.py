@@ -13,28 +13,17 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
 
     @pytest.mark.sparql
     def test_sparql_default_query_metadata(self):
-<<<<<<< HEAD
         query = '''
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                PREFIX so: <https://schema.org/>
-=======
-        query = '''PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                PREFIX so: <https://schema.org/>
-                
->>>>>>> rebase from 2.1.2
-                SELECT ?city
-                WHERE {
-                    ?s a so:City .
-                    ?s rdfs:label ?city
-                    FILTER contains(?city,"ou")
-<<<<<<< HEAD
-                }
-                '''
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    PREFIX so: <https://schema.org/>
+                    SELECT ?city
+                    WHERE {
+                        ?s a so:City .
+                        ?s rdfs:label ?city
+                        FILTER contains(?city,"ou")
+                    }
+                    '''
         res = self.client.sparql(query)
-=======
-                }'''
-        res = self.client.sparql(query, headers={'Accept': 'application/sparql-results+json'})
->>>>>>> rebase from 2.1.2
         results = res.json()
         sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=res, results=results, scd_query=True)
         meta_dict = sparql_metadata.to_dict()
