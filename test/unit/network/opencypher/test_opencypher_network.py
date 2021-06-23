@@ -4,12 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
-from gremlin_python.structure.graph import Path
-from gremlin_python.process.traversal import T
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_EDGE, EVENT_ADD_NODE
-from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
-from gremlin_python.structure.graph import Vertex
-
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 
