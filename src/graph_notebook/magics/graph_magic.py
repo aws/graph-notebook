@@ -1153,13 +1153,8 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-<<<<<<< HEAD
-        parser.add_argument('-g', '--group-by', type=str, default='~labels',
-                            help='Property used to group nodes (e.g. code, ~id, ~labels) default is ~label')
-=======
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, ~id) default is ~label')
->>>>>>> akline/OC
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -1177,15 +1172,9 @@ class Graph(Magics):
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
             res = oc_http.json()
-<<<<<<< HEAD
             oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                  query_time=query_time)
             titles.append('Console')
-=======
-            oc_metadata = build_gremlin_metadata_from_query(query_type='query', results=res,
-                                                                 query_time=query_time)
-
->>>>>>> akline/OC
             try:
                 logger.debug(f'groupby: {args.group_by}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
@@ -1193,14 +1182,7 @@ class Graph(Magics):
                 gn.add_results(res)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:
-<<<<<<< HEAD
                     force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
-=======
-                    f = Force(network=gn, options=self.graph_notebook_vis_options)
-                    titles.append('Graph')
-                    children.append(f)
-                    logger.debug('added network to tabs')
->>>>>>> akline/OC
             except ValueError as value_error:
                 logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
 
@@ -1227,10 +1209,6 @@ class Graph(Magics):
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
         # Assign an empty value so we can always display to table output.
         table_html = ""          
-<<<<<<< HEAD
-=======
-
->>>>>>> akline/OC
 
         # Display Console Tab
         # some issues with displaying a datatable when not wrapped in an hbox and displayed last
@@ -1254,10 +1232,7 @@ class Graph(Magics):
         children.append(json_output)
         titles.append('JSON')
 
-<<<<<<< HEAD
         # Display Query Metadata Tab
-=======
->>>>>>> akline/OC
         metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
         titles.append('Query Metadata')
         children.append(metadata_output)
