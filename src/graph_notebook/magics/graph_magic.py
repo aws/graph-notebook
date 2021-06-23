@@ -40,7 +40,7 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
-from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query
+from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, build_opencypher_metadata_from_query
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -1157,15 +1157,16 @@ class Graph(Magics):
         children = []
         rows = []
         columns = set()
+        force_graph_output=None
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
             res = oc_http.json()
-            oc_metadata = build_gremlin_metadata_from_query(query_type='query', results=res,
+            oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                  query_time=query_time)
-
+            titles.append('Console')
             try:
                 logger.debug(f'groupby: {args.group_by}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
@@ -1173,10 +1174,7 @@ class Graph(Magics):
                 gn.add_results(res)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:
-                    f = Force(network=gn, options=self.graph_notebook_vis_options)
-                    titles.append('Graph')
-                    children.append(f)
-                    logger.debug('added network to tabs')
+                    force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
             except ValueError as value_error:
                 logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
 
@@ -1195,6 +1193,7 @@ class Graph(Magics):
                     columns.add(key)
                     row.append(item)
                 rows.append(row)
+            # Need to eventually add code to parse and display a network for the bolt format here
 
         rows_and_columns = {'columns': columns, 'rows': rows}
 
@@ -1203,10 +1202,9 @@ class Graph(Magics):
         # Assign an empty value so we can always display to table output.
         table_html = ""          
 
-
+        # Display Console Tab
         # some issues with displaying a datatable when not wrapped in an hbox and displayed last
         hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
-        titles.append('Table')
         children.append(hbox)
 
         if rows_and_columns is not None:
@@ -1214,12 +1212,19 @@ class Graph(Magics):
             table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
                                                           rows=rows_and_columns['rows'], guid=table_id)
 
+        # Display Graph Tab (if exists)
+        if force_graph_output:
+            titles.append('Graph')
+            children.append(force_graph_output)
+
+        # Display JSON tab
         json_output = widgets.Output(layout=DEFAULT_LAYOUT)
         with json_output:
             print(json.dumps(res, indent=2))
         children.append(json_output)
         titles.append('JSON')
 
+        # Display Query Metadata Tab
         metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
         titles.append('Query Metadata')
         children.append(metadata_output)
