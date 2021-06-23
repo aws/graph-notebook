@@ -7,7 +7,10 @@ import pytest
 from test.integration import GraphNotebookIntegrationTest
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> akline/OC
 class TestGraphMagicSparql(GraphNotebookIntegrationTest):
 
     @pytest.mark.jupyter
@@ -40,7 +43,23 @@ class TestGraphMagicSparql(GraphNotebookIntegrationTest):
     @pytest.mark.neptune  # marking this for neptune since blazegraph is returning subject, predicate, object bindings
     def test_sparql_query_with_variables(self):
         self.ip.user_ns['subj_var'] = 's'
+<<<<<<< HEAD
         query = 'SELECT ?s ?p ?o WHERE {?${subj_var} ?o ?p } LIMIT 1'
+=======
+        query = 'SELECT ?s ?o ?p WHERE {?${subj_var} ?o ?p } LIMIT 1'
+        store_to_var = 'sparql_res'
+        self.ip.run_cell_magic('sparql', f'--store-to {store_to_var}', query)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        sparql_res = self.ip.user_ns[store_to_var]
+        self.assertEqual(['s', 'o', 'p'], sparql_res['head']['vars'])
+
+    @pytest.mark.jupyter
+    @pytest.mark.sparql
+    @pytest.mark.neptune
+    def test_sparql_query_with_variables_and_dict_access(self):
+        self.ip.user_ns['subj_var'] = {'key1': {'key2': {'key3': 's'}}}
+        query = 'SELECT ?s ?o ?p WHERE {?${subj_var["key1"]["key2"]["key3"]} ?o ?p } LIMIT 1'
+>>>>>>> akline/OC
         store_to_var = 'sparql_res'
         self.ip.run_cell_magic('sparql', f'--store-to {store_to_var}', query)
         self.assertFalse('graph_notebook_error' in self.ip.user_ns)

@@ -9,7 +9,10 @@ from test.integration import IntegrationTest
 
 class TestSparqlQuery(IntegrationTest):
     @pytest.mark.sparql
+<<<<<<< HEAD
     @pytest.mark.neptune
+=======
+>>>>>>> akline/OC
     def test_do_sparql_query(self):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
 
@@ -23,7 +26,10 @@ class TestSparqlQuery(IntegrationTest):
         self.assertTrue('o' in res['head']['vars'])
 
     @pytest.mark.sparql
+<<<<<<< HEAD
     @pytest.mark.neptune
+=======
+>>>>>>> akline/OC
     def test_do_sparql_explain(self):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
         query_res = self.client.sparql_explain(query)
@@ -31,3 +37,4 @@ class TestSparqlQuery(IntegrationTest):
         res = query_res.content.decode('utf-8')
         self.assertEqual(type(res), str)
         self.assertTrue(res.startswith('<!DOCTYPE html>'))
+

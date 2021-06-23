@@ -37,8 +37,8 @@ class TestSparqlStatusWithIam(DataDrivenSparqlTest):
     def test_do_sparql_cancel_nonexistent(self):
         query_id = "invalid-guid"
         cancel_res = self.client.sparql_cancel(query_id)
-        assert cancel_res.status_code == 200
-        assert cancel_res.content == b''
+        assert cancel_res.status_code == 400
+        assert cancel_res.content == b'Invalid queryId (not a UUID): invalid-guid'
 
     @pytest.mark.iam
     @pytest.mark.neptune
