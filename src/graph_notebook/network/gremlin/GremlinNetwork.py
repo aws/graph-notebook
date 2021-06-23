@@ -380,7 +380,6 @@ class GremlinNetwork(EventfulNetwork):
 
         if self.ignore_groups:
             data['group'] = ''
-        logger.debug(data)
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):

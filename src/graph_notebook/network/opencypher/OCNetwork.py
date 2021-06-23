@@ -3,16 +3,8 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-<<<<<<< HEAD
 import json
 import logging
-=======
-import hashlib
-import json
-import uuid
-import logging
-from enum import Enum
->>>>>>> akline/OC
 import collections
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork
