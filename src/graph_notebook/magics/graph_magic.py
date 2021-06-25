@@ -1155,6 +1155,10 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, ~id) default is ~label')
+        parser.add_argument('-d', '--display-property', type=str, default='T.label',
+                            help='Property to display the value of on each node, default is T.label')
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -1178,7 +1182,10 @@ class Graph(Magics):
             try:
                 logger.debug(f'groupby: {args.group_by}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
-                gn = OCNetwork(group_by_property=args.group_by, ignore_groups=args.ignore_groups)
+                logger.debug(f'display_property: {args.display_property}')
+                logger.debug(f'label_max_length: {args.label_max_length}')
+                gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                    label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
                 gn.add_results(res)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:

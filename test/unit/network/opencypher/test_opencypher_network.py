@@ -500,6 +500,131 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node2 = gn.graph.nodes.get('3670')
         self.assertEqual(node1['group'], 'ANC')
         self.assertEqual(node2['group'], 'United States')
- 
+
+
+    def test_set_label_property(self):
+        res = {
+        "results": [
+            {
+            "a": {
+                "~id": "22",
+                "~entityType": "node",
+                "~labels": [
+                "airport"
+                ],
+                "~properties": {
+                "runways": 3,
+                "code": "SEA"
+                }
+            }
+            }
+        ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'SEA')
+
+    def test_set_label_length(self):
+        res = {
+        "results": [
+            {
+            "a": {
+                "~id": "22",
+                "~entityType": "node",
+                "~labels": [
+                "airport"
+                ],
+                "~properties": {
+                "runways": 3,
+                "code": "SEA"
+                }
+            }
+            }
+        ]
+        }
+        gn = OCNetwork(label_max_length=5)
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'ai...')
+
+    def test_set_label_property_invalid(self):
+        res = {
+        "results": [
+            {
+            "a": {
+                "~id": "22",
+                "~entityType": "node",
+                "~labels": [
+                "airport"
+                ],
+                "~properties": {
+                "runways": 3,
+                "code": "SEA"
+                }
+            }
+            }
+        ]
+        }
+        gn = OCNetwork(display_property='{"airport":"foo"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+
+    def test_set_label_property_multiple_types(self):
+        path={
+            "results": [
+                {
+                "p": [
+                    {
+                    "~id": "2",
+                    "~entityType": "node",
+                    "~labels": [
+                        "airport"
+                    ],
+                    "~properties": {
+                        "desc": "Anchorage Ted Stevens",
+                        "lon": -149.996002197266,
+                        "runways": 3,
+                        "type": "airport",
+                        "country": "US",
+                        "region": "US-AK",
+                        "lat": 61.1744003295898,
+                        "elev": 151,
+                        "city": "Anchorage",
+                        "icao": "PANC",
+                        "code": "ANC",
+                        "longest": 12400
+                    }
+                    },
+                    {
+                    "~id": "53617",
+                    "~entityType": "relationship",
+                    "~start": "3670",
+                    "~end": "2",
+                    "~type": "contains"
+                    },
+                    {
+                    "~id": "3670",
+                    "~entityType": "node",
+                    "~labels": [
+                        "country"
+                    ],
+                    "~properties": {
+                        "desc": "United States",
+                        "code": "US"
+                    }
+                    }
+                ]
+                }
+            ]
+            }
+        gn = OCNetwork(display_property='{"airport":"code","country":"desc"}')
+        gn.add_results(path)
+        node1 = gn.graph.nodes.get('2')
+        node2 = gn.graph.nodes.get('3670')
+        self.assertEqual(node1['label'], 'ANC')
+        self.assertEqual(node2['label'], 'United ...')
+
 if __name__ == '__main__':
     unittest.main()

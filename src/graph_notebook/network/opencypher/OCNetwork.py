@@ -31,37 +31,24 @@ class OCNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=LABEL_KEY, ignore_groups=False):
+                 group_by_property=LABEL_KEY, display_property=LABEL_KEY, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        self.label_max_length = label_max_length
+        if label_max_length < 3:
+            self.label_max_length = 3
+        else:
+            self.label_max_length = label_max_length
         try:
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
             self.group_by_property = group_by_property
+        try:
+            self.display_property = json.loads(display_property)
+        except ValueError:
+            self.display_property = display_property
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
     
-    def flatten(self, d:dict, parent_key='', sep='_') -> dict:
-        """Flattens dictionaries including nested dictionaties
-
-        Args:
-            d (dict): The dictionary to flatten
-            parent_key (str, optional): The parent key name to append. Defaults to ''.
-            sep (str, optional): The seperator between the parent and sub key. Defaults to '_'.
-
-        Returns:
-            [dict]: The flattened dictionary
-        """
-        items = []
-        for k, v in d.items():
-            new_key = parent_key + sep + k if parent_key else k
-            if isinstance(v, collections.MutableMapping):
-                items.extend(self.flatten(v).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
-
     def parse_node(self, node:dict):
         """This parses the node parameter and adds the node to the network diagram
 
@@ -100,11 +87,22 @@ class OCNetwork(EventfulNetwork):
             except KeyError:
                 group = ''
 
-        if title == '':
-            for key in node[PROPERTIES_KEY]:
-                title += str(node[PROPERTIES_KEY][key])
-            label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-        data = {'properties': self.flatten(node), 'label': label, 'title': title, 'group': group}
+        props=self.flatten(node)
+        if self.display_property in [ID_KEY, 'id']:
+            label = str(node[ID_KEY])
+        elif isinstance(self.display_property, dict):
+            try:
+                if self.display_property[title] in props:
+                    label = str(props[self.display_property[title]])
+                elif LABEL_KEY in props:
+                    label = props[LABEL_KEY]
+                else:
+                    label=str(props)
+            except KeyError:
+                pass
+        title=label
+        label = self.strip_and_truncate_label(label, self.label_max_length)
+        data = {'properties': props, 'label': label, 'title': title, 'group': group}
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):
@@ -122,8 +120,6 @@ class OCNetwork(EventfulNetwork):
                 self.parse_node(res)
             else:
                 self.parse_rel(res)
-        else:
-            logger.debug("No Type Found")
 
     def add_results(self, results):
         """Adds the results parameter to the network
