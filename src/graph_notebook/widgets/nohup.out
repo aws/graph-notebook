@@ -1,0 +1,511 @@
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 4689ms
+    Built at: 06/25/2021 7:45:35 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 6459ms
+    Built at: 06/25/2021 7:45:37 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 4200ms
+    Built at: 06/25/2021 8:08:13 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 5960ms
+    Built at: 06/25/2021 8:08:15 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 4109ms
+    Built at: 06/25/2021 10:04:52 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 5848ms
+    Built at: 06/25/2021 10:04:53 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 3314ms
+    Built at: 06/25/2021 10:12:49 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 4888ms
+    Built at: 06/25/2021 10:12:51 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 4605ms
+    Built at: 06/25/2021 10:18:34 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 6469ms
+    Built at: 06/25/2021 10:18:36 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 3841ms
+    Built at: 06/25/2021 10:21:38 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 5528ms
+    Built at: 06/25/2021 10:21:39 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.
+
+> graph_notebook_widgets@2.1.3 start /Users/dbechbe/Documents/brazil/src/Graph-notebook-private/src/graph_notebook/widgets
+> webpack-dev-server --config webpack.dev.config.js
+
+[31m✖[39m [90m｢wds｣[39m:  { Error: listen EADDRINUSE: address already in use 127.0.0.1:9000
+    at Server.setupListenHandle [as _listen2] (net.js:1259:14)
+    at listenInCluster (net.js:1307:12)
+    at GetAddrInfoReqWrap.doListen [as callback] (net.js:1446:7)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:63:10)
+  code: 'EADDRINUSE',
+  errno: 'EADDRINUSE',
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 9000 }
+[34mℹ[39m [90m｢wdm｣[39m: Hash: d098533078f0a7c7b5087246ef48c9a17bbc06cb
+Version: webpack 4.43.0
+Child
+    Hash: d098533078f0a7c7b508
+    Time: 3719ms
+    Built at: 06/25/2021 10:30:00 AM
+               Asset     Size  Chunks                   Chunk Names
+        extension.js  386 KiB    main  [emitted]        main
+    extension.js.map  438 KiB    main  [emitted] [dev]  main
+    Entrypoint main = extension.js extension.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js extension.dev.js 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/extension.dev.js] 391 bytes {main} [built]
+        + 21 hidden modules
+Child
+    Hash: 7246ef48c9a17bbc06cb
+    Time: 5350ms
+    Built at: 06/25/2021 10:30:01 AM
+                               Asset       Size  Chunks                   Chunk Names
+            ../../lib/extension.d.ts  114 bytes          [emitted]        
+         ../../lib/force_widget.d.ts   9.25 KiB          [emitted]        
+    ../../lib/force_widget.spec.d.ts   11 bytes          [emitted]        
+                ../../lib/index.d.ts   59 bytes          [emitted]        
+            ../../lib/index.dev.d.ts   59 bytes          [emitted]        
+               ../../lib/plugin.d.ts  218 bytes          [emitted]        
+                ../../lib/types.d.ts    6.3 KiB          [emitted]        
+              ../../lib/version.d.ts  262 bytes          [emitted]        
+                            index.js   3.49 MiB    main  [emitted]        main
+                        index.js.map   4.22 MiB    main  [emitted] [dev]  main
+    Entrypoint main = index.js index.js.map
+    [0] multi (webpack)-dev-server/client?http://localhost:9000 (webpack)/hot/only-dev-server.js index.dev.ts 52 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/index.js?http://localhost:9000] (webpack)-dev-server/client?http://localhost:9000 4.29 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/overlay.js] (webpack)-dev-server/client/overlay.js 3.51 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/socket.js] (webpack)-dev-server/client/socket.js 1.53 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/createSocketUrl.js] (webpack)-dev-server/client/utils/createSocketUrl.js 2.91 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/log.js] (webpack)-dev-server/client/utils/log.js 964 bytes {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/reloadApp.js] (webpack)-dev-server/client/utils/reloadApp.js 1.59 KiB {main} [built]
+    [./node_modules/webpack-dev-server/client/utils/sendMessage.js] (webpack)-dev-server/client/utils/sendMessage.js 402 bytes {main} [built]
+    [./node_modules/webpack-dev-server/node_modules/strip-ansi/index.js] (webpack)-dev-server/node_modules/strip-ansi/index.js 161 bytes {main} [built]
+    [./node_modules/webpack/hot sync ^\.\/log$] (webpack)/hot sync nonrecursive ^\.\/log$ 170 bytes {main} [built]
+    [./node_modules/webpack/hot/emitter.js] (webpack)/hot/emitter.js 75 bytes {main} [built]
+    [./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {main} [built]
+    [./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.34 KiB {main} [built]
+    [./node_modules/webpack/hot/only-dev-server.js] (webpack)/hot/only-dev-server.js 2.52 KiB {main} [built]
+    [./src/index.dev.ts] 459 bytes {main} [built]
+        + 37 hidden modules
+[34mℹ[39m [90m｢wdm｣[39m: Compiled successfully.

@@ -979,7 +979,7 @@ class Graph(Magics):
     @display_exceptions
     def seed(self, line):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
+        parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
@@ -990,9 +990,9 @@ class Graph(Magics):
 
         output = widgets.Output()
         progress_output = widgets.Output()
-        language_dropdown = widgets.Dropdown(
+        model_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
-            description='Language:',
+            description='Data Model:',
             disabled=False
         )
 
@@ -1006,8 +1006,8 @@ class Graph(Magics):
         submit_button.layout.visibility = 'hidden'
 
         def on_value_change(change):
-            selected_language = change['new']
-            data_sets = get_data_sets(selected_language)
+            selected_model = change['new']
+            data_sets = get_data_sets(selected_model)
             data_sets.sort()
             data_set_drop_down.options = [ds for ds in data_sets if
                                           ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
@@ -1017,13 +1017,13 @@ class Graph(Magics):
 
         def on_button_clicked(b=None):
             submit_button.close()
-            language_dropdown.disabled = True
+            model_dropdown.disabled = True
             data_set_drop_down.disabled = True
-            language = language_dropdown.value.lower()
+            model = model_dropdown.value.lower()
             data_set = data_set_drop_down.value.lower()
             with output:
-                print(f'Loading data set {data_set} with language {language}')
-            queries = get_queries(language, data_set)
+                print(f'Loading data set {data_set} for {model}')
+            queries = get_queries(model, data_set)
             if len(queries) < 1:
                 with output:
                     print('Did not find any queries for the given dataset')
@@ -1045,7 +1045,7 @@ class Graph(Magics):
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
-                if language == 'gremlin':
+                if model == 'Property Graph':
                     # IMPORTANT: We treat each line as its own query!
                     for line in q['content'].splitlines():
                         try:
@@ -1105,11 +1105,11 @@ class Graph(Magics):
             return
 
         submit_button.on_click(on_button_clicked)
-        language_dropdown.observe(on_value_change, names='value')
+        model_dropdown.observe(on_value_change, names='value')
 
-        display(language_dropdown, data_set_drop_down, submit_button, progress_output, output)
-        if args.language != '':
-            language_dropdown.value = args.language
+        display(model_dropdown, data_set_drop_down, submit_button, progress_output, output)
+        if args.model != '':
+            model_dropdown.value = args.model
 
             if args.dataset != '' and args.dataset in data_set_drop_down.options:
                 data_set_drop_down.value = args.dataset.lower()

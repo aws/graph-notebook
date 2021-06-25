@@ -1,0 +1,233 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX soccer: <http://www.example.com/soccer#>
+PREFIX city: <http://www.example.com/city#>
+prefix so: <https://schema.org/>
+
+INSERT DATA
+{
+#
+# Teams
+#
+  soccer:Arsenal a soccer:Team ;
+    rdfs:label "Arsenal" ;
+    soccer:teamName "Arsenal F.C." ;
+    soccer:nickName "The Gunners" ;
+    soccer:founded 1886 ;
+    soccer:homeStadium soccer:The_Emirates .
+  soccer:Chelsea a soccer:Team ;
+    rdfs:label "Chelsea" ;
+    soccer:teamName "Chelsea F.C." ;
+    soccer:nickName "The Blues" ;
+    soccer:founded 1905 ;
+    soccer:homeStadium soccer:Stamford_Bridge .
+  soccer:Spurs a soccer:Team ;
+    rdfs:label "Tottenham Hotspur" ;
+    soccer:teamName "Tottenham Hotspur F.C." ;
+    soccer:nickName "Spurs" ;
+    soccer:founded 1882 ;
+    soccer:homeStadium soccer:Tottenham_Hotspur_Stadium .
+  soccer:West_Ham a soccer:Team ;
+    rdfs:label "West Ham United" ;
+    soccer:teamName "West Ham United F.C." ;
+    soccer:nickName "The Hammers" ;
+    soccer:founded 1895 ;
+    soccer:homeStadium soccer:London_Stadium .
+  soccer:Liverpool a soccer:Team ;
+    rdfs:label "Liverpool" ;
+    soccer:teamName "Liverpool F.C." ;
+    soccer:nickName "The Reds" ;
+    soccer:founded 1892 ;
+    soccer:homeStadium soccer:Anfield .
+  soccer:Everton a soccer:Team ;
+    rdfs:label "Everton" ;
+    soccer:teamName "Everton F.C." ;
+    soccer:nickName "The Toffees" ;
+    soccer:founded 1878 ;
+    soccer:homeStadium soccer:Goodison_Park .
+  soccer:Manchester_United a soccer:Team ;
+    rdfs:label "Manchester United" ;
+    soccer:teamName "Manchester United F.C." ;
+    soccer:nickName "The Red Devils" ;
+    soccer:founded 1878 ;
+    soccer:homeStadium soccer:Old_Trafford .
+  soccer:Manchester_City a soccer:Team ;
+    rdfs:label "Manchester City" ;
+    soccer:teamName "Manchester City F.C" ;
+    soccer:nickName "The Citizens" ;
+    soccer:founded 1880 ;
+    soccer:homeStadium soccer:The_Etihad .
+  soccer:Wolves a soccer:Team ;
+    rdfs:label "Wolverhampton Wanderers" ;
+    soccer:teamName "Wolverhampton Wanderers F.C" ;
+    soccer:nickName "Wolves" ;
+    soccer:founded 1877 ;
+    soccer:homeStadium soccer:Molineux .
+soccer:Burnley a soccer:Team ;
+    rdfs:label "Burnley" ;
+    soccer:teamName "Burnley F.C" ;
+    soccer:nickName "The Clarets" ;
+    soccer:founded 1882 ;
+    soccer:homeStadium soccer:Turf_Moor .
+soccer:Sheffield_United a soccer:Team ;
+    rdfs:label "Sheffield United" ;
+    soccer:teamName "Sheffield United F.C" ;
+    soccer:nickName "The Blades" ;
+    soccer:founded 1889 ;
+    soccer:homeStadium soccer:Bramall_Lane .
+soccer:Crystal_Palace a soccer:Team ;
+    rdfs:label "Crystal Palace" ;
+    soccer:teamName "Crystal Palace F.C" ;
+    soccer:nickName "Eagles" ;
+    soccer:founded 1905 ;
+    soccer:homeStadium soccer:Selhurst_Park .
+soccer:Southampton a soccer:Team ;
+    rdfs:label "Southampton" ;
+    soccer:teamName "Southampton F.C" ;
+    soccer:nickName "The Saints" ;
+    soccer:founded 1885 ;
+    soccer:homeStadium soccer:St_Marys .
+soccer:Newcastle_United a soccer:Team ;
+    rdfs:label "Newcastle United" ;
+    soccer:teamName "Newcastle United F.C" ;
+    soccer:nickName "The Magpies" ;
+    soccer:founded 1892 ;
+    soccer:homeStadium soccer:St_James_Park .
+soccer:Brighton a soccer:Team ;
+    rdfs:label "Brighton and Hove Albion" ;
+    soccer:teamName "Brighton and Hove Albion F.C" ;
+    soccer:nickName "Seagulls" ;
+    soccer:founded 1901 ;
+    soccer:homeStadium soccer:Amex_Stadium .
+soccer:Watford a soccer:Team ;
+    rdfs:label "Watford" ;
+    soccer:teamName "Watford F.C." ;
+    soccer:nickName "Hornets" ;
+    soccer:founded 1898 ;
+    soccer:homeStadium soccer:Vicarage_Road .
+soccer:Bournemouth a soccer:Team ;
+    rdfs:label "Bournemouth" ;
+    soccer:teamName "Bournemouth F.C." ;
+    soccer:nickName "The Cherries" ;
+    soccer:founded 1899 ;
+    soccer:homeStadium soccer:Vitality_Stadium .
+soccer:Aston_Villa a soccer:Team ;
+    rdfs:label "Aston Villa" ;
+    soccer:teamName "Aston Villa F.C." ;
+    soccer:nickName "The Villans" ;
+    soccer:founded 1897 ;
+    soccer:homeStadium soccer:Villa_Park .
+soccer:Leicester_City a soccer:Team ;
+    rdfs:label "Leicester City" ;
+    soccer:teamName "Leicester City F.C." ;
+    soccer:nickName "The Foxes" ;
+    soccer:founded 1884 ;
+    soccer:homeStadium soccer:King_Power_Stadium .
+soccer:Norwich_City a soccer:Team ;
+    rdfs:label "Norwich City" ;
+    soccer:teamName "Norwich City F.C." ;
+    soccer:nickName "The Canaries" ;
+    soccer:founded 1902 ;
+    soccer:homeStadium soccer:Carrow_Road_Stadium .
+#
+#
+# Stadiums
+#
+  soccer:The_Emirates a soccer:Stadium ;
+    rdfs:label "The Emirates" ;
+    so:location city:London .
+  soccer:Stamford_Bridge a soccer:Stadium ;
+    rdfs:label "Stamford Bridge" ;
+    so:location city:London .
+  soccer:Tottenham_Hotspur_Stadium a soccer:Stadium ;
+    rdfs:label "Tottenham Hotspur Stadium" ;
+    so:location city:London .
+  soccer:London_Stadium a soccer:Stadium ;
+    rdfs:label "London Stadium" ;
+    so:location city:London .
+  soccer:Anfield a soccer:Stadium ;
+    rdfs:label "Anfield" ;
+    so:location city:Liverpool .
+  soccer:Goodison_Park a soccer:Stadium ;
+    rdfs:label "Goodison Park" ;
+    so:location city:Liverpool .
+  soccer:Old_Trafford a soccer:Stadium ;
+    rdfs:label "Old Trafford" ;
+    so:location city:Manchester .
+  soccer:The_Etihad a soccer:Stadium ;
+    rdfs:label "Etihad Stadium" ;
+    so:location city:Manchester .
+  soccer:Molineux a soccer:Stadium ;
+    rdfs:label "Molineux Stadium" ;
+    so:location city:Wolverhampton .
+  soccer:Turf_Moor a soccer:Stadium ;
+    rdfs:label "Turf Moor" ;
+    so:location city:Burnley .
+  soccer:Bramall_Lane a soccer:Stadium ;
+    rdfs:label "Bramall Lane" ;
+    so:location city:Sheffield .
+  soccer:Selhurst_Park a soccer:Stadium ;
+    rdfs:label "Selhurst Park Stadium" ;
+    so:location city:London .
+  soccer:St_Marys a soccer:Stadium ;
+    rdfs:label "St. Marys Stadium" ;
+    so:location city:Southampton .
+  soccer:St_James_Park a soccer:Stadium ;
+    rdfs:label "St. James Park" ;
+    so:location city:Newcastle .
+  soccer:Amex_Stadium a soccer:Stadium ;
+    rdfs:label "American Express Community Stadium" ;
+    so:location city:Brighton .
+  soccer:Vicarage_Road a soccer:Stadium ;
+    rdfs:label "Vicarage Road" ;
+    so:location city:Watford .
+  soccer:Vitality_Stadium a soccer:Stadium ;
+    rdfs:label "Vitality Stadium" ;
+    so:location city:Bournemouth .
+  soccer:Villa_Park a soccer:Stadium ;
+    rdfs:label "Villa Park" ;
+    so:location city:Birmingham .
+  soccer:King_Power_Stadium a soccer:Stadium ;
+    rdfs:label "King Power Stadium" ;
+    so:location city:Leicester .
+  soccer:Carrow_Road_Stadium a soccer:Stadium ;
+    rdfs:label "Carrow Road Stadium" ;
+    so:location city:Norwich .
+
+ soccer:Stadium a so:StadiumOrArena .
+#
+# Cities
+#
+  city:London a so:City ;
+    rdfs:label "London" .
+  city:Liverpool a so:City ;
+    rdfs:label "Liverpool" .
+  city:Manchester a so:City ;
+    rdfs:label "Manchester" .
+  city:Wolverhampton a so:City ;
+    rdfs:label "Wolverhampton" .
+  city:Leicester a so:City ;
+    rdfs:label "Leicester" .
+  city:Brighton a so:City ;
+    rdfs:label "Brighton" .
+  city:Southampton a so:City ;
+    rdfs:label "Southampton" .
+  city:Newcastle a so:City ;
+    rdfs:label "Newcastle" .
+  city:Sheffield a so:City ;
+    rdfs:label "Sheffield" .
+  city:Birmingham a so:City ;
+    rdfs:label "Birmingham" .
+  city:Watford a so:City ;
+    rdfs:label "Watford" .
+  city:Norwich a so:City ;
+    rdfs:label "Norwich" .
+  city:Bournemouth a so:City ;
+    rdfs:label "Bournemouth" .
+  city:Burnley a so:City ;
+    rdfs:label "Burnley"
+
+
+}
