@@ -158,6 +158,7 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
         gremlin_metadata.set_metric_value('results', len(results))
         return gremlin_metadata
 
+
 def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
     oc_metadata = create_propertygraph_metadata_obj('query')
     oc_metadata.set_metric_value('request_time', query_time)

@@ -40,7 +40,8 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
-from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, build_opencypher_metadata_from_query
+from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
+    build_opencypher_metadata_from_query
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -59,9 +60,12 @@ logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
 
-GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %gremlin_status --cancelQuery --queryId my-query-id'''
-SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %sparql_status --cancelQuery --queryId my-query-id'''
-OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %opencypher_status --cancelQuery --queryId my-query-id'''
+GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                            for example: %gremlin_status --cancelQuery --queryId my-query-id'''
+SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                            for example: %sparql_status --cancelQuery --queryId my-query-id'''
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                                for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
 
 LOADER_FORMAT_CHOICES = ['']
@@ -127,8 +131,8 @@ class Graph(Magics):
             self.client: Client = None
             self.graph_notebook_config = get_config(self.config_location)
         except FileNotFoundError:
-            print(
-                'Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
+            print('Could not find a valid configuration. '
+                  'Do not forget to validate your settings using %graph_notebook_config.')
 
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
@@ -198,7 +202,8 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
         parser.add_argument('--path', '-p', default='',
-                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be host:port/foo/bar')
+                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, '
+                                 'the endpoint called would be host:port/foo/bar')
         parser.add_argument('--expand-all', action='store_true')
         parser.add_argument('--explain-type', default='dynamic',
                             help='explain mode to use when using the explain query mode',
@@ -239,8 +244,6 @@ class Graph(Magics):
             except JSONDecodeError:
                 res = query_res.content.decode('utf-8')
             store_to_ns(args.store_to, res, local_ns)
-            titles = []
-            children = []
 
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
@@ -326,7 +329,9 @@ class Graph(Magics):
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
         parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
+                                 'If silent is not present or silent=false, '
+                                 'the query is cancelled with an HTTP 500 status code.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -453,7 +458,9 @@ class Graph(Magics):
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Required for cancellation. Parameter has no corresponding value.')
         parser.add_argument('-w', '--includeWaiting', action='store_true',
-                            help='(Optional) Normally, only running queries are included in the response. When the includeWaiting parameter is specified, the status of all waiting queries is also returned.')
+                            help='(Optional) Normally, only running queries are included in the response. '
+                                 'When the includeWaiting parameter is specified, '
+                                 'the status of all waiting queries is also returned.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -792,8 +799,10 @@ class Graph(Magics):
             if not validated:
                 return
 
+            # replace any env variables in source.value with their values, can use $foo or ${foo}.
+            # Particularly useful for ${AWS_REGION}
             source_exp = os.path.expandvars(
-                source.value)  # replace any env variables in source.value with their values, can use $foo or ${foo}. Particularly useful for ${AWS_REGION}
+                source.value)
             logger.info(f'using source_exp: {source_exp}')
             try:
                 kwargs = {
@@ -974,7 +983,8 @@ class Graph(Magics):
         parser.add_argument('--dataset', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
-                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be host:port/foo/bar for sparql seed commands')
+                            help='prefix path to query endpoint. For example, "foo/bar". '
+                                 'The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
         args = parser.parse_args(line.split())
 
@@ -1000,7 +1010,7 @@ class Graph(Magics):
             data_sets = get_data_sets(selected_language)
             data_sets.sort()
             data_set_drop_down.options = [ds for ds in data_sets if
-                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__ here.
+                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
             data_set_drop_down.layout.visibility = 'visible'
             submit_button.layout.visibility = 'visible'
             return
@@ -1155,7 +1165,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, ~id) default is ~label')
-        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]', choices=['query', 'bolt'])
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
+                            choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
@@ -1173,7 +1184,7 @@ class Graph(Magics):
             oc_http.raise_for_status()
             res = oc_http.json()
             oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                                 query_time=query_time)
+                                                               query_time=query_time)
             titles.append('Console')
             try:
                 logger.debug(f'groupby: {args.group_by}')
@@ -1256,11 +1267,14 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
-                            help='The ID of a running OpenCypher query. Only displays the status of the specified query.')
+                            help='The ID of a running OpenCypher query. '
+                                 'Only displays the status of the specified query.')
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
         parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
+                                 ' If silent is not present or silent=false, '
+                                 'the query is cancelled with an HTTP 500 status code.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 

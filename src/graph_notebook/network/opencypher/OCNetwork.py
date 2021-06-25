@@ -14,20 +14,21 @@ logging.basicConfig()
 logger = logging.getLogger(__file__)
 
 DEFAULT_LABEL_MAX_LENGTH = 10
-ENTITY_KEY="~entityType"
-ID_KEY="~id"
-START_KEY="~start"
-END_KEY="~end"
-PROPERTIES_KEY="~properties"
-TYPE_KEY="~type"
-LABEL_KEY="~labels"
-NODE_ENTITY_TYPE='node'
-REL_ENTITY_TYPE='relationship'
+ENTITY_KEY = "~entityType"
+ID_KEY = "~id"
+START_KEY = "~start"
+END_KEY = "~end"
+PROPERTIES_KEY = "~properties"
+TYPE_KEY = "~type"
+LABEL_KEY = "~labels"
+NODE_ENTITY_TYPE = 'node'
+REL_ENTITY_TYPE = 'relationship'
+
 
 class OCNetwork(EventfulNetwork):
-    """OCNetwork extends the EventfulNetwork class and uses the add_results method to parse any response that returns nodes/relationships 
-    as part (or all) of the response.  Currently this only works with HTTPS response format but in the future, we will work to 
-    support Bolt based responses as well.
+    """OCNetwork extends the EventfulNetwork class and uses the add_results method to parse any response that returns
+    nodes/relationships as part (or all) of the response.  Currently this only works with HTTPS response format but in
+    the future, we will work to support Bolt based responses as well.
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
@@ -42,13 +43,13 @@ class OCNetwork(EventfulNetwork):
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
     
-    def flatten(self, d:dict, parent_key='', sep='_') -> dict:
-        """Flattens dictionaries including nested dictionaties
+    def flatten(self, d: dict, parent_key='', sep='_') -> dict:
+        """Flattens dictionaries including nested dictionaries
 
         Args:
             d (dict): The dictionary to flatten
             parent_key (str, optional): The parent key name to append. Defaults to ''.
-            sep (str, optional): The seperator between the parent and sub key. Defaults to '_'.
+            sep (str, optional): The separator between the parent and sub key. Defaults to '_'.
 
         Returns:
             [dict]: The flattened dictionary
@@ -71,9 +72,9 @@ class OCNetwork(EventfulNetwork):
         if LABEL_KEY in node.keys():
             title = node[LABEL_KEY][0]
         else:
+            title = ""
             for key in node:
                 title += str(node[key])
-            label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             
         label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
@@ -82,7 +83,7 @@ class OCNetwork(EventfulNetwork):
             elif self.group_by_property in [ID_KEY, 'id']:
                 group = node[ID_KEY]
             elif self.group_by_property in node[PROPERTIES_KEY]:
-                group=node[PROPERTIES_KEY][self.group_by_property]
+                group = node[PROPERTIES_KEY][self.group_by_property]
             else:
                 group = ''
         else:  # handle dict format group_by
@@ -109,9 +110,9 @@ class OCNetwork(EventfulNetwork):
     
     def parse_rel(self, rel):
         data = {'properties': self.flatten(rel), 'label': rel[TYPE_KEY]}
-        self.add_edge(rel[START_KEY],rel[END_KEY], rel[ID_KEY], rel[TYPE_KEY], data)
+        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], rel[TYPE_KEY], data)
 
-    def process_result(self, res:dict):
+    def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately
 
         Args:
@@ -129,8 +130,7 @@ class OCNetwork(EventfulNetwork):
         """Adds the results parameter to the network
 
         Args:
-            results (Object): Determines the type of the object and processes it
-            appropriately
+            results (Object): Determines the type of the object and processes it appropriately
         """
         for res in results["results"]:
             if type(res) is dict:
@@ -138,5 +138,5 @@ class OCNetwork(EventfulNetwork):
                     if type(res[k]) is dict:
                         self.process_result(res[k]) 
                     elif type(res[k]) is list:
-                        for l in res[k]:
-                            self.process_result(l)
+                        for res_sublist in res[k]:
+                            self.process_result(res_sublist)
