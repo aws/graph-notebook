@@ -740,6 +740,13 @@ class Graph(Magics):
             disabled=False
         )
 
+        user_provided_edge_ids = widgets.Dropdown(
+            options=['TRUE', 'FALSE'],
+            value=str(args.queue_request).upper(),
+            description='User Provided Edge Ids:',
+            disabled=False,
+        )
+
         queue_request = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.queue_request).upper(),
@@ -760,7 +767,7 @@ class Graph(Magics):
         dep_hbox = widgets.HBox([dependencies])
 
         display(source_hbox, source_format_hbox, region_box, arn_hbox, mode, fail_on_error, parallelism,
-                update_single_cardinality, queue_request, dep_hbox, button, output)
+                update_single_cardinality, queue_request, dep_hbox, user_provided_edge_ids, button, output)
 
         def on_button_clicked(b):
             source_hbox.children = (source,)
@@ -816,6 +823,8 @@ class Graph(Magics):
                 if dependencies:
                     kwargs['dependencies'] = dependencies_list
 
+                if source_format.value.lower()=='opencypher':
+                    kwargs['userProvidedEdgeIds']= user_provided_edge_ids.value
                 load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
                 load_res.raise_for_status()
                 load_result = load_res.json()
@@ -831,6 +840,7 @@ class Graph(Magics):
                 update_single_cardinality.close()
                 queue_request.close()
                 dep_hbox.close()
+                user_provided_edge_ids.close()
                 button.close()
                 output.close()
 
