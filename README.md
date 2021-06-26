@@ -52,7 +52,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
-`%seed` - Provides a form to add data to your graph without the use of a bulk loader. both SPARQL and Gremlin have an airport routes dataset.
+`%seed` - Provides a form to add data to your graph without the use of a bulk loader. Supports both RDF and Property Graph data models.
 
 `%graph_notebook_config` - Returns a JSON payload that contains connection information for your host.
 

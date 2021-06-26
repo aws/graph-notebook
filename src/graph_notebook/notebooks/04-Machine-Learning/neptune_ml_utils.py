@@ -1,5 +1,4 @@
 import boto3
-import uuid
 import pandas as pd
 import os
 import requests
@@ -20,7 +19,8 @@ HOME_DIRECTORY = os.path.expanduser("~")
 
 def signed_request(method, url, data=None, params=None, headers=None, service=None):
     creds = boto3.Session().get_credentials().get_frozen_credentials()
-    request = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
+    request = AWSRequest(method=method, url=url, data=data,
+                         params=params, headers=headers)
     SigV4Auth(creds, service, boto3.Session().region_name).add_auth(request)
     return requests.request(method=method, url=url, headers=dict(request.headers), data=data)
 
@@ -53,7 +53,8 @@ def get_training_job_name(prefix: str):
 
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
-    response = signed_request("GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
+    response = signed_request(
+        "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
 Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
@@ -76,14 +77,16 @@ def get_export_service_host():
 
 
 def delete_pretrained_data(setup_node_classification: bool,
-                           setup_node_regression: bool, setup_link_prediction: bool):
+                           setup_node_regression: bool, setup_link_prediction: bool,
+                           setup_edge_regression: bool, setup_edge_classification: bool):
     host, port, use_iam = load_configuration()
     if setup_node_classification:
         response = signed_request("POST", service='neptune-db',
                                   url=f'https://{host}:{port}/gremlin',
                                   headers={'content-type': 'application/json'},
                                   data=json.dumps(
-                                      {'gremlin': "g.V('movie_1', 'movie_7', 'movie_15').properties('genre').drop()"}))
+                                      {
+                                          'gremlin': "g.V('movie_28', 'movie_69', 'movie_88').properties('genre').drop()"}))
 
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
@@ -102,16 +105,43 @@ def delete_pretrained_data(setup_node_classification: bool,
         if response.status_code != 200:
             print(response.content.decode('utf-8'))
 
+    if setup_edge_regression:
+        response = signed_request("POST", service='neptune-db',
+                                  url=f'https://{host}:{port}/gremlin',
+                                  headers={'content-type': 'application/json'},
+                                  data=json.dumps(
+                                      {'gremlin': "g.V('user_1').outE('rated').properties('score').drop()"}))
+        if response.status_code != 200:
+            print(response.content.decode('utf-8'))
+
+    if setup_edge_classification:
+        response = signed_request("POST", service='neptune-db',
+                                  url=f'https://{host}:{port}/gremlin',
+                                  headers={'content-type': 'application/json'},
+                                  data=json.dumps(
+                                      {'gremlin': "g.V('user_1').outE('rated').properties('scale').drop()"}))
+        if response.status_code != 200:
+            print(response.content.decode('utf-8'))
+
 
 def delete_pretrained_endpoints(endpoints: dict):
     sm = boto3.client("sagemaker")
     try:
-        if 'classification_endpoint_name' in endpoints and endpoints['classification_endpoint_name']:
-            sm.delete_endpoint(EndpointName=endpoints['classification_endpoint_name']["EndpointName"])
-        if 'regression_endpoint_name' in endpoints and endpoints['regression_endpoint_name']:
-            sm.delete_endpoint(EndpointName=endpoints['regression_endpoint_name']["EndpointName"])
+        if 'node_classification_endpoint_name' in endpoints and endpoints['node_classification_endpoint_name']:
+            sm.delete_endpoint(
+                EndpointName=endpoints['node_classification_endpoint_name']["EndpointName"])
+        if 'node_regression_endpoint_name' in endpoints and endpoints['node_regression_endpoint_name']:
+            sm.delete_endpoint(
+                EndpointName=endpoints['node_regression_endpoint_name']["EndpointName"])
         if 'prediction_endpoint_name' in endpoints and endpoints['prediction_endpoint_name']:
-            sm.delete_endpoint(EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
+            sm.delete_endpoint(
+                EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
+        if 'edge_classification_endpoint_name' in endpoints and endpoints['edge_classification_endpoint_name']:
+            sm.delete_endpoint(
+                EndpointName=endpoints['edge_classification_endpoint_name']["EndpointName"])
+        if 'edge_regression_endpoint_name' in endpoints and endpoints['edge_regression_endpoint_name']:
+            sm.delete_endpoint(
+                EndpointName=endpoints['edge_regression_endpoint_name']["EndpointName"])
         print(f'Endpoint(s) have been deleted')
     except Exception as e:
         logging.error(e)
@@ -140,12 +170,15 @@ def prepare_movielens_data(s3_bucket_uri: str):
 
 
 def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bool,
-                               setup_node_regression: bool, setup_link_prediction: bool):
+                               setup_node_regression: bool, setup_link_prediction: bool, \
+                               setup_edge_classification: bool, setup_edge_regression: bool):
     delete_pretrained_data(setup_node_classification,
-                           setup_node_regression, setup_link_prediction)
+                           setup_node_regression, setup_link_prediction,
+                           setup_edge_classification, setup_edge_regression)
     try:
         return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification,
-                                                             setup_node_regression, setup_link_prediction)
+                                                             setup_node_regression, setup_link_prediction,
+                                                             setup_edge_classification, setup_edge_regression)
     except Exception as e:
         logging.error(e)
 
@@ -207,8 +240,9 @@ class MovieLensProcessor:
             genre_lst = []
             for g in genres:
                 if row[g] == 1:
-                    genres_edges_df = genres_edges_df.append({'~id': uuid.uuid4(), '~label': 'included_in',
-                                                              '~from': row['~id'], '~to': g}, ignore_index=True)
+                    genres_edges_df = genres_edges_df.append(
+                        {'~id': f"{row['~id']}-included_in-{g}", '~label': 'included_in',
+                         '~from': row['~id'], '~to': g}, ignore_index=True)
                     genre_lst.append(g)
             movies_df.loc[index, 'genre:String[]'] = ';'.join(genre_lst)
 
@@ -239,30 +273,43 @@ class MovieLensProcessor:
         ratings_vertices['~id'] = ratings_vertices['~from'].str.cat(
             ratings_vertices['~to'], sep=":")
         ratings_vertices['~label'] = "rating"
-
         dict = {}
+        edges = {}
         for index, row in ratings_vertices.iterrows():
-            dict[index * 2] = {'~id': uuid.uuid4(), '~label': 'wrote',
-                               '~from': row['~from'], '~to': row['~id']}
-            dict[index * 2 + 1] = {'~id': uuid.uuid4(), '~label': 'about',
-                                   '~from': row['~id'], '~to': row['~to']}
+            id_from = row['~from']
+            id_to = row['~to']
+            id_id = row['~id']
+            dict[index * 2] = {'~id': f"{id_from}-wrote-{id_id}", '~label': 'wrote',
+                               '~from': id_from, '~to': id_id}
+            dict[index * 2 + 1] = {'~id': f"{id_id}-about-{id_to}", '~label': 'about',
+                                   '~from': id_id, '~to': id_to}
+            score = row['score:Int']
+            scale = ''
+            if score == 1:
+                scale = 'Hate'
+            elif score == 2:
+                scale = 'Dislike'
+            elif score == 3:
+                scale = 'Neutral'
+            elif score == 4:
+                scale = 'Like'
+            elif score == 5:
+                scale = 'Love'
+            edges[index] = {'~id': f"{id_from}-rated-{id_to}", '~label': 'rated',
+                            '~from': id_from, '~to': id_to, 'score:Int': score, 'scale': scale}
         rating_edges_df = pd.DataFrame.from_dict(dict, "index")
 
         # Remove the from and to columns and write this out as a vertex now
         ratings_vertices = ratings_vertices.drop(columns=['~from', '~to'])
         ratings_vertices.to_csv(os.path.join(self.formatted_directory,
                                              'ratings_vertices.csv'), index=False)
-
-        # Finally write out the rating vertex edges for wrote and about
+        # Write out the rating vertex edges for wrote and about
         rating_edges_df.to_csv(os.path.join(self.formatted_directory,
                                             'ratings_vertex_edges.csv'), index=False)
-
-        # Add ids to ratings edges
-        rated_edges['~id'] = rated_edges['~from'].apply(
-            lambda x: uuid.uuid4())
-        rated_edges['~label'] = "rated"
-        rated_edges.to_csv(os.path.join(self.formatted_directory,
-                                        'rated_edges.csv'), index=False)
+        # Write out the rated edges
+        rated_edges_df = pd.DataFrame.from_dict(edges, "index")
+        rated_edges_df.to_csv(os.path.join(self.formatted_directory,
+                                           'rated_edges.csv'), index=False)
 
     def __process_users(self):
         print("Processing Users", end='\r')
@@ -405,7 +452,8 @@ class PretrainedModels:
 
     def setup_pretrained_endpoints(self, s3_bucket_uri: str,
                                    setup_node_classification: bool, setup_node_regression: bool,
-                                   setup_link_prediction: bool):
+                                   setup_link_prediction: bool, setup_edge_classification: bool,
+                                   setup_edge_regression: bool):
         print('Beginning endpoint creation', end='\r')
         if setup_node_classification:
             # copy model
@@ -428,17 +476,35 @@ class PretrainedModels:
             # create model
             prediction_output = self.__create_model(
                 'linkpred', f'{s3_bucket_uri}/pretrained-models/link-prediction/model.tar.gz')
+        if setup_edge_classification:
+            # copy model
+            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/edge-classification/model.tar.gz',
+                           self.PRETRAINED_MODEL['edge_classification'])
+            # create model
+            edgeclass_output = self.__create_model(
+                'edgeclass', f'{s3_bucket_uri}/pretrained-models/edge-classification/model.tar.gz')
+        if setup_edge_regression:
+            # copy model
+            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/edge-regression/model.tar.gz',
+                           self.PRETRAINED_MODEL['edge_regression'])
+            # create model
+            edgereg_output = self.__create_model(
+                'edgereg', f'{s3_bucket_uri}/pretrained-models/edge-regression/model.tar.gz')
 
         sleep(UPDATE_DELAY_SECONDS)
         classification_running = setup_node_classification
         regression_running = setup_node_regression
         prediction_running = setup_link_prediction
+        edgeclass_running = setup_edge_classification
+        edgereg_running = setup_edge_regression
         classification_endpoint_name = ""
         regression_endpoint_name = ""
         prediction_endpoint_name = ""
+        edge_classification_endpoint_name = ""
+        edge_regression_endpoint_name = ""
         sucessful = False
         sm = boto3.client("sagemaker")
-        while classification_running or regression_running or prediction_running:
+        while classification_running or regression_running or prediction_running or edgeclass_running or edgereg_running:
             if classification_running:
                 response = sm.describe_endpoint(
                     EndpointName=classification_output
@@ -463,6 +529,22 @@ class PretrainedModels:
                     if response['EndpointStatus'] == 'InService':
                         prediction_endpoint_name = response
                     prediction_running = False
+            if edgeclass_running:
+                response = sm.describe_endpoint(
+                    EndpointName=edgeclass_output
+                )
+                if response['EndpointStatus'] in ['InService', 'Failed']:
+                    if response['EndpointStatus'] == 'InService':
+                        edge_classification_endpoint_name = response
+                    edgeclass_running = False
+            if edgereg_running:
+                response = sm.describe_endpoint(
+                    EndpointName=edgereg_output
+                )
+                if response['EndpointStatus'] in ['InService', 'Failed']:
+                    if response['EndpointStatus'] == 'InService':
+                        edge_regression_endpoint_name = response
+                    edgereg_running = False
 
             print(
                 f'Checking Endpoint Creation Statuses at {datetime.now().strftime("%H:%M:%S")}', end='\r')
@@ -478,8 +560,17 @@ class PretrainedModels:
         if prediction_endpoint_name:
             print(
                 f"Link Prediction Endpoint Name: {prediction_endpoint_name['EndpointName']}")
+        if edge_classification_endpoint_name:
+            print(
+                f"Edge Classification Endpoint Name: {edge_classification_endpoint_name['EndpointName']}")
+        if edge_regression_endpoint_name:
+            print(
+                f"Edge Regression Endpoint Name: {edge_regression_endpoint_name['EndpointName']}")
         print('Endpoint creation complete', end='\r')
         return {
-            'classification_endpoint_name': classification_endpoint_name,
-            'regression_endpoint_name': regression_endpoint_name,
-            'prediction_endpoint_name': prediction_endpoint_name}
+            'node_classification_endpoint_name': classification_endpoint_name,
+            'node_regression_endpoint_name': regression_endpoint_name,
+            'prediction_endpoint_name': prediction_endpoint_name,
+            'edge_classification_endpoint_name': edge_classification_endpoint_name,
+            'edge_regression_endpoint_name': edge_regression_endpoint_name
+        }

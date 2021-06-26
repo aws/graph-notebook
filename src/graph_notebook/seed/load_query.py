@@ -7,10 +7,20 @@ import os
 from os.path import join as pjoin
 
 
+def normalize_model_name(name):
+    name = name.lower().replace('_', '')
+    # handles legacy scenarios
+    if name=='gremlin':
+        name='propertygraph'
+    elif name=='sparql':
+        name='rdf' 
+    return name
+
+
 # returns a list of queries which correspond to a given query language and name
-def get_queries(query_language, name):
+def get_queries(model, name):
     d = os.path.dirname(os.path.realpath(__file__))
-    path_to_data_sets = pjoin(d, 'queries', query_language, name)
+    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
     queries = []
 
     for file in os.listdir(path_to_data_sets):
@@ -27,10 +37,9 @@ def get_queries(query_language, name):
     return queries
 
 
-def get_data_sets(query_language):
-    query_language = query_language.lower()
+def get_data_sets(model):
     d = os.path.dirname(os.path.realpath(__file__))
-    path_to_data_sets = pjoin(d, 'queries', query_language)
+    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model))
     data_sets = []
     for data_set in os.listdir(path_to_data_sets):
         if data_set != '__pycache__' and os.path.isdir(pjoin(path_to_data_sets, data_set)):

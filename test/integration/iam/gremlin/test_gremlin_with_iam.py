@@ -52,4 +52,4 @@ class TestGremlinWithIam(IntegrationTest):
     def test_iam_gremlin_connection(self):
         conn = self.client.get_gremlin_connection()
         conn.submit('g.V().limit(1)')
-        print('here')
+        assert True  # if we got here then everything worked

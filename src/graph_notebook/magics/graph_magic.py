@@ -13,6 +13,8 @@ import datetime
 import os
 import uuid
 from enum import Enum
+from json import JSONDecodeError
+from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
 from SPARQLWrapper import SPARQLWrapper
@@ -38,12 +40,14 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.seed.load_query import get_data_sets, get_queries
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
-from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query
+from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
+    build_opencypher_metadata_from_query
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
 gremlin_table_template = retrieve_template("gremlin_table.html")
+opencypher_table_template = retrieve_template("opencypher_table.html")
 pre_container_template = retrieve_template("pre_container.html")
 loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
@@ -56,8 +60,12 @@ logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
 
-GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %gremlin_status --cancelQuery --queryId my-query-id'''
-SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, for example: %sparql_status --cancelQuery --queryId my-query-id'''
+GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                            for example: %gremlin_status --cancelQuery --queryId my-query-id'''
+SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                            for example: %sparql_status --cancelQuery --queryId my-query-id'''
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+                                for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
 
 LOADER_FORMAT_CHOICES = ['']
@@ -123,8 +131,8 @@ class Graph(Magics):
             self.client: Client = None
             self.graph_notebook_config = get_config(self.config_location)
         except FileNotFoundError:
-            print(
-                'Could not find a valid configuration. Do not forgot to validate your settings using %graph_notebook_config')
+            print('Could not find a valid configuration. '
+                  'Do not forget to validate your settings using %graph_notebook_config.')
 
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
@@ -146,7 +154,6 @@ class Graph(Magics):
 
         self.client = builder.build()
 
-    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_config(self, line='', cell=''):
@@ -194,7 +201,8 @@ class Graph(Magics):
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain]')
         parser.add_argument('--path', '-p', default='',
-                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, the endpoint called would be host:port/foo/bar')
+                            help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, '
+                                 'the endpoint called would be host:port/foo/bar')
         parser.add_argument('--expand-all', action='store_true')
         parser.add_argument('--explain-type', default='dynamic',
                             help='explain mode to use when using the explain query mode',
@@ -230,6 +238,11 @@ class Graph(Magics):
             query_res.raise_for_status()
             results = query_res.json()
             store_to_ns(args.store_to, results, local_ns)
+            try:
+                res = query_res.json()
+            except JSONDecodeError:
+                res = query_res.content.decode('utf-8')
+            store_to_ns(args.store_to, res, local_ns)
 
             # Assign an empty value so we can always display to table output.
             # We will only add it as a tab if the type of query allows it.
@@ -315,7 +328,9 @@ class Graph(Magics):
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
         parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200. If silent is not present or silent=false, the query is cancelled with an HTTP 500 status code.')
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
+                                 'If silent is not present or silent=false, '
+                                 'the query is cancelled with an HTTP 500 status code.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -442,7 +457,9 @@ class Graph(Magics):
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Required for cancellation. Parameter has no corresponding value.')
         parser.add_argument('-w', '--includeWaiting', action='store_true',
-                            help='(Optional) Normally, only running queries are included in the response. When the includeWaiting parameter is specified, the status of all waiting queries is also returned.')
+                            help='(Optional) Normally, only running queries are included in the response. '
+                                 'When the includeWaiting parameter is specified, '
+                                 'the status of all waiting queries is also returned.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -460,6 +477,30 @@ class Graph(Magics):
                 res = cancel_res.json()
         print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
+
+    @cell_magic
+    @needs_local_scope
+    @display_exceptions
+    def oc(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
+
+    @cell_magic
+    @needs_local_scope
+    @display_exceptions
+    def opencypher(self, line='', cell='', local_ns: dict = None):
+        self.handle_opencypher_query(line, cell, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def oc_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def opencypher_status(self, line='', local_ns: dict = None):
+        self.handle_opencypher_status(line, local_ns)
 
     @line_magic
     @display_exceptions
@@ -698,6 +739,13 @@ class Graph(Magics):
             disabled=False
         )
 
+        user_provided_edge_ids = widgets.Dropdown(
+            options=['TRUE', 'FALSE'],
+            value=str(args.queue_request).upper(),
+            description='User Provided Edge Ids:',
+            disabled=False,
+        )
+
         queue_request = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.queue_request).upper(),
@@ -718,7 +766,7 @@ class Graph(Magics):
         dep_hbox = widgets.HBox([dependencies])
 
         display(source_hbox, source_format_hbox, region_box, arn_hbox, mode, fail_on_error, parallelism,
-                update_single_cardinality, queue_request, dep_hbox, button, output)
+                update_single_cardinality, queue_request, dep_hbox, user_provided_edge_ids, button, output)
 
         def on_button_clicked(b):
             source_hbox.children = (source,)
@@ -757,21 +805,26 @@ class Graph(Magics):
             if not validated:
                 return
 
+            # replace any env variables in source.value with their values, can use $foo or ${foo}.
+            # Particularly useful for ${AWS_REGION}
             source_exp = os.path.expandvars(
-                source.value)  # replace any env variables in source.value with their values, can use $foo or ${foo}. Particularly useful for ${AWS_REGION}
+                source.value)
             logger.info(f'using source_exp: {source_exp}')
             try:
                 kwargs = {
                     'failOnError': fail_on_error.value,
                     'parallelism': parallelism.value,
                     'updateSingleCardinalityProperties': update_single_cardinality.value,
-                    'queueRequest': queue_request.value
+                    'queueRequest': queue_request.value,
+                    'region': region
                 }
 
                 if dependencies:
                     kwargs['dependencies'] = dependencies_list
 
-                load_res = self.client.load(source.value, source_format.value, arn.value, region_box.value, **kwargs)
+                if source_format.value.lower()=='opencypher':
+                    kwargs['userProvidedEdgeIds']= user_provided_edge_ids.value
+                load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
                 load_res.raise_for_status()
                 load_result = load_res.json()
                 store_to_ns(args.store_to, load_result, local_ns)
@@ -786,6 +839,7 @@ class Graph(Magics):
                 update_single_cardinality.close()
                 queue_request.close()
                 dep_hbox.close()
+                user_provided_edge_ids.close()
                 button.close()
                 output.close()
 
@@ -934,19 +988,20 @@ class Graph(Magics):
     @display_exceptions
     def seed(self, line):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
+        parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
-                            help='prefix path to query endpoint. For example, "foo/bar". The queried path would then be host:port/foo/bar for sparql seed commands')
+                            help='prefix path to query endpoint. For example, "foo/bar". '
+                                 'The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
         args = parser.parse_args(line.split())
 
         output = widgets.Output()
         progress_output = widgets.Output()
-        language_dropdown = widgets.Dropdown(
+        model_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
-            description='Language:',
+            description='Data Model:',
             disabled=False
         )
 
@@ -960,24 +1015,24 @@ class Graph(Magics):
         submit_button.layout.visibility = 'hidden'
 
         def on_value_change(change):
-            selected_language = change['new']
-            data_sets = get_data_sets(selected_language)
+            selected_model = change['new']
+            data_sets = get_data_sets(selected_model)
             data_sets.sort()
             data_set_drop_down.options = [ds for ds in data_sets if
-                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__ here.
+                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
             data_set_drop_down.layout.visibility = 'visible'
             submit_button.layout.visibility = 'visible'
             return
 
         def on_button_clicked(b=None):
             submit_button.close()
-            language_dropdown.disabled = True
+            model_dropdown.disabled = True
             data_set_drop_down.disabled = True
-            language = language_dropdown.value.lower()
+            model = model_dropdown.value.lower()
             data_set = data_set_drop_down.value.lower()
             with output:
-                print(f'Loading data set {data_set} with language {language}')
-            queries = get_queries(language, data_set)
+                print(f'Loading data set {data_set} for {model}')
+            queries = get_queries(model, data_set)
             if len(queries) < 1:
                 with output:
                     print('Did not find any queries for the given dataset')
@@ -999,7 +1054,7 @@ class Graph(Magics):
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
-                if language == 'gremlin':
+                if model == 'Property Graph':
                     # IMPORTANT: We treat each line as its own query!
                     for line in q['content'].splitlines():
                         try:
@@ -1059,15 +1114,13 @@ class Graph(Magics):
             return
 
         submit_button.on_click(on_button_clicked)
-        language_dropdown.observe(on_value_change, names='value')
+        model_dropdown.observe(on_value_change, names='value')
 
-        display(language_dropdown, data_set_drop_down, submit_button, progress_output, output)
-        if args.language != '':
-            language_dropdown.value = args.language
-
+        display(model_dropdown, data_set_drop_down, submit_button, progress_output, output)
+        if args.model != '':
+            model_dropdown.value = args.model
             if args.dataset != '' and args.dataset in data_set_drop_down.options:
                 data_set_drop_down.value = args.dataset.lower()
-
                 if args.run:
                     on_button_clicked()
 
@@ -1106,8 +1159,151 @@ class Graph(Magics):
         logger.info(f'received call to neptune_ml with details: {args.__dict__}, cell={cell}, local_ns={local_ns}')
         main_output = widgets.Output()
         display(main_output)
-        res = neptune_ml_magic_handler(args, self.client, main_output, cell, local_ns)
+        res = neptune_ml_magic_handler(args, self.client, main_output, cell)
         message = json.dumps(res, indent=2) if type(res) is dict else res
         store_to_ns(args.store_to, res, local_ns)
         with main_output:
             print(message)
+
+    def handle_opencypher_query(self, line, cell, local_ns):
+        """
+        This method in its own handler so that the magics %%opencypher and %%oc can both call it
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-g', '--group-by', type=str, default='T.label',
+                            help='Property used to group nodes (e.g. code, ~id) default is ~label')
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
+                            choices=['query', 'bolt'])
+        parser.add_argument('-d', '--display-property', type=str, default='T.label',
+                            help='Property to display the value of on each node, default is T.label')
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex label, in characters. Default is 10')
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
+                            choices=['query', 'bolt'])
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
+        args = parser.parse_args(line.split())
+        tab = widgets.Tab()
+
+        titles = []
+        children = []
+        rows = []
+        columns = set()
+        force_graph_output=None
+        if args.mode == 'query':
+            query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
+            oc_http = self.client.opencypher_http(cell)
+            query_time = time.time() * 1000 - query_start
+            oc_http.raise_for_status()
+            res = oc_http.json()
+            oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
+                                                               query_time=query_time)
+            titles.append('Console')
+            try:
+                logger.debug(f'groupby: {args.group_by}')
+                logger.debug(f'ignore_groups: {args.ignore_groups}')
+                logger.debug(f'display_property: {args.display_property}')
+                logger.debug(f'label_max_length: {args.label_max_length}')
+                gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                               label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                gn.add_results(res)
+                logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                if len(gn.graph.nodes) > 0:
+                    force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+            except ValueError as value_error:
+                logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
+
+            if res['results']:
+                for r in res['results']:
+                    row = []
+                    for key, item in r.items():
+                        columns.add(key)
+                        row.append(item)
+                    rows.append(row)
+        elif args.mode == 'bolt':
+            res = self.client.opencyper_bolt(cell)
+            for r in res:
+                row = []
+                for key, item in r.items():
+                    columns.add(key)
+                    row.append(item)
+                rows.append(row)
+            # Need to eventually add code to parse and display a network for the bolt format here
+
+        rows_and_columns = {'columns': columns, 'rows': rows}
+
+        display(tab)
+        table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        # Assign an empty value so we can always display to table output.
+        table_html = ""          
+
+        # Display Console Tab
+        # some issues with displaying a datatable when not wrapped in an hbox and displayed last
+        hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+        children.append(hbox)
+
+        if rows_and_columns is not None:
+            table_id = f"table-{str(uuid.uuid4())[:8]}"
+            table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                          rows=rows_and_columns['rows'], guid=table_id)
+
+        # Display Graph Tab (if exists)
+        if force_graph_output:
+            titles.append('Graph')
+            children.append(force_graph_output)
+
+        # Display JSON tab
+        json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        with json_output:
+            print(json.dumps(res, indent=2))
+        children.append(json_output)
+        titles.append('JSON')
+
+        # Display Query Metadata Tab
+        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+        titles.append('Query Metadata')
+        children.append(metadata_output)
+
+        tab.children = children
+        for i in range(len(titles)):
+            tab.set_title(i, titles[i])
+
+        if table_html != "":
+            with table_output:
+                display(HTML(table_html))
+
+        with metadata_output:
+            display(HTML(oc_metadata.to_html()))
+        store_to_ns(args.store_to, res, local_ns)
+
+    def handle_opencypher_status(self, line, local_ns):
+        """
+        This is refactored into its own handler method so that we can invoke is from
+        %opencypher_status or from %oc_status
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-q', '--queryId', default='',
+                            help='The ID of a running OpenCypher query. '
+                                 'Only displays the status of the specified query.')
+        parser.add_argument('-c', '--cancelQuery', action='store_true',
+                            help='Tells the status command to cancel a query. This parameter does not take a value')
+        parser.add_argument('-s', '--silent', action='store_true',
+                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
+                                 ' If silent is not present or silent=false, '
+                                 'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        if not args.cancelQuery:
+            res = self.client.opencypher_status(args.queryId)
+            res.raise_for_status()
+        else:
+            if args.queryId == '':
+                print(OPENCYPHER_CANCEL_HINT_MSG)
+                return
+            else:
+                res = self.client.opencypher_cancel(args.queryId, args.silent)
+                res.raise_for_status()
+        js = res.json()
+        store_to_ns(args.store_to, js, local_ns)
+        print(json.dumps(js, indent=2))

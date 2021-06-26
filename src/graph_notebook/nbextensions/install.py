@@ -10,6 +10,7 @@ PLUGINS = [
     'neptune_menu',
     'gremlin_syntax',
     'sparql_syntax',
+    'opencypher_syntax',
     'playable_cells'
 ]
 

@@ -4,14 +4,15 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
+import logging
 
-import botocore
 import requests
 from SPARQLWrapper import SPARQLWrapper
 from boto3 import Session
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
+from neo4j import GraphDatabase
 from tornado import httpclient
 
 import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
@@ -21,11 +22,13 @@ DEFAULT_PORT = 8182
 DEFAULT_REGION = 'us-east-1'
 
 NEPTUNE_SERVICE_NAME = 'neptune-db'
+logger = logging.getLogger('client')
 
 # TODO: Constants for states of each long-running job
 # TODO: add doc links to each command
 
 FORMAT_CSV = 'csv'
+FORMAT_OPENCYPHER='opencypher'
 FORMAT_NTRIPLE = 'ntriples'
 FORMAT_NQUADS = 'nquads'
 FORMAT_RDFXML = 'rdfxml'
@@ -41,7 +44,7 @@ MODE_NEW = 'NEW'
 MODE_AUTO = 'AUTO'
 
 LOAD_JOB_MODES = [MODE_RESUME, MODE_NEW, MODE_AUTO]
-VALID_FORMATS = [FORMAT_CSV, FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+VALID_FORMATS = [FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 PARALLELISM_OPTIONS = [PARALLELISM_LOW, PARALLELISM_MEDIUM, PARALLELISM_HIGH, PARALLELISM_OVERSUBSCRIBE]
 LOADER_ACTION = 'loader'
 
@@ -67,12 +70,13 @@ SPARQL_ACTION = 'sparql'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', session: Session = None):
+                 sparql_path: str = '/sparql', auth=None, session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.region = region
+        self._auth = auth
         self._session = session
 
         self._http_protocol = 'https' if self.ssl else 'http'
@@ -196,17 +200,70 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
+    def opencypher_http(self, query: str, headers: dict = None) -> requests.Response:
+        if headers is None:
+            headers = {}
+
+        if 'content-type' not in headers:
+            headers['content-type'] = 'application/x-www-form-urlencoded'
+
+        url = f'{self._http_protocol}://{self.host}:{self.port}/openCypher'
+        data = {
+            'query': query
+        }
+
+        req = self._prepare_request('POST', url, data=data, headers=headers)
+        res = self._http_session.send(req)
+        return res
+
+    def opencyper_bolt(self, query: str, **kwargs):
+        driver = self.get_opencypher_driver()
+        with driver.session() as session:
+            res = session.run(query, kwargs)
+            data = res.data()
+        driver.close()
+        return data
+
+    def opencypher_status(self, query_id: str = ''):
+        return self._query_status('openCypher', query_id=query_id)
+
+    def opencypher_cancel(self, query_id, silent: bool = False):
+        if type(query_id) is not str or query_id == '':
+            raise ValueError('query_id must be a non-empty string')
+
+        return self._query_status('openCypher', query_id=query_id, cancelQuery=True, silent=silent)
+
+    def get_opencypher_driver(self, user: str = 'neo4j', password: str = 'password'):
+        url = f'bolt://{self.host}:{self.port}'
+
+        if self._session:
+            method = 'POST'
+            headers = {
+                'HttpMethod': method,
+                'Host': url
+            }
+            aws_request = self._get_aws_request('POST', url)
+            for item in aws_request.headers.items():
+                headers[item[0]] = item[1]
+
+            auth_str = json.dumps(headers)
+            password = auth_str
+
+        driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
+        return driver
+
     def status(self) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/status'
         req = self._prepare_request('GET', url, data='')
         res = self._http_session.send(req)
         return res
 
-    def load(self, source: str, source_format: str, iam_role_arn: str, region: str, **kwargs) -> requests.Response:
+    def load(self, source: str, source_format: str, iam_role_arn: str, **kwargs) -> requests.Response:
         """
         For a full list of allowed parameters, see aws documentation on the Neptune loader
         endpoint: https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-load.html
         """
+
         payload = {
             'source': source,
             'format': source_format,
@@ -285,7 +342,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def dataprocessing_status(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
+    def dataprocessing_list(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/dataprocessing'
         data = {
             'maxItems': max_items
@@ -328,7 +385,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def modeltraining_status(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
+    def modeltraining_list(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
         data = {
             'maxItems': max_items
         }
@@ -362,6 +419,73 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
+    def modeltransform_create(self, output_s3_location: str, dataprocessing_job_id: str = '', modeltraining_job_id: str = '',
+                              training_job_name: str = '', **kwargs) -> requests.Response:
+        logger.debug("modeltransform_create initiated with params:"
+                     f"output_s3_location: {output_s3_location}\n"
+                     f"dataprocessing_job_id: {dataprocessing_job_id}\n"
+                     f"modeltraining_job_id: {modeltraining_job_id}\n"
+                     f"training_job_name: {training_job_name}\n"
+                     f"kwargs: {kwargs}")
+        data = {
+            'modelTransformOutputS3Location': output_s3_location
+        }
+        if not dataprocessing_job_id and not modeltraining_job_id and training_job_name:
+            data['trainingJobName'] = training_job_name
+        elif dataprocessing_job_id and modeltraining_job_id and not training_job_name:
+            data['dataProcessingJobId'] = dataprocessing_job_id
+            data['mlModelTrainingJobId'] = modeltraining_job_id
+        else:
+            raise ValueError(
+                'Invalid input. Must only specify either dataprocessing_job_id and modeltraining_job_id or only training_job_name')
+
+        for k, v in kwargs.items():
+            data[k] = v
+
+        headers = {
+            'content-type': 'application/json'
+        }
+
+        url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform'
+        req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
+        res = self._http_session.send(req)
+        return res
+
+    def modeltransform_status(self, job_id: str, iam_role: str = '') -> requests.Response:
+        data = {}
+        if iam_role != '':
+            data['neptuneIamRoleArn'] = iam_role
+
+        url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform/{job_id}'
+        req = self._prepare_request('GET', url, params=data)
+        res = self._http_session.send(req)
+        return res
+
+    def modeltransform_list(self, iam_role: str = '', max_items: int = 10) -> requests.Response:
+        data = {
+            'maxItems': max_items
+        }
+
+        if iam_role != '':
+            data['neptuneIamRoleArn'] = iam_role
+
+        url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform'
+        req = self._prepare_request('GET', url, params=data)
+        res = self._http_session.send(req)
+        return res
+
+    def modeltransform_stop(self, job_id: str, iam_role: str = '', clean: bool = False) -> requests.Response:
+        data = {
+            'clean': 'TRUE' if clean else 'FALSE'
+        }
+        if iam_role != '':
+            data['neptuneIamRoleArn'] = iam_role
+
+        url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform/{job_id}'
+        req = self._prepare_request('DELETE', url, params=data)
+        res = self._http_session.send(req)
+        return res
+
     def endpoints_create(self, training_job_id: str, **kwargs) -> requests.Response:
         data = {
             'mlModelTrainingJobId': training_job_id
@@ -389,7 +513,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def endpoints(self, max_items: int = 10, neptune_iam_role_arn: str = ''):
+    def endpoints(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
         data = {
             'maxItems': max_items
         }
@@ -433,17 +557,21 @@ class Client(object):
 
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
-        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers)
+        request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
         if self._session is not None:
-            credentials = self._session.get_credentials()
-            frozen_creds = credentials.get_frozen_credentials()
-
-            req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
-            SigV4Auth(frozen_creds, service, self.region).add_auth(req)
-            prepared_iam_req = req.prepare()
-            request.headers = dict(prepared_iam_req.headers)
+            aws_request = self._get_aws_request(method, url, data=data, params=params, headers=headers)
+            request.headers = dict(aws_request.headers)
 
         return request.prepare()
+
+    def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
+        credentials = self._session.get_credentials()
+        frozen_creds = credentials.get_frozen_credentials()
+
+        req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
+        SigV4Auth(frozen_creds, service, self.region).add_auth(req)
+        prepared_iam_req = req.prepare()
+        return prepared_iam_req
 
     def _ensure_http_session(self):
         if not self._http_session:
@@ -459,7 +587,7 @@ class Client(object):
 
     @property
     def iam_enabled(self):
-        return type(self._session) is botocore.session.Session
+        return type(self._session) is Session
 
 
 class ClientBuilder(object):

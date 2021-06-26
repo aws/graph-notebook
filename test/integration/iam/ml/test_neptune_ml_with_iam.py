@@ -3,6 +3,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 import logging
 import os
 import threading
@@ -13,23 +14,123 @@ import pytest
 from botocore.session import get_session
 
 from graph_notebook.configuration.get_config import get_config
-from test.integration import IntegrationTest
+from test.integration import IntegrationTest, GraphNotebookIntegrationTest
 from test.integration.iam.ml import setup_iam_client
 
 logger = logging.getLogger()
 
+NEPTUNE_ML_DATAPROCESSING_S3_INPUT = os.getenv('NEPTUNE_ML_DATAPROCESSING_S3_INPUT')
+NEPTUNE_ML_DATAPROCESSING_S3_PROCESSED = os.getenv('NEPTUNE_ML_DATAPROCESSING_S3_PROCESSED')
+NEPTUNE_ML_TRAINING_OUTPUT = os.getenv('NEPTUNE_ML_TRAINING_OUTPUT')
+NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID = os.getenv('NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID')
+NEPTUNE_ML_IAM_ROLE_ARN = os.getenv('NEPTUNE_ML_IAM_ROLE_ARN')
+NEPTUNE_ML_COMPLETED_TRAINING_ID = os.getenv('NEPTUNE_ML_COMPLETED_TRAINING_ID')
+NEPTUNE_ML_TRANSFORM_OUTPUT = 's3://akline-misc/transform'
 
-@unittest.skip
-class TestNeptuneMLWithIAM(IntegrationTest):
+
+class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
     def setUp(self) -> None:
+        super(TestNeptuneMLWithIAM, self).setUp()
+        assert NEPTUNE_ML_DATAPROCESSING_S3_INPUT is not None
+        assert NEPTUNE_ML_DATAPROCESSING_S3_PROCESSED is not None
+        assert NEPTUNE_ML_IAM_ROLE_ARN is not None
+        assert NEPTUNE_ML_TRAINING_OUTPUT is not None
+
         self.client = self.client_builder.with_iam(get_session()).build()
 
     def tearDown(self) -> None:
-        endpoint_ids = client.endpoints().json()['ids']
+        res = client.endpoints()
+        res.raise_for_status()
+        endpoint_res = res.json()
+        endpoint_ids = endpoint_res['ids']
         for endpoint_id in endpoint_ids:
             self.client.endpoints_delete(endpoint_id)
 
         client.close()
+
+    def test_neptuneml_magic(self):
+        data = {
+            'output_s3_location': 's3://akline-misc/transform',
+            'dataprocessing_job_id': NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
+            'modeltraining_job_id': NEPTUNE_ML_COMPLETED_TRAINING_ID
+        }
+
+        cell = '''{
+    "output_s3_location": "s3://akline-misc/transform",
+    "dataprocessing_job_id": "node-classification-1621962877",
+    "modeltraining_job_id": "node-classification-1621962877"
+}'''
+        self.ip.user_ns['create_input'] = data
+        create_res = self.ip.run_cell_magic('neptune_ml', 'modeltransform create --wait', cell)
+        pass
+
+    def test_neptune_ml_dataprocessing(self):
+        params = {
+            'neptuneIamRoleArn': NEPTUNE_ML_IAM_ROLE_ARN,
+            'configFileName': 'training-job-configuration.json'
+        }
+        res = self.client.dataprocessing_start(NEPTUNE_ML_DATAPROCESSING_S3_INPUT,
+                                               NEPTUNE_ML_DATAPROCESSING_S3_PROCESSED, **params)
+        assert res.status_code == 200
+        response = res.json()
+        dataprocessing_id = response['id']
+
+        time.sleep(30)
+        status_res = self.client.dataprocessing_job_status(dataprocessing_id)
+        assert status_res.status_code == 200
+
+        list_res = self.client.dataprocessing_list()
+        assert list_res.status_code == 200
+        ids = list_res.json()['ids']
+        assert dataprocessing_id in ids
+
+        delete_res = self.client.dataprocessing_stop(dataprocessing_id, True)
+        assert delete_res.status_code == 200
+
+    def test_neptune_ml_modeltraining(self):
+        training_res = self.client.modeltraining_start(NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
+                                                       NEPTUNE_ML_TRAINING_OUTPUT)
+        assert training_res.status_code == 200
+        training = training_res.json()
+
+        modeltraining_id = training['id']
+
+        time.sleep(30)
+
+        list_res = self.client.modeltraining_list()
+        assert list_res.status_code == 200
+        ids = list_res.json()['ids']
+        assert modeltraining_id in ids
+
+        status_res = self.client.modeltraining_job_status(modeltraining_id)
+        assert status_res.status_code == 200
+
+        delete_res = self.client.modeltraining_stop(modeltraining_id)
+        assert delete_res.status_code == 200
+
+    def test_neptune_ml_modeltransform(self):
+        create_res = self.client.modeltransform_create(NEPTUNE_ML_TRANSFORM_OUTPUT,
+                                                       NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
+                                                       NEPTUNE_ML_COMPLETED_TRAINING_ID)
+        assert create_res.status_code == 200
+
+        create = create_res.json()
+        transform_id = create['id']
+
+        time.sleep(30)
+
+        status_res = self.client.modeltransform_status(transform_id)
+        assert status_res.status_code == 200
+
+        list_res = self.client.modeltraining_list()
+        assert list_res.status_code == 200
+        assert transform_id in list_res.json()['ids']
+
+        stop_res = self.client.modeltransform_stop(transform_id)
+        assert stop_res.status_code == 200
+
+    def test_neptune_ml_endpoint(self):
+        pass
 
     @pytest.mark.neptuneml
     @pytest.mark.iam
@@ -68,7 +169,7 @@ class TestNeptuneMLWithIAM(IntegrationTest):
     @pytest.mark.neptuneml
     @pytest.mark.iam
     def test_neptune_ml_dataprocessing_status(self):
-        status = client.dataprocessing_status()
+        status = client.dataprocessing_list()
 
         assert status.status_code == 200
         assert 'ids' in status.json()
@@ -76,7 +177,7 @@ class TestNeptuneMLWithIAM(IntegrationTest):
     @pytest.mark.neptuneml
     @pytest.mark.iam
     def test_neptune_ml_modeltraining_status(self):
-        status = client.modeltraining_status()
+        status = client.modeltraining_list()
         assert status.status_code == 200
         assert 'ids' in status.json()
 
