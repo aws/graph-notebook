@@ -80,12 +80,8 @@ setup(
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
         'boto3>=1.17.58',
-<<<<<<< HEAD
-        'ipython>=7.16.1'
-=======
         'ipython>=7.16.1',
         'neo4j'
->>>>>>> d2c6f20cb52c96a49822545ca64e16aa700469bb
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',

@@ -25,7 +25,6 @@ src/graph_notebook/widgets/lib/
 # npm
 node_modules/
 node_modules/.package-lock.json
-<<<<<<< HEAD
 src/graph_notebook/widgets/package-lock.json
 blazegraph.jnl
 rules.log
