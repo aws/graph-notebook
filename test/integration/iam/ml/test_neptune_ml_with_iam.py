@@ -3,18 +3,16 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 import logging
 import os
 import threading
 import time
-import unittest
 
 import pytest
 from botocore.session import get_session
 
 from graph_notebook.configuration.get_config import get_config
-from test.integration import IntegrationTest, GraphNotebookIntegrationTest
+from test.integration import GraphNotebookIntegrationTest
 from test.integration.iam.ml import setup_iam_client
 
 logger = logging.getLogger()
@@ -61,7 +59,9 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
     "modeltraining_job_id": "node-classification-1621962877"
 }'''
         self.ip.user_ns['create_input'] = data
-        create_res = self.ip.run_cell_magic('neptune_ml', 'modeltransform create --wait', cell)
+        self.ip.run_cell_magic('neptune_ml', 'modeltransform create --wait', cell)
+        # create_res = self.ip.run_cell_magic('neptune_ml', 'modeltransform create --wait', cell)
+        # assert create_res.status_code == 200
         pass
 
     def test_neptune_ml_dataprocessing(self):
