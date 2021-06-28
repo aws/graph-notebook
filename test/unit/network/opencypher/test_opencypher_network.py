@@ -81,12 +81,14 @@ class TestOpenCypherNetwork(unittest.TestCase):
                     "~start": "22",
                     "~end": "151",
                     "~type": "route",
-                    'dist': 956}
-                },
+                    'dist': 956
+                }
+            },
             'label': 'route',
             'from_id': "22",
             'to_id': '151',
-            'edge_id': '7389'}
+            'edge_id': '7389'
+        }
 
         def add_edge_callback(network, event_name, data):
             self.assertEqual(event_name, EVENT_ADD_EDGE)
@@ -142,7 +144,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(path)
         self.assertEqual(2, len(gn.graph.nodes))
         self.assertEqual(1, len(gn.graph.edges))
-    
+
     def test_group_with_groupby(self):
         path = {
             "results": [
@@ -302,7 +304,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node2 = gn.graph.nodes.get('8')
         self.assertEqual(node1['group'], 'US-AK')
         self.assertEqual(node2['group'], 'US-TX')
-    
+
     def test_group_with_groupby_id(self):
         res = {
             "results": [
