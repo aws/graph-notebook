@@ -37,7 +37,7 @@ from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str
 from graph_notebook.visualization.sparql_rows_and_columns import get_rows_and_columns
 from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
-from graph_notebook.seed.load_query import get_data_sets, get_queries
+from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
@@ -66,7 +66,7 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
-SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'SPARQL']
+SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
 
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
@@ -1029,7 +1029,7 @@ class Graph(Magics):
             submit_button.close()
             model_dropdown.disabled = True
             data_set_drop_down.disabled = True
-            model = model_dropdown.value.lower()
+            model = normalize_model_name(model_dropdown.value)
             data_set = data_set_drop_down.value.lower()
             with output:
                 print(f'Loading data set {data_set} for {model}')
@@ -1055,7 +1055,7 @@ class Graph(Magics):
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
-                if model == 'Property Graph':
+                if model == 'propertygraph':
                     # IMPORTANT: We treat each line as its own query!
                     for line in q['content'].splitlines():
                         try:
@@ -1173,12 +1173,12 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('-g', '--group-by', type=str, default='T.label',
-                            help='Property used to group nodes (e.g. code, ~id) default is ~label')
+        parser.add_argument('-g', '--group-by', type=str, default='~labels',
+                            help='Property used to group nodes (e.g. code, ~id) default is ~labels')
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
                             choices=['query', 'bolt'])
-        parser.add_argument('-d', '--display-property', type=str, default='T.label',
-                            help='Property to display the value of on each node, default is T.label')
+        parser.add_argument('-d', '--display-property', type=str, default='~labels',
+                            help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
@@ -1234,7 +1234,7 @@ class Graph(Magics):
             # Need to eventually add code to parse and display a network for the bolt format here
 
         rows_and_columns = {'columns': columns, 'rows': rows}
-
+        logger.debug(rows_and_columns)
         display(tab)
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
         # Assign an empty value so we can always display to table output.
