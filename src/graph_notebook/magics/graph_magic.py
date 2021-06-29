@@ -34,7 +34,7 @@ from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, 
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
-from graph_notebook.visualization.sparql_rows_and_columns import get_rows_and_columns
+from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
 from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name
@@ -271,7 +271,7 @@ class Graph(Magics):
                     children.append(f)
                     logger.debug('added sparql network to tabs')
 
-                rows_and_columns = get_rows_and_columns(results)
+                rows_and_columns = sparql_get_rows_and_columns(results)
                 if rows_and_columns is not None:
                     table_id = f"table-{str(uuid.uuid4())[:8]}"
                     first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
@@ -1181,18 +1181,15 @@ class Graph(Magics):
                             help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
-        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
-                            choices=['query', 'bolt'])
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         args = parser.parse_args(line.split())
         tab = widgets.Tab()
-
+        logger.debug(args)
         titles = []
         children = []
-        rows = []
-        columns = set()
         force_graph_output=None
+        res=None
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1200,13 +1197,8 @@ class Graph(Magics):
             oc_http.raise_for_status()
             res = oc_http.json()
             oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                               query_time=query_time)
-            titles.append('Console')
+                                                               query_time=query_time)            
             try:
-                logger.debug(f'groupby: {args.group_by}')
-                logger.debug(f'ignore_groups: {args.ignore_groups}')
-                logger.debug(f'display_property: {args.display_property}')
-                logger.debug(f'label_max_length: {args.label_max_length}')
                 gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
                 gn.add_results(res)
@@ -1215,26 +1207,11 @@ class Graph(Magics):
                     force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
             except ValueError as value_error:
                 logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
-
-            if res['results']:
-                for r in res['results']:
-                    row = []
-                    for key, item in r.items():
-                        columns.add(key)
-                        row.append(item)
-                    rows.append(row)
         elif args.mode == 'bolt':
-            res = self.client.opencyper_bolt(cell)
-            for r in res:
-                row = []
-                for key, item in r.items():
-                    columns.add(key)
-                    row.append(item)
-                rows.append(row)
+            res = self.client.opencyper_bolt(cell)            
             # Need to eventually add code to parse and display a network for the bolt format here
 
-        rows_and_columns = {'columns': columns, 'rows': rows}
-        logger.debug(rows_and_columns)
+        rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
         display(tab)
         table_output = widgets.Output(layout=DEFAULT_LAYOUT)
         # Assign an empty value so we can always display to table output.
@@ -1244,7 +1221,7 @@ class Graph(Magics):
         # some issues with displaying a datatable when not wrapped in an hbox and displayed last
         hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
         children.append(hbox)
-
+        titles.append('Console')
         if rows_and_columns is not None:
             table_id = f"table-{str(uuid.uuid4())[:8]}"
             table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
