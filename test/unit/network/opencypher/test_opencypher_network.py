@@ -423,6 +423,107 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'US-AK')
         self.assertEqual(node2['group'], 'US-TX')
 
+    def test_path_with_default_groupby(self):
+        res = {
+            "results": [
+                {
+                "p": [
+                    {
+                    "~id": "22",
+                    "~entityType": "node",
+                    "~labels": [
+                        "airport"
+                    ],
+                    "~properties": {
+                        "desc": "Seattle-Tacoma",
+                        "lon": -122.30899810791,
+                        "runways": 3,
+                        "type": "airport",
+                        "country": "US",
+                        "region": "US-WA",
+                        "lat": 47.4490013122559,
+                        "elev": 432,
+                        "city": "Seattle",
+                        "icao": "KSEA",
+                        "code": "SEA",
+                        "longest": 11901
+                    }
+                    },
+                    {
+                    "~id": "57081",
+                    "~entityType": "relationship",
+                    "~start": "3684",
+                    "~end": "22",
+                    "~type": "contains"
+                    },
+                    {
+                    "~id": "3684",
+                    "~entityType": "node",
+                    "~labels": [
+                        "continent"
+                    ],
+                    "~properties": {
+                        "desc": "North America",
+                        "code": "NA"
+                    }
+                    }
+                ]
+                },
+                {
+                "p": [
+                    {
+                    "~id": "22",
+                    "~entityType": "node",
+                    "~labels": [
+                        "airport"
+                    ],
+                    "~properties": {
+                        "desc": "Seattle-Tacoma",
+                        "lon": -122.30899810791,
+                        "runways": 3,
+                        "type": "airport",
+                        "country": "US",
+                        "region": "US-WA",
+                        "lat": 47.4490013122559,
+                        "elev": 432,
+                        "city": "Seattle",
+                        "icao": "KSEA",
+                        "code": "SEA",
+                        "longest": 11901
+                    }
+                    },
+                    {
+                    "~id": "53637",
+                    "~entityType": "relationship",
+                    "~start": "3670",
+                    "~end": "22",
+                    "~type": "contains"
+                    },
+                    {
+                    "~id": "3670",
+                    "~entityType": "node",
+                    "~labels": [
+                        "country"
+                    ],
+                    "~properties": {
+                        "desc": "United States",
+                        "code": "US"
+                    }
+                    }
+                ]
+                }
+            ]
+            }
+
+        gn = OCNetwork()
+        gn.add_results(res)        
+        seattle = gn.graph.nodes.get('22')
+        north_america = gn.graph.nodes.get('3684')
+        united_states = gn.graph.nodes.get('3670')
+        self.assertEqual(seattle['group'], 'airport')
+        self.assertEqual(north_america['group'], 'continent')
+        self.assertEqual(united_states['group'], 'country')
+
     def test_group_with_groupby_properties_json_single_label(self):
         res = {
             "results": [
