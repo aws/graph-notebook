@@ -363,6 +363,8 @@ class Graph(Magics):
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('-d', '--display-property', type=str, default='T.label',
                             help='Property to display the value of on each node, default is T.label')
+        parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
+                            help='Property to display the value of on each edge, default is T.label')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -408,9 +410,11 @@ class Graph(Magics):
             try:
                 logger.debug(f'groupby: {args.group_by}')
                 logger.debug(f'display_property: {args.display_property}')
+                logger.debug(f'edge_display_property: {args.edge_display_property}')
                 logger.debug(f'label_max_length: {args.label_max_length}')
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
                 gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                    edge_display_property=args.edge_display_property,
                                     label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
 
                 if args.path_pattern == '':

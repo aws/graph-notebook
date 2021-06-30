@@ -98,7 +98,8 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=T_LABEL, display_property=T_LABEL, ignore_groups=False):
+                 group_by_property=T_LABEL, display_property=T_LABEL, edge_display_property=T_LABEL,
+                 ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         if label_max_length < 3:
@@ -113,6 +114,10 @@ class GremlinNetwork(EventfulNetwork):
             self.display_property = json.loads(display_property)
         except ValueError:
             self.display_property = display_property
+        try:
+            self.edge_display_property = json.loads(edge_display_property)
+        except ValueError:
+            self.edge_display_property = edge_display_property
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
@@ -390,18 +395,39 @@ class GremlinNetwork(EventfulNetwork):
             from_id = from_id if from_id != '' else edge.outV.id
             to_id = to_id if to_id != '' else edge.inV.id
             data['properties'] = {'id': edge.id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
-            self.add_edge(from_id, to_id, edge.id, edge.label, data)
+            if isinstance(self.edge_display_property, dict):
+                try:
+                    display_label = data['properties'][self.edge_display_property[edge.label]]
+                except KeyError:
+                    display_label = edge.label
+            else:
+                if self.edge_display_property == T_LABEL:
+                    display_label = edge.label
+                else:
+                    try:
+                        display_label = data['properties'][self.edge_display_property]
+                    except KeyError:
+                        display_label = edge.label
+            self.add_edge(from_id, to_id, edge.id, display_label, data)
         elif type(edge) is dict:
             properties = {}
             edge_id = ''
             edge_label = ''
+            if T.label in edge.keys():
+                edge_label = str(edge[T.label])
             for k in edge:
-                if str(k) == T_LABEL:
-                    edge_label = str(edge[k])
-                elif str(k) == T_ID:
+                if str(k) in T_ID:
                     edge_id = str(edge[k])
-
                 properties[k] = edge[k]
+                if self.edge_display_property is not T_LABEL:
+                    if isinstance(self.edge_display_property, dict):
+                        try:
+                            if str(k) == self.edge_display_property[edge_label]:
+                                edge_label = str(edge[k])
+                        except KeyError:
+                            continue
+                    elif str(k) == self.edge_display_property:
+                        edge_label = str(edge[k])
             data['properties'] = properties
             self.add_edge(from_id, to_id, edge_id, edge_label, data)
         else:
