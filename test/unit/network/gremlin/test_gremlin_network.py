@@ -8,7 +8,6 @@ from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
-from gremlin_python.structure.graph import Vertex
 
 
 class TestGremlinNetwork(unittest.TestCase):
