@@ -416,7 +416,7 @@ class GremlinNetwork(EventfulNetwork):
             if T.label in edge.keys():
                 edge_label = str(edge[T.label])
             for k in edge:
-                if str(k) in T_ID:
+                if str(k) == T_ID:
                     edge_id = str(edge[k])
                 properties[k] = edge[k]
                 if self.edge_display_property is not T_LABEL:

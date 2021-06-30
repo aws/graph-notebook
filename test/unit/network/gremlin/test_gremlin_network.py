@@ -133,6 +133,226 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['label'], '1')
         self.assertEqual(node2['label'], '2')
 
+    def test_add_vertex_without_node_property(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+
+    def test_add_vertex_with_node_property_string(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='code')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'SEA')
+
+    def test_add_vertex_with_node_property_string_invalid(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='desc')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+
+    def test_add_vertex_with_node_property_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'SEA')
+
+    def test_add_vertex_with_node_property_json_invalid_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":code}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+
+    def test_add_vertex_with_node_property_json_invalid_key(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"country":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+
+    def test_add_vertex_with_node_property_json_invalid_value(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"desc"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+
+    def test_add_vertex_multiple_with_node_property_string(self):
+        vertex1 = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        vertex2 = {
+            T.id: '2345',
+            T.label: 'country',
+            'type': 'Country',
+            'continent': 'NA',
+            'code': 'USA'
+        }
+
+        gn = GremlinNetwork(display_property='code')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        node1 = gn.graph.nodes.get(vertex1[T.id])
+        node2 = gn.graph.nodes.get(vertex2[T.id])
+        self.assertEqual(node1['label'], 'SEA')
+        self.assertEqual(node2['label'], 'USA')
+
+    def test_add_vertex_multiple_with_multiple_node_properties(self):
+        vertex1 = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        vertex2 = {
+            T.id: '2345',
+            T.label: 'country',
+            'type': 'Country',
+            'continent': 'NA',
+            'code': 'USA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"code","country":"continent"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        node1 = gn.graph.nodes.get(vertex1[T.id])
+        node2 = gn.graph.nodes.get(vertex2[T.id])
+        self.assertEqual(node1['label'], 'SEA')
+        self.assertEqual(node2['label'], 'NA')
+
+    def test_add_vertex_with_label_length(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'Seattle-Tacoma International Airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(label_max_length=15)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'Seattle-Taco...')
+
+    def test_add_vertex_with_bracketed_label_and_label_length(self):
+        vertex = {
+            T.id: '1234',
+            T.label: "['Seattle-Tacoma International Airport']",
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(label_max_length=15)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'Seattle-Taco...')
+
+    def test_add_vertex_with_label_length_less_than_3(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'Seattle-Tacoma International Airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(label_max_length=-50)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], '...')
+
+    def test_add_vertex_with_node_property_string_and_label_length(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA',
+            'desc': 'Seattle-Tacoma International Airport'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"desc"}', label_max_length=15)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'Seattle-Taco...')
+
+    def test_add_vertex_with_node_property_json_and_label_length(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA',
+            'desc': 'Seattle-Tacoma International Airport'
+        }
+
+        gn = GremlinNetwork(display_property='desc', label_max_length=15)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'Seattle-Taco...')
+
     def test_add_explicit_type_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
         vertex2 = Vertex(id='2')
@@ -445,226 +665,6 @@ class TestGremlinNetwork(unittest.TestCase):
         edge2_data = gn.graph.get_edge_data('2', '3')
         self.assertEqual(edge1_data['1']['label'], 'v[1]')
         self.assertEqual(edge2_data['2']['label'], '2')
-
-    def test_add_vertex_without_node_property(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork()
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'airport')
-
-    def test_add_vertex_with_node_property_string(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='code')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'SEA')
-
-    def test_add_vertex_with_node_property_string_invalid(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='desc')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'airport')
-
-    def test_add_vertex_with_node_property_json(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='{"airport":"code"}')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'SEA')
-
-    def test_add_vertex_with_node_property_json_invalid_json(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='{"airport":code}')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'airport')
-
-    def test_add_vertex_with_node_property_json_invalid_key(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='{"country":"code"}')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'airport')
-
-    def test_add_vertex_with_node_property_json_invalid_value(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(display_property='{"airport":"desc"}')
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'airport')
-
-    def test_add_vertex_multiple_with_node_property_string(self):
-        vertex1 = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        vertex2 = {
-            T.id: '2345',
-            T.label: 'country',
-            'type': 'Country',
-            'continent': 'NA',
-            'code': 'USA'
-        }
-
-        gn = GremlinNetwork(display_property='code')
-        gn.add_vertex(vertex1)
-        gn.add_vertex(vertex2)
-        node1 = gn.graph.nodes.get(vertex1[T.id])
-        node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['label'], 'SEA')
-        self.assertEqual(node2['label'], 'USA')
-
-    def test_add_vertex_multiple_with_multiple_node_properties(self):
-        vertex1 = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        vertex2 = {
-            T.id: '2345',
-            T.label: 'country',
-            'type': 'Country',
-            'continent': 'NA',
-            'code': 'USA'
-        }
-
-        gn = GremlinNetwork(display_property='{"airport":"code","country":"continent"}')
-        gn.add_vertex(vertex1)
-        gn.add_vertex(vertex2)
-        node1 = gn.graph.nodes.get(vertex1[T.id])
-        node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['label'], 'SEA')
-        self.assertEqual(node2['label'], 'NA')
-
-    def test_add_vertex_with_label_length(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'Seattle-Tacoma International Airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(label_max_length=15)
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'Seattle-Taco...')
-
-    def test_add_vertex_with_bracketed_label_and_label_length(self):
-        vertex = {
-            T.id: '1234',
-            T.label: "['Seattle-Tacoma International Airport']",
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(label_max_length=15)
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'Seattle-Taco...')
-
-    def test_add_vertex_with_label_length_less_than_3(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'Seattle-Tacoma International Airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA'
-        }
-
-        gn = GremlinNetwork(label_max_length=-50)
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], '...')
-
-    def test_add_vertex_with_node_property_string_and_label_length(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA',
-            'desc': 'Seattle-Tacoma International Airport'
-        }
-
-        gn = GremlinNetwork(display_property='{"airport":"desc"}', label_max_length=15)
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'Seattle-Taco...')
-
-    def test_add_vertex_with_node_property_json_and_label_length(self):
-        vertex = {
-            T.id: '1234',
-            T.label: 'airport',
-            'type': 'Airport',
-            'runways': '4',
-            'code': 'SEA',
-            'desc': 'Seattle-Tacoma International Airport'
-        }
-
-        gn = GremlinNetwork(display_property='desc', label_max_length=15)
-        gn.add_vertex(vertex)
-        node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['label'], 'Seattle-Taco...')
 
     def test_add_path_with_integer(self):
         path = Path([], ['ANC', 3030, 'DFW'])
