@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
-from gremlin_python.structure.graph import Path
+from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
@@ -354,6 +354,319 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['label'], 'Seattle-Taco...')
 
+    def test_add_explicit_type_single_edge_without_edge_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_single_edge_with_invalid_edge_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='length')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_single_edge_with_edge_property_string_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='label')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_single_edge_with_edge_property_string_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='id')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], '1')
+
+    def test_add_explicit_type_single_edge_with_edge_property_json_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+
+    def test_add_explicit_type_single_edge_with_edge_property_malformed_json_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":inV}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_single_edge_with_edge_property_json_invalid_key_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"road":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_single_edge_with_edge_property_json_invalid_value_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"distance"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_explicit_type_multiple_edges_with_edge_property_string(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        vertex3 = Vertex(id='3')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='airway')
+        edge2 = Edge(id='2', outV=vertex2, inV=vertex3, label='road')
+
+        gn = GremlinNetwork(edge_display_property='id')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        gn.add_path_edge(edge2)
+        edge_route = gn.graph.get_edge_data('1', '2')
+        edge_path = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge_route['1']['label'], '1')
+        self.assertEqual(edge_path['2']['label'], '2')
+
+    def test_add_explicit_type_multiple_edges_with_edge_property_json_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        vertex3 = Vertex(id='3')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+        edge2 = Edge(id='2', outV=vertex2, inV=vertex3, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        gn.add_path_edge(edge2)
+        edge_route = gn.graph.get_edge_data('1', '2')
+        edge_path = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge_route['1']['label'], 'v[2]')
+        self.assertEqual(edge_path['2']['label'], 'v[3]')
+
+    def test_add_explicit_type_multiple_edges_with_edge_property_json_multiple_labels(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        vertex3 = Vertex(id='3')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='airway')
+        edge2 = Edge(id='2', outV=vertex2, inV=vertex3, label='road')
+
+        gn = GremlinNetwork(edge_display_property='{"airway":"inV","road":"id"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        gn.add_path_edge(edge2)
+        edge_route = gn.graph.get_edge_data('1', '2')
+        edge_path = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge_route['1']['label'], 'v[2]')
+        self.assertEqual(edge_path['2']['label'], '2')
+
+    def test_add_single_edge_without_edge_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_invalid_edge_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='distance')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_edge_property_string_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='T.label')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_edge_property_string_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='T.id')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], '1')
+
+    def test_add_single_edge_with_edge_property_json(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+
+    def test_add_single_edge_with_edge_property_invalid_json(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":inV}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_edge_property_json_invalid_key(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"distance":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_edge_property_json_invalid_value(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":"foo"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_multiple_edges_with_edge_property_string(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+        edge2 = {T.id: '2', T.label: 'route', 'outV': 'v[2]', 'inV': 'v[3]'}
+
+        gn = GremlinNetwork(edge_display_property='inV')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        gn.add_path_edge(edge2, from_id='2', to_id='3')
+        edge1_data = gn.graph.get_edge_data('1', '2')
+        edge2_data = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge1_data['1']['label'], 'v[2]')
+        self.assertEqual(edge2_data['2']['label'], 'v[3]')
+
+    def test_add_multiple_edges_with_edge_property_json_single_label(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+        edge2 = {T.id: '2', T.label: 'route', 'outV': 'v[2]', 'inV': 'v[3]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        gn.add_path_edge(edge2, from_id='2', to_id='3')
+        edge1_data = gn.graph.get_edge_data('1', '2')
+        edge2_data = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge1_data['1']['label'], 'v[2]')
+        self.assertEqual(edge2_data['2']['label'], 'v[3]')
+
+    def test_add_multiple_edges_with_edge_property_json_multiple_labels(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'airway', 'outV': 'v[1]', 'inV': 'v[2]'}
+        edge2 = {T.id: '2', T.label: 'road', 'outV': 'v[2]', 'inV': 'v[3]'}
+
+        gn = GremlinNetwork(edge_display_property='{"airway":"outV","road":"T.id"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        gn.add_path_edge(edge2, from_id='2', to_id='3')
+        edge1_data = gn.graph.get_edge_data('1', '2')
+        edge2_data = gn.graph.get_edge_data('2', '3')
+        self.assertEqual(edge1_data['1']['label'], 'v[1]')
+        self.assertEqual(edge2_data['2']['label'], '2')
+
     def test_add_path_with_integer(self):
         path = Path([], ['ANC', 3030, 'DFW'])
         gn = GremlinNetwork()
@@ -694,6 +1007,24 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('graph_notebook-ed8fddedf251d3d5745dccfd53edf51d')
         self.assertEqual(node['group'], '')
+
+    def test_add_path_with_edge_property_string(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        path = Path([], [vertex1, Edge(id='1', outV=vertex1, inV=vertex2, label='route'), vertex2])
+        gn = GremlinNetwork(edge_display_property='id')
+        gn.add_results([path])
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], '1')
+
+    def test_add_path_with_edge_property_json(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        path = Path([], [vertex1, Edge(id='1', outV=vertex1, inV=vertex2, label='route'), vertex2])
+        gn = GremlinNetwork(edge_display_property='{"route":"id"}')
+        gn.add_results([path])
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], '1')
 
     def test_add_path_without_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
