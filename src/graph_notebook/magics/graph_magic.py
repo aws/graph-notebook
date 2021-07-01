@@ -479,12 +479,14 @@ class Graph(Magics):
         print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
     def oc(self, line='', cell='', local_ns: dict = None):
         self.handle_opencypher_query(line, cell, local_ns)
 
+    @magic_variables
     @cell_magic
     @needs_local_scope
     @display_exceptions
