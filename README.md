@@ -6,13 +6,13 @@ The graph notebook provides an easy way to interact with graph databases using J
 
 ![Gremlin query and graph](./images/GremlinQueryGraph.png)
 
+### Visualizing openCypher queries
+
+![openCypher query and graph](./images/OCQueryGraph.png)
+
 ### Visualizing SPARQL queries:
 
 ![SPARL query and graph](./images/SPARQLQueryGraph.png)
-
-### Visualizing openCypher queries
-
-TODO: Add screen shots
 
 Instructions for connecting to the following graph databases:
 
