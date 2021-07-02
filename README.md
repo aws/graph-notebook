@@ -2,6 +2,9 @@
 
 The graph notebook provides an easy way to interact with graph databases using Jupyter notebooks. Using this open-source Python package, you can connect to any graph database that supports the [Apache TinkerPop](https://tinkerpop.apache.org/), [openCypher](https://github.com/opencypher/openCypher) or the [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/) graph models. These databases could be running locally on your desktop or in the cloud. Graph databases can be used to explore a variety of use cases including [knowledge graphs](https://aws.amazon.com/neptune/knowledge-graphs-on-aws/) and [identity graphs](https://aws.amazon.com/neptune/identity-graphs-on-aws/).
 
+![A colorful graph picture](./images/ColorfulGraph.png)
+
+
 ### Visualizing Gremlin queries:
 
 ![Gremlin query and graph](./images/GremlinQueryGraph.png)
@@ -75,7 +78,7 @@ We encourage others to contribute configurations they find useful. There is an [
 **TIP** :point_right: Many of the magic commands support a `--help` option in order to provide additional information.
 
 ## Example notebooks
-This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/)
+This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/). As this project has evolved, many new features have been added. If you are already familiar with graph-notebook but want a quick summary of new features added, a good place to start is the Air-Routes notebooks in the [02-Visualization](./src/graph_notebook/notebooks/02-Visualization) folder.
 
 ## Keeping track of new features
 It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to keep up to date as new features are added.
