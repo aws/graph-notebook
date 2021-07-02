@@ -1,10 +1,14 @@
-## Graph Notebook: easily query and visualize graphs 
+## Graph Notebook: easily query and visualize graphs
 
-The graph notebook provides an easy way to interact with graph databases using Jupyter notebooks. Using this open-source Python package, you can connect to any graph database that supports the [Apache TinkerPop](https://tinkerpop.apache.org/) or the [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/) graph model. These databases could be running locally on your desktop or in the cloud. Graph databases can be used to explore a variety of use cases including [knowledge graphs](https://aws.amazon.com/neptune/knowledge-graphs-on-aws/) and [identity graphs](https://aws.amazon.com/neptune/identity-graphs-on-aws/).
+The graph notebook provides an easy way to interact with graph databases using Jupyter notebooks. Using this open-source Python package, you can connect to any graph database that supports the [Apache TinkerPop](https://tinkerpop.apache.org/), [openCypher](https://github.com/opencypher/openCypher) or the [RDF SPARQL](https://www.w3.org/TR/rdf-sparql-query/) graph models. These databases could be running locally on your desktop or in the cloud. Graph databases can be used to explore a variety of use cases including [knowledge graphs](https://aws.amazon.com/neptune/knowledge-graphs-on-aws/) and [identity graphs](https://aws.amazon.com/neptune/identity-graphs-on-aws/).
 
 ### Visualizing Gremlin queries:
 
 ![Gremlin query and graph](./images/GremlinQueryGraph.png)
+
+### Visualizing openCypher queries
+
+![openCypher query and graph](./images/OCQueryGraph.png)
 
 ### Visualizing SPARQL queries:
 
@@ -13,7 +17,7 @@ The graph notebook provides an easy way to interact with graph databases using J
 Instructions for connecting to the following graph databases:
 
 |             Endpoint            |       Graph model       |   Query language    |
-| :-----------------------------: | :---------------------: | :-----------------: | 
+| :-----------------------------: | :---------------------: | :-----------------: |
 |[Gremlin Server](#gremlin-server)|     property graph      |       Gremlin       |
 |    [Blazegraph](#blazegraph)    |            RDF          |       SPARQL        |
 |[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin or SPARQL  |
@@ -25,7 +29,9 @@ We encourage others to contribute configurations they find useful. There is an [
 #### Notebook cell 'magic' extensions in the IPython 3 kernel
 `%%sparql` - Executes a SPARQL query against your configured database endpoint.
 
-`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to what the Gremlin console would return.
+`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return.
+
+`%%opencypher` or `%%oc` Executes an openCypher query against your database.
 
 `%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
 
@@ -41,13 +47,15 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%sparql_status` - Obtain the status of SPARQL queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-api-status.html)
 
+`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries.
+
 `%load` - Generate a form to submit a bulk loader job. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html)
 
 `%load_ids` - Get ids of bulk load jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
 
 `%load_status` - Get the status of a provided `load_id`. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
 
-`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning). 
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
 [Documentation](https://aws.amazon.com/neptune/machine-learning/)
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
@@ -64,6 +72,13 @@ We encourage others to contribute configurations they find useful. There is an [
 
 **TIP** :point_right: You can list all the magics installed in the Python 3 kernel using the `%lsmagic` command.
 
+**TIP** :point_right: Many of the magic commands support a `--help` option in order to provide additional information.
+
+## Example notebooks
+This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/)
+
+## Keeping track of new features
+It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to keep up to date as new features are added.
 
 ## Prerequisites
 
@@ -73,7 +88,6 @@ You will need:
 * [Jupyter Notebook](https://jupyter.org/install) 5.7.10
 * [Tornado](https://pypi.org/project/tornado/) 4.5.3
 * A graph database that provides a SPARQL 1.1 Endpoint or a Gremlin Server
-
 
 ## Installation
 
@@ -102,7 +116,7 @@ jupyter notebook ~/notebook/destination/dir
 
 ## Connecting to a graph database
 
-### Gremlin Server 
+### Gremlin Server
 
 In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`.  For a local Gremlin server (HTTP or WebSockets), you can use the following command:
 
@@ -157,7 +171,7 @@ You can also make use of namespaces for Blazegraph by specifying the path `graph
 }
 ```
 
-This will result in the url `localhost:9999/blazegraph/namespace/foo/sparql` being used when executing any `%%sparql` magic commands. 
+This will result in the url `localhost:9999/blazegraph/namespace/foo/sparql` being used when executing any `%%sparql` magic commands.
 
 To setup a new local Blazegraph database for use with the graph notebook, check out the [Quick Start](https://github.com/blazegraph/database/wiki/Quick_Start) from Blazegraph.
 
@@ -179,7 +193,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
 ```
 To setup a new Amazon Neptune cluster, check out the [AWS documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
 
-When connecting the graph notebook to Neptune, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune). 
+When connecting the graph notebook to Neptune, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune).
 
 ## Authentication (Amazon Neptune)
 

@@ -31,7 +31,8 @@ class OCNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=LABEL_KEY, display_property=LABEL_KEY, ignore_groups=False):
+                 group_by_property=LABEL_KEY, display_property=LABEL_KEY,
+                 edge_display_property=TYPE_KEY, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         if label_max_length < 3:
@@ -46,10 +47,14 @@ class OCNetwork(EventfulNetwork):
             self.display_property = json.loads(display_property)
         except ValueError:
             self.display_property = display_property
+        try:
+            self.edge_display_property = json.loads(edge_display_property)
+        except ValueError:
+            self.edge_display_property = edge_display_property
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
-    def parse_node(self, node:dict):
+    def parse_node(self, node: dict):
         """This parses the node parameter and adds the node to the network diagram
 
         Args:
@@ -64,7 +69,7 @@ class OCNetwork(EventfulNetwork):
             
         label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
-            if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY])>0:
+            if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
                 group = node[LABEL_KEY][0]
             elif self.group_by_property in [ID_KEY, 'id']:
                 group = node[ID_KEY]
@@ -74,7 +79,7 @@ class OCNetwork(EventfulNetwork):
                 group = ''
         else:  # handle dict format group_by
             try:
-                if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY])>0:
+                if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
                     key=node[LABEL_KEY][0]
                     if self.group_by_property[key]['groupby'] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
@@ -87,7 +92,7 @@ class OCNetwork(EventfulNetwork):
             except KeyError:
                 group = ''
 
-        props=self.flatten(node)
+        props = self.flatten(node)
         if self.display_property in [ID_KEY, 'id']:
             label = str(node[ID_KEY])
         elif isinstance(self.display_property, dict):
@@ -97,17 +102,27 @@ class OCNetwork(EventfulNetwork):
                 elif LABEL_KEY in props:
                     label = props[LABEL_KEY]
                 else:
-                    label=str(props)
+                    label = str(props)
             except KeyError:
                 pass
-        title=label
+        title = label
         label = self.strip_and_truncate_label(label, self.label_max_length)
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):
         data = {'properties': self.flatten(rel), 'label': rel[TYPE_KEY]}
-        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], rel[TYPE_KEY], data)
+        if self.edge_display_property is not TYPE_KEY:
+            try:
+                if isinstance(self.edge_display_property, dict):
+                    display_label = data['properties'][self.edge_display_property[rel[TYPE_KEY]]]
+                else:
+                    display_label = data['properties'][self.edge_display_property]
+            except KeyError:
+                display_label = rel[TYPE_KEY]
+        else:
+            display_label = rel[TYPE_KEY]
+        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), data)
 
     def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately

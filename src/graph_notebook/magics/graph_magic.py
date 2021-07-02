@@ -1182,6 +1182,8 @@ class Graph(Magics):
                             choices=['query', 'bolt'])
         parser.add_argument('-d', '--display-property', type=str, default='~labels',
                             help='Property to display the value of on each node, default is ~labels')
+        parser.add_argument('-de', '--edge-display-property', type=str, default='~labels',
+                            help='Property to display the value of on each edge, default is ~type')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -1192,7 +1194,7 @@ class Graph(Magics):
         titles = []
         children = []
         force_graph_output=None
-        res=None
+        res = None
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1203,6 +1205,7 @@ class Graph(Magics):
                                                                query_time=query_time)            
             try:
                 gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                               edge_display_property=args.edge_display_property,
                                label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
                 gn.add_results(res)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
