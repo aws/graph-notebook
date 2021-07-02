@@ -77,7 +77,8 @@ We encourage others to contribute configurations they find useful. There is an [
 ## Example notebooks
 This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/)
 
-It is also recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to keep up to date as new features are added.
+## Keeping track of new features
+It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to keep up to date as new features are added.
 
 ## Prerequisites
 
