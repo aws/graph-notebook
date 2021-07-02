@@ -78,7 +78,7 @@ We encourage others to contribute configurations they find useful. There is an [
 **TIP** :point_right: Many of the magic commands support a `--help` option in order to provide additional information.
 
 ## Example notebooks
-This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/)
+This project includes many example Jupyter notebooks. It is recommended to explore them. All of the commands and features supported by `graph-notebook` are explained in detail with examples within the sample notebooks. You can find them  [here](./src/graph_notebook/notebooks/). As this project has evolved, many new features have been added. If you are already familiar with graph-notebook but want a quick summary of new features added, a good place to start is the Air-Routes notebooks in the [02-Visualization](./src/graph_notebook/notebooks/02-Visualization) folder.
 
 ## Keeping track of new features
 It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to keep up to date as new features are added.
