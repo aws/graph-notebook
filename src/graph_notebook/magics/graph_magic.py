@@ -1007,7 +1007,7 @@ class Graph(Magics):
         progress_output = widgets.Output()
         model_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
-            description='Data Model:',
+            description='Data model:',
             disabled=False
         )
 
