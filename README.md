@@ -179,7 +179,21 @@ When connecting the graph notebook to Neptune, make sure you have a network setu
 
 ## Authentication (Amazon Neptune)
 
-If you are running a SigV4 authenticated endpoint, ensure that you have made the following credentials available in a location accessible to Boto3:
+If you are running a SigV4 authenticated endpoint, ensure that your configuration has `auth_mode` set to `IAM`:
+
+```
+%%graph_notebook_config
+{
+  "host": "your-neptune-endpoint",
+  "port": 8182,
+  "auth_mode": "IAM",
+  "load_from_s3_arn": "",
+  "ssl": true,
+  "aws_region": "your-neptune-region"
+}
+```
+
+Additionally, you should have the following AWS credentials available in a location accessible to Boto3:
 
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
