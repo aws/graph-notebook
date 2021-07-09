@@ -129,7 +129,6 @@ In a new cell in the Jupyter notebook, change the configuration using `%%graph_n
   "host": "localhost",
   "port": 8182,
   "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
   "load_from_s3_arn": "",
   "ssl": false,
   "aws_region": "us-east-1"
@@ -148,7 +147,6 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
   "host": "localhost",
   "port": 9999,
   "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
   "load_from_s3_arn": "",
   "ssl": false,
   "aws_region": "us-east-1"
@@ -164,7 +162,6 @@ You can also make use of namespaces for Blazegraph by specifying the path `graph
   "host": "localhost",
   "port": 9999,
   "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ENV",
   "load_from_s3_arn": "",
   "ssl": false,
   "aws_region": "us-west-2",
@@ -188,7 +185,6 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "host": "your-neptune-endpoint",
   "port": 8182,
   "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ENV",
   "load_from_s3_arn": "",
   "ssl": true,
   "aws_region": "your-neptune-region"
@@ -200,14 +196,28 @@ When connecting the graph notebook to Neptune, make sure you have a network setu
 
 ## Authentication (Amazon Neptune)
 
-If you are running a SigV4 authenticated endpoint, ensure that the config field `iam_credentials_provider_type` is set
-to `ENV` and that you have set the following environment variables:
+If you are running a SigV4 authenticated endpoint, ensure that your configuration has `auth_mode` set to `IAM`:
+
+```
+%%graph_notebook_config
+{
+  "host": "your-neptune-endpoint",
+  "port": 8182,
+  "auth_mode": "IAM",
+  "load_from_s3_arn": "",
+  "ssl": true,
+  "aws_region": "your-neptune-region"
+}
+```
+
+Additionally, you should have the following AWS credentials available in a location accessible to Boto3:
 
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_REGION
 - AWS_SESSION_TOKEN (OPTIONAL. Use if you are using temporary credentials)
 
+A list of all locations checked for AWS credentials can be found in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html).
 
 ## Contributing Guidelines
 
