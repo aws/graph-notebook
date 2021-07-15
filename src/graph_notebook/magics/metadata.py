@@ -76,9 +76,10 @@ def set_gremlin_profile_metrics(gremlin_metadata: Metadata, profile_str: str) ->
     if querytime_regex:
         gremlin_metadata.set_metric_value('query_time', float(querytime_regex.group(1)))
     if predicates_regex:
-        gremlin_metadata.set_metric_value('predicates', int(predicates_regex.group(1).replace(',', '')))
+        gremlin_metadata.set_metric_value('predicates', int(predicates_regex.group(1).replace(",", '')
+                                                            .replace(".", '')))
     if count_regex:
-        gremlin_metadata.set_metric_value('results', int(count_regex.group(1).replace(',', '')))
+        gremlin_metadata.set_metric_value('results', int(count_regex.group(1).replace(",", '').replace(".", '')))
     if serialization_regex:
         gremlin_metadata.set_metric_value('seri_time', float(serialization_regex.group(1)))
     if results_size_regex:
@@ -145,7 +146,7 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
         gremlin_metadata = create_gremlin_metadata_obj('explain')
         gremlin_metadata.set_request_metrics(res)
         gremlin_metadata.set_metric_value('predicates', int((re.search(r'# of predicates: (.*?)\n', results).group(1))
-                                                            .replace(',', '')))
+                                                            .replace(".", '').replace(",", '')))
         return gremlin_metadata
     elif query_type == 'profile':
         gremlin_metadata = create_gremlin_metadata_obj('profile')
