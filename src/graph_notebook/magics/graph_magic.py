@@ -514,9 +514,16 @@ class Graph(Magics):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         status_res = self.client.status()
         status_res.raise_for_status()
-        res = status_res.json()
-        logger.info(f'got the response {res}')
-        return res
+        try:
+            res = status_res.json()
+            logger.info(f'got the json format response {res}')
+            return res
+        except ValueError:
+            logger.info(f'got the HTML format response {status_res.text}')
+            print("For more information on the status of your Blazegraph cluster, please visit: ")
+            print()
+            print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
+            return status_res
 
     @line_magic
     @display_exceptions

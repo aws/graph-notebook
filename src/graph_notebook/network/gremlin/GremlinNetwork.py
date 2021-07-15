@@ -332,11 +332,13 @@ class GremlinNetwork(EventfulNetwork):
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
             if self.display_property in [T_ID, 'id']:
+                title = str(node_id)
                 label = str(node_id)
                 title = str(node_id)
             elif isinstance(self.display_property, dict):
                 try:
                     if self.display_property[title] in [T_ID, 'id']:
+                        title = str(node_id)
                         label = str(node_id)
                         title = str(node_id)
                 except KeyError:
