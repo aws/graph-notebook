@@ -461,11 +461,8 @@ class GremlinNetwork(EventfulNetwork):
         """
         Add a vertex or edge that has been returned by an elementMap query step.
 
-        Any elementMap representations of edges must be directed, and contain either of following:
-        1. Direction.IN AND Direction.OUT
-        2. Direction.BOTH
-
-        If the elementMap contains neither of these, then we assume it is a vertex.
+        Any elementMap representations of edges must be directed, and contain both of the Direction.IN and Direction.OUT
+        properties. If the elementMap contains neither of these, then we assume it is a vertex.
 
         :param e_map: A dictionary containing the elementMap representation of a vertex or an edge
         """
@@ -480,16 +477,6 @@ class GremlinNetwork(EventfulNetwork):
             if not self.graph.has_node(to_id):
                 self.add_vertex(e_map[Direction.IN])
             self.add_path_edge(e_map, from_id, to_id)
-        elif Direction.BOTH in e_map.keys():  # TODO: Handle bidirectional edges
-            pass
-            # id_1 = get_id(path[Direction.BOTH][0])
-            # id_2 = get_id(path[Direction.BOTH][1])
-            # if not self.graph.has_node(from_id):
-            #    self.add_vertex(path[Direction.BOTH][0])
-            # if not self.graph.has_node(to_id):
-            #    self.add_vertex(path[Direction.BOTH][1])
-            # self.add_path_edge(path, id_1, id_2)
-            # self.add_path_edge(path, id_2, id_1)
         # Handle vertex elementMap
         else:
             # Overwrite the the default node created by edge elementMap, if it exists already.
