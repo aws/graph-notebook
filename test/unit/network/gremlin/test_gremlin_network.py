@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import unittest
 from gremlin_python.structure.graph import Path, Edge, Vertex
-from gremlin_python.process.traversal import T
+from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
 from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
 
@@ -1241,6 +1241,279 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '1')
+
+    def test_add_elementmap_edge(self):
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        edge_expected = {
+            '5298': {
+                'properties': {
+                    T.id: '5298',
+                    T.label: 'route',
+                    Direction.IN: '1112',
+                    Direction.OUT: '2',
+                    'dist': 763
+                },
+                'label': 'route'
+            }
+        }
+
+        gn = GremlinNetwork()
+        gn.insert_elementmap(edge_map)
+        edge_data = gn.graph.get_edge_data('2', '1112')
+        inv_data = gn.graph.nodes.get('1112')
+        outv_data = gn.graph.nodes.get('2')
+        self.assertEqual(edge_data, edge_expected)
+        self.assertEqual(inv_data['properties'], edge_map[Direction.IN])
+        self.assertEqual(outv_data['properties'], edge_map[Direction.OUT])
+
+    def test_add_elementmap_vertex(self):
+        vertex = {
+            T.id: '2',
+            T.label: 'airport',
+            'code': 'ANC',
+            'type': 'airport',
+            'desc': 'Anchorage Ted Stevens',
+            'country': 'US', 'longest': 12400,
+            'city': 'Anchorage',
+            'lon': -149.996002197266,
+            'elev': 151,
+            'icao': 'PANC',
+            'region': 'US-AK',
+            'runways': 3,
+            'lat': 61.1744003295898
+        }
+
+        gn = GremlinNetwork()
+        gn.insert_elementmap(vertex)
+        vertex_data = gn.graph.nodes.get('2')
+        self.assertEqual(vertex_data['properties'], vertex)
+
+    def test_add_elementmap_edge_with_existing_full_vertices(self):
+        # Test case where a full elementmap vertex has already been inserted into the graph
+        # Afterwards, inserting an elementmap edge connected to the same vertex should not overwrite the old vertex
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        out_vertex = {
+            T.id: '2',
+            T.label: 'airport',
+            'code': 'ANC',
+            'type': 'airport',
+            'desc': 'Anchorage Ted Stevens',
+            'country': 'US', 'longest': 12400,
+            'city': 'Anchorage',
+            'lon': -149.996002197266,
+            'elev': 151,
+            'icao': 'PANC',
+            'region': 'US-AK',
+            'runways': 3,
+            'lat': 61.1744003295898
+        }
+
+        in_vertex = {
+            T.id: '1112',
+            T.label: 'airport',
+            'code': 'SNP',
+            'type': 'airport',
+            'desc': 'St Paul Island Airport',
+            'country': 'US',
+            'longest': 6500,
+            'city': 'St Paul Island',
+            'lon': -170.220001220703,
+            'elev': 63,
+            'icao': 'PASN',
+            'region': 'US-AK',
+            'runways': 1,
+            'lat': 57.1673011779785
+        }
+
+        gn = GremlinNetwork()
+        gn.insert_elementmap(in_vertex)
+        gn.insert_elementmap(out_vertex)
+        gn.insert_elementmap(edge_map)
+        outv_data = gn.graph.nodes.get('2')
+        inv_data = gn.graph.nodes.get('1112')
+        self.assertEqual(outv_data['properties'], out_vertex)
+        self.assertEqual(inv_data['properties'], in_vertex)
+
+    def test_add_elementmap_vertex_with_existing_basic_vertices(self):
+        # Test case where an edge elementmap has already inserted a minimal inVertex and outVertex into the graph
+        # Inserting the full vertex afterwards should overwrite the old inVertex or outVertex
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        vertex = {
+            T.id: '2',
+            T.label: 'airport',
+            'code': 'ANC',
+            'type': 'airport',
+            'desc': 'Anchorage Ted Stevens',
+            'country': 'US', 'longest': 12400,
+            'city': 'Anchorage',
+            'lon': -149.996002197266,
+            'elev': 151,
+            'icao': 'PANC',
+            'region': 'US-AK',
+            'runways': 3,
+            'lat': 61.1744003295898
+        }
+
+        gn = GremlinNetwork()
+        gn.insert_elementmap(edge_map)
+        outv_data_orig = gn.graph.nodes.get('2')
+        self.assertEqual(outv_data_orig['properties'], edge_map[Direction.OUT])
+
+        gn.insert_elementmap(vertex)
+        outv_data_final = gn.graph.nodes.get('2')
+        self.assertEqual(outv_data_final['properties'], vertex)
+
+    def test_add_results_as_list_of_elementmaps(self):
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        out_vertex = {
+            T.id: '2',
+            T.label: 'airport',
+            'code': 'ANC',
+            'type': 'airport',
+            'desc': 'Anchorage Ted Stevens',
+            'country': 'US', 'longest': 12400,
+            'city': 'Anchorage',
+            'lon': -149.996002197266,
+            'elev': 151,
+            'icao': 'PANC',
+            'region': 'US-AK',
+            'runways': 3,
+            'lat': 61.1744003295898
+        }
+
+        in_vertex = {
+            T.id: '1112',
+            T.label: 'airport',
+            'code': 'SNP',
+            'type': 'airport',
+            'desc': 'St Paul Island Airport',
+            'country': 'US',
+            'longest': 6500,
+            'city': 'St Paul Island',
+            'lon': -170.220001220703,
+            'elev': 63,
+            'icao': 'PASN',
+            'region': 'US-AK',
+            'runways': 1,
+            'lat': 57.1673011779785
+        }
+
+        edge_expected = {
+            '5298': {
+                'properties': {
+                    T.id: '5298',
+                    T.label: 'route',
+                    Direction.IN: '1112',
+                    Direction.OUT: '2',
+                    'dist': 763
+                },
+                'label': 'route'
+            }
+        }
+
+        results = [edge_map, out_vertex, in_vertex]
+
+        gn = GremlinNetwork()
+        gn.add_results(results)
+        edge_data = gn.graph.get_edge_data('2', '1112')
+        outv_data = gn.graph.nodes.get('2')
+        inv_data = gn.graph.nodes.get('1112')
+        self.assertEqual(outv_data['properties'], out_vertex)
+        self.assertEqual(inv_data['properties'], in_vertex)
+        self.assertEqual(edge_data, edge_expected)
+
+    def test_add_results_as_path_containing_elementmaps(self):
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        out_vertex = {
+            T.id: '2',
+            T.label: 'airport',
+            'code': 'ANC',
+            'type': 'airport',
+            'desc': 'Anchorage Ted Stevens',
+            'country': 'US', 'longest': 12400,
+            'city': 'Anchorage',
+            'lon': -149.996002197266,
+            'elev': 151,
+            'icao': 'PANC',
+            'region': 'US-AK',
+            'runways': 3,
+            'lat': 61.1744003295898
+        }
+
+        in_vertex = {
+            T.id: '1112',
+            T.label: 'airport',
+            'code': 'SNP',
+            'type': 'airport',
+            'desc': 'St Paul Island Airport',
+            'country': 'US',
+            'longest': 6500,
+            'city': 'St Paul Island',
+            'lon': -170.220001220703,
+            'elev': 63,
+            'icao': 'PASN',
+            'region': 'US-AK',
+            'runways': 1,
+            'lat': 57.1673011779785
+        }
+
+        edge_expected = {
+            '5298': {
+                'properties': {
+                    T.id: '5298',
+                    T.label: 'route',
+                    Direction.IN: '1112',
+                    Direction.OUT: '2',
+                    'dist': 763
+                },
+                'label': 'route'
+            }
+        }
+
+        path = Path([], [edge_map, out_vertex, in_vertex])
+        gn = GremlinNetwork()
+        gn.add_results([path])
+        edge_data = gn.graph.get_edge_data('2', '1112')
+        outv_data = gn.graph.nodes.get('2')
+        inv_data = gn.graph.nodes.get('1112')
+        self.assertEqual(outv_data['properties'], out_vertex)
+        self.assertEqual(inv_data['properties'], in_vertex)
+        self.assertEqual(edge_data, edge_expected)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ import logging
 from enum import Enum
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork
-from gremlin_python.process.traversal import T
+from gremlin_python.process.traversal import T, Direction
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
 
@@ -246,46 +246,51 @@ class GremlinNetwork(EventfulNetwork):
             raise ValueError("results must be a list of paths")
 
         for path in results:
-            if not isinstance(path, Path):
-                raise ValueError("all entries in results must be paths")
+            if isinstance(path, Path):
+                if type(path[0]) is Edge or type(path[-1]) is Edge:
+                    raise INVALID_PATH_ERROR
 
-            if type(path[0]) is Edge or type(path[-1]) is Edge:
-                raise INVALID_PATH_ERROR
-
-            for i in range(len(path)):
-                if i == 0:
-                    self.add_vertex(path[i])
-                    continue
-
-                if type(path[i]) is Edge:
-                    edge = path[i]
-                    path_left = get_id(path[i - 1])
-                    path_right = get_id(path[i + 1])
-
-                    # If the edge is an object type but its vertices aren't, then the ID contained
-                    # in the edge won't be the same as the ids used to store those two vertices.
-                    # For example, g.V().inE().outV().path().by(valueMap()).by().by(valueMap(true)
-                    # will yield a V, E, V pattern where the first vertex is a dict without T.id, the edge
-                    # will be an Edge object, and the second vertex will be a dict with T.id.
-                    if edge.outV.id == path_left or edge.inV.id == path_right:
-                        from_id = path_left
-                        to_id = path_right
-                        self.add_path_edge(path[i], from_id, to_id)
-                    elif edge.inV.id == path_left or edge.outV.id == path_right:
-                        from_id = path_right
-                        to_id = path_left
-                        self.add_path_edge(path[i], from_id, to_id)
+                for i in range(len(path)):
+                    if isinstance(path[i], dict):
+                        self.insert_elementmap(path[i])
                     else:
-                        from_id = path_left
-                        to_id = path_right
-                        self.add_blank_edge(from_id, to_id, edge.id, label=edge.label)
-                    continue
-                else:
-                    from_id = get_id(path[i - 1])
+                        if i == 0:
+                            self.add_vertex(path[i])
+                            continue
 
-                self.add_vertex(path[i])
-                if type(path[i - 1]) is not Edge:
-                    self.add_blank_edge(from_id, get_id(path[i]))
+                        if type(path[i]) is Edge:
+                            edge = path[i]
+                            path_left = get_id(path[i - 1])
+                            path_right = get_id(path[i + 1])
+
+                            # If the edge is an object type but its vertices aren't, then the ID contained
+                            # in the edge won't be the same as the ids used to store those two vertices.
+                            # For example, g.V().inE().outV().path().by(valueMap()).by().by(valueMap(true)
+                            # will yield a V, E, V pattern where the first vertex is a dict without T.id, the edge
+                            # will be an Edge object, and the second vertex will be a dict with T.id.
+                            if edge.outV.id == path_left or edge.inV.id == path_right:
+                                from_id = path_left
+                                to_id = path_right
+                                self.add_path_edge(path[i], from_id, to_id)
+                            elif edge.inV.id == path_left or edge.outV.id == path_right:
+                                from_id = path_right
+                                to_id = path_left
+                                self.add_path_edge(path[i], from_id, to_id)
+                            else:
+                                from_id = path_left
+                                to_id = path_right
+                                self.add_blank_edge(from_id, to_id, edge.id, label=edge.label)
+                            continue
+                        else:
+                            from_id = get_id(path[i - 1])
+
+                        self.add_vertex(path[i])
+                        if type(path[i - 1]) is not Edge:
+                            self.add_blank_edge(from_id, get_id(path[i]))
+            elif isinstance(path, dict):
+                self.insert_elementmap(path)
+            else:
+                raise ValueError("all entries in results must be paths or maps")
 
     def add_vertex(self, v):
         """
@@ -424,8 +429,10 @@ class GremlinNetwork(EventfulNetwork):
             for k in edge:
                 if str(k) == T_ID:
                     edge_id = str(edge[k])
-
-                properties[k] = edge[k]
+                if type(edge[k]) is dict:  # Handle Direction properties, where the value is a map
+                    properties[k] = get_id(edge[k])
+                else:
+                    properties[k] = edge[k]
                 if self.edge_display_property is not T_LABEL:
                     if isinstance(self.edge_display_property, dict):
                         try:
@@ -455,3 +462,28 @@ class GremlinNetwork(EventfulNetwork):
             edge_id = str(uuid.uuid4())
         edge_data = UNDIRECTED_EDGE if undirected else {}
         self.add_edge(from_id, to_id, edge_id, label, edge_data)
+
+    def insert_elementmap(self, e_map):
+        """
+        Add a vertex or edge that has been returned by an elementMap query step.
+
+        Any elementMap representations of edges must be directed, and contain both of the Direction.IN and Direction.OUT
+        properties. If the elementMap contains neither of these, then we assume it is a vertex.
+
+        :param e_map: A dictionary containing the elementMap representation of a vertex or an edge
+        """
+        # Handle directed edge elementMap
+        if Direction.IN in e_map.keys() and Direction.OUT in e_map.keys():
+            from_id = get_id(e_map[Direction.OUT])
+            to_id = get_id(e_map[Direction.IN])
+            # Ensure that the default nodes includes with edge elementMaps do not overwrite nodes
+            # with the same ID that have been explicitly inserted.
+            if not self.graph.has_node(from_id):
+                self.add_vertex(e_map[Direction.OUT])
+            if not self.graph.has_node(to_id):
+                self.add_vertex(e_map[Direction.IN])
+            self.add_path_edge(e_map, from_id, to_id)
+        # Handle vertex elementMap
+        else:
+            # Overwrite the the default node created by edge elementMap, if it exists already.
+            self.add_vertex(e_map)
