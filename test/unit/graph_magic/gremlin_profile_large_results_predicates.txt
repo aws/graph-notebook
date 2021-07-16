@@ -1,0 +1,12 @@
+Predicates
+==========
+# of predicates: 999,999
+
+WARNING: reverse traversal with no edge label(s) - .in() / .both() may impact query performance
+
+Results
+=======
+Count: 999.999
+Output: [v[3], v[3600], v[3614], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[47], v[49], v[136], v[13], v[15], v[16], v[17], v[18], v[389], v[20], v[21], v[22], v[23], v[24], v[25], v[26], v[27], v[28], v[416], v[29], v[30], v[430], v[31], v[9...
+Response serializer: GRYO_V3D0
+Response size (bytes): 23566

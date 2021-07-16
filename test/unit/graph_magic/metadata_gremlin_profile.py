@@ -33,3 +33,21 @@ class TestMetadataClassFunctions(unittest.TestCase):
         self.assertEqual(results_num_expected, results_metric.value)
         self.assertEqual(serialization_expected, seri_time_metric.value)
         self.assertEqual(results_size_expected, results_size_metric.value)
+
+    def test_gremlin_profile_metadata_large_results_and_predicates(self):
+        predicates_expected = 999999
+        results_num_expected = 999999
+
+        gremlin_metadata = Metadata()
+        with open('gremlin_profile_large_results_predicates.txt', 'r') as profile_file:
+            profile = profile_file.read()
+        query_time = Metric('query_time', 'Query execution time (ms)')
+        predicates = Metric('predicates', '# of predicates')
+        results_metric = Metric('results', '# of results')
+        seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
+        results_size_metric = Metric('results_size', 'Results size (bytes)')
+        gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric, results_size_metric])
+        gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=profile)
+
+        self.assertEqual(predicates_expected, predicates.value)
+        self.assertEqual(results_num_expected, results_metric.value)
