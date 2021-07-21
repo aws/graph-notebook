@@ -31,7 +31,7 @@ from graph_notebook.configuration.generate_config import generate_default_config
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
-    LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION
+    LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -680,7 +680,7 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', '--source', default='s3://')
         parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
-        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default='')
+        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default=FORMAT_CSV)
         parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
         parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
         parser.add_argument('--fail-on-failure', action='store_true', default=False)
@@ -692,100 +692,176 @@ class Graph(Magics):
         parser.add_argument('-d', '--dependencies', action='append', default=[])
 
         args = parser.parse_args(line.split())
-
         region = self.graph_notebook_config.aws_region
         button = widgets.Button(description="Submit")
         output = widgets.Output()
+        widget_width = '25%'
+        label_width = '16%'
+
         source = widgets.Text(
             value=args.source,
             placeholder='Type something',
-            description='Source:',
             disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         arn = widgets.Text(
             value=args.loader_arn,
             placeholder='Type something',
-            description='Load ARN:',
-            disabled=False
+            disabled=False,
+            layout = widgets.Layout(width=widget_width)
         )
 
         source_format = widgets.Dropdown(
             options=LOADER_FORMAT_CHOICES,
             value=args.format,
-            description='Format:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         region_box = widgets.Text(
             value=region,
             placeholder=args.region,
-            description='AWS Region:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         fail_on_error = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.fail_on_failure).upper(),
-            description='Fail on Failure: ',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         parallelism = widgets.Dropdown(
             options=PARALLELISM_OPTIONS,
             value=args.parallelism,
-            description='Parallelism:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         update_single_cardinality = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.update_single_cardinality).upper(),
-            description='Update Single Cardinality:',
             disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         mode = widgets.Dropdown(
             options=LOAD_JOB_MODES,
             value=args.mode,
-            description='Mode:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         user_provided_edge_ids = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.queue_request).upper(),
-            description='User Provided Edge Ids:',
             disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         queue_request = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
             value=str(args.queue_request).upper(),
-            description='Queue Request:',
             disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
         dependencies = widgets.Textarea(
             value="\n".join(args.dependencies),
             placeholder='load_A_id\nload_B_id',
-            description='Dependencies:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
         )
 
-        source_hbox = widgets.HBox([source])
-        arn_hbox = widgets.HBox([arn])
-        source_format_hbox = widgets.HBox([source_format])
-        dep_hbox = widgets.HBox([dependencies])
+        # Create a series of HBox containers that will hold the widgets and labels
+        # that make up the %load form. Some of the labels and widgets are created
+        # in two parts to support the validation steps that come later. In the case
+        # of validation errors this allows additional text to easily be added to an
+        # HBox describing the issue.
+        source_hbox_label = widgets.Label('Source:',
+                                          layout=widgets.Layout(width=label_width,
+                                          display="flex",
+                                          justify_content="flex-end"))
 
-        display(source_hbox, source_format_hbox, region_box, arn_hbox, mode, fail_on_error, parallelism,
-                update_single_cardinality, queue_request, dep_hbox, user_provided_edge_ids, button, output)
+        source_hbox = widgets.HBox([source_hbox_label,source])
+
+        format_hbox_label = widgets.Label('Format:',
+                                          layout=widgets.Layout(width=label_width,
+                                          display="flex", justify_content="flex-end"))
+
+        source_format_hbox = widgets.HBox([format_hbox_label,source_format])
+
+        region_hbox = widgets.HBox([widgets.Label('Region:',
+                                            layout=widgets.Layout(width=label_width,
+                                            display="flex", justify_content="flex-end")),
+                                    region_box])
+
+        arn_hbox_label = widgets.Label('Load ARN:',
+                                       layout=widgets.Layout(width=label_width,
+                                       display="flex",
+                                       justify_content="flex-end"))
+
+        arn_hbox = widgets.HBox([arn_hbox_label, arn])
+
+        mode_hbox = widgets.HBox([widgets.Label('Mode:',
+                                          layout=widgets.Layout(width=label_width,
+                                          display="flex", justify_content="flex-end")),
+                                  mode])
+
+        fail_hbox = widgets.HBox([widgets.Label('Fail on Error:',
+                                          layout=widgets.Layout(width=label_width,
+                                          display="flex", justify_content="flex-end")),
+                                  fail_on_error])
+
+        parallelism_hbox = widgets.HBox([widgets.Label('Parallelism:',
+                                                 layout=widgets.Layout(width=label_width,
+                                                 display="flex", justify_content="flex-end")),
+                                         parallelism])
+
+
+        cardinality_hbox = widgets.HBox([widgets.Label('Update Single Cardinality:',
+                                                 layout=widgets.Layout(width=label_width,
+                                                 display="flex", justify_content="flex-end")),
+                                         update_single_cardinality])
+
+        queue_hbox = widgets.HBox([widgets.Label('Queue Request:',
+                                           layout=widgets.Layout(width=label_width,
+                                           display="flex", justify_content="flex-end")),
+                                   queue_request])
+
+        dep_hbox_label = widgets.Label('Dependencies:',
+                                         layout=widgets.Layout(width=label_width,
+                                         display="flex", justify_content="flex-end"))
+
+        dep_hbox = widgets.HBox([dep_hbox_label, dependencies])
+        
+        ids_hbox_label = widgets.Label('User Provided Edge Ids:',
+                                       layout=widgets.Layout(width=label_width,
+                                       display="flex", justify_content="flex-end"))
+
+        ids_hbox = widgets.HBox([ids_hbox_label,user_provided_edge_ids])
+
+        display(source_hbox, 
+                source_format_hbox, 
+                region_hbox, 
+                arn_hbox, 
+                mode_hbox, 
+                fail_hbox, 
+                parallelism_hbox,
+                cardinality_hbox, 
+                queue_hbox, 
+                dep_hbox, 
+                ids_hbox, 
+                button, 
+                output)
 
         def on_button_clicked(b):
-            source_hbox.children = (source,)
-            arn_hbox.children = (arn,)
-            source_format_hbox.children = (source_format,)
-            dep_hbox.children = (dependencies,)
+            source_hbox.children = (source_hbox_label,source,)
+            arn_hbox.children = (arn_hbox_label,arn,)
+            source_format_hbox.children = (format_hbox_label,source_format,)
+            dep_hbox.children = (dep_hbox_label,dependencies,)
 
             dependencies_list = list(filter(None, dependencies.value.split('\n')))
 
@@ -844,17 +920,18 @@ class Graph(Magics):
 
                 source_hbox.close()
                 source_format_hbox.close()
-                region_box.close()
+                region_hbox.close()
                 arn_hbox.close()
-                mode.close()
-                fail_on_error.close()
-                parallelism.close()
-                update_single_cardinality.close()
-                queue_request.close()
+                mode_hbox.close()
+                fail_hbox.close()
+                parallelism_hbox.close()
+                cardinality_hbox.close()
+                queue_hbox.close()
                 dep_hbox.close()
-                user_provided_edge_ids.close()
+                ids_hbox.close()
                 button.close()
                 output.close()
+
 
                 if 'status' not in load_result or load_result['status'] != '200 OK':
                     with output:
