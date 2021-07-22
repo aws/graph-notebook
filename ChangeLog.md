@@ -3,6 +3,13 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Add visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
+- Support additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
+- Update SPARQL EPL seed dataset file ([Link to PR](https://github.com/aws/graph-notebook/pull/134))
+- Update documentation on using `%%graph_notebook_config` with an IAM enabled Neptune cluster ([Link to PR](https://github.com/aws/graph-notebook/pull/136))
+- Fix improper handling of Blazegraph status response ([Link to PR](https://github.com/aws/graph-notebook/pull/137))
+- Fix Gremlin node tooltips being displayed incorrectly ([Link to PR](https://github.com/aws/graph-notebook/pull/139))
+- Fix bug in using Gremlin explain/profile with large result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/141))
 
 ## Release 2.1.4 (June 27, 2021)
 - Support for additional customization of graph node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
