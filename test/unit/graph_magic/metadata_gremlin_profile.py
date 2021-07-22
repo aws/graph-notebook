@@ -43,11 +43,11 @@ class TestMetadataClassFunctions(unittest.TestCase):
         seri_duplication_ratio_metric = Metric('seri_duplication_ratio', '[Serialization] Duplication ratio')
         seri_terms_materialized_metric = Metric('seri_terms_materialized', '[Serialization] # of terms materialized')
         gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric,
-                                          results_size_metric, query_total_index_ops_metric,
-                                          query_unique_index_ops_metric, query_duplication_ratio_metric,
-                                          query_terms_materialized_metric, seri_total_index_ops_metric,
-                                          seri_unique_index_ops_metric, seri_duplication_ratio_metric,
-                                          seri_terms_materialized_metric])
+                                              results_size_metric, query_total_index_ops_metric,
+                                              query_unique_index_ops_metric, query_duplication_ratio_metric,
+                                              query_terms_materialized_metric, seri_total_index_ops_metric,
+                                              seri_unique_index_ops_metric, seri_duplication_ratio_metric,
+                                              seri_terms_materialized_metric])
         gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=profile)
 
         self.assertEqual(time_expected, query_time.value)
