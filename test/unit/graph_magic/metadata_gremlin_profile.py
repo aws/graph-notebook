@@ -15,6 +15,7 @@ class TestMetadataClassFunctions(unittest.TestCase):
         predicates_expected = 16
         results_num_expected = 100
         serialization_expected = 2636.380
+        serializer_type_expected = "GRYO_V3D0"
         results_size_expected = 23566
         query_total_index_ops_expected = 3
         query_unique_index_ops_expected = 3
@@ -32,6 +33,7 @@ class TestMetadataClassFunctions(unittest.TestCase):
         predicates = Metric('predicates', '# of predicates')
         results_metric = Metric('results', '# of results')
         seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
+        seri_type_metric = Metric('seri_type', 'Serializer type')
         results_size_metric = Metric('results_size', 'Results size (bytes)')
         query_total_index_ops_metric = Metric('query_total_index_ops', '[Query] # of statement index ops')
         query_unique_index_ops_metric = Metric('query_unique_index_ops', '[Query]  # of unique statement index ops')
@@ -43,7 +45,7 @@ class TestMetadataClassFunctions(unittest.TestCase):
         seri_duplication_ratio_metric = Metric('seri_duplication_ratio', '[Serialization] Duplication ratio')
         seri_terms_materialized_metric = Metric('seri_terms_materialized', '[Serialization] # of terms materialized')
         gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric,
-                                              results_size_metric, query_total_index_ops_metric,
+                                              seri_type_metric, results_size_metric, query_total_index_ops_metric,
                                               query_unique_index_ops_metric, query_duplication_ratio_metric,
                                               query_terms_materialized_metric, seri_total_index_ops_metric,
                                               seri_unique_index_ops_metric, seri_duplication_ratio_metric,
@@ -54,6 +56,7 @@ class TestMetadataClassFunctions(unittest.TestCase):
         self.assertEqual(predicates_expected, predicates.value)
         self.assertEqual(results_num_expected, results_metric.value)
         self.assertEqual(serialization_expected, seri_time_metric.value)
+        self.assertEqual(serializer_type_expected, seri_type_metric.value)
         self.assertEqual(results_size_expected, results_size_metric.value)
         self.assertEqual(query_total_index_ops_expected, query_total_index_ops_metric.value)
         self.assertEqual(query_unique_index_ops_expected, query_unique_index_ops_metric.value)
@@ -75,8 +78,10 @@ class TestMetadataClassFunctions(unittest.TestCase):
         predicates = Metric('predicates', '# of predicates')
         results_metric = Metric('results', '# of results')
         seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
+        seri_type_metric = Metric('seri_type', 'Serializer type')
         results_size_metric = Metric('results_size', 'Results size (bytes)')
-        gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric, results_size_metric])
+        gremlin_metadata.bulk_insert_metrics([query_time, predicates, results_metric, seri_time_metric,
+                                              seri_type_metric, results_size_metric])
         gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=profile)
 
         self.assertEqual(predicates_expected, predicates.value)
