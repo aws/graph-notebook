@@ -80,7 +80,8 @@ setup(
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
         'boto3>=1.17.58',
-        'ipython>=7.16.1'
+        'ipython>=7.16.1',
+        'rdflib==5.0.0'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
