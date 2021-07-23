@@ -10,6 +10,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fix improper handling of Blazegraph status response ([Link to PR](https://github.com/aws/graph-notebook/pull/137))
 - Fix Gremlin node tooltips being displayed incorrectly ([Link to PR](https://github.com/aws/graph-notebook/pull/139))
 - Fix bug in using Gremlin explain/profile with large result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/141))
+- Pin RDFLib version ([Link to PR](https://github.com/aws/graph-notebook/pull/151))
 
 ## Release 2.1.4 (June 27, 2021)
 - Support for additional customization of graph node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
