@@ -67,23 +67,68 @@ class Metadata(object):
         return pre_container_template.render(content=self.format_dict())
 
 
+def set_profile_metric_value(metadata: Metadata, metric_name: str, metric_type: str, metric_value: str):
+    if metric_type == 'int':
+        metadata.set_metric_value(metric_name, int(metric_value.replace(",", '').replace(".", '')))
+    elif metric_type == 'float':
+        metadata.set_metric_value(metric_name, float(metric_value))
+    else:
+        metadata.set_metric_value(metric_name, str(metric_value))
+
+
 def set_gremlin_profile_metrics(gremlin_metadata: Metadata, profile_str: str) -> Metadata:
     querytime_regex = re.search(r'Query Execution: (.*?)\n', profile_str)
     predicates_regex = re.search(r'# of predicates: (.*?)\n', profile_str)
     count_regex = re.search(r'Count: (.*?)\n', profile_str)
     serialization_regex = re.search(r'Serialization: (.*?)\n', profile_str)
     results_size_regex = re.search(r'Response size \(bytes\): (.*?)\n', profile_str)
+    serializer_regex = re.search(r'Response serializer: (.*?)\n', profile_str)
+    total_index_ops_regex = re.findall(r'# of statement index ops: (.*?)\n', profile_str)
+    unique_index_ops_regex = re.findall(r'# of unique statement index ops: (.*?)\n', profile_str)
+    duplication_ratio_regex = re.findall(r'Duplication ratio: (.*?)\n', profile_str)
+    terms_materialized_regex = re.findall(r'# of terms materialized: (.*?)\n', profile_str)
     if querytime_regex:
-        gremlin_metadata.set_metric_value('query_time', float(querytime_regex.group(1)))
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='query_time', metric_type='float',
+                                 metric_value=querytime_regex.group(1))
     if predicates_regex:
-        gremlin_metadata.set_metric_value('predicates', int(predicates_regex.group(1).replace(",", '')
-                                                            .replace(".", '')))
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='predicates', metric_type='int',
+                                 metric_value=predicates_regex.group(1))
     if count_regex:
-        gremlin_metadata.set_metric_value('results', int(count_regex.group(1).replace(",", '').replace(".", '')))
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='results', metric_type='int',
+                                 metric_value=count_regex.group(1))
     if serialization_regex:
-        gremlin_metadata.set_metric_value('seri_time', float(serialization_regex.group(1)))
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_time', metric_type='float',
+                                 metric_value=serialization_regex.group(1))
+    if serializer_regex:
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_type', metric_type='str',
+                                 metric_value=serializer_regex.group(1))
     if results_size_regex:
-        gremlin_metadata.set_metric_value('results_size', int(results_size_regex.group(1)))
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='results_size', metric_type='int',
+                                 metric_value=results_size_regex.group(1))
+    if total_index_ops_regex:
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='query_total_index_ops', metric_type='int',
+                                 metric_value=total_index_ops_regex[0])
+        if len(total_index_ops_regex) > 1:
+            set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_total_index_ops', metric_type='int',
+                                     metric_value=total_index_ops_regex[1])
+    if unique_index_ops_regex:
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='query_unique_index_ops', metric_type='int',
+                                 metric_value=unique_index_ops_regex[0])
+        if len(unique_index_ops_regex) > 1:
+            set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_unique_index_ops', metric_type='int',
+                                     metric_value=unique_index_ops_regex[1])
+    if duplication_ratio_regex:
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='query_duplication_ratio', metric_type='float',
+                                 metric_value=duplication_ratio_regex[0])
+        if len(duplication_ratio_regex) > 1:
+            set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_duplication_ratio',
+                                     metric_type='float', metric_value=duplication_ratio_regex[1])
+    if terms_materialized_regex:
+        set_profile_metric_value(metadata=gremlin_metadata, metric_name='query_terms_materialized', metric_type='int',
+                                 metric_value=terms_materialized_regex[0])
+        if len(terms_materialized_regex) > 1:
+            set_profile_metric_value(metadata=gremlin_metadata, metric_name='seri_terms_materialized',
+                                     metric_type='int', metric_value=terms_materialized_regex[1])
     return gremlin_metadata
 
 
@@ -98,14 +143,27 @@ def create_propertygraph_metadata_obj(q_mode: str) -> Metadata:
     results_metric = Metric('results', '# of results')
     resp_size_metric = Metric('resp_size', 'Response size (bytes)')
     seri_time_metric = Metric('seri_time', 'Serialization execution time (ms)')
+    seri_type_metric = Metric('seri_type', 'Serializer type')
     results_size_metric = Metric('results_size', 'Results size (bytes)')
+    query_total_index_ops_metric = Metric('query_total_index_ops', '[Query] # of statement index ops')
+    query_unique_index_ops_metric = Metric('query_unique_index_ops', '[Query]  # of unique statement index ops')
+    query_duplication_ratio_metric = Metric('query_duplication_ratio', '[Query] Duplication ratio')
+    query_terms_materialized_metric = Metric('query_terms_materialized', '[Query] # of terms materialized')
+    seri_total_index_ops_metric = Metric('seri_total_index_ops', '[Serialization] # of statement index ops')
+    seri_unique_index_ops_metric = Metric('seri_unique_index_ops', '[Serialization] # of unique statement index ops')
+    seri_duplication_ratio_metric = Metric('seri_duplication_ratio', '[Serialization] Duplication ratio')
+    seri_terms_materialized_metric = Metric('seri_terms_materialized', '[Serialization] # of terms materialized')
     if q_mode == 'explain':
         metadata_obj.bulk_insert_metrics([mode_metric, request_time, status_metric, status_ok_metric,
                                           predicates, resp_size_metric])
     elif q_mode == 'profile':
         metadata_obj.bulk_insert_metrics([mode_metric, query_time, request_time, status_metric, status_ok_metric,
                                           predicates, results_metric, resp_size_metric, seri_time_metric,
-                                          results_size_metric])
+                                          seri_type_metric, results_size_metric, query_total_index_ops_metric,
+                                          query_unique_index_ops_metric, query_duplication_ratio_metric,
+                                          query_terms_materialized_metric, seri_total_index_ops_metric,
+                                          seri_unique_index_ops_metric, seri_duplication_ratio_metric,
+                                          seri_terms_materialized_metric])
     else:
         metadata_obj.bulk_insert_metrics([mode_metric, request_time, results_metric, resp_size_metric])
     return metadata_obj
