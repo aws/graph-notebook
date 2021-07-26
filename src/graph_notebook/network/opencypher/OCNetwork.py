@@ -95,7 +95,6 @@ class OCNetwork(EventfulNetwork):
 
         props = self.flatten(node)
         if isinstance(self.display_property, dict):
-            print("Found dict format label")
             try:
                 if self.display_property[title] in props:
                     label = str(props[self.display_property[title]])
