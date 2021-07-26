@@ -18,7 +18,8 @@ ID_KEY = "~id"
 START_KEY = "~start"
 END_KEY = "~end"
 PROPERTIES_KEY = "~properties"
-TYPE_KEY = "~type"
+VERTEX_TYPE_KEY = "~entityType"
+EDGE_TYPE_KEY = "~type"
 LABEL_KEY = "~labels"
 NODE_ENTITY_TYPE = 'node'
 REL_ENTITY_TYPE = 'relationship'
@@ -32,7 +33,7 @@ class OCNetwork(EventfulNetwork):
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  group_by_property=LABEL_KEY, display_property=LABEL_KEY,
-                 edge_display_property=TYPE_KEY, ignore_groups=False):
+                 edge_display_property=EDGE_TYPE_KEY, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         if label_max_length < 3:
@@ -80,7 +81,7 @@ class OCNetwork(EventfulNetwork):
         else:  # handle dict format group_by
             try:
                 if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
-                    key=node[LABEL_KEY][0]
+                    key = node[LABEL_KEY][0]
                     if self.group_by_property[key]['groupby'] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
                     else:
@@ -93,9 +94,8 @@ class OCNetwork(EventfulNetwork):
                 group = ''
 
         props = self.flatten(node)
-        if self.display_property in [ID_KEY, 'id']:
-            label = str(node[ID_KEY])
-        elif isinstance(self.display_property, dict):
+        if isinstance(self.display_property, dict):
+            print("Found dict format label")
             try:
                 if self.display_property[title] in props:
                     label = str(props[self.display_property[title]])
@@ -105,23 +105,32 @@ class OCNetwork(EventfulNetwork):
                     label = str(props)
             except KeyError:
                 pass
+        elif self.display_property in [ID_KEY, 'id']:
+            label = str(node[ID_KEY])
+        elif self.display_property in [LABEL_KEY, 'label']:
+            label = str(node[LABEL_KEY])
+        elif self.display_property in [VERTEX_TYPE_KEY, 'type']:
+            label = str(node[VERTEX_TYPE_KEY])
+        elif self.display_property in props:
+            label = props[self.display_property]
+
         title = label
         label = self.strip_and_truncate_label(label, self.label_max_length)
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):
-        data = {'properties': self.flatten(rel), 'label': rel[TYPE_KEY]}
-        if self.edge_display_property is not TYPE_KEY:
+        data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY]}
+        if self.edge_display_property is not EDGE_TYPE_KEY:
             try:
                 if isinstance(self.edge_display_property, dict):
-                    display_label = data['properties'][self.edge_display_property[rel[TYPE_KEY]]]
+                    display_label = data['properties'][self.edge_display_property[rel[EDGE_TYPE_KEY]]]
                 else:
                     display_label = data['properties'][self.edge_display_property]
             except KeyError:
-                display_label = rel[TYPE_KEY]
+                display_label = rel[EDGE_TYPE_KEY]
         else:
-            display_label = rel[TYPE_KEY]
+            display_label = rel[EDGE_TYPE_KEY]
         self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), data)
 
     def process_result(self, res: dict):
