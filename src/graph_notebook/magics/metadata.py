@@ -212,16 +212,16 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
         gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=results)
         return gremlin_metadata
     else:  # default Gremlin query
-        gremlin_metadata = create_propertygraph_metadata_obj('query')
-        gremlin_metadata.set_metric_value('request_time', query_time)
-        gremlin_metadata.set_metric_value('resp_size', sys.getsizeof(results))
-        gremlin_metadata.set_metric_value('results', len(results))
-        return gremlin_metadata
+        return build_propertygraph_metadata_from_default_query(results=results, query_time=query_time)
 
 
 def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
-    oc_metadata = create_propertygraph_metadata_obj('query')
-    oc_metadata.set_metric_value('request_time', query_time)
-    oc_metadata.set_metric_value('resp_size', sys.getsizeof(results))
-    oc_metadata.set_metric_value('results', len(results))
-    return oc_metadata
+    return build_propertygraph_metadata_from_default_query(results=results['results'], query_time=query_time)
+
+
+def build_propertygraph_metadata_from_default_query(results: any, query_time: float = None) -> Metadata:
+    propertygraph_metadata = create_propertygraph_metadata_obj('query')
+    propertygraph_metadata.set_metric_value('request_time', query_time)
+    propertygraph_metadata.set_metric_value('resp_size', sys.getsizeof(results))
+    propertygraph_metadata.set_metric_value('results', len(results))
+    return propertygraph_metadata
