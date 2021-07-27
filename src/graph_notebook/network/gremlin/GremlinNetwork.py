@@ -96,9 +96,6 @@ class GremlinNetwork(EventfulNetwork):
 
     1. A query which returns in the format of a path whose objects are in the order Vertex -> Edge -> Vertex.
     2. A query which returns a path as a valueMap. In this case, we will assume that the order is Vertex -> Edge -> Vertex.
-
-    In the future, we will work to support other types of paths and/or results. For now, they are all out of scope.
-    You can find more details on this in our design doc for visualization here: https://quip-amazon.com/R1jbA8eECdDd
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
