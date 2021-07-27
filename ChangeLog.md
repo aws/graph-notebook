@@ -20,6 +20,8 @@ For more detailed information and examples of how you can execute and visualize 
 - Added visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
 - Added support for additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
 - Refactored %load form display code for flexibility; fixes some descriptions being cut off
+- Updated Neptune ML notebooks, utils, and pretrained models config
+- Added support for `modeltransform` commands in `%neptune_ml`
 
 **Minor updates**:
 - Included index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
