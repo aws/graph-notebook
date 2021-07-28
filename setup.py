@@ -81,6 +81,7 @@ setup(
         'botocore>=1.19.37',
         'boto3>=1.17.58',
         'ipython>=7.16.1',
+        'neo4j==4.3.2',
         'rdflib==5.0.0'
     ],
     package_data={

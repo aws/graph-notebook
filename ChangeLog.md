@@ -3,47 +3,68 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Add visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
-- Support additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
-- Include index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
-- Update SPARQL EPL seed dataset file ([Link to PR](https://github.com/aws/graph-notebook/pull/134))
-- Update documentation on using `%%graph_notebook_config` with an IAM enabled Neptune cluster ([Link to PR](https://github.com/aws/graph-notebook/pull/136))
-- Fix improper handling of Blazegraph status response ([Link to PR](https://github.com/aws/graph-notebook/pull/137))
-- Fix Gremlin node tooltips being displayed incorrectly ([Link to PR](https://github.com/aws/graph-notebook/pull/139))
-- Fix bug in using Gremlin explain/profile with large result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/141))
-- Pin RDFLib version ([Link to PR](https://github.com/aws/graph-notebook/pull/151))
+
+**openCypher Support**:
+
+With the release of support for the openCypher query language in Amazon Neptune's lab mode, graph-notebook can now be used to execute and visualize openCypher queries with any compatible graph database.
+
+Two new magic commands have been added: 
+- `%%oc`/`%%opencypher` 
+- `%%oc_status`/`%%opencypher_status`
+
+These openCypher magic commands inherit the majority of the query and visualization customization features that are already available in the Gremlin and SPARQL magics.
+
+For more detailed information and examples of how you can execute and visualize openCypher queries through graph-notebook, please refer to the new `Air-Routes-openCypher` and `EPL-openCypher` sample notebooks.
+
+**Other major updates**:
+- Added visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
+- Added support for additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
+- Refactored %load form display code for flexibility; fixes some descriptions being cut off
+- Updated Neptune ML notebooks, utils, and pretrained models config
+- Added support for `modeltransform` commands in `%neptune_ml`
+
+**Minor updates**:
+- Included index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
+- Updated SPARQL EPL seed dataset file ([Link to PR](https://github.com/aws/graph-notebook/pull/134))
+- Updated documentation on using `%%graph_notebook_config` with an IAM enabled Neptune cluster ([Link to PR](https://github.com/aws/graph-notebook/pull/136))
+  
+**Bugfixes**:
+- Fixed improper handling of Blazegraph status response ([Link to PR](https://github.com/aws/graph-notebook/pull/137))
+- Fixed Gremlin node tooltips being displayed incorrectly ([Link to PR](https://github.com/aws/graph-notebook/pull/139))
+- Fixed bug in using Gremlin explain/profile with large result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/141))
+- Pinned RDFLib version ([Link to PR](https://github.com/aws/graph-notebook/pull/151))
 
 ## Release 2.1.4 (June 27, 2021)
-- Support for additional customization of graph node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
+- Added support for additional customization of graph node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
 
 ## Release 2.1.3 (June 18, 2021)
-- Support dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/126))
+- Added support for dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/126))
 
 ## Release 2.1.2 (May 10, 2021)
 
-- Pin gremlinpython to `<3.5.*` ([Link to PR](https://github.com/aws/graph-notebook/pull/123))
-- Add support for notebook variables in Sparql/Gremlin magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/113))
-- Add support for grouping by different properties per label in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/115))
-- Fix missing Boto3 dependency in setup.py ([Link to PR](https://github.com/aws/graph-notebook/pull/118))
-- Update %load execution time to HH:MM:SS format if over a minute ([Link to PR](https://github.com/aws/graph-notebook/pull/121))
+- Pinned gremlinpython to `<3.5.*` ([Link to PR](https://github.com/aws/graph-notebook/pull/123))
+- Added support for notebook variables in Sparql/Gremlin magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/113))
+- Added support for grouping by different properties per label in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/115))
+- Fixed missing Boto3 dependency in setup.py ([Link to PR](https://github.com/aws/graph-notebook/pull/118))
+- Updated %load execution time to HH:MM:SS format if over a minute ([Link to PR](https://github.com/aws/graph-notebook/pull/121))
 
 ## Release 2.1.1 (April 22, 2021)
 
-- Fix bug in `%neptune_ml export ...` logic where the iam setting for the exporter endpoint wasn't getting picked up properly
+- Fixed bug in `%neptune_ml export ...` logic where the iam setting for the exporter endpoint wasn't getting picked up properly
 
 ## Release 2.1.0 (April 15, 2021)
 
-- Add support for Mode, queueRequest, and Dependencies parameters when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/91))
-- Add support for list and dict as map keys in Python Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/100))
-- Refactor modules that call to Neptune or other SPARQL/Gremlin endpoints to use a unified client object ([Link to PR](https://github.com/aws/graph-notebook/pull/104))
+- Added support for Mode, queueRequest, and Dependencies parameters when running %load command ([Link to PR](https://github.com/aws/graph-notebook/pull/91))
+- Added support for list and dict as map keys in Python Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/100))
+- Refactored modules that call to Neptune or other SPARQL/Gremlin endpoints to use a unified client object ([Link to PR](https://github.com/aws/graph-notebook/pull/104))
 - Added an additional notebook under [02-Visualization](src/graph_notebook/notebooks/02-Visualization) demonstrating how to use the visualzation grouping and coloring options in Gremlin. ([Link to PR](https://github.com/aws/graph-notebook/pull/107))
-- Add metadata output tab for magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/108))
+- Added metadata output tab for magic queries ([Link to PR](https://github.com/aws/graph-notebook/pull/108))
 
 ## Release 2.0.12 (Mar 25, 2021)
 
- - Add default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
- - Add ipython as a dependency in `setup.py` ([Link to PR](https://github.com/aws/graph-notebook/pull/95))
- - Add parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage` ([Link to PR](https://github.com/aws/graph-notebook/pull/88))
+ - Added default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
+ - Added ipython as a dependency in `setup.py` ([Link to PR](https://github.com/aws/graph-notebook/pull/95))
+ - Added parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage` ([Link to PR](https://github.com/aws/graph-notebook/pull/88))
 
 ## Release 2.0.10 (Mar 18, 2021)
 

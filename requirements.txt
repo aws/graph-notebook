@@ -7,11 +7,15 @@ notebook==5.7.10
 ipywidgets==7.5.1
 jupyter-contrib-nbextensions
 widgetsnbextension
-gremlinpython
+gremlinpython<=3.4.*
 requests==2.24.0
 ipython==7.16.1
+neo4j==4.2.1
+rdflib~=5.0.0
+traitlets~=4.3.3
+setuptools~=40.6.2
 
 # requirements for testing
-boto3==1.15.15
-botocore==1.18.18
+botocore~=1.18.18
+boto3~=1.15.15
 pytest==6.2.2

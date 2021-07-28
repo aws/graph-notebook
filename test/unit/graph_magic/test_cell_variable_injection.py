@@ -80,3 +80,42 @@ class TestCellVariableInjectionFunction(unittest.TestCase):
         cell_expected = None
 
         self.assertEqual(sparql_mock('', '', cell_orig, local_ns={'city_prefix': 'ou'}), cell_expected)
+
+    def test_opencypher_variable_injection(self):
+        @magic_variables
+        def oc_mock(self_var, line, cell, local_ns: dict = None):
+            return cell
+
+        cell_original = '''
+                        MATCH (a:airport)-->(b:airport)
+                        WHERE a.country = 'NZ' AND b.country='AU'
+                        RETURN a.city AS ${NZ}, b.city AS ${AU}
+                        ORDER BY a.city , b.city
+                        '''
+
+        cell_expected = '''
+                        MATCH (a:airport)-->(b:airport)
+                        WHERE a.country = 'NZ' AND b.country='AU'
+                        RETURN a.city AS NewZealand, b.city AS Australia
+                        ORDER BY a.city , b.city
+                        '''
+
+        self.assertEqual(oc_mock('', '', cell_original, local_ns={'NZ': 'NewZealand', 'AU': 'Australia'}),
+                         cell_expected)
+
+    def test_invalid_opencypher_variable_injection(self):
+        @magic_variables
+        def oc_mock(self_var, line, cell, local_ns: dict = None):
+            return cell
+
+        cell_original = '''
+                        MATCH (a:airport)-->(b:airport)
+                        WHERE a.country = 'NZ' AND b.country='AU'
+                        RETURN a.city AS ${NOT_NZ}, b.city AS ${NOT_AU}
+                        ORDER BY a.city , b.city
+                        '''
+
+        cell_expected = None
+
+        self.assertEqual(oc_mock('', '', cell_original, local_ns={'NZ': 'NewZealand', 'AU': 'Australia'}),
+                         cell_expected)

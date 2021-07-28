@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from collections import defaultdict
-
+import collections
 from networkx import MultiDiGraph
 from .Network import Network
 
@@ -38,6 +38,30 @@ class EventfulNetwork(Network):
         if graph is None:
             graph = MultiDiGraph()
         super().__init__(graph)
+
+    def strip_and_truncate_label(self, old_label: str, max_len: int):
+        label = str(old_label).strip("[]'")
+        return label if len(label) <= max_len else label[:max_len - 3] + '...'
+
+    def flatten(self, d:dict, parent_key='', sep='_') -> dict:
+        """Flattens dictionaries including nested dictionaties
+
+        Args:
+            d (dict): The dictionary to flatten
+            parent_key (str, optional): The parent key name to append. Defaults to ''.
+            sep (str, optional): The seperator between the parent and sub key. Defaults to '_'.
+
+        Returns:
+            [dict]: The flattened dictionary
+        """
+        items = []
+        for k, v in d.items():
+            new_key = parent_key + sep + k if parent_key else k
+            if isinstance(v, collections.MutableMapping):
+                items.extend(self.flatten(v).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
 
     def register_universal_callback(self, callback):
         """

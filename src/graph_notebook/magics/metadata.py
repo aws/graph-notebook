@@ -132,7 +132,7 @@ def set_gremlin_profile_metrics(gremlin_metadata: Metadata, profile_str: str) ->
     return gremlin_metadata
 
 
-def create_gremlin_metadata_obj(q_mode: str) -> Metadata:
+def create_propertygraph_metadata_obj(q_mode: str) -> Metadata:
     metadata_obj = Metadata()
     mode_metric = Metric('mode', 'Query mode', q_mode)
     query_time = Metric('query_time', 'Query execution time (ms)')
@@ -201,19 +201,27 @@ def build_sparql_metadata_from_query(query_type: str, res: Response, results: an
 
 def build_gremlin_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
     if query_type == 'explain':
-        gremlin_metadata = create_gremlin_metadata_obj('explain')
+        gremlin_metadata = create_propertygraph_metadata_obj('explain')
         gremlin_metadata.set_request_metrics(res)
         gremlin_metadata.set_metric_value('predicates', int((re.search(r'# of predicates: (.*?)\n', results).group(1))
                                                             .replace(".", '').replace(",", '')))
         return gremlin_metadata
     elif query_type == 'profile':
-        gremlin_metadata = create_gremlin_metadata_obj('profile')
+        gremlin_metadata = create_propertygraph_metadata_obj('profile')
         gremlin_metadata.set_request_metrics(res)
         gremlin_metadata = set_gremlin_profile_metrics(gremlin_metadata=gremlin_metadata, profile_str=results)
         return gremlin_metadata
     else:  # default Gremlin query
-        gremlin_metadata = create_gremlin_metadata_obj('query')
-        gremlin_metadata.set_metric_value('request_time', query_time)
-        gremlin_metadata.set_metric_value('resp_size', sys.getsizeof(results))
-        gremlin_metadata.set_metric_value('results', len(results))
-        return gremlin_metadata
+        return build_propertygraph_metadata_from_default_query(results=results, query_time=query_time)
+
+
+def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
+    return build_propertygraph_metadata_from_default_query(results=results['results'], query_time=query_time)
+
+
+def build_propertygraph_metadata_from_default_query(results: any, query_time: float = None) -> Metadata:
+    propertygraph_metadata = create_propertygraph_metadata_obj('query')
+    propertygraph_metadata.set_metric_value('request_time', query_time)
+    propertygraph_metadata.set_metric_value('resp_size', sys.getsizeof(results))
+    propertygraph_metadata.set_metric_value('results', len(results))
+    return propertygraph_metadata

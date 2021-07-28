@@ -18,6 +18,11 @@ def _jupyter_nbextension_paths():
             require="sparql_syntax/main"),
         dict(
             section="notebook",
+            src="opencypher_syntax/static",
+            dest="opencypher_syntax",
+            require="opencypher_syntax/main"),
+        dict(
+            section="notebook",
             src="neptune_menu/static",
             dest="neptune_menu",
             require="neptune_menu/main"),
