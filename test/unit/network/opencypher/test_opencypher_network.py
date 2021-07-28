@@ -425,94 +425,94 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_path_with_default_groupby(self):
         res = {
-            "results": [
-                {
-                "p": [
+                "results": [
                     {
-                    "~id": "22",
-                    "~entityType": "node",
-                    "~labels": [
-                        "airport"
-                    ],
-                    "~properties": {
-                        "desc": "Seattle-Tacoma",
-                        "lon": -122.30899810791,
-                        "runways": 3,
-                        "type": "airport",
-                        "country": "US",
-                        "region": "US-WA",
-                        "lat": 47.4490013122559,
-                        "elev": 432,
-                        "city": "Seattle",
-                        "icao": "KSEA",
-                        "code": "SEA",
-                        "longest": 11901
-                    }
+                        "p": [
+                            {
+                                "~id": "22",
+                                "~entityType": "node",
+                                "~labels": [
+                                    "airport"
+                                ],
+                                "~properties": {
+                                    "desc": "Seattle-Tacoma",
+                                    "lon": -122.30899810791,
+                                    "runways": 3,
+                                    "type": "airport",
+                                    "country": "US",
+                                    "region": "US-WA",
+                                    "lat": 47.4490013122559,
+                                    "elev": 432,
+                                    "city": "Seattle",
+                                    "icao": "KSEA",
+                                    "code": "SEA",
+                                    "longest": 11901
+                                }
+                            },
+                            {
+                                "~id": "57081",
+                                "~entityType": "relationship",
+                                "~start": "3684",
+                                "~end": "22",
+                                "~type": "contains"
+                            },
+                            {
+                                "~id": "3684",
+                                "~entityType": "node",
+                                "~labels": [
+                                    "continent"
+                                ],
+                                "~properties": {
+                                    "desc": "North America",
+                                    "code": "NA"
+                                }
+                            }
+                        ]
                     },
                     {
-                    "~id": "57081",
-                    "~entityType": "relationship",
-                    "~start": "3684",
-                    "~end": "22",
-                    "~type": "contains"
-                    },
-                    {
-                    "~id": "3684",
-                    "~entityType": "node",
-                    "~labels": [
-                        "continent"
-                    ],
-                    "~properties": {
-                        "desc": "North America",
-                        "code": "NA"
-                    }
+                        "p": [
+                            {
+                                "~id": "22",
+                                "~entityType": "node",
+                                "~labels": [
+                                    "airport"
+                                ],
+                                "~properties": {
+                                    "desc": "Seattle-Tacoma",
+                                    "lon": -122.30899810791,
+                                    "runways": 3,
+                                    "type": "airport",
+                                    "country": "US",
+                                    "region": "US-WA",
+                                    "lat": 47.4490013122559,
+                                    "elev": 432,
+                                    "city": "Seattle",
+                                    "icao": "KSEA",
+                                    "code": "SEA",
+                                    "longest": 11901
+                                }
+                            },
+                            {
+                                "~id": "53637",
+                                "~entityType": "relationship",
+                                "~start": "3670",
+                                "~end": "22",
+                                "~type": "contains"
+                            },
+                            {
+                                "~id": "3670",
+                                "~entityType": "node",
+                                "~labels": [
+                                        "country"
+                                ],
+                                "~properties": {
+                                        "desc": "United States",
+                                        "code": "US"
+                                }
+                            }
+                        ]
                     }
                 ]
-                },
-                {
-                "p": [
-                    {
-                    "~id": "22",
-                    "~entityType": "node",
-                    "~labels": [
-                        "airport"
-                    ],
-                    "~properties": {
-                        "desc": "Seattle-Tacoma",
-                        "lon": -122.30899810791,
-                        "runways": 3,
-                        "type": "airport",
-                        "country": "US",
-                        "region": "US-WA",
-                        "lat": 47.4490013122559,
-                        "elev": 432,
-                        "city": "Seattle",
-                        "icao": "KSEA",
-                        "code": "SEA",
-                        "longest": 11901
-                    }
-                    },
-                    {
-                    "~id": "53637",
-                    "~entityType": "relationship",
-                    "~start": "3670",
-                    "~end": "22",
-                    "~type": "contains"
-                    },
-                    {
-                    "~id": "3670",
-                    "~entityType": "node",
-                    "~labels": [
-                        "country"
-                    ],
-                    "~properties": {
-                        "desc": "United States",
-                        "code": "US"
-                    }
-                    }
-                ]
-                }
-            ]
             }
 
         gn = OCNetwork()
@@ -1394,7 +1394,6 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'route')
 
-
     def test_add_multiple_edge_with_property_string(self):
         path = {
               "results": [
@@ -1644,6 +1643,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_path = gn.graph.get_edge_data('365', '367', '30604')
         self.assertEqual(edge_route['label'], '792')
         self.assertEqual(edge_path['label'], '30604')
+
 
 if __name__ == '__main__':
     unittest.main()
