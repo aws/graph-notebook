@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 2.1.4 (July 28, 2021)
+
 **openCypher Support**:
 
 With the release of support for the openCypher query language in Amazon Neptune's lab mode, graph-notebook can now be used to execute and visualize openCypher queries with any compatible graph database.
@@ -16,12 +18,14 @@ These openCypher magic commands inherit the majority of the query and visualizat
 
 For more detailed information and examples of how you can execute and visualize openCypher queries through graph-notebook, please refer to the new `Air-Routes-openCypher` and `EPL-openCypher` sample notebooks.
 
+([Link to PR](https://github.com/aws/graph-notebook/pull/153))
+
 **Other major updates**:
 - Added visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
 - Added support for additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
 - Refactored %load form display code for flexibility; fixes some descriptions being cut off
-- Updated Neptune ML notebooks, utils, and pretrained models config
-- Added support for `modeltransform` commands in `%neptune_ml`
+- Updated Neptune ML notebooks, utils, and pretrained models config ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
+- Added support for `modeltransform` commands in `%neptune_ml` ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
 
 **Minor updates**:
 - Included index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
