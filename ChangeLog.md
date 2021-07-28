@@ -4,7 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-## Release 2.1.4 (July 28, 2021)
+## Release 3.0.0 (July 28, 2021)
 
 **openCypher Support**:
 
