@@ -425,95 +425,95 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_path_with_default_groupby(self):
         res = {
-                "results": [
-                    {
-                        "p": [
-                            {
-                                "~id": "22",
-                                "~entityType": "node",
-                                "~labels": [
-                                    "airport"
-                                ],
-                                "~properties": {
-                                    "desc": "Seattle-Tacoma",
-                                    "lon": -122.30899810791,
-                                    "runways": 3,
-                                    "type": "airport",
-                                    "country": "US",
-                                    "region": "US-WA",
-                                    "lat": 47.4490013122559,
-                                    "elev": 432,
-                                    "city": "Seattle",
-                                    "icao": "KSEA",
-                                    "code": "SEA",
-                                    "longest": 11901
-                                }
-                            },
-                            {
-                                "~id": "57081",
-                                "~entityType": "relationship",
-                                "~start": "3684",
-                                "~end": "22",
-                                "~type": "contains"
-                            },
-                            {
-                                "~id": "3684",
-                                "~entityType": "node",
-                                "~labels": [
-                                    "continent"
-                                ],
-                                "~properties": {
-                                    "desc": "North America",
-                                    "code": "NA"
-                                }
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "22",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Seattle-Tacoma",
+                                "lon": -122.30899810791,
+                                "runways": 3,
+                                "type": "airport",
+                                "country": "US",
+                                "region": "US-WA",
+                                "lat": 47.4490013122559,
+                                "elev": 432,
+                                "city": "Seattle",
+                                "icao": "KSEA",
+                                "code": "SEA",
+                                "longest": 11901
                             }
-                        ]
-                    },
-                    {
-                        "p": [
-                            {
-                                "~id": "22",
-                                "~entityType": "node",
-                                "~labels": [
-                                    "airport"
-                                ],
-                                "~properties": {
-                                    "desc": "Seattle-Tacoma",
-                                    "lon": -122.30899810791,
-                                    "runways": 3,
-                                    "type": "airport",
-                                    "country": "US",
-                                    "region": "US-WA",
-                                    "lat": 47.4490013122559,
-                                    "elev": 432,
-                                    "city": "Seattle",
-                                    "icao": "KSEA",
-                                    "code": "SEA",
-                                    "longest": 11901
-                                }
-                            },
-                            {
-                                "~id": "53637",
-                                "~entityType": "relationship",
-                                "~start": "3670",
-                                "~end": "22",
-                                "~type": "contains"
-                            },
-                            {
-                                "~id": "3670",
-                                "~entityType": "node",
-                                "~labels": [
-                                        "country"
-                                ],
-                                "~properties": {
-                                        "desc": "United States",
-                                        "code": "US"
-                                }
+                        },
+                        {
+                            "~id": "57081",
+                            "~entityType": "relationship",
+                            "~start": "3684",
+                            "~end": "22",
+                            "~type": "contains"
+                        },
+                        {
+                            "~id": "3684",
+                            "~entityType": "node",
+                            "~labels": [
+                                "continent"
+                            ],
+                            "~properties": {
+                                "desc": "North America",
+                                "code": "NA"
                             }
-                        ]
-                    }
-                ]
-            }
+                        }
+                    ]
+                },
+                {
+                    "p": [
+                        {
+                            "~id": "22",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Seattle-Tacoma",
+                                "lon": -122.30899810791,
+                                "runways": 3,
+                                "type": "airport",
+                                "country": "US",
+                                "region": "US-WA",
+                                "lat": 47.4490013122559,
+                                "elev": 432,
+                                "city": "Seattle",
+                                "icao": "KSEA",
+                                "code": "SEA",
+                                "longest": 11901
+                            }
+                        },
+                        {
+                            "~id": "53637",
+                            "~entityType": "relationship",
+                            "~start": "3670",
+                            "~end": "22",
+                            "~type": "contains"
+                        },
+                        {
+                            "~id": "3670",
+                            "~entityType": "node",
+                            "~labels": [
+                                "country"
+                            ],
+                            "~properties": {
+                                "desc": "United States",
+                                "code": "US"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
 
         gn = OCNetwork()
         gn.add_results(res)        
@@ -927,64 +927,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_without_property(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork()
@@ -994,64 +994,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_string(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='dist')
@@ -1061,64 +1061,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_string_invalid(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='desc')
@@ -1128,64 +1128,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_json(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='{"route":"dist"}')
@@ -1195,64 +1195,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_invalid_json(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='{"route":dist}')
@@ -1262,64 +1262,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_json_invalid_key(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='{"road":"dist"}')
@@ -1329,64 +1329,64 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_edge_with_property_invalid_json_value(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='{"route":"trips"}')
@@ -1396,120 +1396,120 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_multiple_edge_with_property_string(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 },
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30604",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "367",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 911
-                      }
-                    },
-                    {
-                      "~id": "367",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "General Mariano Escobedo International Airport",
-                        "lon": -100.107002258,
-                        "runways": 1,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-NLE",
-                        "lat": 25.7784996033,
-                        "elev": 1278,
-                        "city": "Monterrey",
-                        "icao": "MMMY",
-                        "code": "MTY",
-                        "longest": 5909
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30604",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "367",
+                            "~type": "path",
+                            "~properties": {
+                                "dist": 911
+                            }
+                        },
+                        {
+                            "~id": "367",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "General Mariano Escobedo International Airport",
+                                "lon": -100.107002258,
+                                "runways": 1,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-NLE",
+                                "lat": 25.7784996033,
+                                "elev": 1278,
+                                "city": "Monterrey",
+                                "icao": "MMMY",
+                                "code": "MTY",
+                                "longest": 5909
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='dist')
@@ -1521,120 +1521,120 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_add_multiple_edge_with_property_json(self):
         path = {
-              "results": [
+            "results": [
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30601",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "136",
-                      "~type": "route",
-                      "~properties": {
-                        "dist": 792
-                      }
-                    },
-                    {
-                      "~id": "136",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Mexico City, Licenciado Benito Juarez International Airport",
-                        "lon": -99.0720977783203,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-DIF",
-                        "lat": 19.43630027771,
-                        "elev": 7316,
-                        "city": "Mexico City",
-                        "icao": "MMMX",
-                        "code": "MEX",
-                        "longest": 12966
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
                 },
                 {
-                  "p": [
-                    {
-                      "~id": "365",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "Cozumel International Airport",
-                        "lon": -86.9255981445312,
-                        "runways": 2,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-ROO",
-                        "lat": 20.5223999023438,
-                        "elev": 15,
-                        "city": "Cozumel",
-                        "icao": "MMCZ",
-                        "code": "CZM",
-                        "longest": 10165
-                      }
-                    },
-                    {
-                      "~id": "30604",
-                      "~entityType": "relationship",
-                      "~start": "365",
-                      "~end": "367",
-                      "~type": "path",
-                      "~properties": {
-                        "dist": 911
-                      }
-                    },
-                    {
-                      "~id": "367",
-                      "~entityType": "node",
-                      "~labels": [
-                        "airport"
-                      ],
-                      "~properties": {
-                        "desc": "General Mariano Escobedo International Airport",
-                        "lon": -100.107002258,
-                        "runways": 1,
-                        "type": "airport",
-                        "country": "MX",
-                        "region": "MX-NLE",
-                        "lat": 25.7784996033,
-                        "elev": 1278,
-                        "city": "Monterrey",
-                        "icao": "MMMY",
-                        "code": "MTY",
-                        "longest": 5909
-                      }
-                    }
-                  ]
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30604",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "367",
+                            "~type": "path",
+                            "~properties": {
+                                "dist": 911
+                            }
+                        },
+                        {
+                            "~id": "367",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "General Mariano Escobedo International Airport",
+                                "lon": -100.107002258,
+                                "runways": 1,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-NLE",
+                                "lat": 25.7784996033,
+                                "elev": 1278,
+                                "city": "Monterrey",
+                                "icao": "MMMY",
+                                "code": "MTY",
+                                "longest": 5909
+                            }
+                        }
+                    ]
                 }
-              ]
+            ]
         }
 
         gn = OCNetwork(edge_display_property='{"route":"dist","path":"~id"}')
