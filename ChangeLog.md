@@ -26,6 +26,8 @@ For more detailed information and examples of how you can execute and visualize 
 - Refactored %load form display code for flexibility; fixes some descriptions being cut off
 - Updated Neptune ML notebooks, utils, and pretrained models config ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
 - Added support for `modeltransform` commands in `%neptune_ml` ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
+- Overhauled Gremlin visualization notebooks with example usage of new customization options and elementMap step ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
+- Added new notebook to explain Identity Graph data modeling ([Link to PR](https://github.com/aws/graph-notebook/pull/154))
 
 **Minor updates**:
 - Included index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
