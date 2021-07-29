@@ -1450,6 +1450,14 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data, edge_expected)
 
+    def test_add_results_as_list_of_non_elementmap_dicts(self):
+
+        results = [{"vertex1": 1}, {"vertex2": 2}, {"vertex3": 3}]
+
+        gn = GremlinNetwork()
+        with self.assertRaises(ValueError):
+            gn.add_results(results)
+
     def test_add_results_as_path_containing_elementmaps(self):
         edge_map = {
             T.id: '5298',

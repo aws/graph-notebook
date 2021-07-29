@@ -284,10 +284,10 @@ class GremlinNetwork(EventfulNetwork):
                         self.add_vertex(path[i])
                         if type(path[i - 1]) is not Edge:
                             self.add_blank_edge(from_id, get_id(path[i]))
-            elif isinstance(path, dict):
+            elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
                 self.insert_elementmap(path)
             else:
-                raise ValueError("all entries in results must be paths or maps")
+                raise ValueError("all entries in results must be paths or elementMaps")
 
     def add_vertex(self, v):
         """
