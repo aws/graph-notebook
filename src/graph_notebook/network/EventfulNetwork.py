@@ -7,6 +7,7 @@ from collections import defaultdict
 import collections
 from networkx import MultiDiGraph
 from .Network import Network
+from typing import Tuple
 
 EVENT_ADD_NODE = 'add_node'
 EVENT_ADD_NODE_DATA = 'add_node_data'
@@ -39,11 +40,15 @@ class EventfulNetwork(Network):
             graph = MultiDiGraph()
         super().__init__(graph)
 
-    def strip_and_truncate_label(self, old_label: str, max_len: int):
-        label = str(old_label).strip("[]'")
-        return label if len(label) <= max_len else label[:max_len - 3] + '...'
+    def strip_and_truncate_label_and_title(self, old_label: str, max_len: int) -> Tuple[str, str]:
+        title = str(old_label).strip("[]'")
+        if len(title) <= max_len:
+            label = title
+        else:
+            label = title[:max_len - 3] + '...'
+        return title, label
 
-    def flatten(self, d:dict, parent_key='', sep='_') -> dict:
+    def flatten(self, d: dict, parent_key='', sep='_') -> dict:
         """Flattens dictionaries including nested dictionaties
 
         Args:

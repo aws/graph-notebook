@@ -39,7 +39,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                     "~labels": ['airport'],
                     'code': 'SEA',
                     'runways': 3},
-                'title': "['airport']"},
+                'title': "airport"},
             'node_id': '22'}
 
         def add_node_callback(network, event_name, data):
@@ -626,6 +626,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_vertex_label_property_string(self):
         res = {
@@ -649,6 +650,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'SEA')
+        self.assertEqual(node1['title'], 'SEA')
 
     def test_set_vertex_label_property_string_id(self):
         res = {
@@ -672,6 +674,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], '22')
+        self.assertEqual(node1['title'], '22')
 
     def test_set_vertex_label_property_string_label(self):
         res = {
@@ -695,6 +698,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_vertex_label_property_string_type(self):
         res = {
@@ -718,6 +722,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'node')
+        self.assertEqual(node1['title'], 'node')
 
     def test_set_vertex_label_property_json(self):
         res = {
@@ -741,6 +746,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'SEA')
+        self.assertEqual(node1['title'], 'SEA')
 
     def test_set_vertex_label_property_invalid_json(self):
         res = {
@@ -764,6 +770,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_vertex_label_property_invalid_key(self):
         res = {
@@ -787,6 +794,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_vertex_label_length(self):
         res = {
@@ -810,6 +818,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'ai...')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_vertex_label_property_invalid_value(self):
         res = {
@@ -833,6 +842,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
 
     def test_set_label_property_multiple_vertices_property_string(self):
         res = {
@@ -868,7 +878,9 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('11')
         node2 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'JFK')
+        self.assertEqual(node1['title'], 'JFK')
         self.assertEqual(node2['label'], 'SEA')
+        self.assertEqual(node2['title'], 'SEA')
 
     def test_set_label_property_multiple_types(self):
         path = {
@@ -923,7 +935,9 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('2')
         node2 = gn.graph.nodes.get('3670')
         self.assertEqual(node1['label'], 'ANC')
+        self.assertEqual(node1['title'], 'ANC')
         self.assertEqual(node2['label'], 'United ...')
+        self.assertEqual(node2['title'], 'United States')
 
     def test_add_edge_without_property(self):
         path = {

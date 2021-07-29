@@ -67,8 +67,7 @@ class OCNetwork(EventfulNetwork):
             title = ""
             for key in node:
                 title += str(node[key])
-            
-        label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
+
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
             if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
                 group = node[LABEL_KEY][0]
@@ -103,6 +102,7 @@ class OCNetwork(EventfulNetwork):
                 else:
                     label = str(props)
             except KeyError:
+                label = title
                 pass
         elif self.display_property in [ID_KEY, 'id']:
             label = str(node[ID_KEY])
@@ -112,9 +112,10 @@ class OCNetwork(EventfulNetwork):
             label = str(node[VERTEX_TYPE_KEY])
         elif self.display_property in props:
             label = props[self.display_property]
+        else:
+            label = title
 
-        title = label
-        label = self.strip_and_truncate_label(label, self.label_max_length)
+        title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
         self.add_node(node[ID_KEY], data)
     
