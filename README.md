@@ -90,6 +90,7 @@ You will need:
 * [Python](https://www.python.org/downloads/) 3.6.1-3.6.12
 * [Jupyter Notebook](https://jupyter.org/install) 5.7.10
 * [Tornado](https://pypi.org/project/tornado/) 4.5.3
+* [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
 * A graph database that provides a SPARQL 1.1 Endpoint or a Gremlin Server
 
 ## Installation
@@ -98,6 +99,7 @@ You will need:
 # pin specific versions of Jupyter and Tornado dependency
 pip install notebook==5.7.10
 pip install tornado==4.5.3
+pip install rdflib==5.0.0
 
 # install the package
 pip install graph-notebook
