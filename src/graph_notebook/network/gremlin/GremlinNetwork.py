@@ -81,15 +81,6 @@ def get_id(element):
         return str(element)
 
 
-def strip_and_truncate_label_and_title(old_label: str, max_len: int):
-    title = str(old_label).strip("[]'")
-    if len(title) <= max_len:
-        label = title
-    else:
-        label = title[:max_len - 3] + '...'
-    return title, label
-
-
 class GremlinNetwork(EventfulNetwork):
     """
     GremlinNetwork extends the Network class and uses the add_results method to parse two specific types of responses
@@ -350,7 +341,7 @@ class GremlinNetwork(EventfulNetwork):
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
             if T.label in v.keys():
                 title = str(v[T.label])
-                title_plc, label = strip_and_truncate_label_and_title(title, self.label_max_length)
+                title_plc, label = self.strip_and_truncate_label_and_title(title, self.label_max_length)
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
@@ -366,11 +357,11 @@ class GremlinNetwork(EventfulNetwork):
                 if isinstance(self.display_property, dict):
                     try:
                         if str(k) == self.display_property[title]:
-                            title, label = strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
+                            title, label = self.strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
                     except KeyError:
                         continue
                 elif str(k) == self.display_property:
-                    title, label = strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
+                    title, label = self.strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
 
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
