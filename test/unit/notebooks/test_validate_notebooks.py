@@ -33,6 +33,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/00-Sample-Applications-Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/01-Fraud-Graphs/01-Building-a-Fraud-Graph-Application.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application-openCypher.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/01-Building-an-Identity-Graph-Application.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/02-Data-Modeling-for-Identity-Graphs.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-00-Getting-Started-with-Neptune-ML-Gremlin.ipynb',
