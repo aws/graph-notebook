@@ -4,9 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-- Fixed error caused by bug in Gremlin visualization ([Link to PR](https://github.com/aws/graph-notebook/pull/158))
-
-## Release 3.0.0 (July 28, 2021)
+## Release 3.0.1 (July 28, 2021)
 
 **openCypher Support**:
 
