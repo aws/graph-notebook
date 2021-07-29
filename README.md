@@ -91,8 +91,10 @@ You will need:
 * [Jupyter Notebook](https://jupyter.org/install) 5.7.10
 * [Tornado](https://pypi.org/project/tornado/) 4.5.3
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
-* A graph database that provides a SPARQL 1.1 Endpoint or a Gremlin Server
-
+* A graph database that provides one or more of:
+  *  A SPARQL 1.1 endpoint 
+  *  An Apache TinkerPop Gremlin Server compatible endpoint
+  *  An endpoint compatible with openCypher
 ## Installation
 
 ```
