@@ -287,7 +287,7 @@ class GremlinNetwork(EventfulNetwork):
             elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
                 self.insert_elementmap(path)
             else:
-                raise ValueError("all entries in results must be paths or maps")
+                raise ValueError("all entries in results must be paths or elementMaps")
 
     def add_vertex(self, v):
         """
