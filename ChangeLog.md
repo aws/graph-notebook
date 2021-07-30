@@ -4,6 +4,11 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Fixed incorrect visualizations of some Gremlin results returned by valueMap ([Link to PR](https://github.com/aws/graph-notebook/pull/165))
+- Fixed error with Gremlin visualizer incorrectly identifying some query results as elementMaps ([Link to PR](https://github.com/aws/graph-notebook/pull/158))
+- Pin RDFLib version in README ([Link to PR](https://github.com/aws/graph-notebook/pull/162))
+- Fixed inconsistent node tooltips in openCypher visualizations ([Link to PR](https://github.com/aws/graph-notebook/pull/163))
+
 ## Release 3.0.1 (July 28, 2021)
 
 **openCypher Support**:
