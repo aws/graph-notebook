@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Add new Knowledge Graph use case notebook for openCypher usage ([Link to PR](https://github.com/aws/graph-notebook/pull/161))
 - Fixed incorrect visualizations of some Gremlin results returned by valueMap ([Link to PR](https://github.com/aws/graph-notebook/pull/165))
 - Fixed error with Gremlin visualizer incorrectly identifying some query results as elementMaps ([Link to PR](https://github.com/aws/graph-notebook/pull/158))
 - Pin RDFLib version in README ([Link to PR](https://github.com/aws/graph-notebook/pull/162))
