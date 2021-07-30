@@ -240,41 +240,23 @@ class GremlinNetwork(EventfulNetwork):
 
                 for i in range(len(path)):
                     if isinstance(path[i], dict):
-                        self.insert_elementmap(path[i])
-                    else:
-                        if i == 0:
-                            self.add_vertex(path[i])
-                            continue
-
-                        if type(path[i]) is Edge:
-                            edge = path[i]
-                            path_left = get_id(path[i - 1])
-                            path_right = get_id(path[i + 1])
-
-                            # If the edge is an object type but its vertices aren't, then the ID contained
-                            # in the edge won't be the same as the ids used to store those two vertices.
-                            # For example, g.V().inE().outV().path().by(valueMap()).by().by(valueMap(true)
-                            # will yield a V, E, V pattern where the first vertex is a dict without T.id, the edge
-                            # will be an Edge object, and the second vertex will be a dict with T.id.
-                            if edge.outV.id == path_left or edge.inV.id == path_right:
-                                from_id = path_left
-                                to_id = path_right
-                                self.add_path_edge(path[i], from_id, to_id)
-                            elif edge.inV.id == path_left or edge.outV.id == path_right:
-                                from_id = path_right
-                                to_id = path_left
-                                self.add_path_edge(path[i], from_id, to_id)
-                            else:
-                                from_id = path_left
-                                to_id = path_right
-                                self.add_blank_edge(from_id, to_id, edge.id, label=edge.label)
-                            continue
+                        is_elementmap = False
+                        for prop, value in path[i].items():
+                            if prop not in [T.id, T.label] and isinstance(value, str):
+                                is_elementmap = True
+                                break
+                            elif isinstance(value, dict):
+                                is_elementmap = True
+                                break
+                            elif isinstance(value, list):
+                                break
+                        if is_elementmap:
+                            self.insert_elementmap(path[i])
                         else:
-                            from_id = get_id(path[i - 1])
+                            self.insert_path_element(path, i)
+                    else:
+                        self.insert_path_element(path, i)
 
-                        self.add_vertex(path[i])
-                        if type(path[i - 1]) is not Edge:
-                            self.add_blank_edge(from_id, get_id(path[i]))
             elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
                 self.insert_elementmap(path)
             else:
@@ -451,6 +433,41 @@ class GremlinNetwork(EventfulNetwork):
             edge_id = str(uuid.uuid4())
         edge_data = UNDIRECTED_EDGE if undirected else {}
         self.add_edge(from_id, to_id, edge_id, label, edge_data)
+
+    def insert_path_element(self, path, i):
+        if i == 0:
+            self.add_vertex(path[i])
+            return
+
+        if type(path[i]) is Edge:
+            edge = path[i]
+            path_left = get_id(path[i - 1])
+            path_right = get_id(path[i + 1])
+
+            # If the edge is an object type but its vertices aren't, then the ID contained
+            # in the edge won't be the same as the ids used to store those two vertices.
+            # For example, g.V().inE().outV().path().by(valueMap()).by().by(valueMap(true)
+            # will yield a V, E, V pattern where the first vertex is a dict without T.id, the edge
+            # will be an Edge object, and the second vertex will be a dict with T.id.
+            if edge.outV.id == path_left or edge.inV.id == path_right:
+                from_id = path_left
+                to_id = path_right
+                self.add_path_edge(path[i], from_id, to_id)
+            elif edge.inV.id == path_left or edge.outV.id == path_right:
+                from_id = path_right
+                to_id = path_left
+                self.add_path_edge(path[i], from_id, to_id)
+            else:
+                from_id = path_left
+                to_id = path_right
+                self.add_blank_edge(from_id, to_id, edge.id, label=edge.label)
+            return
+        else:
+            from_id = get_id(path[i - 1])
+
+        self.add_vertex(path[i])
+        if type(path[i - 1]) is not Edge:
+            self.add_blank_edge(from_id, get_id(path[i]))
 
     def insert_elementmap(self, e_map):
         """

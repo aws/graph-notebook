@@ -1523,6 +1523,63 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data, edge_expected)
 
+    def test_add_results_as_path_containing_valuemaps(self):
+
+        out_vertex = {
+            'country': ['US'],
+            'code': ['SAF'],
+            'longest': [8366],
+            'city': ['Santa Fe'],
+            'lon': [-106.088996887],
+            'type': ['airport'],
+            T.id: '44', 'elev': [6348],
+            T.label: 'airport',
+            'icao': ['KSAF'],
+            'runways': [3],
+            'region': ['US-NM'],
+            'lat': [35.617099762],
+            'desc': ['Santa Fe']
+        }
+
+        in_vertex = {
+            'country': ['US'],
+            'code': ['DFW'],
+            'longest': [13401],
+            'city': ['Dallas'],
+            'lon': [-97.0380020141602],
+            'type': ['airport'],
+            T.id: '8',
+            'elev': [607],
+            T.label: 'airport',
+            'icao': ['KDFW'],
+            'runways': [7],
+            'region': ['US-TX'],
+            'lat': [32.896800994873],
+            'desc': ['Dallas/Fort Worth International Airport']
+        }
+
+        edge_value_expected = {
+            'arrows': {
+                'to': {
+                    'enabled': False
+                }
+            },
+            'label': ''
+        }
+
+        path = Path([], [out_vertex, in_vertex])
+        gn = GremlinNetwork()
+        gn.add_results([path])
+        edge_data = gn.graph.get_edge_data('44', '8')
+        for prop, value in edge_data.items():
+            edge_data_value = value
+            break
+        outv_data = gn.graph.nodes.get('44')
+        inv_data = gn.graph.nodes.get('8')
+        self.assertEqual(outv_data['properties'], out_vertex)
+        self.assertEqual(inv_data['properties'], in_vertex)
+        self.assertEqual(edge_data_value, edge_value_expected)
+
 
 if __name__ == '__main__':
     unittest.main()
