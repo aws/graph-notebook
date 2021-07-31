@@ -58,6 +58,14 @@ def generate_id_from_dict(data: dict) -> str:
     if T.label in data.keys():
         data['label'] = data[T.label]
         del data[T.label]
+    for k in data.keys():
+        if isinstance(data[k], dict):
+            if T.id in data[k]:
+                data[k]['id'] = data[k][T.id]
+                del data[k][T.id]
+            if T.label in data[k]:
+                data[k]['label'] = data[k][T.label]
+                del data[k][T.label]
     data_str = json.dumps(data, default=str)
     hashed = hashlib.md5(data_str.encode())
     generate_id = hashed.hexdigest()
@@ -241,15 +249,18 @@ class GremlinNetwork(EventfulNetwork):
                 for i in range(len(path)):
                     if isinstance(path[i], dict):
                         is_elementmap = False
-                        for prop, value in path[i].items():
-                            if prop not in [T.id, T.label] and isinstance(value, str):
-                                is_elementmap = True
-                                break
-                            elif isinstance(value, dict):
-                                is_elementmap = True
-                                break
-                            elif isinstance(value, list):
-                                break
+                        if T.id in path[i] and T.label in path[i]:
+                            for prop, value in path[i].items():
+                                # T.id and/or T.label could be renamed by a project() step
+                                if prop not in [T.id, T.label] and isinstance(value, str):
+                                    is_elementmap = True
+                                    break
+                                elif isinstance(value, dict):
+                                    if prop in [Direction.IN, Direction.OUT]:
+                                        is_elementmap = True
+                                        break
+                                elif isinstance(value, list):
+                                    break
                         if is_elementmap:
                             self.insert_elementmap(path[i])
                         else:
@@ -327,7 +338,7 @@ class GremlinNetwork(EventfulNetwork):
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
-                properties[k] = v[k]
+                properties[k] = str(v[k]) if isinstance(v[k], dict) else v[k]
                 if isinstance(self.group_by_property, dict):
                     try:
                         if str(k) == self.group_by_property[title]:
@@ -344,7 +355,6 @@ class GremlinNetwork(EventfulNetwork):
                         continue
                 elif str(k) == self.display_property:
                     title, label = self.strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
-
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
