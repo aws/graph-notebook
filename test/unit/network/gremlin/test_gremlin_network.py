@@ -1692,5 +1692,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(inv_data['properties'], in_vertex_expected)
         self.assertEqual(edge_data_value, edge_value_expected)
 
+
 if __name__ == '__main__':
     unittest.main()
