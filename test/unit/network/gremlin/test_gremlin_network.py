@@ -1580,6 +1580,118 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data_value, edge_value_expected)
 
+    def test_add_results_as_path_containing_projected_values(self):
+
+        out_vertex = {
+            T.id: '365',
+            'properties': {
+                'country': ['MX'],
+                'city': ['Cozumel']
+            },
+            'type': 'airport'
+        }
+
+        in_vertex = {
+            T.id: '1',
+            'properties': {
+                'country': ['US'],
+                'city': ['Atlanta']
+            },
+            'type': 'airport'
+        }
+
+        out_vertex_expected = {
+            T.id: '365',
+            'properties': "{'country': ['MX'], 'city': ['Cozumel']}",
+            'type': 'airport'
+        }
+
+        in_vertex_expected = {
+            T.id: '1',
+            'properties': "{'country': ['US'], 'city': ['Atlanta']}",
+            'type': 'airport'
+        }
+
+        edge_value_expected = {
+            'arrows': {
+                'to': {
+                    'enabled': False
+                }
+            },
+            'label': ''
+        }
+
+        path = Path([], [out_vertex, in_vertex])
+        gn = GremlinNetwork()
+        gn.add_results([path])
+        edge_data = gn.graph.get_edge_data('365', '1')
+        for prop, value in edge_data.items():
+            edge_data_value = value
+            break
+        outv_data = gn.graph.nodes.get('365')
+        inv_data = gn.graph.nodes.get('1')
+        self.assertEqual(outv_data['properties'], out_vertex_expected)
+        self.assertEqual(inv_data['properties'], in_vertex_expected)
+        self.assertEqual(edge_data_value, edge_value_expected)
+
+    def test_add_results_as_path_containing_nested_tokens(self):
+
+        out_vertex = {
+            T.id: '365',
+            'properties': {
+                T.id: '365',
+                T.label: 'airport',
+                'country': ['MX'],
+                'city': ['Cozumel']
+            },
+            'type': 'airport'
+        }
+
+        in_vertex = {
+            T.id: '1',
+            'properties': {
+                T.id: '1',
+                T.label: 'airport',
+                'country': ['US'],
+                'city': ['Atlanta']
+            },
+            'type': 'airport'
+        }
+
+        out_vertex_expected = {
+            T.id: '365',
+            'properties': "{<T.id: 1>: '365', <T.label: 4>: 'airport', 'country': ['MX'], 'city': ['Cozumel']}",
+            'type': 'airport'
+        }
+
+        in_vertex_expected = {
+            T.id: '1',
+            'properties': "{<T.id: 1>: '1', <T.label: 4>: 'airport', 'country': ['US'], 'city': ['Atlanta']}",
+            'type': 'airport'
+        }
+
+        edge_value_expected = {
+            'arrows': {
+                'to': {
+                    'enabled': False
+                }
+            },
+            'label': ''
+        }
+
+        path = Path([], [out_vertex, in_vertex])
+        gn = GremlinNetwork()
+        gn.add_results([path])
+        edge_data = gn.graph.get_edge_data('365', '1')
+        for prop, value in edge_data.items():
+            edge_data_value = value
+            break
+        outv_data = gn.graph.nodes.get('365')
+        inv_data = gn.graph.nodes.get('1')
+        self.assertEqual(outv_data['properties'], out_vertex_expected)
+        self.assertEqual(inv_data['properties'], in_vertex_expected)
+        self.assertEqual(edge_data_value, edge_value_expected)
+
 
 if __name__ == '__main__':
     unittest.main()

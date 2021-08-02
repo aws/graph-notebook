@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Gremlin visualization bugfixes ([Link to PR](https://github.com/aws/graph-notebook/pull/166))
 
 ## Release 3.0.2 (July 29, 2021)
 
