@@ -38,6 +38,8 @@ def get_queries(model, name):
 
 
 def get_data_sets(model):
+    if model == '':
+      return []
     d = os.path.dirname(os.path.realpath(__file__))
     path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model))
     data_sets = []
