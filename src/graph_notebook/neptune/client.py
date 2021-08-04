@@ -187,15 +187,18 @@ class Client(object):
             raise ValueError('query_id must be a non-empty string')
         return self._query_status('gremlin', query_id=query_id, cancelQuery=True)
 
-    def gremlin_explain(self, query: str) -> requests.Response:
-        return self._gremlin_query_plan(query, 'explain')
+    def gremlin_explain(self, query: str, args={}) -> requests.Response:
+        return self._gremlin_query_plan(query=query, plan_type='explain', args=args)
 
-    def gremlin_profile(self, query: str) -> requests.Response:
-        return self._gremlin_query_plan(query, 'profile')
+    def gremlin_profile(self, query: str, args={}) -> requests.Response:
+        return self._gremlin_query_plan(query=query, plan_type='profile', args=args)
 
-    def _gremlin_query_plan(self, query: str, plan_type: str, ) -> requests.Response:
+    def _gremlin_query_plan(self, query: str, plan_type: str, args: dict, ) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/{plan_type}'
         data = {'gremlin': query}
+        if args:
+            for param, value in args.items():
+                data[param] = value
         req = self._prepare_request('POST', url, data=json.dumps(data))
         res = self._http_session.send(req)
         return res

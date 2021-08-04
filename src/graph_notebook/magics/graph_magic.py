@@ -71,6 +71,14 @@ SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
 
+serializers_map = {
+    "MIME_JSON": "application/json",
+    "GRAPHSON_V2D0": "application/vnd.gremlin-v2.0+json",
+    "GRAPHSON_V3D0": "application/vnd.gremlin-v3.0+json",
+    "GRYO_V3D0": "application/vnd.gremlin-v3.0+gryo",
+    "GRAPHBINARY_V1D0": "application/vnd.graphbinary-v1.0"
+}
+
 
 class QueryMode(Enum):
     DEFAULT = 'query'
@@ -369,6 +377,16 @@ class Graph(Magics):
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
+        parser.add_argument('--no-results', action='store_false', default=True,
+                            help='Display only the result count. If not used, all query results will be displayed in '
+                                 'the profile report by default.')
+        parser.add_argument('--chop', type=int, default=250,
+                            help='Property to specify max length of profile results string. Default is 250')
+        parser.add_argument('--serializer', type=str, default='application/json',
+                            help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
+                                 'TinkerPop driver "Serializers" enum values. Default is application/json')
+        parser.add_argument('--indexOps', action='store_true', default=False,
+                            help='Show a detailed report of all index operations.')
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
@@ -391,7 +409,19 @@ class Graph(Magics):
             else:
                 first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
-            res = self.client.gremlin_profile(cell)
+            logger.debug(f'results: {args.no_results}')
+            logger.debug(f'chop: {args.chop}')
+            logger.debug(f'serializer: {args.serializer}')
+            logger.debug(f'indexOps: {args.indexOps}')
+            if args.serializer in serializers_map:
+                serializer = serializers_map[args.serializer]
+            else:
+                serializer = args.serializer
+            profile_args = {"profile.results": args.no_results,
+                            "profile.chop": args.chop,
+                            "profile.serializer": serializer,
+                            "profile.indexOps": args.indexOps}
+            res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
             gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
