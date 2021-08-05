@@ -1227,7 +1227,8 @@ class Graph(Magics):
                         return
 
                 progress.value += 1
-
+            # Sleep for two seconds so the user sees the progress bar complete
+            time.sleep(2)
             progress.close()
             with output:
                 print('Done.')
