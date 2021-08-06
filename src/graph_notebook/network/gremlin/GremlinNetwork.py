@@ -19,6 +19,7 @@ logger = logging.getLogger(__file__)
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
+DEFAULT_GRP = 'DEFAULT_GROUP'
 
 INVALID_PATH_ERROR = ValueError("results must be a path with the pattern Vertex -> Edge -> Vertex.")
 INVALID_VERTEX_ERROR = ValueError("when adding a vertex, object must be of type Vertex or Dict")
@@ -261,13 +262,15 @@ class GremlinNetwork(EventfulNetwork):
                                         break
                                 elif isinstance(value, list):
                                     break
+                                elif not isinstance(value, (str, list, dict)):
+                                    is_elementmap = True
+                                    break
                         if is_elementmap:
-                            self.insert_elementmap(path[i])
+                            self.insert_elementmap(path[i], check_emap=True, path_element=path, index=i)
                         else:
                             self.insert_path_element(path, i)
                     else:
                         self.insert_path_element(path, i)
-
             elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
                 self.insert_elementmap(path)
             else:
@@ -295,7 +298,7 @@ class GremlinNetwork(EventfulNetwork):
                 elif str(self.group_by_property) in [T_ID, 'id']:
                     group = v.id
                 else:
-                    group = ''
+                    group = DEFAULT_GRP
             else:  # handle dict format group_by
                 try:
                     if str(v.label) in self.group_by_property:
@@ -306,9 +309,9 @@ class GremlinNetwork(EventfulNetwork):
                         else:
                             group = vertex_dict[self.group_by_property[str(v.label)]]
                     else:
-                        group = ''
+                        group = DEFAULT_GRP
                 except KeyError:
-                    group = ''
+                    group = DEFAULT_GRP
 
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
@@ -335,6 +338,8 @@ class GremlinNetwork(EventfulNetwork):
             if T.label in v.keys():
                 title = str(v[T.label])
                 title_plc, label = self.strip_and_truncate_label_and_title(title, self.label_max_length)
+            else:
+                group = DEFAULT_GRP
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
@@ -373,10 +378,10 @@ class GremlinNetwork(EventfulNetwork):
             node_id = str(v)
             title = str(v)
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-            data = {'title': title, 'label': label, 'group': ''}
+            data = {'title': title, 'label': label, 'group': DEFAULT_GRP}
 
         if self.ignore_groups:
-            data['group'] = ''
+            data['group'] = DEFAULT_GRP
         self.add_node(node_id, data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):
@@ -477,9 +482,13 @@ class GremlinNetwork(EventfulNetwork):
 
         self.add_vertex(path[i])
         if type(path[i - 1]) is not Edge:
-            self.add_blank_edge(from_id, get_id(path[i]))
+            if type(path[i - 1]) is dict:
+                if Direction.IN not in path[i-1]:
+                    self.add_blank_edge(from_id, get_id(path[i]))
+            else:
+                self.add_blank_edge(from_id, get_id(path[i]))
 
-    def insert_elementmap(self, e_map):
+    def insert_elementmap(self, e_map, check_emap=False, path_element=None, index=None):
         """
         Add a vertex or edge that has been returned by an elementMap query step.
 
@@ -502,4 +511,7 @@ class GremlinNetwork(EventfulNetwork):
         # Handle vertex elementMap
         else:
             # Overwrite the the default node created by edge elementMap, if it exists already.
-            self.add_vertex(e_map)
+            if check_emap:
+                self.insert_path_element(path_element, index)
+            else:
+                self.add_vertex(e_map)

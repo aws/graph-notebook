@@ -23,6 +23,7 @@ EDGE_TYPE_KEY = "~type"
 LABEL_KEY = "~labels"
 NODE_ENTITY_TYPE = 'node'
 REL_ENTITY_TYPE = 'relationship'
+DEFAULT_GRP = 'DEFAULT_GROUP'
 
 
 class OCNetwork(EventfulNetwork):
@@ -69,14 +70,17 @@ class OCNetwork(EventfulNetwork):
                 title += str(node[key])
 
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
-            if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
-                group = node[LABEL_KEY][0]
-            elif self.group_by_property in [ID_KEY, 'id']:
-                group = node[ID_KEY]
-            elif self.group_by_property in node[PROPERTIES_KEY]:
-                group = node[PROPERTIES_KEY][self.group_by_property]
-            else:
-                group = ''
+            try:
+                if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
+                    group = node[LABEL_KEY][0]
+                elif self.group_by_property in [ID_KEY, 'id']:
+                    group = node[ID_KEY]
+                elif self.group_by_property in node[PROPERTIES_KEY]:
+                    group = node[PROPERTIES_KEY][self.group_by_property]
+                else:
+                    group = DEFAULT_GRP
+            except KeyError:
+                group = DEFAULT_GRP
         else:  # handle dict format group_by
             try:
                 if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
@@ -88,35 +92,36 @@ class OCNetwork(EventfulNetwork):
                 elif ID_KEY in self.group_by_property:
                     group = node[ID_KEY]
                 else:
-                    group = ''
+                    group = DEFAULT_GRP
             except KeyError:
-                group = ''
+                group = DEFAULT_GRP
 
         props = self.flatten(node)
-        if isinstance(self.display_property, dict):
-            try:
+        try:
+            if isinstance(self.display_property, dict):
                 if self.display_property[title] in props:
                     label = str(props[self.display_property[title]])
                 elif LABEL_KEY in props:
                     label = props[LABEL_KEY]
                 else:
                     label = str(props)
-            except KeyError:
+            elif self.display_property in [ID_KEY, 'id']:
+                label = str(node[ID_KEY])
+            elif self.display_property in [LABEL_KEY, 'label']:
+                label = str(node[LABEL_KEY])
+            elif self.display_property in [VERTEX_TYPE_KEY, 'type']:
+                label = str(node[VERTEX_TYPE_KEY])
+            elif self.display_property in props:
+                label = props[self.display_property]
+            else:
                 label = title
-                pass
-        elif self.display_property in [ID_KEY, 'id']:
-            label = str(node[ID_KEY])
-        elif self.display_property in [LABEL_KEY, 'label']:
-            label = str(node[LABEL_KEY])
-        elif self.display_property in [VERTEX_TYPE_KEY, 'type']:
-            label = str(node[VERTEX_TYPE_KEY])
-        elif self.display_property in props:
-            label = props[self.display_property]
-        else:
+        except KeyError:
             label = title
 
         title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
+        if self.ignore_groups:
+            data['group'] = DEFAULT_GRP
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):

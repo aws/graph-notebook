@@ -1033,7 +1033,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork()
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('graph_notebook-ed8fddedf251d3d5745dccfd53edf51d')
-        self.assertEqual(node['group'], '')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
     def test_add_path_with_edge_property_string(self):
         vertex1 = Vertex(id='1')
@@ -1141,12 +1141,12 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(ignore_groups=True)
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['group'], '')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
         gn = GremlinNetwork(group_by_property="code", ignore_groups=True)
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['group'], '')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
     def test_ignore_group_properties_json(self):
         vertex1 = {
@@ -1170,8 +1170,8 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
         gn = GremlinNetwork(group_by_property='{"airport":"code","country":"continent"}',
                             ignore_groups=True)
@@ -1179,8 +1179,8 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
     def test_group_returnvertex_groupby_notspecified(self):
         vertex = Vertex(id='1')
@@ -1501,16 +1501,14 @@ class TestGremlinNetwork(unittest.TestCase):
         }
 
         edge_expected = {
-            '5298': {
-                'properties': {
-                    T.id: '5298',
-                    T.label: 'route',
-                    Direction.IN: '1112',
-                    Direction.OUT: '2',
-                    'dist': 763
-                },
-                'label': 'route'
-            }
+            'properties': {
+                T.id: '5298',
+                T.label: 'route',
+                Direction.IN: '1112',
+                Direction.OUT: '2',
+                'dist': 763
+            },
+            'label': 'route'
         }
 
         path = Path([], [edge_map, out_vertex, in_vertex])
@@ -1521,7 +1519,7 @@ class TestGremlinNetwork(unittest.TestCase):
         inv_data = gn.graph.nodes.get('1112')
         self.assertEqual(outv_data['properties'], out_vertex)
         self.assertEqual(inv_data['properties'], in_vertex)
-        self.assertEqual(edge_data, edge_expected)
+        self.assertEqual(edge_data['5298'], edge_expected)
 
     def test_add_results_as_path_containing_valuemaps(self):
 
