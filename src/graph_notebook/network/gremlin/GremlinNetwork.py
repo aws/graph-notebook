@@ -252,7 +252,7 @@ class GremlinNetwork(EventfulNetwork):
                         if T.id in path[i] and T.label in path[i]:
                             for prop, value in path[i].items():
                                 # T.id and/or T.label could be renamed by a project() step
-                                if prop not in [T.id, T.label] and isinstance(value, str):
+                                if isinstance(value, str) and prop not in [T.id, T.label]:
                                     is_elementmap = True
                                     break
                                 elif isinstance(value, dict):
@@ -260,6 +260,9 @@ class GremlinNetwork(EventfulNetwork):
                                         is_elementmap = True
                                         break
                                 elif isinstance(value, list):
+                                    break
+                                elif not isinstance(value, (str, list, dict)):
+                                    is_elementmap = True
                                     break
                         if is_elementmap:
                             self.insert_elementmap(path[i])

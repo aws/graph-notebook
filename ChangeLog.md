@@ -3,7 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Gremlin visualization bugfixes ([Link to PR](https://github.com/aws/graph-notebook/pull/166))
+- Gremlin visualization bugfixes ([PR #1](https://github.com/aws/graph-notebook/pull/166)) ([PR #2](https://github.com/aws/graph-notebook/pull/174))
 - Updated the airport data loadable via %seed to the latest version ([Link to PR](https://github.com/aws/graph-notebook/pull/172))
 - Added support for Gremlin Profile API parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/171))
 - Improved %seed so the progress bar is seen to complete ([Link to PR](https://github.com/aws/graph-notebook/pull/173))
