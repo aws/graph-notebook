@@ -43,7 +43,7 @@ We encourage others to contribute configurations they find useful. There is an [
 `%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
 
 
-**TIP** :point_right:  There is syntax highlighting for both `%%sparql` and `%%gremlin` queries to help you structure your queries more easily.
+**TIP** :point_right:  There is syntax highlighting for `%%sparql`, `%%gremlin` and `%%oc` cells to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
 `%gremlin_status` - Obtain the status of Gremlin queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/gremlin-api-status.html)
