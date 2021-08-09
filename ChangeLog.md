@@ -3,10 +3,12 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Gremlin visualization bugfixes ([PR #1](https://github.com/aws/graph-notebook/pull/166)) ([PR #2](https://github.com/aws/graph-notebook/pull/174))
+- Gremlin visualization bugfixes ([PR #1](https://github.com/aws/graph-notebook/pull/166)) ([PR #2](https://github.com/aws/graph-notebook/pull/174)) ([PR #3](https://github.com/aws/graph-notebook/pull/175))
 - Updated the airport data loadable via %seed to the latest version ([Link to PR](https://github.com/aws/graph-notebook/pull/172))
 - Added support for Gremlin Profile API parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/171))
-- Improved %seed so the progress bar is seen to complete ([Link to PR](https://github.com/aws/graph-notebook/pull/173))
+- Improved %seed so that the progress bar is seen to complete ([Link to PR](https://github.com/aws/graph-notebook/pull/173))
+- Added helper functions to neptune_ml utils to get node embeddings, model predictions and performance metrics ([Link to PR](https://github.com/aws/graph-notebook/pull/170))
+- Changed visualization behavior to add all group-less nodes to a default group ([Link to PR](https://github.com/aws/graph-notebook/pull/175))
 
 ## Release 3.0.2 (July 29, 2021)
 

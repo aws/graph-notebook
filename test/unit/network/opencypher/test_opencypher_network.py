@@ -145,6 +145,61 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(2, len(gn.graph.nodes))
         self.assertEqual(1, len(gn.graph.edges))
 
+    def test_ignore_group(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+        gn = OCNetwork(group_by_property="code", ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_default_groups_no_label(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+        gn = OCNetwork(group_by_property="code", ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
     def test_group_with_groupby(self):
         path = {
             "results": [
