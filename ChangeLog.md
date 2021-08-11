@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Improved %seed so that the progress bar is seen to complete ([Link to PR](https://github.com/aws/graph-notebook/pull/173))
 - Added helper functions to neptune_ml utils to get node embeddings, model predictions and performance metrics ([Link to PR](https://github.com/aws/graph-notebook/pull/170))
 - Changed visualization behavior to add all group-less nodes to a default group ([Link to PR](https://github.com/aws/graph-notebook/pull/175))
+- Fixed a bug causing ML Export requests to fail ([Link to PR](https://github.com/aws/graph-notebook/pull/178))
 
 ## Release 3.0.2 (July 29, 2021)
 
