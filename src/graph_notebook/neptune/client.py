@@ -562,14 +562,20 @@ class Client(object):
         self._ensure_http_session()
         request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
         if self._session is not None:
-            credentials = self._session.get_credentials()
-            frozen_creds = credentials.get_frozen_credentials()
-            req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
-            SigV4Auth(frozen_creds, service, self.region).add_auth(req)
-            prepared_iam_req = req.prepare()
-            request.headers = dict(prepared_iam_req.headers)
+            aws_request = self._get_aws_request(method=method, url=url, data=data, params=params, headers=headers,
+                                                service=service)
+            request.headers = dict(aws_request.headers)
 
         return request.prepare()
+
+    def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
+        credentials = self._session.get_credentials()
+        frozen_creds = credentials.get_frozen_credentials()
+
+        req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
+        SigV4Auth(frozen_creds, service, self.region).add_auth(req)
+        prepared_iam_req = req.prepare()
+        return prepared_iam_req
 
     def _ensure_http_session(self):
         if not self._http_session:
