@@ -562,7 +562,8 @@ class Client(object):
         self._ensure_http_session()
         request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
         if self._session is not None:
-            aws_request = self._get_aws_request(method, url, data=data, params=params, headers=headers)
+            aws_request = self._get_aws_request(method=method, url=url, data=data, params=params, headers=headers,
+                                                service=service)
             request.headers = dict(aws_request.headers)
 
         return request.prepare()
