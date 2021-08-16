@@ -9,6 +9,7 @@ import logging
 import requests
 from SPARQLWrapper import SPARQLWrapper
 from boto3 import Session
+from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
@@ -569,13 +570,15 @@ class Client(object):
         return request.prepare()
 
     def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
-        credentials = self._session.get_credentials()
-        frozen_creds = credentials.get_frozen_credentials()
-
         req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
-        SigV4Auth(frozen_creds, service, self.region).add_auth(req)
-        prepared_iam_req = req.prepare()
-        return prepared_iam_req
+        if self.iam_enabled and self._auth is not None:
+            credentials = self._session.get_credentials()
+            frozen_creds = credentials.get_frozen_credentials()
+            SigV4Auth(frozen_creds, service, self.region).add_auth(req)
+            prepared_iam_req = req.prepare()
+            return prepared_iam_req
+        else:
+            return req
 
     def _ensure_http_session(self):
         if not self._http_session:
@@ -591,7 +594,7 @@ class Client(object):
 
     @property
     def iam_enabled(self):
-        return type(self._session) is Session
+        return type(self._session) in [Session, botocoreSession]
 
 
 class ClientBuilder(object):
