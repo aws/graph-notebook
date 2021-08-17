@@ -807,9 +807,9 @@ class Graph(Magics):
             layout=widgets.Layout(width=widget_width)
         )
 
-        nopoll = widgets.Dropdown(
+        poll_status = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
-            value=str(args.nopoll).upper(),
+            value=str(not args.nopoll).upper(),
             disabled=False,
             layout=widgets.Layout(width=widget_width)
         )
@@ -864,7 +864,6 @@ class Graph(Magics):
                                                                              justify_content="flex-end")),
                                          parallelism])
 
-
         cardinality_hbox = widgets.HBox([widgets.Label('Update Single Cardinality:',
                                                        layout=widgets.Layout(width=label_width,
                                                                              display="flex",
@@ -889,12 +888,12 @@ class Graph(Magics):
 
         ids_hbox = widgets.HBox([ids_hbox_label, user_provided_edge_ids])
 
-        nopoll_label = widgets.Label('No Load Status Polling:',
-                                         layout=widgets.Layout(width=label_width,
-                                                               display="flex",
-                                                               justify_content="flex-end"))
+        poll_status_label = widgets.Label('Poll Load Status:',
+                                          layout=widgets.Layout(width=label_width,
+                                                                display="flex",
+                                                                justify_content="flex-end"))
 
-        nopoll_hbox = widgets.HBox([nopoll_label, nopoll])
+        poll_status_hbox = widgets.HBox([poll_status_label, poll_status])
 
         display(source_hbox, 
                 source_format_hbox, 
@@ -907,7 +906,7 @@ class Graph(Magics):
                 queue_hbox, 
                 dep_hbox, 
                 ids_hbox,
-                nopoll_hbox,
+                poll_status_hbox,
                 button, 
                 output)
 
@@ -987,7 +986,7 @@ class Graph(Magics):
                 queue_hbox.close()
                 dep_hbox.close()
                 ids_hbox.close()
-                nopoll_hbox.close()
+                poll_status_hbox.close()
                 button.close()
                 output.close()
 
@@ -998,13 +997,13 @@ class Graph(Magics):
                         logger.error(load_result)
                     return
 
-                if nopoll.value == 'TRUE':
+                if poll_status.value == 'FALSE':
                     start_msg_label = widgets.Label(f'Load started successfully!')
-                    nopoll_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
-                                                     f'in another cell to check the current status of your bulk load.')
+                    polling_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
+                                                      f'in another cell to check the current status of your bulk load.')
                     start_msg_hbox = widgets.HBox([start_msg_label])
-                    nopoll_msg_hbox = widgets.HBox([nopoll_msg_label])
-                    vbox = widgets.VBox([start_msg_hbox, nopoll_msg_hbox])
+                    polling_msg_hbox = widgets.HBox([polling_msg_label])
+                    vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
                     display(vbox)
                 else:
                     poll_interval = 5
