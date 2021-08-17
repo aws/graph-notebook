@@ -262,7 +262,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def load(self, source: str, source_format: str, iam_role_arn: str, **kwargs) -> requests.Response:
+    def load(self, source: str, source_format: str, iam_role_arn: str = None, **kwargs) -> requests.Response:
         """
         For a full list of allowed parameters, see aws documentation on the Neptune loader
         endpoint: https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-load.html
@@ -271,9 +271,11 @@ class Client(object):
         payload = {
             'source': source,
             'format': source_format,
-            'region': self.region,
-            'iamRoleArn': iam_role_arn
+            'region': self.region
         }
+
+        if iam_role_arn:
+            payload['iamRoleArn'] = iam_role_arn
 
         for key, value in kwargs.items():
             payload[key] = value
