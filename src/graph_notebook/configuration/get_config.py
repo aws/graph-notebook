@@ -11,9 +11,12 @@ from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION
 
 def get_config_from_dict(data: dict) -> Configuration:
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
-    config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
-                           ssl=data['ssl'],
-                           load_from_s3_arn=data['load_from_s3_arn'], aws_region=data['aws_region'], sparql_section=sparql_section)
+    if ".neptune.amazonaws.com" in data['host']:
+        config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
+                               ssl=data['ssl'], load_from_s3_arn=data['load_from_s3_arn'],
+                               aws_region=data['aws_region'], sparql_section=sparql_section)
+    else:
+        config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], sparql_section=sparql_section)
     return config
 
 

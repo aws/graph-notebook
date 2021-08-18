@@ -132,10 +132,7 @@ In a new cell in the Jupyter notebook, change the configuration using `%%graph_n
 {
   "host": "localhost",
   "port": 8182,
-  "auth_mode": "DEFAULT",
-  "load_from_s3_arn": "",
-  "ssl": false,
-  "aws_region": "us-east-1"
+  "ssl": false
 }
 ```
 
@@ -150,10 +147,7 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
 {
   "host": "localhost",
   "port": 9999,
-  "auth_mode": "DEFAULT",
-  "load_from_s3_arn": "",
-  "ssl": false,
-  "aws_region": "us-east-1"
+  "ssl": false
 }
 ```
 
@@ -165,10 +159,7 @@ You can also make use of namespaces for Blazegraph by specifying the path `graph
 {
   "host": "localhost",
   "port": 9999,
-  "auth_mode": "DEFAULT",
-  "load_from_s3_arn": "",
   "ssl": false,
-  "aws_region": "us-west-2",
   "sparql": {
     "path": "blazegraph/namespace/foo/sparql"
   }

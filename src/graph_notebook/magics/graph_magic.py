@@ -26,8 +26,8 @@ from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
 
 import graph_notebook
-from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, AuthModeEnum, \
-    Configuration
+from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, \
+    AuthModeEnum, Configuration
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
@@ -151,14 +151,21 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        builder = ClientBuilder() \
-            .with_host(config.host) \
-            .with_port(config.port) \
-            .with_region(config.aws_region) \
-            .with_tls(config.ssl) \
-            .with_sparql_path(config.sparql.path)
-        if config.auth_mode == AuthModeEnum.IAM:
-            builder = builder.with_iam(get_session())
+        if ".neptune.amazonaws.com" in config.host:
+            builder = ClientBuilder() \
+                .with_host(config.host) \
+                .with_port(config.port) \
+                .with_region(config.aws_region) \
+                .with_tls(config.ssl) \
+                .with_sparql_path(config.sparql.path)
+            if config.auth_mode == AuthModeEnum.IAM:
+                builder = builder.with_iam(get_session())
+        else:
+            builder = ClientBuilder() \
+                .with_host(config.host) \
+                .with_port(config.port) \
+                .with_tls(config.ssl) \
+                .with_sparql_path(config.sparql.path)
 
         self.client = builder.build()
 
