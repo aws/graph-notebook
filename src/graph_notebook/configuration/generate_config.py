@@ -51,22 +51,34 @@ class Configuration(object):
                  sparql_section: SparqlSection = None):
         self.host = host
         self.port = port
-        self.auth_mode = auth_mode
-        self.load_from_s3_arn = load_from_s3_arn
         self.ssl = ssl
-        self.aws_region = aws_region
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
+        if ".neptune.amazonaws.com" in self.host:
+            self.is_neptune_config = True
+            self.auth_mode = auth_mode
+            self.load_from_s3_arn = load_from_s3_arn
+            self.aws_region = aws_region
+        else:
+            self.is_neptune_config = False
 
     def to_dict(self) -> dict:
-        return {
-            'host': self.host,
-            'port': self.port,
-            'auth_mode': self.auth_mode.value,
-            'load_from_s3_arn': self.load_from_s3_arn,
-            'ssl': self.ssl,
-            'aws_region': self.aws_region,
-            'sparql': self.sparql.to_dict()
-        }
+        if self.is_neptune_config:
+            return {
+                'host': self.host,
+                'port': self.port,
+                'auth_mode': self.auth_mode.value,
+                'load_from_s3_arn': self.load_from_s3_arn,
+                'ssl': self.ssl,
+                'aws_region': self.aws_region,
+                'sparql': self.sparql.to_dict()
+            }
+        else:
+            return {
+                'host': self.host,
+                'port': self.port,
+                'ssl': self.ssl,
+                'sparql': self.sparql.to_dict()
+            }
 
     def write_to_file(self, file_path=DEFAULT_CONFIG_LOCATION):
         data = self.to_dict()
@@ -76,7 +88,8 @@ class Configuration(object):
         return
 
 
-def generate_config(host, port, auth_mode, ssl, load_from_s3_arn, aws_region):
+def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
+                    aws_region: str = 'us-east-1'):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
     c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region)
     return c
@@ -93,10 +106,6 @@ if __name__ == "__main__":
     parser.add_argument("--port", help="the port to use when creating a connection", default="8182")
     parser.add_argument("--auth_mode", default=AuthModeEnum.DEFAULT.value,
                         help="type of authentication the cluster being connected to is using. Can be DEFAULT or IAM")
-
-    # TODO: this can now be removed.
-    parser.add_argument("--iam_credentials_provider", default='ROLE',
-                        help="The mode used to obtain credentials for IAM Authentication. Can be ROLE or ENV")
     parser.add_argument("--ssl",
                         help="whether to make connections to the created endpoint with ssl or not [True|False]",
                         default=True)
@@ -107,7 +116,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
-    config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl ,
+    config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl,
                              args.load_from_s3_arn, args.aws_region)
     config.write_to_file(args.config_destination)
 
