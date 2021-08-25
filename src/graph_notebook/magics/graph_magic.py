@@ -727,7 +727,7 @@ class Graph(Magics):
         parser.add_argument('-m', '--mode', choices=LOAD_JOB_MODES, default=MODE_AUTO)
         parser.add_argument('-q', '--queue-request', action='store_true', default=False)
         parser.add_argument('-d', '--dependencies', action='append', default=[])
-        parser.add_argument('-e', '--edge-ids', action='store_true', default=False)
+        parser.add_argument('-e', '--no-edge-ids', action='store_true', default=False)
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
@@ -757,6 +757,11 @@ class Graph(Magics):
             disabled=False,
             layout=widgets.Layout(width=widget_width)
         )
+
+        if source_format.value.lower() == 'opencypher':
+            ids_hbox_visibility = 'flex'
+        else:
+            ids_hbox_visibility = 'none'
 
         region_box = widgets.Text(
             value=region,
@@ -795,9 +800,10 @@ class Graph(Magics):
 
         user_provided_edge_ids = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
-            value=str(args.edge_ids).upper(),
+            value=str(not args.no_edge_ids).upper(),
             disabled=False,
-            layout=widgets.Layout(width=widget_width)
+            layout=widgets.Layout(display=ids_hbox_visibility,
+                                  width=widget_width)
         )
 
         queue_request = widgets.Dropdown(
@@ -887,10 +893,10 @@ class Graph(Magics):
                                                              display="flex", justify_content="flex-end"))
 
         dep_hbox = widgets.HBox([dep_hbox_label, dependencies])
-        
+
         ids_hbox_label = widgets.Label('User Provided Edge Ids:',
                                        layout=widgets.Layout(width=label_width,
-                                                             display="flex",
+                                                             display=ids_hbox_visibility,
                                                              justify_content="flex-end"))
 
         ids_hbox = widgets.HBox([ids_hbox_label, user_provided_edge_ids])
@@ -902,19 +908,30 @@ class Graph(Magics):
 
         poll_status_hbox = widgets.HBox([poll_status_label, poll_status])
 
-        display(source_hbox, 
-                source_format_hbox, 
-                region_hbox, 
-                arn_hbox, 
-                mode_hbox, 
-                fail_hbox, 
+        def update_edge_ids_options(change):
+            if change.new.lower() == 'opencypher':
+                ids_hbox_visibility = 'flex'
+            else:
+                ids_hbox_visibility = 'none'
+                user_provided_edge_ids.value = 'TRUE'
+            user_provided_edge_ids.layout.display = ids_hbox_visibility
+            ids_hbox_label.layout.display = ids_hbox_visibility
+
+        source_format.observe(update_edge_ids_options, names='value')
+
+        display(source_hbox,
+                source_format_hbox,
+                region_hbox,
+                arn_hbox,
+                mode_hbox,
+                fail_hbox,
                 parallelism_hbox,
-                cardinality_hbox, 
-                queue_hbox, 
-                dep_hbox, 
+                cardinality_hbox,
+                queue_hbox,
+                dep_hbox,
                 ids_hbox,
                 poll_status_hbox,
-                button, 
+                button,
                 output)
 
         def on_button_clicked(b):
