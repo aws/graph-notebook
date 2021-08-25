@@ -4,9 +4,13 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 3.0.4 (August 25, 2021)
+
 - Disabled SigV4 signing for non-IAM AWS requests ([Link to PR](https://github.com/aws/graph-notebook/pull/179))
 - Added new `--nopoll` option to `%load` to disable status polling ([Link to PR](https://github.com/aws/graph-notebook/pull/180))
 - Made Neptune specific parameters optional for `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/181))
+- Upgraded Jupyter Notebook dependency to 5.7.13 for security fix ([Link to PR](https://github.com/aws/graph-notebook/pull/182))
+- Improved usability of %load Edge IDs option ([Link to PR](https://github.com/aws/graph-notebook/pull/183))
 
 ## Release 3.0.3 (August 11, 2021)
 

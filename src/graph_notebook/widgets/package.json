@@ -1,6 +1,6 @@
 {
   "name": "graph_notebook_widgets",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "author": "amazon",
   "description": "A Custom Jupyter Library for rendering NetworkX MultiDiGraphs using vis-network",
   "dependencies": {
