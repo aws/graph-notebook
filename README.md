@@ -88,18 +88,19 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 You will need:
 
 * [Python](https://www.python.org/downloads/) 3.6.1-3.6.12
-* [Jupyter Notebook](https://jupyter.org/install) 5.7.10
+* [Jupyter Notebook](https://jupyter.org/install) 5.7.13
 * [Tornado](https://pypi.org/project/tornado/) 4.5.3
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
   *  An endpoint compatible with openCypher
+  
 ## Installation
 
 ```
 # pin specific versions of Jupyter, Tornado, and RDFLib dependencies
-pip install notebook==5.7.10
+pip install notebook==5.7.13
 pip install tornado==4.5.3
 pip install rdflib==5.0.0
 
