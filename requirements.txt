@@ -3,7 +3,7 @@ SPARQLWrapper==1.8.4
 networkx==2.4
 Jinja2==2.11.3
 jupyter
-notebook==5.7.13
+notebook==6.4.1
 ipywidgets==7.5.1
 jupyter-contrib-nbextensions
 widgetsnbextension
