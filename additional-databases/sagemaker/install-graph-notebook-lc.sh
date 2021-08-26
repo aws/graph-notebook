@@ -38,7 +38,6 @@ HOST=${GRAPH_NOTEBOOK_HOST}
 PORT=${GRAPH_NOTEBOOK_PORT}
 AUTH_MODE=${GRAPH_NOTEBOOK_AUTH_MODE}
 SSL=${GRAPH_NOTEBOOK_SSL}
-IAM_CREDENTIALS_PROVIDER=${GRAPH_NOTEBOOK_IAM_PROVIDER}
 LOAD_FROM_S3_ARN=${NEPTUNE_LOAD_FROM_S3_ROLE_ARN}
 
 if [[ ${SSL} -eq "" ]]; then
@@ -50,7 +49,6 @@ HOST:                       ${HOST}
 PORT:                       ${PORT}
 AUTH_MODE:                  ${AUTH_MODE}
 SSL:                        ${SSL}
-IAM_CREDENTIALS_PROVIDER:   ${IAM_CREDENTIALS_PROVIDER}
 AWS_REGION:                 ${AWS_REGION}"
 
 /home/ec2-user/anaconda3/envs/JupyterSystemEnv/bin/python -m graph_notebook.configuration.generate_config \
@@ -58,7 +56,6 @@ AWS_REGION:                 ${AWS_REGION}"
   --port "${PORT}" \
   --auth_mode "${AUTH_MODE}" \
   --ssl "${SSL}" \
-  --iam_credentials_provider "${IAM_CREDENTIALS_PROVIDER}" \
   --load_from_s3_arn "${LOAD_FROM_S3_ARN}" \
   --aws_region "${AWS_REGION}"
 
