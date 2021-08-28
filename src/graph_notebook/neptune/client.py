@@ -573,7 +573,7 @@ class Client(object):
 
     def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
-        if self.iam_enabled and self._auth is not None:
+        if self.iam_enabled:
             credentials = self._session.get_credentials()
             frozen_creds = credentials.get_frozen_credentials()
             SigV4Auth(frozen_creds, service, self.region).add_auth(req)
