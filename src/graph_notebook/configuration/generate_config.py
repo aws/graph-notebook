@@ -109,6 +109,9 @@ if __name__ == "__main__":
     parser.add_argument("--ssl",
                         help="whether to make connections to the created endpoint with ssl or not [True|False]",
                         default=True)
+    # TODO: Remove this after we fix the LC script in S3.
+    parser.add_argument("--iam_credentials_provider", default='ROLE',
+                        help="The mode used to obtain credentials for IAM Authentication. Can be ROLE or ENV")
     parser.add_argument("--config_destination", help="location to put generated config",
                         default=DEFAULT_CONFIG_LOCATION)
     parser.add_argument("--load_from_s3_arn", help="arn of role to use for bulk loader", default='')
