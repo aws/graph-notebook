@@ -5,9 +5,11 @@ SPDX-License-Identifier: Apache-2.0
 
 from collections import defaultdict
 import collections
+import re
 from networkx import MultiDiGraph
 from .Network import Network
 from typing import Tuple
+from graph_notebook.decorators.decorators import check_if_dict_access_regex, get_variable_injection_dict_and_indices
 
 EVENT_ADD_NODE = 'add_node'
 EVENT_ADD_NODE_DATA = 'add_node_data'
@@ -40,16 +42,46 @@ class EventfulNetwork(Network):
             graph = MultiDiGraph()
         super().__init__(graph)
 
-    def strip_and_truncate_label_and_title(self, old_label: str, max_len: int) -> Tuple[str, str]:
-        title = str(old_label).strip("[]'")
+    def strip_and_truncate_label_and_title(self, old_label, max_len: int) -> Tuple[str, str]:
+        if isinstance(old_label, list) and len(old_label) > 1:
+            title = str(old_label)
+        else:
+            title = str(old_label).strip("[]'")
         if len(title) <= max_len:
             label = title
         else:
             label = title[:max_len - 3] + '...'
         return title, label
 
+    def single_subproperty_check_and_convert_to_tuple(self, property_with_index):
+        """
+        Converts a string formatted as a dict variable with an index operator to a tuple.
+
+        Ex. "names[2]" -> (names, 2)
+        """
+        if re.match(check_if_dict_access_regex, property_with_index):
+            property_name, property_index = get_variable_injection_dict_and_indices(raw_var=property_with_index,
+                                                                                    keys_are_str=False)
+            if property_name and property_index:
+                property_indices_list = [property_name]
+                property_indices_list.extend(property_index)
+                return tuple(property_indices_list)
+        return None
+
+    def convert_multiproperties_to_tuples(self, display_params):
+        if isinstance(display_params, dict):
+            for k, v in display_params.items():
+                converted_property = self.single_subproperty_check_and_convert_to_tuple(v)
+                if converted_property:
+                    display_params[k] = converted_property
+        elif isinstance(display_params, str):
+            converted_property = self.single_subproperty_check_and_convert_to_tuple(display_params)
+            if converted_property:
+                display_params = converted_property
+        return display_params
+
     def flatten(self, d: dict, parent_key='', sep='_') -> dict:
-        """Flattens dictionaries including nested dictionaties
+        """Flattens dictionaries including nested dictionaries
 
         Args:
             d (dict): The dictionary to flatten

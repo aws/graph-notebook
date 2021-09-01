@@ -16,22 +16,30 @@ from requests import HTTPError
 
 error_template = retrieve_template("error.html")
 
-check_if_dict_access_regex = re.compile(r'^[a-zA-Z0-9_]+((\[\'.*?\'\])|(\[\".*?\"\]))+$')
+check_if_dict_access_regex = re.compile(r'^[a-zA-Z0-9_]+((\[\'.*?\'\])|(\[\".*?\"\])|(\[.*?\]))+$')
 dict_name_regex = re.compile(r'^[^\[]*')
+
+
+def get_variable_injection_dict_and_indices(raw_var: str, keys_are_str: bool = True):
+    # get the name of the dict
+    dict_name = dict_name_regex.match(raw_var).group(0)
+    # get the rest of the string, containing all the nested keys
+    keys_raw = raw_var[len(dict_name):len(raw_var)]
+    # ensure that all the keys use single quotes before we str.split
+    if keys_are_str:
+        keys_raw = keys_raw.replace('"', "'")
+        keys_list = keys_raw[2:(len(keys_raw) - 2)].split("']['")
+    else:
+        keys_list = [int(x) for x in keys_raw[1:(len(keys_raw) - 1)].split("][")]
+    return dict_name, keys_list
 
 
 def get_variable_injection_value(raw_var: str, local_ns: dict):
     # check if var string is trying to access a dict
     if re.match(check_if_dict_access_regex, raw_var):
-        # get the name of the dict
-        dict_name = dict_name_regex.match(raw_var).group(0)
+        dict_name, keys_list = get_variable_injection_dict_and_indices(raw_var)
         # outer try/except statement in use_magic_variable should catch case where dict_name isn't in local_ns
         current_dict = local_ns[dict_name]
-        # get the rest of the string, containing all the nested keys
-        keys_raw = raw_var[len(dict_name):len(raw_var)]
-        # ensure that all the keys use single quotes before we str.split
-        keys_raw = keys_raw.replace('"', "'")
-        keys_list = keys_raw[2:(len(keys_raw)-2)].split("']['")
         # loop through the nested keys/values until we get the final value
         for key in keys_list:
             current_dict = current_dict[key]
