@@ -85,6 +85,10 @@ class Client(object):
 
         self._http_session = None
 
+    def get_uri_with_port(self):
+        uri = f'{self._http_protocol}://{self.host}:{self.port}'
+        return uri
+
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
         if headers is None:
             headers = {}
@@ -176,6 +180,7 @@ class Client(object):
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
+
 
     def gremlin_status(self, query_id: str = '', include_waiting: bool = False):
         kwargs = {}
