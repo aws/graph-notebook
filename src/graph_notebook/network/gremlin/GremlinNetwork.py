@@ -112,13 +112,13 @@ class GremlinNetwork(EventfulNetwork):
         except ValueError:
             self.group_by_property = group_by_property
         try:
-            self.display_property = json.loads(display_property)
+            self.display_property = self.convert_multiproperties_to_tuples(json.loads(display_property))
         except ValueError:
-            self.display_property = display_property
+            self.display_property = self.convert_multiproperties_to_tuples(display_property)
         try:
-            self.edge_display_property = json.loads(edge_display_property)
+            self.edge_display_property = self.convert_multiproperties_to_tuples(json.loads(edge_display_property))
         except ValueError:
-            self.edge_display_property = edge_display_property
+            self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property)
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
@@ -332,6 +332,8 @@ class GremlinNetwork(EventfulNetwork):
             title = ''
             label = ''
             group = ''
+            display_is_set = False
+            group_is_set = False
             # Before looping though properties, we first search for T.label in vertex dict, then set title = T.label
             # Otherwise, we will hit KeyError if we don't iterate through T.label first to set the title
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
@@ -344,22 +346,48 @@ class GremlinNetwork(EventfulNetwork):
                 if str(k) == T_ID:
                     node_id = str(v[k])
                 properties[k] = str(v[k]) if isinstance(v[k], dict) else v[k]
-                if isinstance(self.group_by_property, dict):
-                    try:
-                        if str(k) == self.group_by_property[title]:
-                            group = str(v[k])
-                    except KeyError:
-                        pass
-                elif str(k) == self.group_by_property:
-                    group = str(v[k])
-                if isinstance(self.display_property, dict):
-                    try:
-                        if str(k) == self.display_property[title]:
-                            title, label = self.strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
-                    except KeyError:
-                        continue
-                elif str(k) == self.display_property:
-                    title, label = self.strip_and_truncate_label_and_title(str(v[k]), self.label_max_length)
+                if not group_is_set:
+                    if isinstance(self.group_by_property, dict):
+                        try:
+                            if str(k) == self.group_by_property[title]:
+                                group = str(v[k])
+                                group_is_set = True
+                        except KeyError:
+                            pass
+                    elif str(k) == self.group_by_property:
+                        group = str(v[k])
+                        group_is_set = True
+                if not display_is_set:
+                    if isinstance(self.display_property, dict):
+                        try:
+                            if isinstance(self.display_property[title], tuple) and isinstance(v[k], list):
+                                if str(k) == self.display_property[title][0]:
+                                    try:
+                                        title, label = self.strip_and_truncate_label_and_title(
+                                            v[k][self.display_property[title][1]], self.label_max_length)
+                                        display_is_set = True
+                                    except IndexError:
+                                        logger.debug(f"Failed to index into sub-property for: {k} and "
+                                                     f"{self.display_property[title]}")
+                                        continue
+                            elif str(k) == self.display_property[title]:
+                                title, label = self.strip_and_truncate_label_and_title(v[k], self.label_max_length)
+                                display_is_set = True
+                        except KeyError as e:
+                            continue
+                    elif isinstance(self.display_property, tuple):
+                        if str(k) == self.display_property[0] and isinstance(v[k], list):
+                            try:
+                                title, label = self.strip_and_truncate_label_and_title(
+                                    v[k][self.display_property[1]], self.label_max_length)
+                                display_is_set = True
+                            except IndexError:
+                                logger.debug(f"Failed to index into sub-property for: {k} and "
+                                             f"{self.display_property[0]}")
+                                continue
+                    elif str(k) == self.display_property:
+                        title, label = self.strip_and_truncate_label_and_title(v[k], self.label_max_length)
+                        display_is_set = True
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
@@ -410,6 +438,7 @@ class GremlinNetwork(EventfulNetwork):
             properties = {}
             edge_id = ''
             edge_label = ''
+            display_is_set = False
             if T.label in edge.keys():
                 edge_label = str(edge[T.label])
             for k in edge:
@@ -419,15 +448,36 @@ class GremlinNetwork(EventfulNetwork):
                     properties[k] = get_id(edge[k])
                 else:
                     properties[k] = edge[k]
-                if self.edge_display_property is not T_LABEL:
+                if self.edge_display_property is not T_LABEL and not display_is_set:
                     if isinstance(self.edge_display_property, dict):
                         try:
-                            if str(k) == self.edge_display_property[edge_label]:
+                            if isinstance(self.edge_display_property[edge_label], tuple) and isinstance(edge[k],list):
+                                if str(k) == self.edge_display_property[edge_label][0]:
+                                    try:
+                                        edge_label = str(edge[k][self.edge_display_property[edge_label][1]])
+                                        display_is_set = True
+                                    except (TypeError, IndexError) as e:
+                                        logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
+                                                     f"{self.edge_display_property[edge_label]}")
+                                        continue
+                            elif str(k) == self.edge_display_property[edge_label]:
                                 edge_label = str(edge[k])
+                                display_is_set = True
                         except KeyError:
                             continue
+                    elif isinstance(self.edge_display_property, tuple):
+                        if str(k) == self.edge_display_property[0] and isinstance(edge[k], list):
+                            try:
+                                edge_label = str(edge[k][self.edge_display_property[1]])
+                                display_is_set = True
+                            except IndexError:
+                                logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
+                                             f"{self.edge_display_property[0]}")
+                                continue
                     elif str(k) == self.edge_display_property:
                         edge_label = str(edge[k])
+                        display_is_set = True
+
             data['properties'] = properties
             self.add_edge(from_id, to_id, edge_id, edge_label, data)
         else:

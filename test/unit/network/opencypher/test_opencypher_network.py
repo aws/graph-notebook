@@ -707,6 +707,30 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['label'], 'SEA')
         self.assertEqual(node1['title'], 'SEA')
 
+    def test_set_vertex_label_property_string_apostrophe_value(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "S'E'A"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='code')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], "S'E'A")
+        self.assertEqual(node1['title'], "S'E'A")
+
     def test_set_vertex_label_property_string_id(self):
         res = {
             "results": [
@@ -802,6 +826,30 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'SEA')
         self.assertEqual(node1['title'], 'SEA')
+
+    def test_set_vertex_label_property_json_apostrophe_value(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "S'E'A"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], "S'E'A")
+        self.assertEqual(node1['title'], "S'E'A")
 
     def test_set_vertex_label_property_invalid_json(self):
         res = {
@@ -994,6 +1042,305 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node2['label'], 'United ...')
         self.assertEqual(node2['title'], 'United States')
 
+    def test_set_vertex_label_property_string_and_multiproperty_access(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='code[1]')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'SJC')
+        self.assertEqual(node1['title'], 'SJC')
+
+    def test_set_vertex_label_property_string_and_multiproperty_access_no_property_match(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='distance[1]')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_string_and_multiproperty_access_non_multiproperty(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='code[1]')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_string_and_multiproperty_access_with_bad_index(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='code[2]')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_string_and_non_multiproperty_access_on_multiproperty_value(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='code', label_max_length=50)
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], "['SEA', 'SJC']")
+        self.assertEqual(node1['title'], "['SEA', 'SJC']")
+
+    def test_set_vertex_label_property_json_and_multiproperty_access(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code[1]"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'SJC')
+        self.assertEqual(node1['title'], 'SJC')
+
+    def test_set_vertex_label_property_json_and_non_multiproperty_access_on_multiproperty_value(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code"}', label_max_length=50)
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], "['SEA', 'SJC']")
+        self.assertEqual(node1['title'], "['SEA', 'SJC']")
+
+    def test_set_vertex_label_property_json_and_multiproperty_access_on_non_multiproperty(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code[1]"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_json_and_multiproperty_access_no_match(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"distance[1]"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_json_and_multiproperty_access_with_bad_index(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": ["SEA", "SJC"]
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"code[2]"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_multiple_vertex_label_multiproperty(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "2",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Anchorage Ted Stevens",
+                                "lon": -149.996002197266,
+                                "runways": 3,
+                                "type": "airport",
+                                "country": "US",
+                                "region": "US-AK",
+                                "lat": 61.1744003295898,
+                                "elev": 151,
+                                "city": "Anchorage",
+                                "icao": "PANC",
+                                "code": "ANC",
+                                "longest": 12400,
+                                'regionality': ['domestic', 'international']
+                            }
+                        },
+                        {
+                            "~id": "53617",
+                            "~entityType": "relationship",
+                            "~start": "3670",
+                            "~end": "2",
+                            "~type": "contains"
+                        },
+                        {
+                            "~id": "3670",
+                            "~entityType": "node",
+                            "~labels": [
+                                "country"
+                            ],
+                            "~properties": {
+                                "desc": "United States",
+                                "code": "US",
+                                "alliances": ['NATO', 'UN']
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"regionality[0]","country":"alliances[0]"}')
+        gn.add_results(path)
+        node1 = gn.graph.nodes.get('2')
+        node2 = gn.graph.nodes.get('3670')
+        self.assertEqual(node1['label'], 'domestic')
+        self.assertEqual(node1['title'], 'domestic')
+        self.assertEqual(node2['label'], 'NATO')
+        self.assertEqual(node2['title'], 'NATO')
+
     def test_add_edge_without_property(self):
         path = {
             "results": [
@@ -1128,6 +1475,265 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], '792')
 
+    def test_add_edge_with_property_string_apostrophe_value(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": "7'9'2"
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='dist')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], "7'9'2")
+
+    def test_add_edge_with_property_string_and_multiproperty_access(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='endpoints[0]')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], '365')
+
+    def test_add_edge_with_property_string_and_multiproperty_access_no_property_match(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='callsigns[0]')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
+    def test_add_edge_with_property_string_and_multiproperty_access_with_non_multiproperty(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='dist[0]')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
+    def test_add_edge_with_property_string_and_multiproperty_access_with_bad_index(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='endpoints[2]')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
     def test_add_edge_with_property_string_invalid(self):
         path = {
             "results": [
@@ -1261,6 +1867,73 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], '792')
+
+    def test_add_edge_with_property_json_apostrophe_value(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": "7'9'2"
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"dist"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], "7'9'2")
 
     def test_add_edge_with_property_invalid_json(self):
         path = {
@@ -1459,6 +2132,246 @@ class TestOpenCypherNetwork(unittest.TestCase):
         }
 
         gn = OCNetwork(edge_display_property='{"route":"trips"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
+    def test_add_edge_with_property_json_and_multiproperty_access(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"endpoints[0]"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], '365')
+
+    def test_add_edge_with_property_json_and_multiproperty_access_display_param_has_no_index(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"endpoints"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], "['365', '136']")
+
+    def test_add_edge_with_property_json_and_multiproperty_access_with_non_multiproperty(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"dist[0]"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
+    def test_add_edge_with_property_json_and_multiproperty_access_no_matching_property(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"callsigns[0]"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+
+    def test_add_edge_with_property_json_and_multiproperty_access_with_bad_index(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"endpoints[2]"}')
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'route')
@@ -1712,6 +2625,133 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_path = gn.graph.get_edge_data('365', '367', '30604')
         self.assertEqual(edge_route['label'], '792')
         self.assertEqual(edge_path['label'], '30604')
+
+    def test_add_multiple_edge_with_property_json_and_multiproperties(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "foobar": ['foo', 'bar']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                },
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30604",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "367",
+                            "~type": "path",
+                            "~properties": {
+                                "dist": 911,
+                                "barfoo": ["bar", "foo"]
+                            },
+                        },
+                        {
+                            "~id": "367",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "General Mariano Escobedo International Airport",
+                                "lon": -100.107002258,
+                                "runways": 1,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-NLE",
+                                "lat": 25.7784996033,
+                                "elev": 1278,
+                                "city": "Monterrey",
+                                "icao": "MMMY",
+                                "code": "MTY",
+                                "longest": 5909
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"foobar[0]","path":"barfoo[0]"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        edge_path = gn.graph.get_edge_data('365', '367', '30604')
+        self.assertEqual(edge_route['label'], 'foo')
+        self.assertEqual(edge_path['label'], 'bar')
 
 
 if __name__ == '__main__':
