@@ -575,7 +575,15 @@ class Client(object):
         req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
         if self.iam_enabled:
             credentials = self._session.get_credentials()
-            frozen_creds = credentials.get_frozen_credentials()
+            try:
+                frozen_creds = credentials.get_frozen_credentials()
+            except AttributeError:
+                print("Could not find valid IAM credentials in any the following locations:\n")
+                print("env, assume-role, assume-role-with-web-identity, sso, shared-credential-file, custom-process, "
+                      "config-file, ec2-credentials-file, boto-config, container-role, iam-role\n")
+                print("Go to https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html for more "
+                      "details on configuring your IAM credentials.")
+                return req
             SigV4Auth(frozen_creds, service, self.region).add_auth(req)
             prepared_iam_req = req.prepare()
             return prepared_iam_req
