@@ -21,10 +21,20 @@ HOME_DIRECTORY = os.path.expanduser("~")
 
 
 def signed_request(method, url, data=None, params=None, headers=None, service=None):
-    creds = boto3.Session().get_credentials().get_frozen_credentials()
     request = AWSRequest(method=method, url=url, data=data,
                          params=params, headers=headers)
-    SigV4Auth(creds, service, boto3.Session().region_name).add_auth(request)
+    session = boto3.Session()
+    credentials = session.get_credentials()
+    try:
+        frozen_creds = credentials.get_frozen_credentials()
+    except AttributeError:
+        print("Could not find valid IAM credentials in any the following locations:\n")
+        print("env, assume-role, assume-role-with-web-identity, sso, shared-credential-file, custom-process, "
+              "config-file, ec2-credentials-file, boto-config, container-role, iam-role\n")
+        print("Go to https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html for more "
+              "details on configuring your IAM credentials.")
+        return request
+    SigV4Auth(frozen_creds, service, boto3.Session().region_name).add_auth(request)
     return requests.request(method=method, url=url, headers=dict(request.headers), data=data)
 
 
