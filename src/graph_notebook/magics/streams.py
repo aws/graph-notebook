@@ -1,53 +1,67 @@
 import re
 import json
-# TODO: KRL
-import time
 import urllib.request
 import urllib.error
 import ipywidgets as widgets
 from IPython.display import display, HTML, clear_output
 
+from datetime import datetime
+
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = commit_num
         self.op_num = op_num
+        self.nudge = True
     
     def update(self, event_id):
         if event_id is not None:
+            if event_id.commit_num != self.commit_num:
+                self.nudge = True
             self.commit_num = event_id.commit_num
             self.op_num = event_id.op_num
-        
+            
+            
+    def commit_num_with_nudge(self):
+        if self.nudge:
+            self.nudge = False 
+            return self.commit_num + 0.1
+        else: 
+            self.nudge = True 
+            return self.commit_num
+            
+    
+
 class StreamViewer:
     
     def __init__(self,uri_with_port,language):
         self.uri_with_port = uri_with_port
         self.language = language
-        self.last_event_id = EventId()
+        self.last_displayed_event_id = None
         self.dropdown = widgets.Dropdown(options=['gremlin', 'sparql'], value=language, disabled=False)
         self.dropdown.layout.width = '10%'
         self.dropdown.observe(self.on_dropdown_changed)
-        self.slider = widgets.IntSlider(continuous_update=False, readout=False)
+        self.slider = widgets.FloatSlider(continuous_update=False, readout=False, step=1.0)
         self.next_button = widgets.Button(description='Next', tooltip='Next')
         self.next_button.layout.width = '10%'
         self.next_button.on_click(self.on_next)
         self.ui = widgets.HBox([self.slider, self.next_button, self.dropdown])
         self.out = widgets.interactive_output(self.on_slider_changed, {'commit_num': self.slider})
-
+        self.iterator = 'AT_SEQUENCE_NUMBER'
+        #TODO: KRL
+        self.display_count = 0
+        
     def stream_uri(self):
         self.language = self.dropdown.value
         uri = f'{self.uri_with_port}/{self.language.lower()}/stream/'
         return uri
     
-    def get_events(self, commit_num, op_num, iterator):
+    def get_events(self, event_id, iterator):
         try:
-            url = '{}?iteratorType={}&commitNum={}&opNum={}'.format(self.stream_uri(), iterator, commit_num, op_num)
-            # TODO: KRL
-            #print(url)
+            url = '{}?iteratorType={}&commitNum={}&opNum={}'.format(self.stream_uri(), iterator, event_id.commit_num, event_id.op_num)
+
             req = urllib.request.Request(url)
             response = urllib.request.urlopen(req)
             jsonpayload = response.read().decode('utf8')
-            # TODO: KRL
-            #print(jsonpayload)
             jsonresponse = json.loads(jsonpayload)
             
             records = jsonresponse['records']
@@ -85,6 +99,9 @@ class StreamViewer:
                
             html += '</table></body></html>'
             display(HTML(html))
+            #TODO: KRL
+            self.display_count += 1
+            print(self.display_count)
         
     def parse_last_commit_num(self, msg):
         results = re.findall("\d+", msg)      
@@ -113,56 +130,44 @@ class StreamViewer:
             response = urllib.request.urlopen(req)
             jsonresponse = json.loads(response.read().decode('utf8'))
             c = jsonresponse['lastEventId']['commitNum']
-            # TODO: KRL
-            #print(f'Commit num computed is {c}')
             return c
         except urllib.error.HTTPError as e:
             return None
             
-    def refresh(self, commit_num, op_num, iterator):
-        (records, first_event, last_event) = self.get_events(commit_num, op_num, iterator)
-        self.show_records(records)
-        
-        self.last_event_id.update(last_event)
+    def refresh(self, event_id, iterator):
+        if not self.last_displayed_event_id:
+            self.last_displayed_event_id = EventId(self.slider.min, 1)
+        (records, first_event, last_event) = self.get_events(event_id, iterator)
+        self.show_records(records)        
+        self.last_displayed_event_id.update(last_event)
         self.update_slider_min_max()
 
+            
     def on_slider_changed(self, commit_num):
-        # TODO: KRL
-        print(f'slider_changed commit_num {commit_num}')
-        print(f'slider_changed last_event {self.last_event_id.commit_num:}')
-        print(f'on_slider_changed min and max {self.slider.min} {self.slider.max}')
-        if commit_num == self.last_event_id.commit_num:
-            self.refresh(commit_num, self.last_event_id.op_num, 'AT_SEQUENCE_NUMBER')
+        if self.iterator == 'AFTER_SEQUENCE_NUMBER':
+            self.refresh(self.last_displayed_event_id, self.iterator)
         else:
-            self.refresh(commit_num, 1, 'AT_SEQUENCE_NUMBER')
+            self.refresh(EventId(int(commit_num), 1), self.iterator)
     
     def on_next(self, _):
-        self.slider.value = self.last_event_id.commit_num
+       self.iterator = 'AFTER_SEQUENCE_NUMBER'
+       self.slider.value = self.last_displayed_event_id.commit_num_with_nudge()
+       self.iterator = 'AT_SEQUENCE_NUMBER'
         
     def on_dropdown_changed(self, changes):
-        self.update_slider_min_max()
-        if self.slider.min == self.slider.max == 0:
-            self.out.clear_output()
-
-
-    # TODO: KRL
-    #def update_slider_min_max(self):
-    #    last = self.get_last_commit_num()
-    #    first = self.get_first_commit_num()
-    #    print(f'Time {time.time()} First {first}  Last {last}')
-    #    
-    #    if last is None and first is None:
-    #        self.slider.min = 0
-    #        self.slider.max = 0
-    #    else:
-    #        self.slider.max = last
-    #        self.slider.min = first
-
+        if changes['name'] == 'value':
+            self.update_slider_min_max()
+            if self.slider.min == self.slider.max == 0:
+                self.out.clear_output()
+            else:
+                self.iterator = 'AT_SEQUENCE_NUMBER'
+                self.last_displayed_event_id.update(EventId(self.slider.min, 1))
+                self.slider.value = self.last_displayed_event_id.commit_num_with_nudge()
+            
     def update_slider_min_max(self):
         last = int(self.get_last_commit_num())
         first = int(self.get_first_commit_num())
-        # TODO: KRL
-        #print(f'Time {time.time()} First {first}  Last {last}')
+
         old_min = self.slider.min
         
         if last is None and first is None:
@@ -171,14 +176,13 @@ class StreamViewer:
         elif last < old_min:
             self.slider.min = first
             self.slider.max = last               
-            # TODO: KRL
-            #print('path A')
         else:
             self.slider.max = last
             self.slider.min = first
-            # TODO: KRL
-            #print('path B')
-  
+            
+            
     def show(self):
         self.update_slider_min_max()
         display(self.ui, self.out)
+
+        

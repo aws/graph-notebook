@@ -30,7 +30,7 @@ from graph_notebook.configuration.generate_config import generate_default_config
     AuthModeEnum, Configuration
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
-#from graph_notebook.magics.streams import StreamViewer
+from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV
 from graph_notebook.network import SPARQLNetwork
@@ -199,7 +199,6 @@ class Graph(Magics):
 
     @line_magic
     def stream_viewer(self,line):
-        from graph_notebook.magics.streams import StreamViewer
         if line == '':
             print('A parameter of gremlin or sparql is required')
             return
