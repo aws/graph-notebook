@@ -42,7 +42,8 @@ class StreamClient:
             last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
             
             return (records, first_event, last_event)
-        except urllib.error.HTTPError as e:
+        #except urllib.error.HTTPError as e:
+        except:
             return ([], None, None)
         
     def __parse_last_commit_num(self, msg):
@@ -58,16 +59,19 @@ class StreamClient:
         commit_num = 1000000000
         
         while True:
-            try:
-                req = urllib.request.Request('{}?commitNum={}&limit=1'.format(self.__stream_uri(language), commit_num))
-                response = urllib.request.urlopen(req)
-                jsonresponse = json.loads(response.read().decode('utf8'))
+            #try:
+                #req = urllib.request.Request('{}?commitNum={}&limit=1'.format(self.__stream_uri(language), commit_num))
+                #response = urllib.request.urlopen(req)
+                #jsonresponse = json.loads(response.read().decode('utf8'))
+            jsonresponse = self.wb_client.stream(self.__stream_uri(language),
+                                                 commitNum = commit_num,
+                                                 limit = 1)
                 
-                commit_num = commit_num + 1000000000
+            commit_num = commit_num + 1000000000
                 
-            except urllib.error.HTTPError as e:
-                
-                msg = json.loads(e.read().decode('utf8'))['detailedMessage']
+            #except urllib.error.HTTPError as e:
+            if  jsonresponse['code'] == 'StreamRecordsNotFoundException':    
+                msg = jsonresponse['detailedMessage']
                 return self.__parse_last_commit_num(msg)
             
     def get_first_commit_num(self, language):
