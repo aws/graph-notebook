@@ -1317,7 +1317,6 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
-    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
