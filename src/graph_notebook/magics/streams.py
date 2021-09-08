@@ -54,6 +54,8 @@ class StreamClient:
         uri = f'{self.uri_with_port}/{language.lower()}/stream/'
         return uri
     
+    # TODO: Revisit this logic if the Neptune Stream API adds support for querying this
+    # directly.
     def get_last_commit_num(self, language):
            
         commit_num = 1000000000
