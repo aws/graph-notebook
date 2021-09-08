@@ -1,11 +1,10 @@
-
 import re
 import json
 import urllib.request
 import urllib.error
 import ipywidgets as widgets
 from IPython.display import display, HTML, clear_output
-
+from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = int(commit_num)
@@ -18,31 +17,26 @@ class EventId:
                 self.nudge = True
             self.commit_num = event_id.commit_num
             self.op_num = event_id.op_num
-            
-            
-    def commit_num_with_nudge(self):
-        if self.nudge:
-            self.nudge = False 
-            return self.commit_num + 0.1
-        else: 
-            self.nudge = True 
-            return self.commit_num
 
 class StreamClient:
     
-    def __init__(self, uri_with_port):
+    def __init__(self, wb_client, uri_with_port):
+        self.wb_client = wb_client
         self.uri_with_port = uri_with_port
     
     
     def get_events(self, language, event_id, iterator):
         try:
-            url = '{}?iteratorType={}&commitNum={}&opNum={}'.format(self.__stream_uri(language), iterator, event_id.commit_num, event_id.op_num)
+            #url = '{}?iteratorType={}&commitNum={}&opNum={}'.format(self.__stream_uri(language), iterator, event_id.commit_num, event_id.op_num)
+            #
+            #req = urllib.request.Request(url)
+            #response = urllib.request.urlopen(req)
+            #jsonpayload = response.read().decode('utf8')
+            jsonresponse = self.wb_client.stream(self.__stream_uri(language),
+                                                 iteratorType = iterator,
+                                                 commitNum = event_id.commit_num,
+                                                 opNum = event_id.op_num)
 
-            req = urllib.request.Request(url)
-            response = urllib.request.urlopen(req)
-            jsonpayload = response.read().decode('utf8')
-            jsonresponse = json.loads(jsonpayload)
-            
             records = jsonresponse['records']
             first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
             last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
@@ -88,8 +82,8 @@ class StreamClient:
 
 class StreamViewer:
     
-    def __init__(self, uri_with_port, language):
-        self.stream_client = StreamClient(uri_with_port)
+    def __init__(self, wb_client, uri_with_port, language):
+        self.stream_client = StreamClient(wb_client, uri_with_port)
         self.last_displayed_event_id = EventId()
         self.slider = widgets.FloatSlider(continuous_update=False, readout=False, step=1.0)
         self.slider.observe(self.on_slider_changed)

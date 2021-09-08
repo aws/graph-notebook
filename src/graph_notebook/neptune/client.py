@@ -264,15 +264,13 @@ class Client(object):
         driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
         return driver
 
-    def stream(self, url, **kwargs)  -> requests.Response: 
-        # TODO: Build params
+    def stream(self, url, **kwargs) -> requests.Response: 
         params = {}
         for k, v in kwargs.items():
             params[k] = v
         req = self._prepare_request('GET', url, params=params,data='')
         res = self._http_session.send(req)
-        return res
-    end
+        return res.json()
 
     def status(self) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/status'

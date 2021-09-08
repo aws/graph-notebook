@@ -212,7 +212,7 @@ class Graph(Magics):
         #TODO: Remove the print before PR
         print(uri)
 
-        viewer = StreamViewer(uri,line)
+        viewer = StreamViewer(self.client,uri,line)
         viewer.show()
         
     @line_magic
