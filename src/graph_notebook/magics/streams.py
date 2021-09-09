@@ -36,12 +36,16 @@ class StreamClient:
                                                  iteratorType = iterator,
                                                  commitNum = event_id.commit_num,
                                                  opNum = event_id.op_num)
-
-            records = jsonresponse['records']
-            first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
-            last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
-            
-            return (records, first_event, last_event)
+                                                 
+            if 'records' in jsonresponse:
+                records = jsonresponse['records']
+                first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
+                last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
+                
+                return (records, first_event, last_event)
+            else:
+                return ([], None, None)
+                
         #except urllib.error.HTTPError as e:
         except:
             return ([], None, None)
@@ -127,14 +131,17 @@ class StreamViewer:
             language = changes['new']
             self.init_display(language)
         
+
+
     def on_next(self, _):
-        if self.slider.value < self.slider.max:
+        if self.last_displayed_event_id.commit_num <= self.slider.max:
             language = self.dropdown.value
-            self.update_slider_min_max_values(language)
-            self.slider.value = self.last_displayed_event_id.commit_num
             (records, first_event, last_event) = self.stream_client.get_events(language, self.last_displayed_event_id, STREAM_AFTER)
-            self.show_records(records)
-            self.last_displayed_event_id.update(last_event)
+            if records:
+                self.update_slider_min_max_values(language)
+                self.slider.value = self.last_displayed_event_id.commit_num
+                self.show_records(records)
+                self.last_displayed_event_id.update(last_event)
             
     def init_display(self, language):
         self.update_slider_min_max_values(language)
