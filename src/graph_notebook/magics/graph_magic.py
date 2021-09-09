@@ -196,23 +196,23 @@ class Graph(Magics):
             print(json.dumps(config_dict, indent=2))
 
         return self.graph_notebook_config
+    
 
     @line_magic
     def stream_viewer(self,line):
-        if line == '':
-            print('A parameter of gremlin or sparql is required')
-            return
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', type=str.lower, nargs='?', default='gremlin',
+                            help='language  (default=gremlin) [gremlin|sparql]',
+                            choices = ['gremlin','sparql'])
 
-        if line.upper() in ['GREMLIN','SPARQL']:
-            uri = self.client.get_uri_with_port()
-        else:
-            print("The language must be gremlin or sparql")
-            return
+        parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
-        #TODO: Remove the print before PR
-        print(uri)
-
-        viewer = StreamViewer(self.client,uri,line)
+        args = parser.parse_args(line.split())
+        
+        language = args.language
+        limit = args.limit
+        uri = self.client.get_uri_with_port()
+        viewer = StreamViewer(self.client,uri,language,limit=limit)
         viewer.show()
         
     @line_magic

@@ -1,28 +1,35 @@
+
 import re
 import json
 import urllib.request
 import urllib.error
 import ipywidgets as widgets
+import queue
 from IPython.display import display, HTML, clear_output
 from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = int(commit_num)
         self.op_num = int(op_num)
-        self.nudge = True
+        
     
     def update(self, event_id):
         if event_id is not None:
-            if event_id.commit_num != self.commit_num:
-                self.nudge = True
             self.commit_num = event_id.commit_num
             self.op_num = event_id.op_num
+            
+    def duplicate(self):
+        return EventId(self.commit_num, self.op_num)
+    
+    def value(self):
+        return '{}/{}'.format(self.commit_num, self.op_num)
 
 class StreamClient:
     
-    def __init__(self, wb_client, uri_with_port):
+    def __init__(self, wb_client, uri_with_port, limit=10):
         self.wb_client = wb_client
         self.uri_with_port = uri_with_port
+        self.limit=limit
     
     
     def get_events(self, language, event_id, iterator):
@@ -35,13 +42,14 @@ class StreamClient:
             jsonresponse = self.wb_client.stream(self.__stream_uri(language),
                                                  iteratorType = iterator,
                                                  commitNum = event_id.commit_num,
-                                                 opNum = event_id.op_num)
+                                                 opNum = event_id.op_num,
+                                                 limit=self.limit)
                                                  
             if 'records' in jsonresponse:
                 records = jsonresponse['records']
                 first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
                 last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
-                
+
                 return (records, first_event, last_event)
             else:
                 return ([], None, None)
@@ -96,19 +104,24 @@ class StreamClient:
 
 class StreamViewer:
     
-    def __init__(self, wb_client, uri_with_port, language):
-        self.stream_client = StreamClient(wb_client, uri_with_port)
+    def __init__(self, wb_client, uri_with_port, language, limit=10):
+        self.stream_client = StreamClient(wb_client, uri_with_port, limit=limit)
+        self.first_displayed_event_id = EventId()
         self.last_displayed_event_id = EventId()
+        self.history = None
         self.slider = widgets.FloatSlider(continuous_update=False, readout=False, step=1.0)
         self.slider.observe(self.on_slider_changed)
         self.next_button = widgets.Button(description='Next', tooltip='Next')
         self.next_button.layout.width = '10%'
         self.next_button.on_click(self.on_next)
+        self.back_button = widgets.Button(description='Back', tooltip='Back', disabled=True)
+        self.back_button.layout.width = '10%'
+        self.back_button.on_click(self.on_back)
         self.dropdown = widgets.Dropdown(options=['gremlin', 'sparql'], value=language, disabled=False)
         self.dropdown.layout.width = '10%'
         self.dropdown.observe(self.on_dropdown_changed)
         self.out = widgets.Output()
-        self.ui = widgets.HBox([self.slider, self.next_button, self.dropdown])
+        self.ui = widgets.HBox([self.slider, self.back_button, self.next_button, self.dropdown])
         
     def show(self):
         language = self.dropdown.value
@@ -124,6 +137,7 @@ class StreamViewer:
             self.update_slider_min_max_values(self.dropdown.value)
             (records, first_event, last_event) = self.stream_client.get_events(self.dropdown.value, EventId(new_value, 1), STREAM_AT)
             self.show_records(records)
+            self.first_displayed_event_id.update(first_event)
             self.last_displayed_event_id.update(last_event)   
             
     def on_dropdown_changed(self, changes):
@@ -138,16 +152,40 @@ class StreamViewer:
             language = self.dropdown.value
             (records, first_event, last_event) = self.stream_client.get_events(language, self.last_displayed_event_id, STREAM_AFTER)
             if records:
+                self.history.put(self.first_displayed_event_id.duplicate())
+                self.back_button.disabled = False
                 self.update_slider_min_max_values(language)
-                self.slider.value = self.last_displayed_event_id.commit_num
+                self.slider.value = first_event.commit_num
                 self.show_records(records)
+                self.first_displayed_event_id.update(first_event)
                 self.last_displayed_event_id.update(last_event)
+                
+    def on_back(self, _):
+        if self.history.empty():
+            return
+        
+        event_id = self.history.get()
+
+        if self.history.empty():
+            self.back_button.disabled = True
+        
+        if event_id:
+            language = self.dropdown.value
+            (records, first_event, last_event) = self.stream_client.get_events(language, event_id, STREAM_AT)
+            self.update_slider_min_max_values(language)
+            self.slider.value = first_event.commit_num
+            self.show_records(records)
+            self.first_displayed_event_id.update(first_event)
+            self.last_displayed_event_id.update(last_event)
             
     def init_display(self, language):
+        self.history = queue.LifoQueue(100)
+        self.back_button.disabled = True
         self.update_slider_min_max_values(language)
         self.slider.value = self.slider.min
         (records, first_event, last_event) = self.stream_client.get_events(language, EventId(self.slider.min, 1), STREAM_AT)
         self.show_records(records)
+        self.first_displayed_event_id.update(first_event)
         self.last_displayed_event_id.update(last_event)
        
 
