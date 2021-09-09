@@ -86,8 +86,8 @@ class StreamClient:
                                                  limit = 1)
             c = jsonresponse['lastEventId']['commitNum']
             return c
-         #except urllib.error.HTTPError as e:
-         except:
+        #except urllib.error.HTTPError as e:
+        except:
             return None
 
 class StreamViewer:
