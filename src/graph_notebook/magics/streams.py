@@ -4,7 +4,7 @@ import urllib.request
 import urllib.error
 import ipywidgets as widgets
 from IPython.display import display, HTML, clear_output
-from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER
+from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = int(commit_num)
@@ -72,18 +72,22 @@ class StreamClient:
             commit_num = commit_num + 1000000000
                 
             #except urllib.error.HTTPError as e:
-            if  jsonresponse['code'] == 'StreamRecordsNotFoundException':    
+            if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
                 msg = jsonresponse['detailedMessage']
                 return self.__parse_last_commit_num(msg)
             
     def get_first_commit_num(self, language):
         try:
-            req = urllib.request.Request('{}?iteratorType=TRIM_HORIZON&limit=1'.format(self.__stream_uri(language)))
-            response = urllib.request.urlopen(req)
-            jsonresponse = json.loads(response.read().decode('utf8'))
+            #req = urllib.request.Request('{}?iteratorType=TRIM_HORIZON&limit=1'.format(self.__stream_uri(language)))
+            #response = urllib.request.urlopen(req)
+            #jsonresponse = json.loads(response.read().decode('utf8'))
+            jsonresponse = self.wb_client.stream(self.__stream_uri(language),
+                                                 iteratorType = STREAM_TRIM,
+                                                 limit = 1)
             c = jsonresponse['lastEventId']['commitNum']
             return c
-        except urllib.error.HTTPError as e:
+         #except urllib.error.HTTPError as e:
+         except:
             return None
 
 class StreamViewer:
@@ -107,11 +111,14 @@ class StreamViewer:
         display(self.ui, self.out)
         self.init_display(language)
      
+    # Only when the slider is manipulated, fetch the relevant stream contents.
+    # This method will not make updates if the slider was changed elsewhere by
+    # our code. This avoids unnecessary processing.
     def on_slider_changed(self, changes):
         if changes['name'] == '_property_lock' and changes['new']:
             new_value = changes['new']['value'] 
             self.update_slider_min_max_values(self.dropdown.value)
-            (records, first_event, last_event) = self.stream_client.get_events(self.dropdown.value, EventId(new_value, 1), 'AT_SEQUENCE_NUMBER')
+            (records, first_event, last_event) = self.stream_client.get_events(self.dropdown.value, EventId(new_value, 1), STREAM_AT)
             self.show_records(records)
             self.last_displayed_event_id.update(last_event)   
             
@@ -125,14 +132,14 @@ class StreamViewer:
             language = self.dropdown.value
             self.update_slider_min_max_values(language)
             self.slider.value = self.last_displayed_event_id.commit_num
-            (records, first_event, last_event) = self.stream_client.get_events(language, self.last_displayed_event_id, 'AFTER_SEQUENCE_NUMBER')
+            (records, first_event, last_event) = self.stream_client.get_events(language, self.last_displayed_event_id, STREAM_AFTER)
             self.show_records(records)
             self.last_displayed_event_id.update(last_event)
             
     def init_display(self, language):
         self.update_slider_min_max_values(language)
         self.slider.value = self.slider.min
-        (records, first_event, last_event) = self.stream_client.get_events(language, EventId(self.slider.min, 1), 'AT_SEQUENCE_NUMBER')
+        (records, first_event, last_event) = self.stream_client.get_events(language, EventId(self.slider.min, 1), STREAM_AT)
         self.show_records(records)
         self.last_displayed_event_id.update(last_event)
        

@@ -71,6 +71,7 @@ SPARQL_ACTION = 'sparql'
 STREAM_AT = 'AT_SEQUENCE_NUMBER'
 STREAM_AFTER = 'AFTER_SEQUENCE)NUMBER'
 STREAM_TRIM = 'TRIM_HORIZON'
+STREAM_EXCEPTION_NOT_FOUND = 'StreamRecordsNotFoundException'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
