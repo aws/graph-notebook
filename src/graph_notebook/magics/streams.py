@@ -1,4 +1,3 @@
-
 import re
 import json
 import urllib.request
@@ -34,11 +33,6 @@ class StreamClient:
     
     def get_events(self, language, event_id, iterator):
         try:
-            #url = '{}?iteratorType={}&commitNum={}&opNum={}'.format(self.__stream_uri(language), iterator, event_id.commit_num, event_id.op_num)
-            #
-            #req = urllib.request.Request(url)
-            #response = urllib.request.urlopen(req)
-            #jsonpayload = response.read().decode('utf8')
             jsonresponse = self.wb_client.stream(self.__stream_uri(language),
                                                  iteratorType = iterator,
                                                  commitNum = event_id.commit_num,
@@ -54,7 +48,6 @@ class StreamClient:
             else:
                 return ([], None, None)
                 
-        #except urllib.error.HTTPError as e:
         except:
             return ([], None, None)
         
@@ -73,32 +66,23 @@ class StreamClient:
         commit_num = 1000000000
         
         while True:
-            #try:
-                #req = urllib.request.Request('{}?commitNum={}&limit=1'.format(self.__stream_uri(language), commit_num))
-                #response = urllib.request.urlopen(req)
-                #jsonresponse = json.loads(response.read().decode('utf8'))
             jsonresponse = self.wb_client.stream(self.__stream_uri(language),
                                                  commitNum = commit_num,
                                                  limit = 1)
                 
             commit_num = commit_num + 1000000000
                 
-            #except urllib.error.HTTPError as e:
             if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
                 msg = jsonresponse['detailedMessage']
                 return self.__parse_last_commit_num(msg)
             
     def get_first_commit_num(self, language):
         try:
-            #req = urllib.request.Request('{}?iteratorType=TRIM_HORIZON&limit=1'.format(self.__stream_uri(language)))
-            #response = urllib.request.urlopen(req)
-            #jsonresponse = json.loads(response.read().decode('utf8'))
             jsonresponse = self.wb_client.stream(self.__stream_uri(language),
                                                  iteratorType = STREAM_TRIM,
                                                  limit = 1)
             c = jsonresponse['lastEventId']['commitNum']
             return c
-        #except urllib.error.HTTPError as e:
         except:
             return None
 
@@ -144,8 +128,6 @@ class StreamViewer:
         if changes['name'] == 'value':
             language = changes['new']
             self.init_display(language)
-        
-
 
     def on_next(self, _):
         if self.last_displayed_event_id.commit_num <= self.slider.max:
