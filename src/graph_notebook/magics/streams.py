@@ -2,7 +2,7 @@ import re
 import json
 import ipywidgets as widgets
 import queue
-from IPython.display import display, HTML, clear_output
+from IPython.display import display, HTML
 from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,STREAM_EXCEPTION_NOT_ENABLED
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
