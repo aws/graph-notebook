@@ -174,6 +174,12 @@ class StreamViewer:
     def show_records(self, records):
         
         html = '''<html><body><table style="border: 1px solid black">'''
+        
+        html += '''<tr>
+                   <th style="text-align: center" >Tx/Op#</th>
+                   <th style="text-align: center">Operation</th>
+                   <th style="text-align: center">Data</th>
+                   </tr>'''
             
         commit_num = None
      
@@ -184,11 +190,11 @@ class StreamViewer:
             
             if commit_num is None or current_commit_num != commit_num:
                 commit_num = current_commit_num
-                html += '<tr style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
+                html += '<tr title="The commit number for this transaction" style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
                 html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}</td>'.format(commit_num)
                 html += '</tr><tr style="border: 1px solid black;">'     
             
-            html += '<tr style="border: 1px solid black; background-color: white;">'
+            html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
             html += '''<td style="border: 1px solid black; vertical-align: top;">{}</td>
             <td style="border: 1px solid black; vertical-align: top;">{}</td>
             <td style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
