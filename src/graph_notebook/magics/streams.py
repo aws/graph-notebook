@@ -41,12 +41,12 @@ class StreamClient:
                 first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
                 last_event = EventId(jsonresponse['lastEventId']['commitNum'], jsonresponse['lastEventId']['opNum'])
 
-                return (records, first_event, last_event)
+                return records, first_event, last_event
             else:
-                return ([], None, None)
+                return [], None, None
                 
         except:
-            return ([], None, None)
+            return [], None, None
         
     def __parse_last_commit_num(self, msg):
         results = re.findall("\d+", msg)      
