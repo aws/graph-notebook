@@ -1,7 +1,5 @@
 import re
 import json
-import urllib.request
-import urllib.error
 import ipywidgets as widgets
 import queue
 from IPython.display import display, HTML, clear_output
