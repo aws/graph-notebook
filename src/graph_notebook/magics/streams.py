@@ -5,7 +5,7 @@ import urllib.error
 import ipywidgets as widgets
 import queue
 from IPython.display import display, HTML, clear_output
-from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND
+from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,STREAM_EXCEPTION_NOT_ENABLED
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = int(commit_num)
@@ -32,13 +32,12 @@ class StreamClient:
     
     
     def get_events(self, language, event_id, iterator):
-        try:
+        try:  
             jsonresponse = self.wb_client.stream(self.__stream_uri(language),
                                                  iteratorType = iterator,
                                                  commitNum = event_id.commit_num,
                                                  opNum = event_id.op_num,
                                                  limit=self.limit)
-                                                 
             if 'records' in jsonresponse:
                 records = jsonresponse['records']
                 first_event = EventId(records[0]['eventId']['commitNum'], records[0]['eventId']['opNum'])
@@ -75,6 +74,9 @@ class StreamClient:
             if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
                 msg = jsonresponse['detailedMessage']
                 return self.__parse_last_commit_num(msg)
+            elif jsonresponse['code'] == STREAM_EXCEPTION_NOT_ENABLED:
+                print('The stream is not enabled on this cluster')
+                return None
             
     def get_first_commit_num(self, language):
         try:
@@ -172,47 +174,46 @@ class StreamViewer:
        
 
     def show_records(self, records):
-        
-        html = '''<html><body><table style="border: 1px solid black">'''
-        
-        html += '''<tr>
-                   <th style="text-align: center" >Tx/Op#</th>
-                   <th style="text-align: center">Operation</th>
-                   <th style="text-align: center">Data</th>
-                   </tr>'''
+        if len(records) > 0:
+            html = '''<html><body><table style="border: 1px solid black">'''
             
-        commit_num = None
-     
-        for record in records:
-            current_commit_num = record['eventId']['commitNum']
+            html += '''<tr>
+                       <th style="text-align: center" >Tx/Op#</th>
+                       <th style="text-align: center">Operation</th>
+                       <th style="text-align: center">Data</th>
+                       </tr>'''
+                
+            commit_num = None
+         
+            for record in records:
+                current_commit_num = record['eventId']['commitNum']
+                
+                data = json.dumps(record['data']).replace('&', '&amp;').replace('<', '&lt;')
+                
+                if commit_num is None or current_commit_num != commit_num:
+                    commit_num = current_commit_num
+                    html += '<tr title="The commit number for this transaction" style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
+                    html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}</td>'.format(commit_num)
+                    html += '</tr><tr style="border: 1px solid black;">'     
+                
+                html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
+                html += '''<td style="border: 1px solid black; vertical-align: top;">{}</td>
+                <td style="border: 1px solid black; vertical-align: top;">{}</td>
+                <td style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
+                    record['eventId']['opNum'], 
+                    record['op'],
+                    data)
+               
+            html += '</table></body></html>'
             
-            data = json.dumps(record['data']).replace('&', '&amp;').replace('<', '&lt;')
-            
-            if commit_num is None or current_commit_num != commit_num:
-                commit_num = current_commit_num
-                html += '<tr title="The commit number for this transaction" style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
-                html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}</td>'.format(commit_num)
-                html += '</tr><tr style="border: 1px solid black;">'     
-            
-            html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
-            html += '''<td style="border: 1px solid black; vertical-align: top;">{}</td>
-            <td style="border: 1px solid black; vertical-align: top;">{}</td>
-            <td style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
-                record['eventId']['opNum'], 
-                record['op'],
-                data)
-           
-        html += '</table></body></html>'
-        
-        self.out.clear_output(wait=True)
-        with self.out:
-            display(HTML(html))
+            self.out.clear_output(wait=True)
+            with self.out:
+                display(HTML(html))
             
     def update_slider_min_max_values(self, language):
         
         new_min = self.stream_client.get_first_commit_num(language)
         new_max = self.stream_client.get_last_commit_num(language)
-        
         if new_min is None and new_max is None:
             self.slider.min = 0
             self.slider.max = 0
