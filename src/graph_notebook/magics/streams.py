@@ -4,12 +4,13 @@ import ipywidgets as widgets
 import queue
 from IPython.display import display, HTML
 from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,STREAM_EXCEPTION_NOT_ENABLED
+
+
 class EventId:
     def __init__(self, commit_num=1, op_num=1):
         self.commit_num = int(commit_num)
         self.op_num = int(op_num)
         
-    
     def update(self, event_id):
         if event_id is not None:
             self.commit_num = event_id.commit_num
@@ -17,17 +18,16 @@ class EventId:
             
     def duplicate(self):
         return EventId(self.commit_num, self.op_num)
-    
+
     def value(self):
         return '{}/{}'.format(self.commit_num, self.op_num)
 
+
 class StreamClient:
-    
     def __init__(self, wb_client, uri_with_port, limit=10):
         self.wb_client = wb_client
         self.uri_with_port = uri_with_port
         self.limit=limit
-    
     
     def get_events(self, language, event_id, iterator):
         try:  
@@ -66,7 +66,7 @@ class StreamClient:
                                              commitNum = commit_num,
                                              limit = 1)
             
-        if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
+        if jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:
             msg = jsonresponse['detailedMessage']
             return self.__parse_last_commit_num(msg)
         elif jsonresponse['code'] == STREAM_EXCEPTION_NOT_ENABLED:
@@ -82,6 +82,7 @@ class StreamClient:
             return c
         except:
             return None
+
 
 class StreamViewer:
     
@@ -167,7 +168,6 @@ class StreamViewer:
         self.first_displayed_event_id.update(first_event)
         self.last_displayed_event_id.update(last_event)
        
-
     def show_records(self, records):
         if len(records) > 0:
             html = '''<html><body><table style="border: 1px solid black">'''
@@ -216,5 +216,4 @@ class StreamViewer:
             self.slider.max = new_max               
         else:
             self.slider.max = new_max
-            self.slider.min = new_min
-       
+            self.slider.min = new_min       
