@@ -3,6 +3,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+# Documentation for these options: https://visjs.github.io/vis-network/docs/network
 OPTIONS_DEFAULT_DIRECTED = {
     "nodes": {
         "borderWidthSelected": 0,
@@ -53,6 +54,8 @@ OPTIONS_DEFAULT_DIRECTED = {
         "selectConnectedEdges": False
     },
     "physics": {
+        "simulationDuration": 1500,
+        "disablePhysicsAfterInitialSimulation": False,
         "minVelocity": 0.75,
         "barnesHut": {
             "centralGravity": 0.1,

@@ -108,6 +108,8 @@ class TestOptions(unittest.TestCase):
                 'original': OPTIONS_DEFAULT_DIRECTED,
                 'target': {
                     "physics": {
+                        "simulationDuration": 1500,
+                        "disablePhysicsAfterInitialSimulation": False,
                         "hierarchicalRepulsion": {
                             "centralGravity": 0
                         },
@@ -173,6 +175,8 @@ class TestOptions(unittest.TestCase):
                         "selectConnectedEdges": False
                     },
                     "physics": {
+                        "simulationDuration": 1500,
+                        "disablePhysicsAfterInitialSimulation": False,
                         "minVelocity": 0.75,
                         "barnesHut": {
                             "centralGravity": 0.1,
@@ -267,6 +271,8 @@ class TestOptions(unittest.TestCase):
                         "selectConnectedEdges": False
                     },
                     "physics": {
+                        "simulationDuration": 1500,
+                        "disablePhysicsAfterInitialSimulation": False,
                         "minVelocity": 0.75,
                         "barnesHut": {
                             "centralGravity": 0.1,
