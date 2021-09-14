@@ -12,6 +12,7 @@ from graph_notebook.network.EventfulNetwork import EventfulNetwork, EVENT_ADD_NO
 class TestEventfulNetwork(TestCase):
     def test_add_node_callback_dispatch(self):
         node_id = '1'
+        node_value = '0.0'
         node_data = {
             'foo': 'bar'
         }
@@ -26,7 +27,7 @@ class TestEventfulNetwork(TestCase):
 
         en = EventfulNetwork()
         en.register_callback(EVENT_ADD_NODE, add_node_callback)
-        en.add_node(node_id, node_data)
+        en.add_node(node_id, node_value, node_data)
         self.assertIsNotNone(en.graph.nodes.get(node_id))
         self.assertTrue(callbacks_reached[EVENT_ADD_NODE])
 
@@ -59,6 +60,7 @@ class TestEventfulNetwork(TestCase):
         edge_label = edge_id
         edge_data = dict()
         edge_data['foo'] = 'bar'
+        edge_value = 0.0
 
         callback_reached = {}
 
@@ -69,6 +71,7 @@ class TestEventfulNetwork(TestCase):
                 'to_id': to_id,
                 'edge_id': edge_id,
                 'label': edge_label,
+                'value': edge_value,
                 'data': edge_data
             }
             self.assertEqual(expected_payload, data)
@@ -78,7 +81,7 @@ class TestEventfulNetwork(TestCase):
         en = EventfulNetwork(callbacks={EVENT_ADD_EDGE: [add_edge_callback]})
         en.add_node(from_id)
         en.add_node(to_id)
-        en.add_edge(from_id, to_id, edge_id, edge_label, edge_data)
+        en.add_edge(from_id, to_id, edge_id, edge_label, edge_value, edge_data)
         self.assertTrue(callback_reached[EVENT_ADD_EDGE])
 
     def test_add_node_data_callback_dispatched(self):

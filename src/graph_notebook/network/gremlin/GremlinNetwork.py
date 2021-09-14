@@ -100,7 +100,7 @@ class GremlinNetwork(EventfulNetwork):
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  group_by_property=T_LABEL, display_property=T_LABEL, edge_display_property=T_LABEL,
-                 ignore_groups=False):
+                 node_scaling_property=None, edge_scaling_property=None, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         if label_max_length < 3:
@@ -119,6 +119,8 @@ class GremlinNetwork(EventfulNetwork):
             self.edge_display_property = self.convert_multiproperties_to_tuples(json.loads(edge_display_property))
         except ValueError:
             self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property)
+        self.node_scaling_property = self.convert_multiproperties_to_tuples(node_scaling_property)
+        self.edge_scaling_property = self.convert_multiproperties_to_tuples(edge_scaling_property)
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
@@ -285,6 +287,8 @@ class GremlinNetwork(EventfulNetwork):
         :param v: The vertex taken from a path traversal object.
         """
         node_id = ''
+        has_value = False
+        scaling_value = None
         if type(v) is Vertex:
             node_id = v.id
             title = v.label
@@ -401,7 +405,28 @@ class GremlinNetwork(EventfulNetwork):
                 if label == '':
                     label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
+            if self.node_scaling_property:
+                if isinstance(self.node_scaling_property, tuple):
+                    if self.node_scaling_property[0] in v and isinstance(v[self.node_scaling_property[0]], list):
+                        try:
+                            node_scaling_value = v[self.node_scaling_property[0]][self.node_scaling_property[1]]
+                            if isinstance(node_scaling_value, (int, float)):
+                                has_value = True
+                                scaling_value = float(node_scaling_value)
+                        except IndexError:
+                            pass
+                elif self.node_scaling_property in v:
+                    if isinstance(v[self.node_scaling_property], list):
+                        node_scaling_value = v[self.node_scaling_property][0]
+                    else:
+                        node_scaling_value = v[self.node_scaling_property]
+                    if isinstance(node_scaling_value, (int, float)):
+                        has_value = True
+                        scaling_value = float(node_scaling_value)
+
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
+            if has_value:
+                data['value'] = scaling_value
         else:
             node_id = str(v)
             title = str(v)
@@ -410,7 +435,7 @@ class GremlinNetwork(EventfulNetwork):
 
         if self.ignore_groups:
             data['group'] = DEFAULT_GRP
-        self.add_node(node_id, data)
+        self.add_node(node_id=node_id, value=scaling_value, data=data)
 
     def add_path_edge(self, edge, from_id='', to_id='', data=None):
         if data is None:
@@ -433,7 +458,7 @@ class GremlinNetwork(EventfulNetwork):
                         display_label = data['properties'][self.edge_display_property]
                     except KeyError:
                         display_label = edge.label
-            self.add_edge(from_id, to_id, edge.id, display_label, data)
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge.id, label=display_label, data=data)
         elif type(edge) is dict:
             properties = {}
             edge_id = ''
@@ -478,10 +503,25 @@ class GremlinNetwork(EventfulNetwork):
                         edge_label = str(edge[k])
                         display_is_set = True
 
+            if self.edge_scaling_property:
+                if isinstance(self.edge_scaling_property, tuple):
+                    if self.edge_scaling_property[0] in properties and \
+                            isinstance(properties[self.edge_scaling_property[0]], list):
+                        try:
+                            node_scaling_value = properties[self.edge_scaling_property[0]][self.edge_scaling_property[1]]
+                            if isinstance(node_scaling_value, (int, float)):
+                                data['value'] = float(node_scaling_value)
+                        except IndexError:
+                            pass
+                elif self.edge_scaling_property in properties:
+                    if isinstance(properties[self.edge_scaling_property], (int, float)):
+                        value = properties[self.edge_scaling_property]
+                        data['value'] = float(value)
+
             data['properties'] = properties
-            self.add_edge(from_id, to_id, edge_id, edge_label, data)
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, data=data)
         else:
-            self.add_edge(from_id, to_id, edge, str(edge), data)
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=str(edge), data=data)
 
     def add_blank_edge(self, from_id, to_id, edge_id=None, undirected=True, label=''):
         """
@@ -497,7 +537,7 @@ class GremlinNetwork(EventfulNetwork):
         if edge_id is None:
             edge_id = str(uuid.uuid4())
         edge_data = UNDIRECTED_EDGE if undirected else {}
-        self.add_edge(from_id, to_id, edge_id, label, edge_data)
+        self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=label, data=edge_data)
 
     def insert_path_element(self, path, i):
         if i == 0:

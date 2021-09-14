@@ -129,9 +129,11 @@ export class ForceView extends DOMWidgetView {
     returned, not json.
      */
 
+    console.log("FORCE: Generating new network.");
     const network = this.model.get("network");
     this.visOptions = this.model.get("options");
     this.populateDatasets(network);
+    console.log("FORCE: Populated datasets from network.");
     const dataset = {
       nodes: this.nodeDataset,
       edges: this.edgeDataset,
@@ -173,7 +175,11 @@ export class ForceView extends DOMWidgetView {
    */
   populateDatasets(network: ForceNetwork): void {
     const edges = this.linksToEdges(network.graph.links);
+    console.log("Nodes:");
+    console.log(network.graph.nodes);
     this.nodeDataset.update(network.graph.nodes);
+    console.log("Edges:");
+    console.log(edges);
     this.edgeDataset.update(edges);
   }
 
@@ -210,6 +216,7 @@ export class ForceView extends DOMWidgetView {
    */
   interceptCustom(msg: Message): void {
     const msgData = msg["data"];
+    console.log(msgData);
     switch (msg["method"]) {
       case "add_node":
         this.addNode(msgData);
@@ -248,6 +255,8 @@ export class ForceView extends DOMWidgetView {
         }
      */
   addNode(msgData: DynamicObject): void {
+    console.log("addNode: adding new node");
+    console.log(msgData);
     if (!msgData.hasOwnProperty("node_id")) {
       // message data must have an id to add a node
       return;
@@ -267,6 +276,11 @@ export class ForceView extends DOMWidgetView {
     if (!node.hasOwnProperty("label")) {
       // no label found, using node id
       node["label"] = id;
+    }
+
+    if (!node.hasOwnProperty("value")) {
+      // no label found, using node id
+      node["value"] = 0;
     }
 
     this.nodeDataset.update([node]);
@@ -350,6 +364,8 @@ export class ForceView extends DOMWidgetView {
   addEdge(msgData: DynamicObject): void {
     // To be able to add an edge, we require the message to have:
     // 'from_id', 'to_id', and 'edge_id'
+    console.log("addEdge: adding new edge");
+    console.log(msgData);
     if (
       !msgData.hasOwnProperty("from_id") ||
       !msgData.hasOwnProperty("to_id") ||
@@ -359,13 +375,19 @@ export class ForceView extends DOMWidgetView {
     }
 
     // check if we have a label. if we do not, use the edge id.
+
     const label = msgData.hasOwnProperty("label")
       ? msgData["label"]
       : msgData["edge_id"];
+
     const innerData = msgData.hasOwnProperty("data") ? msgData["data"] : {};
 
     const edgeID =
       msgData["from_id"] + ":" + msgData["to_id"] + ":" + msgData["edge_id"];
+
+    const value = msgData.hasOwnProperty("value")
+      ? msgData["value"]
+      : 0;
 
     // rearrange the data to add to a node to ensure it conforms to the format of a vis-edge.
     // More info found here: https://github.com/visjs/vis-network
@@ -374,6 +396,7 @@ export class ForceView extends DOMWidgetView {
       to: msgData["to_id"],
       id: edgeID,
       label: label,
+      value: value,
       ...innerData,
     };
     let edge = this.edgeDataset.get(edgeID);

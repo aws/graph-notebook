@@ -33,8 +33,8 @@ class OCNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=LABEL_KEY, display_property=LABEL_KEY,
-                 edge_display_property=EDGE_TYPE_KEY, ignore_groups=False):
+                 group_by_property=LABEL_KEY, display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
+                 node_scaling_property=None, edge_scaling_property=None, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
         if label_max_length < 3:
@@ -53,6 +53,8 @@ class OCNetwork(EventfulNetwork):
             self.edge_display_property = self.convert_multiproperties_to_tuples(json.loads(edge_display_property))
         except ValueError:
             self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property)
+        self.node_scaling_property = self.convert_multiproperties_to_tuples(node_scaling_property)
+        self.edge_scaling_property = self.convert_multiproperties_to_tuples(edge_scaling_property)
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 
@@ -62,6 +64,8 @@ class OCNetwork(EventfulNetwork):
         Args:
             node (dict): The node dictionary to parse
         """
+        value = None
+        has_value = False
         if LABEL_KEY in node.keys():
             title = node[LABEL_KEY][0]
         else:
@@ -131,13 +135,35 @@ class OCNetwork(EventfulNetwork):
             logger.debug(e)
             label = title
 
+        if self.node_scaling_property:
+            if isinstance(self.node_scaling_property, tuple):
+                if self.node_scaling_property[0] in props and isinstance(props[self.node_scaling_property[0]], list):
+                    try:
+                        node_scaling_value = props[self.node_scaling_property[0]][self.node_scaling_property[1]]
+                        if isinstance(node_scaling_value, (int, float)):
+                            has_value = True
+                            value = float(node_scaling_value)
+                    except IndexError:
+                        pass
+            elif self.node_scaling_property in props:
+                if isinstance(props[self.node_scaling_property], list):
+                    node_scaling_value = props[self.node_scaling_property][0]
+                else:
+                    node_scaling_value = props[self.node_scaling_property]
+                if isinstance(node_scaling_value, (int, float)):
+                    has_value = True
+                    value = float(node_scaling_value)
+
         title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
+        if has_value:
+            data['value'] = float(value)
         if self.ignore_groups:
             data['group'] = DEFAULT_GRP
-        self.add_node(node[ID_KEY], data)
+        self.add_node(node[ID_KEY], value, data)
     
     def parse_rel(self, rel):
+        value = None
         data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY]}
         if self.edge_display_property is not EDGE_TYPE_KEY:
             try:
@@ -163,7 +189,24 @@ class OCNetwork(EventfulNetwork):
                 display_label = rel[EDGE_TYPE_KEY]
         else:
             display_label = rel[EDGE_TYPE_KEY]
-        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), data)
+
+        if self.edge_scaling_property:
+            if isinstance(self.edge_scaling_property, tuple):
+                if self.edge_scaling_property[0] in data['properties'] and \
+                        isinstance(data['properties'][self.edge_scaling_property[0]], list):
+                    try:
+                        node_scaling_value = data['properties'][self.edge_scaling_property[0]][self.edge_scaling_property[1]]
+                        if isinstance(node_scaling_value, (int, float)):
+                            value = float(node_scaling_value)
+                            data['value'] = value
+                    except IndexError:
+                        pass
+            elif self.edge_scaling_property in data['properties']:
+                if isinstance(data['properties'][self.edge_scaling_property], (int, float)):
+                    value = float(data['properties'][self.edge_scaling_property])
+                    data['value'] = value
+
+        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), value, data)
 
     def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately

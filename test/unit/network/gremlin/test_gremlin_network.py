@@ -32,7 +32,8 @@ class TestGremlinNetwork(unittest.TestCase):
                     'runways': '4',
                     'type': 'Airport'},
                 'title': 'airport'},
-            'node_id': '1234'}
+            'node_id': '1234',
+            'value': None}
 
         def add_node_callback(network, event_name, data):
             self.assertEqual(event_name, EVENT_ADD_NODE)
