@@ -59,22 +59,19 @@ class StreamClient:
     # TODO: Revisit this logic if the Neptune Stream API adds support for querying this
     # directly.
     def get_last_commit_num(self, language):
-           
-        commit_num = 1000000000
+        # Using an explicit value rather than sys.maxsize as that can vary.
+        commit_num = 2**63-1
         
-        while True:
-            jsonresponse = self.wb_client.stream(self.__stream_uri(language),
-                                                 commitNum = commit_num,
-                                                 limit = 1)
-                
-            commit_num = commit_num + 1000000000
-                
-            if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
-                msg = jsonresponse['detailedMessage']
-                return self.__parse_last_commit_num(msg)
-            elif jsonresponse['code'] == STREAM_EXCEPTION_NOT_ENABLED:
-                print('The stream is not enabled on this cluster')
-                return None
+        jsonresponse = self.wb_client.stream(self.__stream_uri(language),
+                                             commitNum = commit_num,
+                                             limit = 1)
+            
+        if  jsonresponse['code'] == STREAM_EXCEPTION_NOT_FOUND:    
+            msg = jsonresponse['detailedMessage']
+            return self.__parse_last_commit_num(msg)
+        elif jsonresponse['code'] == STREAM_EXCEPTION_NOT_ENABLED:
+            print('The stream is not enabled on this cluster')
+            return None
             
     def get_first_commit_num(self, language):
         try:
@@ -209,7 +206,6 @@ class StreamViewer:
                 display(HTML(html))
             
     def update_slider_min_max_values(self, language):
-        
         new_min = self.stream_client.get_first_commit_num(language)
         new_max = self.stream_client.get_last_commit_num(language)
         if new_min is None and new_max is None:
