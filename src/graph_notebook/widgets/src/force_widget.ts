@@ -79,6 +79,7 @@ export class ForceView extends DOMWidgetView {
   private expandDiv: HTMLDivElement = document.createElement("div");
   private searchDiv: HTMLDivElement = document.createElement("div");
   private detailsDiv: HTMLDivElement = document.createElement("div");
+  private physicsDiv: HTMLDivElement = document.createElement("div");
   private nodeDataset: NodeDataSet = new NodeDataSet(new Array<VisNode>(), {});
   private edgeDataset: EdgeDataSet = new EdgeDataSet(new Array<VisEdge>(), {});
   private visOptions: DynamicObject = {};
@@ -105,6 +106,7 @@ export class ForceView extends DOMWidgetView {
   };
   private detailsBtn = document.createElement("button");
   private selectedNodeID: string | number = "";
+  private physicsBtn = document.createElement("button");
 
   render(): void {
     this.networkDiv.classList.add("network-div");
@@ -142,7 +144,7 @@ export class ForceView extends DOMWidgetView {
     this.vis = new Network(this.canvasDiv, dataset, this.visOptions);
     setTimeout(() => {
       this.vis?.stopSimulation();
-    }, 1500); // TODO: make the timeout configurable
+    }, this.visOptions.physics.simulationDuration);
 
     /*
             To listen to messages sent from the kernel, you can register callback methods in the view class,
@@ -279,7 +281,7 @@ export class ForceView extends DOMWidgetView {
     }
 
     if (!node.hasOwnProperty("value")) {
-      // no label found, using node id
+      // no value found, using default
       node["value"] = 0;
     }
 
@@ -359,7 +361,7 @@ export class ForceView extends DOMWidgetView {
           "data": {
             "label": "to"
           }
-        }
+     }
      */
   addEdge(msgData: DynamicObject): void {
     // To be able to add an edge, we require the message to have:
@@ -488,13 +490,22 @@ export class ForceView extends DOMWidgetView {
     this.vis?.on("startStabilizing", () => {
       setTimeout(() => {
         this.vis?.stopSimulation();
-      }, 1500); // TODO: make timeout configurable
+      }, this.visOptions.physics.simulationDuration);
     });
 
     this.vis?.on("selectEdge", (params) => {
       params.edges.forEach((value) => {
         this.handleEdgeClick(params.edges[0]);
       });
+    });
+
+    this.vis?.on("stabilized", () => {
+      if (
+        this.visOptions.physics.disablePhysicsAfterInitialSimulation == true
+      ) {
+        this.visOptions.physics.enabled = false;
+        this.changeOptions();
+      }
     });
   }
 
@@ -518,7 +529,7 @@ export class ForceView extends DOMWidgetView {
     } else {
       node.color = this.visOptions.nodes.color;
     }
-    node.borderWidth = 0
+    node.borderWidth = 0;
     this.nodeDataset.update(node);
     this.vis?.stopSimulation();
     this.selectedNodeID = "";
@@ -592,7 +603,7 @@ export class ForceView extends DOMWidgetView {
   buildTableRows(data: DynamicObject): Array<HTMLElement> {
     const rows: Array<HTMLElement> = new Array<HTMLElement>();
     const sorted = Object.entries(data).sort((a, b) => {
-        return a[0].localeCompare(b[0]);
+      return a[0].localeCompare(b[0]);
     });
     sorted.forEach((entry: Array<any>) => {
       const row = document.createElement("tr");
@@ -643,11 +654,11 @@ export class ForceView extends DOMWidgetView {
 
     this.buildGraphPropertiesTable(node);
     if (node.group) {
-        node.font = { bold: true };
-        node.opacity = 1
-        node.borderWidth= 3
+      node.font = { bold: true };
+      node.opacity = 1;
+      node.borderWidth = 3;
     } else {
-        node.font = { color: "white" };
+      node.font = { color: "white" };
     }
     this.nodeDataset.update(node);
     this.vis?.stopSimulation();
@@ -725,17 +736,17 @@ export class ForceView extends DOMWidgetView {
         }
       });
     } else {
-        //Reset the opacity and border width
-        this.nodeDataset.forEach((item, id) => {
-          const nodeID = id.toString();
-          nodeUpdate.push({
-            id: nodeID,
-            opacity: 1,
-            borderWidth: 0
-          });
-          nodeIDs[id.toString()] = true;
-        })
-      };
+      //Reset the opacity and border width
+      this.nodeDataset.forEach((item, id) => {
+        const nodeID = id.toString();
+        nodeUpdate.push({
+          id: nodeID,
+          opacity: 1,
+          borderWidth: 0,
+        });
+        nodeIDs[id.toString()] = true;
+      });
+    }
 
     // check current matched nodes and clear all nodes which are no longer matches
     this.nodeIDSearchMatches.forEach((value) => {
@@ -748,7 +759,8 @@ export class ForceView extends DOMWidgetView {
           borderWidth: selected
             ? this.visOptions["nodes"]["borderWidthSelected"]
             : 0,
-          opacity: 0.35        });
+          opacity: 0.35,
+        });
       }
     });
 
@@ -789,6 +801,7 @@ export class ForceView extends DOMWidgetView {
     this.expandDiv.classList.add("menu-action", "expand-div");
     this.searchDiv.classList.add("menu-action", "search-div");
     this.detailsDiv.classList.add("menu-action", "details-div");
+    this.physicsDiv.classList.add("menu-action", "physics-div");
 
     const searchInput = document.createElement("input");
     searchInput.classList.add("search-bar");
@@ -800,6 +813,29 @@ export class ForceView extends DOMWidgetView {
 
     this.searchDiv.append(searchInput);
     rightActions.append(this.searchDiv);
+
+    this.physicsBtn.title = "Enable/Disable Graph Physics";
+    if (
+      this.visOptions.physics.enabled == true &&
+      this.visOptions.physics.disablePhysicsAfterInitialSimulation == false
+    ) {
+      this.physicsBtn.innerHTML = feather.icons["unlock"].toSvg();
+    } else {
+      this.physicsBtn.innerHTML = feather.icons["lock"].toSvg();
+    }
+    this.physicsDiv.appendChild(this.physicsBtn);
+    rightActions.append(this.physicsDiv);
+
+    this.physicsBtn.onclick = (): void => {
+      this.visOptions.physics.disablePhysicsAfterInitialSimulation = false;
+      this.visOptions.physics.enabled = !this.visOptions.physics.enabled;
+      this.changeOptions();
+      if (this.visOptions.physics.enabled == true) {
+        this.physicsBtn.innerHTML = feather.icons["unlock"].toSvg();
+      } else {
+        this.physicsBtn.innerHTML = feather.icons["lock"].toSvg();
+      }
+    };
 
     this.detailsBtn.innerHTML = feather.icons["list"].toSvg();
     this.detailsBtn.title = "Details";
@@ -888,7 +924,6 @@ export class ForceView extends DOMWidgetView {
         animation: true,
       });
     };
-
     const zoomOutButton = document.createElement("button");
     zoomOutButton.title = "Zoom Out";
     zoomOutButton.onclick = () => {

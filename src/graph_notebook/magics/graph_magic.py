@@ -230,6 +230,10 @@ class Graph(Magics):
         parser.add_argument('-se', '--edge-scaling-property', type=str, default=None,
                             help='Optional property to specify what edge property to use for edge width scaling.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
+                            help="Disable visualization physics after the initial simulation stabilizes.")
+        parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
+                            help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         tab = widgets.Tab()
@@ -293,6 +297,9 @@ class Graph(Magics):
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
                     else:
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
+                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                        = args.stop_physics
+                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                     f = Force(network=sn, options=self.graph_notebook_vis_options)
                     titles.append('Graph')
                     children.append(f)
@@ -411,6 +418,11 @@ class Graph(Magics):
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
         parser.add_argument('--indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
+                            help="Disable visualization physics after the initial simulation stabilizes.")
+        parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
+                            help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
+
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
@@ -486,6 +498,9 @@ class Graph(Magics):
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
                     else:
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
+                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                        = args.stop_physics
+                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                     f = Force(network=gn, options=self.graph_notebook_vis_options)
                     titles.append('Graph')
                     children.append(f)
@@ -1342,7 +1357,6 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
-    # TODO: find out where we call this, then add local_ns param and variable decorator
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
@@ -1392,6 +1406,10 @@ class Graph(Magics):
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
+        parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
+                            help="Disable visualization physics after the initial simulation stabilizes.")
+        parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
+                            help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         args = parser.parse_args(line.split())
         tab = widgets.Tab()
         logger.debug(args)
@@ -1422,6 +1440,9 @@ class Graph(Magics):
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
                     else:
                         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
+                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                        = args.stop_physics
+                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                     force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
             except ValueError as value_error:
                 logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
