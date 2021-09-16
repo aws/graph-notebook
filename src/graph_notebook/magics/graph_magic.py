@@ -30,6 +30,7 @@ from graph_notebook.configuration.generate_config import generate_default_config
     AuthModeEnum, Configuration
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
+from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV
 from graph_notebook.network import SPARQLNetwork
@@ -195,7 +196,25 @@ class Graph(Magics):
             print(json.dumps(config_dict, indent=2))
 
         return self.graph_notebook_config
+    
 
+    @line_magic
+    def stream_viewer(self,line):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', type=str.lower, nargs='?', default='gremlin',
+                            help='language  (default=gremlin) [gremlin|sparql]',
+                            choices = ['gremlin','sparql'])
+
+        parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
+
+        args = parser.parse_args(line.split())
+        
+        language = args.language
+        limit = args.limit
+        uri = self.client.get_uri_with_port()
+        viewer = StreamViewer(self.client,uri,language,limit=limit)
+        viewer.show()
+        
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':

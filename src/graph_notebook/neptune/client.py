@@ -68,6 +68,12 @@ EXPORT_ACTION = 'neptune-export'
 EXTRA_HEADERS = {'content-type': 'application/json'}
 SPARQL_ACTION = 'sparql'
 
+STREAM_AT = 'AT_SEQUENCE_NUMBER'
+STREAM_AFTER = 'AFTER_SEQUENCE_NUMBER'
+STREAM_TRIM = 'TRIM_HORIZON'
+STREAM_EXCEPTION_NOT_FOUND = 'StreamRecordsNotFoundException'
+STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
+
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
@@ -84,6 +90,10 @@ class Client(object):
         self._ws_protocol = 'wss' if self.ssl else 'ws'
 
         self._http_session = None
+
+    def get_uri_with_port(self):
+        uri = f'{self._http_protocol}://{self.host}:{self.port}'
+        return uri
 
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
         if headers is None:
@@ -177,6 +187,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
+
     def gremlin_status(self, query_id: str = '', include_waiting: bool = False):
         kwargs = {}
         if include_waiting:
@@ -255,6 +266,14 @@ class Client(object):
 
         driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
         return driver
+
+    def stream(self, url, **kwargs) -> requests.Response: 
+        params = {}
+        for k, v in kwargs.items():
+            params[k] = v
+        req = self._prepare_request('GET', url, params=params,data='')
+        res = self._http_session.send(req)
+        return res.json()
 
     def status(self) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/status'

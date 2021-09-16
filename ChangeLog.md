@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added a new `%stream_viewer` magic that allows interactive exploration of the Neptune CDC stream (if enabled).
 
 - Added support for multi-property values in vertex and edge labels ([Link to PR](https://github.com/aws/graph-notebook/pull/186))
 - Added new visualization physics options, toggle button ([Link to PR](https://github.com/aws/graph-notebook/pull/190))
