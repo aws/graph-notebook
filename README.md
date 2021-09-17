@@ -186,7 +186,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "aws_region": "your-neptune-region"
 }
 ```
-To setup a new Amazon Neptune cluster, check out the [Amazon Web Servcies documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
+To setup a new Amazon Neptune cluster, check out the [Amazon Web Services documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
 
 When connecting the graph notebook to Neptune, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune).
 
