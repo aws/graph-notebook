@@ -186,7 +186,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "aws_region": "your-neptune-region"
 }
 ```
-To setup a new Amazon Neptune cluster, check out the [AWS documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
+To setup a new Amazon Neptune cluster, check out the [Amazon Web Servcies documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
 
 When connecting the graph notebook to Neptune, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune).
 
@@ -206,14 +206,14 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
 }
 ```
 
-Additionally, you should have the following AWS credentials available in a location accessible to Boto3:
+Additionally, you should have the following Amazon Web Services credentials available in a location accessible to Boto3:
 
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_REGION
 - AWS_SESSION_TOKEN (OPTIONAL. Use if you are using temporary credentials)
 
-A list of all locations checked for AWS credentials can be found in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html).
+A list of all locations checked for Amazon Web Services credentials can be found in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html).
 
 ## Contributing Guidelines
 
