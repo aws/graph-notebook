@@ -208,12 +208,14 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
 
 Additionally, you should have the following Amazon Web Services credentials available in a location accessible to Boto3:
 
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_ACCESS_KEY
-- AWS_REGION
-- AWS_SESSION_TOKEN (OPTIONAL. Use if you are using temporary credentials)
+- Access Key ID
+- Secret Access Key
+- Default Region
+- Session Token (OPTIONAL. Use if you are using temporary credentials)
 
-A list of all locations checked for Amazon Web Services credentials can be found in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html).
+These variables must follow a specific naming convention, as listed in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables)
+
+A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 
 ## Contributing Guidelines
 
