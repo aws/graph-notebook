@@ -50,12 +50,16 @@ class SPARQLNetwork(EventfulNetwork):
                  graph: MultiDiGraph = None,
                  callbacks: list = None,
                  label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
+                 node_scaling_property=None,
+                 edge_scaling_property=None,
                  expand_all: bool = False):
         if graph is None:
             graph = MultiDiGraph()
 
         self.expand_all = expand_all
         self.label_max_length = label_max_length
+        self.node_scaling_property = node_scaling_property
+        self.edge_scaling_property = edge_scaling_property
         super().__init__(graph, callbacks)
         self.namespace_to_prefix = {  # http://foo/bar/ -> bar
             NAMESPACE_RDFS: PREFIX_RDFS,
@@ -94,12 +98,13 @@ class SPARQLNetwork(EventfulNetwork):
                     self.namespace_to_prefix[namespace] = shorthand
                     self.prefix_to_namespace[shorthand] = namespace
 
-    def add_node(self, node_id: str, data: dict = None):
+    def add_node(self, node_id: str, value: float = None, data: dict = None):
         """
         overriding parent add_node class to automatically parse the uri for a node
         and add data to the node for prefix and shortened name
         :param node_id: the full uri
         :param data: dict to set node initial node properties
+        :param value: optional property value to use for node size scaling
         """
         if data is None:
             data = {}
@@ -116,8 +121,9 @@ class SPARQLNetwork(EventfulNetwork):
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
             data['label'] = label
             data['title'] = title
+            data['value'] = value
 
-        super().add_node(node_id, data)
+        super().add_node(node_id, value, data)
 
     @staticmethod
     def extract_value(uri: str) -> str:
@@ -183,7 +189,10 @@ class SPARQLNetwork(EventfulNetwork):
         with the variables "subject" ,"predicate", "object" or "s", "p", "o"
         :param results:
         """
-
+        has_scaling_value = False
+        subject_value = None
+        predicate_value = None
+        object_value = None
         # validate that we can process this result..
         vars = []
         if 'head' in results and 'vars' in results['head']:
@@ -266,7 +275,7 @@ class SPARQLNetwork(EventfulNetwork):
             obj = b[object_binding]
 
             if sub['value'] != current_subject:
-                self.add_node(current_subject, data)
+                self.add_node(node_id=current_subject, data=data)
                 data = {'properties': {}}
                 current_subject = sub['value']
 
@@ -291,7 +300,7 @@ class SPARQLNetwork(EventfulNetwork):
                     data['title'] = title
                     data['label'] = label
 
-                # object is a literal. Check if data has this preciate already. If it does, turn its value into an
+                # object is a literal. Check if data has this predicate already. If it does, turn its value into an
                 # array and append the new value to it.
                 if 'properties' in data and f'{prefix}:{value}' in data['properties']:
                     if type(data['properties'][f'{prefix}:{value}']) is list:
@@ -312,7 +321,9 @@ class SPARQLNetwork(EventfulNetwork):
                     data['properties'][pred['value']] = obj['value']
 
         # add the last node and all our edges
-        self.add_node(current_subject, data)
+        # TODO: figure out where we can get the scaling value
+        # self.add_node(node_id=current_subject, value=, data=data)
+        self.add_node(node_id=current_subject, data=data)
         self.process_edge_bindings(edge_bindings, use_spo)
         return
 
@@ -320,6 +331,7 @@ class SPARQLNetwork(EventfulNetwork):
         subject_binding = 'subject'
         predicate_binding = 'predicate'
         object_binding = 'object'
+        scaling_value = None
 
         if use_spo:
             subject_binding = 's'
@@ -337,8 +349,10 @@ class SPARQLNetwork(EventfulNetwork):
             if pred['type'] == 'uri':
                 prefix = self.extract_prefix(pred['value'])
                 value = self.extract_value(pred['value'])
+                scaling_value = value
                 edge_label = f'{prefix}:{value}'
 
             if not self.graph.has_node(b[object_binding]['value']):
                 self.add_node(b[object_binding]['value'])
-            self.add_edge(b[subject_binding]['value'], b[object_binding]['value'], pred['value'], edge_label)
+            self.add_edge(from_id=b[subject_binding]['value'], to_id=b[object_binding]['value'], edge_id=pred['value'],
+                          label=edge_label, value=scaling_value)

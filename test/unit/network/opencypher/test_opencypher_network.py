@@ -39,8 +39,10 @@ class TestOpenCypherNetwork(unittest.TestCase):
                     "~labels": ['airport'],
                     'code': 'SEA',
                     'runways': 3},
-                'title': "airport"},
-            'node_id': '22'}
+                'title': "airport"
+            },
+            'node_id': '22',
+            'value': None}
 
         def add_node_callback(network, event_name, data):
             self.assertEqual(event_name, EVENT_ADD_NODE)
@@ -51,6 +53,8 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn.add_results(res)
         self.assertTrue(reached_callback[EVENT_ADD_NODE])
         node = gn.graph.nodes.get("22")
+        print(expected_data['data']['properties'])
+        print(node['properties'])
         self.assertEqual(expected_data['data']['properties'], node['properties'])
 
     def test_add_edge_with_callback(self):
@@ -87,6 +91,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
             'label': 'route',
             'from_id': "22",
             'to_id': '151',
+            'value': None,
             'edge_id': '7389'
         }
 

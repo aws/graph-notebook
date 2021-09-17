@@ -100,9 +100,11 @@ class TestSPARQLNetwork(unittest.TestCase):
                 'data': {
                     'label': 'resourc...',
                     'prefix': 'resource',
-                    'title': 'resource:24'
+                    'title': 'resource:24',
+                    'value': '24'
                 },
-                'node_id': 'http://kelvinlawrence.net/air-routes/resource/24'
+                'node_id': 'http://kelvinlawrence.net/air-routes/resource/24',
+                'value': '24'
             }
             self.assertEqual(expected_data, data)
             node = network.graph.nodes.get(node_id)

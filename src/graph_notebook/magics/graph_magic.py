@@ -40,7 +40,8 @@ from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name
 from graph_notebook.widgets import Force
-from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
+from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, OPTIONS_DEFAULT_SCALING_NODES, \
+    OPTIONS_DEFAULT_SCALING_EDGES_ONLY, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
     build_opencypher_metadata_from_query
 
@@ -243,6 +244,10 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-sn', '--node-scaling-property', type=str, default=None,
+                            help='Optional property to specify what node property to use for node size scaling.')
+        parser.add_argument('-se', '--edge-scaling-property', type=str, default=None,
+                            help='Optional property to specify what edge property to use for edge width scaling.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -294,7 +299,9 @@ class Graph(Magics):
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results,
                                                                    scd_query=True)
 
-                sn = SPARQLNetwork(expand_all=args.expand_all)
+                sn = SPARQLNetwork(expand_all=args.expand_all,
+                                   node_scaling_property=args.node_scaling_property,
+                                   edge_scaling_property=args.edge_scaling_property)
                 sn.extract_prefix_declarations_from_query(cell)
                 try:
                     sn.add_results(results)
@@ -303,6 +310,12 @@ class Graph(Magics):
 
                 logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
                 if len(sn.graph.nodes) > 0:
+                    if args.node_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_NODES
+                    elif args.edge_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
+                    else:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
                     self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                         = args.stop_physics
                     self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
@@ -406,6 +419,10 @@ class Graph(Magics):
                             help='Property to display the value of on each node, default is T.label')
         parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
                             help='Property to display the value of on each edge, default is T.label')
+        parser.add_argument('-sn', '--node-scaling-property', type=str, default=None,
+                            help='Optional property to specify what node property to use for node size scaling.')
+        parser.add_argument('-se', '--edge-scaling-property', type=str, default=None,
+                            help='Optional property to specify what edge property to use for edge width scaling.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -483,6 +500,8 @@ class Graph(Magics):
                 logger.debug(f'ignore_groups: {args.ignore_groups}')
                 gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                     edge_display_property=args.edge_display_property,
+                                    node_scaling_property=args.node_scaling_property,
+                                    edge_scaling_property=args.edge_scaling_property,
                                     label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
 
                 if args.path_pattern == '':
@@ -492,6 +511,12 @@ class Graph(Magics):
                     gn.add_results_with_pattern(query_res, pattern)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:
+                    if args.node_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_NODES
+                    elif args.edge_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
+                    else:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
                     self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                         = args.stop_physics
                     self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
@@ -1392,6 +1417,10 @@ class Graph(Magics):
                             help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-de', '--edge-display-property', type=str, default='~labels',
                             help='Property to display the value of on each edge, default is ~type')
+        parser.add_argument('-sn', '--node-scaling-property', type=str, default=None,
+                            help='Optional property to specify what node property to use for node size scaling.')
+        parser.add_argument('-se', '--edge-scaling-property', type=str, default=None,
+                            help='Optional property to specify what edge property to use for edge width scaling.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -1405,7 +1434,7 @@ class Graph(Magics):
         logger.debug(args)
         titles = []
         children = []
-        force_graph_output=None
+        force_graph_output = None
         res = None
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
@@ -1417,11 +1446,19 @@ class Graph(Magics):
                                                                query_time=query_time)            
             try:
                 gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
-                               edge_display_property=args.edge_display_property,
-                               label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                               edge_display_property=args.edge_display_property, label_max_length=args.label_max_length,
+                               node_scaling_property=args.node_scaling_property,
+                               edge_scaling_property=args.edge_scaling_property,
+                               ignore_groups=args.ignore_groups)
                 gn.add_results(res)
                 logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                 if len(gn.graph.nodes) > 0:
+                    if args.node_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_NODES
+                    elif args.edge_scaling_property:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_SCALING_EDGES_ONLY
+                    else:
+                        self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
                     self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                         = args.stop_physics
                     self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
