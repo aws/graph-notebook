@@ -6,6 +6,7 @@ import pytest
 
 from test.integration import IntegrationTest
 
+
 class TestOpenCypher(IntegrationTest):
     @pytest.mark.opencypher
     @pytest.mark.neptune
@@ -27,4 +28,3 @@ class TestOpenCypher(IntegrationTest):
         query = 'MATCH (p) RETURN p LIMIT 10'
         res = self.client.opencyper_bolt(query)
         assert len(res) == 10
-
