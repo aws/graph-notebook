@@ -10,10 +10,10 @@ from os.path import join as pjoin
 def normalize_model_name(name):
     name = name.lower().replace('_', '')
     # handles legacy scenarios
-    if name=='gremlin':
-        name='propertygraph'
-    elif name=='sparql':
-        name='rdf' 
+    if name in ('gremlin', 'opencypher'):
+        name = 'propertygraph'
+    elif name == 'sparql':
+        name = 'rdf'
     return name
 
 

@@ -136,3 +136,6 @@ class TestOpenCypherStatusWithoutIam(DataDrivenOpenCypherTest):
         assert 'c' in query_res['result']['head']['vars']
         assert 'd' in query_res['result']['head']['vars']
         assert [] == query_res['result']['results']['bindings']
+
+    def test_opencypher_bolt_query_with_cancellation(self):
+        pass

@@ -186,9 +186,14 @@ class OCNetwork(EventfulNetwork):
         """
         for res in results["results"]:
             if type(res) is dict:
-                for k in res.keys():            
+                for k in res.keys():
                     if type(res[k]) is dict:
                         self.process_result(res[k]) 
                     elif type(res[k]) is list:
                         for res_sublist in res[k]:
-                            self.process_result(res_sublist)
+                            try:
+                                self.process_result(res_sublist)
+                            except TypeError as e:
+                                logger.debug(f'Property {res_sublist} in list results set is invalid, skipping')
+                                logger.debug(f'Error: {e}')
+                                continue
