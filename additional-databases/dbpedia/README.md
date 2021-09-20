@@ -9,10 +9,6 @@ It is possible to connect to this endpoint using the following configuration:
 {
   "host": "dbpedia.org",
   "port": 443,
-  "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
-  "load_from_s3_arn": "",
-  "ssl": true,
-  "aws_region": ""
+  "ssl": true
 }
 ```
