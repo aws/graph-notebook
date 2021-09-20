@@ -1,18 +1,39 @@
 ## Connecting graph notebook to Blazegraph SPARQL Endpoint
 
-The official SPARQL endpoint for DBPedia is available from https://dbpedia.org/sparql and is based on a Virtuoso engine.
+[Blazegraph](https://blazegraph.com/) is an open-source, high-performance RDF triple/quadstore graph-database that can be queried via a SPARQL endpoint.
 
-It is possible to connect to this endpoint using the following configuration:
+For instructions on setting up and running Blazegraph locally, refer to the [Blazegraph Quickstart](https://github.com/blazegraph/database/wiki/Quick_Start) guide.
+
+After local setup of Blazegraph is complete, set the following configuration to connect from graph-notebook:
 
 ```
 %%graph_notebook_config
+
 {
-  "host": "dbpedia.org",
-  "port": 443,
-  "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
-  "load_from_s3_arn": "",
-  "ssl": true,
-  "aws_region": ""
+  "host": "localhost",
+  "port": 9999,
+  "ssl": false
 }
 ```
+
+Blazegraph also supports use of namespaces, which are used to refer to multiple triple or quad stores that are hosted in the same Blazegraph instance, and can be queried independently.
+
+To direct SPARQL queries executed from `graph-notebook` to a specific namespace, you can specify the namespace path in your config:
+
+```
+%%graph_notebook_config
+
+{
+  "host": "localhost",
+  "port": 9999,
+  "ssl": false,
+  "sparql": {
+    "path": "blazegraph/namespace/foo/sparql"
+  }
+}
+```
+
+This will result in the url `localhost:9999/blazegraph/namespace/foo/sparql` being used when executing any `%%sparql` magic commands.
+
+
+
