@@ -12,11 +12,7 @@ like in the following example that connects to `http://localhost:3030/ds/sparql`
 {
   "host": "localhost",
   "port": 3030,
-  "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
-  "load_from_s3_arn": "",
   "ssl": false,
-  "aws_region": "",
   "sparql": {
     "path": "ds/sparql"
   }

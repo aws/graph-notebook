@@ -31,18 +31,14 @@ Several of the steps below are optional but please read each step carefully and 
 
 ### Connecting to a local Gremlin Server from Jupyter
 1. In the Jupyter Notebook disable SSL using `%%graph_notebook_config` and change the host to `localhost`. Keep the other defaults even though they are not used for configuring the Gremlin Server.
-  ```
-  %%graph_notebook_config
+```
+%%graph_notebook_config
 {
   "host": "localhost",
   "port": 8182,
-  "auth_mode": "DEFAULT",
-  "iam_credentials_provider_type": "ROLE",
-  "load_from_s3_arn": "",
-  "ssl": false,
-  "aws_region": "us-east-1"
+  "ssl": false
 }
-  ```
+```
 If the Gremlin Server you wish to connect to is remote,  replacing `localhost` with the IP address or DNS of the remote server should work. This assumes you have access to that server from your local machine.
 
 ### Using `%seed` with Gremlin Server
