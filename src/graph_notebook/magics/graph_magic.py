@@ -1405,7 +1405,7 @@ class Graph(Magics):
         logger.debug(args)
         titles = []
         children = []
-        force_graph_output=None
+        force_graph_output = None
         res = None
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
@@ -1414,7 +1414,7 @@ class Graph(Magics):
             oc_http.raise_for_status()
             res = oc_http.json()
             oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                               query_time=query_time)            
+                                                               query_time=query_time)
             try:
                 gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                edge_display_property=args.edge_display_property,
@@ -1426,8 +1426,9 @@ class Graph(Magics):
                         = args.stop_physics
                     self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                     force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
-            except ValueError as value_error:
-                logger.debug(f'unable to create network from result. Skipping from result set: {value_error}')
+            except (TypeError, ValueError) as network_creation_error:
+                logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
+                logger.debug(f'Error: {network_creation_error}')
         elif args.mode == 'bolt':
             res = self.client.opencyper_bolt(cell)            
             # Need to eventually add code to parse and display a network for the bolt format here

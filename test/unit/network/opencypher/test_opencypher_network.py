@@ -659,6 +659,25 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'ANC')
         self.assertEqual(node2['group'], 'United States')
 
+    def test_set_add_non_graphable_results_list(self):
+        res = {
+            'results': [
+                {
+                    'a': [1, 2, 3, 4, 5, 6, 7]
+                }
+            ]
+        }
+
+        gn = OCNetwork()
+        try:
+            gn.add_results(res)
+        except TypeError:
+            self.fail()
+        nodes_list = list(gn.graph.nodes)
+        edges_list = list(gn.graph.edges)
+        self.assertEqual(nodes_list, [])
+        self.assertEqual(edges_list, [])
+
     def test_do_not_set_vertex_label_property(self):
         res = {
             "results": [
