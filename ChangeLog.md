@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added `--silent` option for suppressing query output ([Link to PR](https://github.com/aws/graph-notebook/pull/201))
 
 ## Release 3.0.6 (September 20, 2021)
 - Added a new `%stream_viewer` magic that allows interactive exploration of the Neptune CDC stream (if enabled). ([Link to PR](https://github.com/aws/graph-notebook/pull/191))
