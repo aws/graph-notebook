@@ -24,6 +24,8 @@ NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID = os.getenv('NEPTUNE_ML_COMPLETED_DAT
 NEPTUNE_ML_IAM_ROLE_ARN = os.getenv('NEPTUNE_ML_IAM_ROLE_ARN')
 NEPTUNE_ML_COMPLETED_TRAINING_ID = os.getenv('NEPTUNE_ML_COMPLETED_TRAINING_ID')
 NEPTUNE_ML_TRANSFORM_OUTPUT = 's3://akline-misc/transform'
+NEPTUNE_ML_MAX_TOTAL_HPO_TRAINING_JOBS = 2
+NEPTUNE_ML_MAX_PARALLEL_HPO_TRAINING_JOBS = 2
 
 
 class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
@@ -89,7 +91,9 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
 
     def test_neptune_ml_modeltraining(self):
         training_res = self.client.modeltraining_start(NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
-                                                       NEPTUNE_ML_TRAINING_OUTPUT)
+                                                       NEPTUNE_ML_TRAINING_OUTPUT,
+                                                       NEPTUNE_ML_MAX_TOTAL_HPO_TRAINING_JOBS,
+                                                       NEPTUNE_ML_MAX_PARALLEL_HPO_TRAINING_JOBS)
         assert training_res.status_code == 200
         training = training_res.json()
 
@@ -109,9 +113,9 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
         assert delete_res.status_code == 200
 
     def test_neptune_ml_modeltransform(self):
-        create_res = self.client.modeltransform_create(NEPTUNE_ML_TRANSFORM_OUTPUT,
-                                                       NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
-                                                       NEPTUNE_ML_COMPLETED_TRAINING_ID)
+        create_res = self.client.modeltransform_create(output_s3_location=NEPTUNE_ML_TRANSFORM_OUTPUT,
+                                                       dataprocessing_job_id=NEPTUNE_ML_COMPLETED_DATAPROCESSING_JOB_ID,
+                                                       modeltraining_job_id=NEPTUNE_ML_COMPLETED_TRAINING_ID)
         assert create_res.status_code == 200
 
         create = create_res.json()
@@ -138,6 +142,8 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
         s3_input_uri = os.getenv('NEPTUNE_ML_DATAPROCESSING_S3_INPUT', '')
         s3_processed_uri = os.getenv('NEPTUNE_ML_DATAPROCESSING_S3_PROCESSED', '')
         train_model_s3_location = os.getenv('NEPTUNE_ML_TRAINING_S3_LOCATION', '')
+        hpo_number = NEPTUNE_ML_MAX_TOTAL_HPO_TRAINING_JOBS
+        hpo_parallel = NEPTUNE_ML_MAX_PARALLEL_HPO_TRAINING_JOBS
 
         assert s3_input_uri != ''
         assert s3_processed_uri != ''
@@ -152,7 +158,7 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
         p.join(3600)
 
         logger.info("model training...")
-        training_job = do_modeltraining(dataprocessing_id, train_model_s3_location)
+        training_job = do_modeltraining(dataprocessing_id, train_model_s3_location, hpo_number, hpo_parallel)
         training_job_id = training_job['id']
 
         p = threading.Thread(target=wait_for_modeltraining_complete, args=(training_job_id,))
@@ -186,6 +192,8 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
     def test_neptune_ml_training(self):
         dataprocessing_id = os.getenv('NEPTUNE_ML_DATAPROCESSING_ID', '')
         train_model_s3_location = os.getenv('NEPTUNE_ML_TRAINING_S3_LOCATION', '')
+        hpo_number = NEPTUNE_ML_MAX_TOTAL_HPO_TRAINING_JOBS
+        hpo_parallel = NEPTUNE_ML_MAX_PARALLEL_HPO_TRAINING_JOBS
 
         assert dataprocessing_id != ''
         assert train_model_s3_location != ''
@@ -193,7 +201,7 @@ class TestNeptuneMLWithIAM(GraphNotebookIntegrationTest):
         dataprocessing_status = client.dataprocessing_job_status(dataprocessing_id)
         assert dataprocessing_status.status_code == 200
 
-        job_start_res = client.modeltraining_start(dataprocessing_id, train_model_s3_location)
+        job_start_res = client.modeltraining_start(dataprocessing_id, train_model_s3_location, hpo_number, hpo_parallel)
         assert job_start_res.status_code == 200
 
         job_id = job_start_res.json()['id']
@@ -238,10 +246,11 @@ def wait_for_dataprocessing_complete(dataprocessing_id: str):
         time.sleep(10)
 
 
-def do_modeltraining(dataprocessing_id, train_model_s3_location):
+def do_modeltraining(dataprocessing_id, train_model_s3_location, hpo_number, hpo_parallel):
     logger.info(
-        f"starting training job from dataprocessing_job_id={dataprocessing_id} and training_model_s3_location={train_model_s3_location}")
-    training_start = client.modeltraining_start(dataprocessing_id, train_model_s3_location)
+        f"starting training job from dataprocessing_job_id={dataprocessing_id} "
+        f"and training_model_s3_location={train_model_s3_location}")
+    training_start = client.modeltraining_start(dataprocessing_id, train_model_s3_location, hpo_number, hpo_parallel)
     assert training_start.status_code == 200
     return training_start.json()
 
@@ -261,7 +270,7 @@ def wait_for_modeltraining_complete(training_job: str) -> dict:
 
 
 def do_create_endpoint(training_job_id: str) -> dict:
-    endpoint_res = client.endpoints_create(training_job_id)
+    endpoint_res = client.endpoints_create(model_training_job_id=training_job_id)
     assert endpoint_res.status_code == 200
     return endpoint_res.json()
 

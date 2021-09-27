@@ -392,6 +392,7 @@ class Client(object):
         return res
 
     def modeltraining_start(self, data_processing_job_id: str, train_model_s3_location: str,
+                            max_hpo_number_of_training_jobs: int, max_hpo_parallel_training_jobs: int,
                             **kwargs) -> requests.Response:
         """
         for a full list of supported parameters, see:
@@ -399,7 +400,9 @@ class Client(object):
         """
         data = {
             'dataProcessingJobId': data_processing_job_id,
-            'trainModelS3Location': train_model_s3_location
+            'trainModelS3Location': train_model_s3_location,
+            'maxHPONumberOfTrainingJobs': max_hpo_number_of_training_jobs,
+            'maxHPOParallelTrainingJobs': max_hpo_parallel_training_jobs
         }
 
         for k, v in kwargs.items():
@@ -444,8 +447,9 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def modeltransform_create(self, output_s3_location: str, dataprocessing_job_id: str = '', modeltraining_job_id: str = '',
-                              training_job_name: str = '', **kwargs) -> requests.Response:
+    def modeltransform_create(self, output_s3_location: str, dataprocessing_job_id: str = '',
+                              modeltraining_job_id: str = '', training_job_name: str = '',
+                              **kwargs) -> requests.Response:
         logger.debug("modeltransform_create initiated with params:"
                      f"output_s3_location: {output_s3_location}\n"
                      f"dataprocessing_job_id: {dataprocessing_job_id}\n"
@@ -462,7 +466,8 @@ class Client(object):
             data['mlModelTrainingJobId'] = modeltraining_job_id
         else:
             raise ValueError(
-                'Invalid input. Must only specify either dataprocessing_job_id and modeltraining_job_id or only training_job_name')
+                'Invalid input. Must only specify either dataprocessing_job_id and modeltraining_job_id or only '
+                'training_job_name')
 
         for k, v in kwargs.items():
             data[k] = v
@@ -511,10 +516,17 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def endpoints_create(self, training_job_id: str, **kwargs) -> requests.Response:
-        data = {
-            'mlModelTrainingJobId': training_job_id
-        }
+    def endpoints_create(self, model_training_job_id: str = '', model_transform_job_id: str = '',
+                         **kwargs) -> requests.Response:
+        data = {}
+
+        if model_training_job_id and not model_transform_job_id:
+            data['mlModelTrainingJobId'] = model_training_job_id
+        elif model_transform_job_id and not model_training_job_id:
+            data['mlModelTransformJobId'] = model_transform_job_id
+        else:
+            raise ValueError('Invalid input. Must either specify model_training_job_id or model_transform_job_id, '
+                             'and not both.')
 
         for k, v in kwargs.items():
             data[k] = v
