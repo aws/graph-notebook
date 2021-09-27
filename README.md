@@ -65,6 +65,8 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%seed` - Provides a form to add data to your graph without the use of a bulk loader. Supports both RDF and Property Graph data models.
 
+`%stream_viewer` - Interactively explore the Neptune CDC stream (if enabled)
+
 `%graph_notebook_config` - Returns a JSON payload that contains connection information for your host.
 
 `%graph_notebook_host` - Set the host endpoint to send queries to.
