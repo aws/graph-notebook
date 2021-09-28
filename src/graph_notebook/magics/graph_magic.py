@@ -248,25 +248,29 @@ class Graph(Magics):
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
-        tab = widgets.Tab()
-        titles = []
-        children = []
 
-        first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        children.append(first_tab_output)
+        if not args.silent:
+            tab = widgets.Tab()
+            titles = []
+            children = []
+
+            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(first_tab_output)
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
-            sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
             explain = res.content.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
-            titles.append('Explain')
-            first_tab_html = sparql_explain_template.render(table=explain)
+            if not args.silent:
+                sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
+                titles.append('Explain')
+                first_tab_html = sparql_explain_template.render(table=explain)
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -282,82 +286,85 @@ class Graph(Magics):
                 res = query_res.content.decode('utf-8')
             store_to_ns(args.store_to, res, local_ns)
 
-            # Assign an empty value so we can always display to table output.
-            # We will only add it as a tab if the type of query allows it.
-            # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
-            first_tab_html = ""
-            query_type = get_query_type(cell)
-            if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                logger.debug('creating sparql network...')
+            if not args.silent:
+                # Assign an empty value so we can always display to table output.
+                # We will only add it as a tab if the type of query allows it.
+                # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
+                first_tab_html = ""
+                query_type = get_query_type(cell)
+                if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
+                    logger.debug('creating sparql network...')
 
-                titles.append('Table')
-                sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results,
-                                                                   scd_query=True)
+                    titles.append('Table')
+                    sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
+                                                                       results=results, scd_query=True)
 
-                sn = SPARQLNetwork(expand_all=args.expand_all)
-                sn.extract_prefix_declarations_from_query(cell)
-                try:
-                    sn.add_results(results)
-                except ValueError as value_error:
-                    logger.debug(value_error)
+                    sn = SPARQLNetwork(expand_all=args.expand_all)
+                    sn.extract_prefix_declarations_from_query(cell)
+                    try:
+                        sn.add_results(results)
+                    except ValueError as value_error:
+                        logger.debug(value_error)
 
-                logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
-                if len(sn.graph.nodes) > 0:
-                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                        = args.stop_physics
-                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                    f = Force(network=sn, options=self.graph_notebook_vis_options)
-                    titles.append('Graph')
-                    children.append(f)
-                    logger.debug('added sparql network to tabs')
+                    logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
+                    if len(sn.graph.nodes) > 0:
+                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                            = args.stop_physics
+                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                        f = Force(network=sn, options=self.graph_notebook_vis_options)
+                        titles.append('Graph')
+                        children.append(f)
+                        logger.debug('added sparql network to tabs')
 
-                rows_and_columns = sparql_get_rows_and_columns(results)
-                if rows_and_columns is not None:
-                    table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                  rows=rows_and_columns['rows'], guid=table_id)
+                    rows_and_columns = sparql_get_rows_and_columns(results)
+                    if rows_and_columns is not None:
+                        table_id = f"table-{str(uuid.uuid4())[:8]}"
+                        first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
+                                                                      rows=rows_and_columns['rows'], guid=table_id)
 
-                # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result pattern
-                # of showing a tsv with each line being a result binding in addition to new ones.
-                if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
-                    lines = []
-                    for b in results['results']['bindings']:
-                        lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
-                    raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
-                    with raw_output:
-                        html = sparql_construct_template.render(lines=lines)
-                        display(HTML(html))
-                    children.append(raw_output)
-                    titles.append('Raw')
+                    # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
+                    # pattern of showing a tsv with each line being a result binding in addition to new ones.
+                    if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
+                        lines = []
+                        for b in results['results']['bindings']:
+                            lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                        raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                        with raw_output:
+                            html = sparql_construct_template.render(lines=lines)
+                            display(HTML(html))
+                        children.append(raw_output)
+                        titles.append('Raw')
+                else:
+                    sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
+                                                                       results=results)
+
+                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                with json_output:
+                    print(json.dumps(results, indent=2))
+                children.append(json_output)
+                titles.append('JSON')
+
+        if not args.silent:
+            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(metadata_output)
+            titles.append('Query Metadata')
+
+            if first_tab_html == "":
+                tab.children = children[1:]  # the first tab is empty, remove it and proceed
             else:
-                sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
+                tab.children = children
 
-            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            with json_output:
-                print(json.dumps(results, indent=2))
-            children.append(json_output)
-            titles.append('JSON')
+            for i in range(len(titles)):
+                tab.set_title(i, titles[i])
 
-        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        children.append(metadata_output)
-        titles.append('Query Metadata')
+            display(tab)
 
-        if first_tab_html == "":
-            tab.children = children[1:]  # the first tab is empty, remove it and proceed
-        else:
-            tab.children = children
+            with metadata_output:
+                display(HTML(sparql_metadata.to_html()))
 
-        for i in range(len(titles)):
-            tab.set_title(i, titles[i])
-
-        display(tab)
-
-        with metadata_output:
-            display(HTML(sparql_metadata.to_html()))
-
-        if first_tab_html != "":
-            with first_tab_output:
-                display(HTML(first_tab_html))
+            if first_tab_html != "":
+                with first_tab_output:
+                    display(HTML(first_tab_html))
 
     @line_magic
     @needs_local_scope
@@ -424,28 +431,31 @@ class Graph(Magics):
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
 
-        tab = widgets.Tab()
-        children = []
-        titles = []
+        if not args.silent:
+            tab = widgets.Tab()
+            children = []
+            titles = []
 
-        first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        children.append(first_tab_output)
+            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            children.append(first_tab_output)
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
-            gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
-            titles.append('Explain')
-            if 'Neptune Gremlin Explain' in query_res:
-                first_tab_html = pre_container_template.render(content=query_res)
-            else:
-                first_tab_html = pre_container_template.render(content='No explain found')
+            if not args.silent:
+                gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
+                titles.append('Explain')
+                if 'Neptune Gremlin Explain' in query_res:
+                    first_tab_html = pre_container_template.render(content=query_res)
+                else:
+                    first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
             logger.debug(f'results: {args.no_results}')
             logger.debug(f'chop: {args.chop}')
@@ -462,63 +472,67 @@ class Graph(Magics):
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
-            gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
-            titles.append('Profile')
-            if 'Neptune Gremlin Profile' in query_res:
-                first_tab_html = pre_container_template.render(content=query_res)
-            else:
-                first_tab_html = pre_container_template.render(content='No profile found')
+            if not args.silent:
+                gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
+                titles.append('Profile')
+                if 'Neptune Gremlin Profile' in query_res:
+                    first_tab_html = pre_container_template.render(content=query_res)
+                else:
+                    first_tab_html = pre_container_template.render(content='No profile found')
         else:
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             query_res = self.client.gremlin_query(cell)
             query_time = time.time() * 1000 - query_start
-            gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
-                                                                 query_time=query_time)
-            titles.append('Console')
-            try:
-                logger.debug(f'groupby: {args.group_by}')
-                logger.debug(f'display_property: {args.display_property}')
-                logger.debug(f'edge_display_property: {args.edge_display_property}')
-                logger.debug(f'label_max_length: {args.label_max_length}')
-                logger.debug(f'ignore_groups: {args.ignore_groups}')
-                gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
-                                    edge_display_property=args.edge_display_property,
-                                    label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+            if not args.silent:
+                gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
+                                                                     query_time=query_time)
+                titles.append('Console')
+                try:
+                    logger.debug(f'groupby: {args.group_by}')
+                    logger.debug(f'display_property: {args.display_property}')
+                    logger.debug(f'edge_display_property: {args.edge_display_property}')
+                    logger.debug(f'label_max_length: {args.label_max_length}')
+                    logger.debug(f'ignore_groups: {args.ignore_groups}')
+                    gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                        edge_display_property=args.edge_display_property,
+                                        label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
 
-                if args.path_pattern == '':
-                    gn.add_results(query_res)
-                else:
-                    pattern = parse_pattern_list_str(args.path_pattern)
-                    gn.add_results_with_pattern(query_res, pattern)
-                logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                if len(gn.graph.nodes) > 0:
-                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                        = args.stop_physics
-                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                    f = Force(network=gn, options=self.graph_notebook_vis_options)
-                    titles.append('Graph')
-                    children.append(f)
-                    logger.debug('added gremlin network to tabs')
-            except ValueError as value_error:
-                logger.debug(f'unable to create gremlin network from result. Skipping from result set: {value_error}')
+                    if args.path_pattern == '':
+                        gn.add_results(query_res)
+                    else:
+                        pattern = parse_pattern_list_str(args.path_pattern)
+                        gn.add_results_with_pattern(query_res, pattern)
+                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                    if len(gn.graph.nodes) > 0:
+                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                            = args.stop_physics
+                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                        f = Force(network=gn, options=self.graph_notebook_vis_options)
+                        titles.append('Graph')
+                        children.append(f)
+                        logger.debug('added gremlin network to tabs')
+                except ValueError as value_error:
+                    logger.debug(
+                        f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-            table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-            first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
+                table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
+                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
 
-        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        titles.append('Query Metadata')
-        children.append(metadata_output)
+        if not args.silent:
+            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            titles.append('Query Metadata')
+            children.append(metadata_output)
 
-        tab.children = children
-        for i in range(len(titles)):
-            tab.set_title(i, titles[i])
-        display(tab)
+            tab.children = children
+            for i in range(len(titles)):
+                tab.set_title(i, titles[i])
+            display(tab)
 
-        with metadata_output:
-            display(HTML(gremlin_metadata.to_html()))
+            with metadata_output:
+                display(HTML(gremlin_metadata.to_html()))
 
-        with first_tab_output:
-            display(HTML(first_tab_html))
+            with first_tab_output:
+                display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
@@ -1400,82 +1414,89 @@ class Graph(Magics):
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
         args = parser.parse_args(line.split())
-        tab = widgets.Tab()
         logger.debug(args)
-        titles = []
-        children = []
-        force_graph_output = None
         res = None
+
+        if not args.silent:
+            tab = widgets.Tab()
+            titles = []
+            children = []
+            force_graph_output = None
+
         if args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
             res = oc_http.json()
-            oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                               query_time=query_time)
-            try:
-                gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
-                               edge_display_property=args.edge_display_property,
-                               label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
-                gn.add_results(res)
-                logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                if len(gn.graph.nodes) > 0:
-                    self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                        = args.stop_physics
-                    self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                    force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
-            except (TypeError, ValueError) as network_creation_error:
-                logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
-                logger.debug(f'Error: {network_creation_error}')
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
+                                                                   query_time=query_time)
+                try:
+                    gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                   edge_display_property=args.edge_display_property,
+                                   label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                    gn.add_results(res)
+                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                    if len(gn.graph.nodes) > 0:
+                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                            = args.stop_physics
+                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                        force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                except (TypeError, ValueError) as network_creation_error:
+                    logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
+                    logger.debug(f'Error: {network_creation_error}')
         elif args.mode == 'bolt':
             res = self.client.opencyper_bolt(cell)            
             # Need to eventually add code to parse and display a network for the bolt format here
 
-        rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
-        display(tab)
-        table_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        # Assign an empty value so we can always display to table output.
-        table_html = ""          
+        if not args.silent:
+            rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
+            display(tab)
+            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            # Assign an empty value so we can always display to table output.
+            table_html = ""
 
-        # Display Console Tab
-        # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-        hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
-        children.append(hbox)
-        titles.append('Console')
-        if rows_and_columns is not None:
-            table_id = f"table-{str(uuid.uuid4())[:8]}"
-            table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                          rows=rows_and_columns['rows'], guid=table_id)
+            # Display Console Tab
+            # some issues with displaying a datatable when not wrapped in an hbox and displayed last
+            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+            children.append(hbox)
+            titles.append('Console')
+            if rows_and_columns is not None:
+                table_id = f"table-{str(uuid.uuid4())[:8]}"
+                table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                              rows=rows_and_columns['rows'], guid=table_id)
 
-        # Display Graph Tab (if exists)
-        if force_graph_output:
-            titles.append('Graph')
-            children.append(force_graph_output)
+            # Display Graph Tab (if exists)
+            if force_graph_output:
+                titles.append('Graph')
+                children.append(force_graph_output)
 
-        # Display JSON tab
-        json_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        with json_output:
-            print(json.dumps(res, indent=2))
-        children.append(json_output)
-        titles.append('JSON')
+            # Display JSON tab
+            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            with json_output:
+                print(json.dumps(res, indent=2))
+            children.append(json_output)
+            titles.append('JSON')
 
-        # Display Query Metadata Tab
-        metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
-        titles.append('Query Metadata')
-        children.append(metadata_output)
+            # Display Query Metadata Tab
+            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            titles.append('Query Metadata')
+            children.append(metadata_output)
 
-        tab.children = children
-        for i in range(len(titles)):
-            tab.set_title(i, titles[i])
+            tab.children = children
+            for i in range(len(titles)):
+                tab.set_title(i, titles[i])
 
-        if table_html != "":
-            with table_output:
-                display(HTML(table_html))
+            if table_html != "":
+                with table_output:
+                    display(HTML(table_html))
 
-        with metadata_output:
-            display(HTML(oc_metadata.to_html()))
+            with metadata_output:
+                display(HTML(oc_metadata.to_html()))
+
         store_to_ns(args.store_to, res, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):

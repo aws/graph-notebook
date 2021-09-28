@@ -204,6 +204,10 @@ class StreamViewer:
             self.out.clear_output(wait=True)
             with self.out:
                 display(HTML(html))
+        else:
+            self.out.clear_output(wait=True)
+            with self.out:
+                display(HTML('<b>No records found to display</b>'))
             
     def update_slider_min_max_values(self, language):
         new_min = self.stream_client.get_first_commit_num(language)
