@@ -449,13 +449,43 @@ def neptune_ml_dataprocessing(args: argparse.Namespace, client, output: widgets.
             if args.model_type:
                 params['modelType'] = args.model_type
             params = add_security_params(args, params)
+            s3_input = args.s3_input_uri
+            s3_output = args.s3_processed_uri
+        else:
+            try:
+                if not isinstance(params, dict):
+                    params = json.loads(params)
+                if 'dataprocessing' in params:
+                    params = params['dataprocessing']
+                try:
+                    if 'inputDataS3Location' in params:
+                        s3_input = params['inputDataS3Location']
+                    else:
+                        s3_input = args.s3_input_uri
+                    if 'processedDataS3Location' in params:
+                        s3_output = params['processedDataS3Location']
+                    else:
+                        s3_output = args.s3_output_uri
+                except AttributeError as e:
+                    print(f"A required parameter has not been defined in params or args. Traceback: {e}")
+            except (ValueError, AttributeError) as e:
+                print("Error occurred while processing parameters. Please ensure your parameters are in JSON "
+                      "format, and that you have defined both 'inputDataS3Location' and 'processedDataS3Location'.")
 
-        processing_job_res = client.dataprocessing_start(args.s3_input_uri, args.s3_processed_uri, **params)
+        processing_job_res = client.dataprocessing_start(s3_input, s3_output, **params)
         processing_job_res.raise_for_status()
         processing_job = processing_job_res.json()
-        job_id = params['id']
+        job_id = params['id'] if 'dataprocessing' not in params else params['dataprocessing']['id']
         if args.wait:
-            return wait_for_dataprocessing(job_id, client, output, args.wait_interval, args.wait_timeout)
+            try:
+                wait_interval = params['wait_interval']
+            except KeyError:
+                wait_interval = args.wait_interval
+            try:
+                wait_timeout = params['wait_timeout']
+            except KeyError:
+                wait_timeout = args.wait_timeout
+            return wait_for_dataprocessing(job_id, client, output, wait_interval, wait_timeout)
         else:
             return processing_job
     elif args.which_sub == 'status':
@@ -514,13 +544,54 @@ def neptune_ml_training(args: argparse.Namespace, client: Client, output: widget
             if args.timeout_in_seconds:
                 params['trainingTimeOutInSeconds'] = args.timeout_in_seconds
             params = add_security_params(args, params)
+            data_processing_id = args.data_processing_id
+            s3_output_uri = args.s3_output_uri
+            max_hpo_number = args.max_hpo_number
+            max_hpo_parallel = args.max_hpo_parallel
+        else:
+            try:
+                if not isinstance(params, dict):
+                    params = json.loads(params)
+                if 'training' in params:
+                    params = params['training']
+                try:
+                    if 'dataProcessingJobId' in params:
+                        data_processing_id = params['dataProcessingJobId']
+                    else:
+                        data_processing_id = args.data_processing_id
+                    if 'trainModelS3Location' in params:
+                        s3_output_uri = params['trainModelS3Location']
+                    else:
+                        s3_output_uri = args.s3_output_uri
+                    if 'maxHPONumberOfTrainingJobs' in params:
+                        max_hpo_number = params['maxHPONumberOfTrainingJobs']
+                    else:
+                        max_hpo_number = args.max_hpo_number
+                    if 'maxHPOParallelTrainingJobs' in params:
+                        max_hpo_parallel = params['maxHPOParallelTrainingJobs']
+                    else:
+                        max_hpo_parallel = args.max_hpo_parallel
+                except AttributeError as e:
+                    print(f"A required parameter has not been defined in params or args. Traceback: {e}")
+            except (ValueError, AttributeError) as e:
+                print("Error occurred while processing parameters. Please ensure your parameters are in JSON "
+                      "format, and that you have defined both all of the following options: dataProcessingJobId, "
+                      "trainModelS3Location, maxHPONumberOfTrainingJobs, maxHPOParallelTrainingJobs.")
 
-        start_training_res = client.modeltraining_start(args.data_processing_id, args.s3_output_uri,
-                                                        args.max_hpo_number, args.max_hpo_parallel, **params)
+        start_training_res = client.modeltraining_start(data_processing_id, s3_output_uri,
+                                                        max_hpo_number, max_hpo_parallel, **params)
         start_training_res.raise_for_status()
         training_job = start_training_res.json()
         if args.wait:
-            return wait_for_training(training_job['id'], client, output, args.wait_interval, args.wait_timeout)
+            try:
+                wait_interval = params['wait_interval']
+            except KeyError:
+                wait_interval = args.wait_interval
+            try:
+                wait_timeout = params['wait_timeout']
+            except KeyError:
+                wait_timeout = args.wait_timeout
+            return wait_for_training(training_job['id'], client, output, wait_interval, wait_timeout)
         else:
             return training_job
     elif args.which_sub == 'status':
@@ -577,11 +648,53 @@ def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widget
                 params['instanceCount'] = args.instance_count
             if args.volume_encryption_kms_key:
                 params['volumeEncryptionKMSKey'] = args.volume_encryption_kms_key
-        create_endpoint_res = client.endpoints_create(args.model_training_job_id, args.model_transform_job_id, **params)
+            model_training_job_id = args.model_training_job_id
+            model_transform_job_id = args.model_transform_job_id
+        else:
+            try:
+                if not isinstance(params, dict):
+                    params = json.loads(params)
+                if 'endpoint' in params:
+                    params = params['endpoint']
+
+                has_training_id = False
+                has_transform_id = False
+                try:
+                    if 'mlModelTrainingJobId' in params:
+                        model_training_job_id = params['mlModelTrainingJobId']
+                    else:
+                        model_training_job_id = args.model_training_job_id
+                    has_training_id = True
+                except AttributeError:
+                    pass
+                try:
+                    if 'mlModelTransformJobId' in params:
+                        model_transform_job_id = params['mlModelTransformJobId']
+                    else:
+                        model_transform_job_id = args.model_transform_job_id
+                    has_transform_id = True
+                except AttributeError:
+                    pass
+                if not has_training_id and not has_transform_id:
+                    print("You are required to define either mlModelTrainingJobId or mlModelTransformJobId as"
+                          "an argument when creating an inference endpoint.")
+            except (ValueError, AttributeError) as e:
+                print("Error occurred while processing parameters. Please ensure your parameters are in JSON "
+                      "format.")
+
+        create_endpoint_res = client.endpoints_create(model_training_job_id, model_transform_job_id, **params)
         create_endpoint_res.raise_for_status()
         create_endpoint_job = create_endpoint_res.json()
         if args.wait:
-            return wait_for_endpoint(create_endpoint_job['id'], client, output, args.wait_interval, args.wait_timeout)
+            try:
+                wait_interval = params['wait_interval']
+            except KeyError:
+                wait_interval = args.wait_interval
+            try:
+                wait_timeout = params['wait_timeout']
+            except KeyError:
+                wait_timeout = args.wait_timeout
+            return wait_for_endpoint(create_endpoint_job['id'], client, output, wait_interval, wait_timeout)
         else:
             return create_endpoint_job
     elif args.which_sub == 'status':
@@ -631,19 +744,63 @@ def modeltransform_start(args: argparse.Namespace, client: Client, params):
         data = {
             'id': args.job_id
         }
-    elif type(params) is dict:
-        data = params
+        if args.base_processing_instance_type:
+            data['baseProcessingInstanceType'] = args.base_processing_instance_type
+        if args.base_processing_instance_volume_size_in_gb:
+            data['baseProcessingInstanceVolumeSizeInGB'] = args.base_processing_instance_volume_size_in_gb
+        data = add_security_params(args, data)
+        s3_output_uri = args.s3_output_uri
+        data_processing_job_id = args.data_processing_job_id
+        model_training_job_id = args.model_training_job_id
+        training_job_name = args.training_job_name
     else:
-        data = json.loads(params)
+        if type(params) is dict:
+            data = params
+        else:
+            try:
+                data = json.loads(params)
+            except ValueError:
+                print("Error: Unable to load modeltransform parameters. Please check that they are defined in JSON "
+                      "format.")
+        if 'modeltransform' in data:
+            data = data['modeltransform']
+        if 'modelTransformOutputS3Location' in data:
+            s3_output_uri = data['modelTransformOutputS3Location']
+        else:
+            s3_output_uri = args.s3_output_uri
+        has_dataprocessing_id = False
+        has_training_id = False
+        has_training_name = False
+        try:
+            if 'dataProcessingJobId' in data:
+                data_processing_job_id = data['dataProcessingJobId']
+            else:
+                data_processing_job_id = args.data_processing_job_id
+            has_dataprocessing_id = True
+        except AttributeError:
+            pass
+        try:
+            if 'mlModelTrainingJobId' in data:
+                model_training_job_id = data['mlModelTrainingJobId']
+            else:
+                model_training_job_id = args.model_training_job_id
+            has_training_id = True
+        except AttributeError:
+            pass
+        try:
+            if 'trainingJobName' in data:
+                training_job_name = data['trainingJobName']
+            else:
+                training_job_name = args.training_job_name
+            has_training_name = True
+        except AttributeError:
+            pass
+        if not (has_dataprocessing_id and has_training_id) and not has_training_name:
+            print("You are required to define either a) dataProcessingJobId AND mlModelTrainingJobId or "
+                  "b) trainingJobName as arguments when creating a transform job.")
 
-    if args.base_processing_instance_type:
-        data['baseProcessingInstanceType'] = args.base_processing_instance_type
-    if args.base_processing_instance_volume_size_in_gb:
-        data['baseProcessingInstanceVolumeSizeInGB'] = args.base_processing_instance_volume_size_in_gb
-    data = add_security_params(args, data)
-
-    res: Response = client.modeltransform_create(args.s3_output_uri, args.data_processing_job_id,
-                                                 args.model_training_job_id, args.training_job_name, **data)
+    res: Response = client.modeltransform_create(s3_output_uri, data_processing_job_id,
+                                                 model_training_job_id, training_job_name, **data)
     res.raise_for_status()
     return res.json()
 
