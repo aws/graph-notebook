@@ -1368,11 +1368,24 @@ class Graph(Magics):
     @line_cell_magic
     @display_exceptions
     def graph_notebook_vis_options(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        line_args = line.split()
+        if line_args:
+            if line_args[0] == 'reset':
+                line = 'reset'
+                if len(line_args) > 1:
+                    line_args = line_args[1:]
+                else:
+                    line_args = []
+        args = parser.parse_args(line_args)
+
         if line == 'reset':
             self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
 
         if cell == '':
-            print(json.dumps(self.graph_notebook_vis_options, indent=2))
+            if not args.silent:
+                print(json.dumps(self.graph_notebook_vis_options, indent=2))
         else:
             options_dict = json.loads(cell)
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
