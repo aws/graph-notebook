@@ -32,7 +32,8 @@ from graph_notebook.decorators.decorators import display_exceptions, magic_varia
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
-    LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV
+    LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -80,6 +81,10 @@ serializers_map = {
     "GRAPHBINARY_V1D0": "application/vnd.graphbinary-v1.0"
 }
 
+DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph"
+DEFAULT_BASE_URI = "http://aws.amazon.com/neptune/default"
+RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+BASE_URI_FORMATS = [FORMAT_RDFXML, FORMAT_TURTLE]
 
 class QueryMode(Enum):
     DEFAULT = 'query'
@@ -776,6 +781,14 @@ class Graph(Magics):
         parser.add_argument('-q', '--queue-request', action='store_true', default=False)
         parser.add_argument('-d', '--dependencies', action='append', default=[])
         parser.add_argument('-e', '--no-edge-ids', action='store_true', default=False)
+        parser.add_argument('--named-graph-uri', type=str, default=DEFAULT_NAMEDGRAPH_URI,
+                            help='The default graph for all RDF formats when no graph is specified. '
+                                 'Default is http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph.')
+        parser.add_argument('--base-uri', type=str, default=DEFAULT_BASE_URI,
+                            help='The base URI for RDF/XML and Turtle formats. '
+                                 'Default is http://aws.amazon.com/neptune/default')
+        parser.add_argument('--allow-empty-strings', action='store_true', default=False,
+                            help='Load empty strings found in node and edge property values.')
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
@@ -806,10 +819,19 @@ class Graph(Magics):
             layout=widgets.Layout(width=widget_width)
         )
 
-        if source_format.value.lower() == 'opencypher':
+        ids_hbox_visibility = 'none'
+        gremlin_parser_options_hbox_visibility = 'none'
+        named_graph_hbox_visibility = 'none'
+        base_uri_hbox_visibility = 'none'
+
+        if source_format.value.lower() == FORMAT_CSV:
+            gremlin_parser_options_hbox_visibility = 'flex'
+        elif source_format.value.lower() == FORMAT_OPENCYPHER:
             ids_hbox_visibility = 'flex'
-        else:
-            ids_hbox_visibility = 'none'
+        elif source_format.value.lower() in RDF_LOAD_FORMATS:
+            named_graph_hbox_visibility = 'flex'
+            if source_format.value.lower() in BASE_URI_FORMATS:
+                base_uri_hbox_visibility = 'flex'
 
         region_box = widgets.Text(
             value=region,
@@ -830,6 +852,30 @@ class Graph(Magics):
             value=args.parallelism,
             disabled=False,
             layout=widgets.Layout(width=widget_width)
+        )
+
+        allow_empty_strings = widgets.Dropdown(
+            options=['TRUE', 'FALSE'],
+            value=str(args.allow_empty_strings).upper(),
+            disabled=False,
+            layout=widgets.Layout(display=gremlin_parser_options_hbox_visibility,
+                                  width=widget_width)
+        )
+
+        named_graph_uri = widgets.Text(
+            value=args.named_graph_uri,
+            placeholder='http://named-graph-string',
+            disabled=False,
+            layout=widgets.Layout(display=named_graph_hbox_visibility,
+                                  width=widget_width)
+        )
+
+        base_uri = widgets.Text(
+            value=args.base_uri,
+            placeholder='http://base-uri-string',
+            disabled=False,
+            layout=widgets.Layout(display=base_uri_hbox_visibility,
+                                  width=widget_width)
         )
 
         update_single_cardinality = widgets.Dropdown(
@@ -925,6 +971,27 @@ class Graph(Magics):
                                                                              justify_content="flex-end")),
                                          parallelism])
 
+        allow_empty_strings_hbox_label = widgets.Label('Allow Empty Strings:',
+                                                       layout=widgets.Layout(width=label_width,
+                                                                             display=gremlin_parser_options_hbox_visibility,
+                                                                             justify_content="flex-end"))
+
+        allow_empty_strings_hbox = widgets.HBox([allow_empty_strings_hbox_label, allow_empty_strings])
+
+        named_graph_uri_hbox_label = widgets.Label('Named Graph URI:',
+                                                   layout=widgets.Layout(width=label_width,
+                                                                         display=named_graph_hbox_visibility,
+                                                                         justify_content="flex-end"))
+
+        named_graph_uri_hbox = widgets.HBox([named_graph_uri_hbox_label, named_graph_uri])
+
+        base_uri_hbox_label = widgets.Label('Base URI:',
+                                            layout=widgets.Layout(width=label_width,
+                                                                  display=base_uri_hbox_visibility,
+                                                                  justify_content="flex-end"))
+
+        base_uri_hbox = widgets.HBox([base_uri_hbox_label, base_uri])
+
         cardinality_hbox = widgets.HBox([widgets.Label('Update Single Cardinality:',
                                                        layout=widgets.Layout(width=label_width,
                                                                              display="flex",
@@ -957,7 +1024,7 @@ class Graph(Magics):
         poll_status_hbox = widgets.HBox([poll_status_label, poll_status])
 
         def update_edge_ids_options(change):
-            if change.new.lower() == 'opencypher':
+            if change.new.lower() == FORMAT_OPENCYPHER:
                 ids_hbox_visibility = 'flex'
             else:
                 ids_hbox_visibility = 'none'
@@ -965,7 +1032,41 @@ class Graph(Magics):
             user_provided_edge_ids.layout.display = ids_hbox_visibility
             ids_hbox_label.layout.display = ids_hbox_visibility
 
+        def update_parserconfig_options(change):
+            if change.new.lower() == FORMAT_CSV:
+                gremlin_parser_options_hbox_visibility = 'flex'
+                named_graph_hbox_visibility_hbox_visibility = 'none'
+                base_uri_hbox_visibility = 'none'
+                named_graph_uri.value = ''
+                base_uri.value = ''
+            elif change.new.lower() == FORMAT_OPENCYPHER:
+                gremlin_parser_options_hbox_visibility = 'none'
+                allow_empty_strings.value = 'FALSE'
+                named_graph_hbox_visibility_hbox_visibility = 'none'
+                base_uri_hbox_visibility = 'none'
+                named_graph_uri.value = ''
+                base_uri.value = ''
+            else:
+                gremlin_parser_options_hbox_visibility = 'none'
+                allow_empty_strings.value = 'FALSE'
+                named_graph_hbox_visibility_hbox_visibility = 'flex'
+                named_graph_uri.value = DEFAULT_NAMEDGRAPH_URI
+                if change.new.lower() in BASE_URI_FORMATS:
+                    base_uri_hbox_visibility = 'flex'
+                    base_uri.value = DEFAULT_BASE_URI
+                else:
+                    base_uri_hbox_visibility = 'none'
+                    base_uri.value = ''
+
+            allow_empty_strings.layout.display = gremlin_parser_options_hbox_visibility
+            allow_empty_strings_hbox_label.layout.display = gremlin_parser_options_hbox_visibility
+            named_graph_uri.layout.display = named_graph_hbox_visibility_hbox_visibility
+            named_graph_uri_hbox_label.layout.display = named_graph_hbox_visibility_hbox_visibility
+            base_uri.layout.display = base_uri_hbox_visibility
+            base_uri_hbox_label.layout.display = base_uri_hbox_visibility
+
         source_format.observe(update_edge_ids_options, names='value')
+        source_format.observe(update_parserconfig_options, names='value')
 
         display(source_hbox,
                 source_format_hbox,
@@ -977,8 +1078,11 @@ class Graph(Magics):
                 cardinality_hbox,
                 queue_hbox,
                 dep_hbox,
-                ids_hbox,
                 poll_status_hbox,
+                ids_hbox,
+                allow_empty_strings_hbox,
+                named_graph_uri_hbox,
+                base_uri_hbox,
                 button,
                 output)
 
@@ -986,6 +1090,9 @@ class Graph(Magics):
             source_hbox.children = (source_hbox_label, source,)
             arn_hbox.children = (arn_hbox_label, arn,)
             source_format_hbox.children = (format_hbox_label, source_format,)
+            allow_empty_strings.children = (allow_empty_strings_hbox_label, allow_empty_strings,)
+            named_graph_uri_hbox.children = (named_graph_uri_hbox_label, named_graph_uri,)
+            base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
 
             dependencies_list = list(filter(None, dependencies.value.split('\n')))
@@ -1030,14 +1137,23 @@ class Graph(Magics):
                     'parallelism': parallelism.value,
                     'updateSingleCardinalityProperties': update_single_cardinality.value,
                     'queueRequest': queue_request.value,
-                    'region': region
+                    'region': region,
+                    'parserConfiguration': {}
                 }
 
                 if dependencies:
                     kwargs['dependencies'] = dependencies_list
 
-                if source_format.value.lower() == 'opencypher':
+                if source_format.value.lower() == FORMAT_OPENCYPHER:
                     kwargs['userProvidedEdgeIds'] = user_provided_edge_ids.value
+                elif source_format.value.lower() == FORMAT_CSV:
+                    if allow_empty_strings.value == 'TRUE':
+                        kwargs['parserConfiguration']['allowEmptyStrings'] = True
+                elif source_format.value.lower() in RDF_LOAD_FORMATS:
+                    if named_graph_uri.value:
+                        kwargs['parserConfiguration']['namedGraphUri'] = named_graph_uri.value
+                    if base_uri.value and source_format.value.lower() in BASE_URI_FORMATS:
+                        kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                 if source.value.startswith("s3://"):
                     load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
@@ -1057,8 +1173,11 @@ class Graph(Magics):
                 cardinality_hbox.close()
                 queue_hbox.close()
                 dep_hbox.close()
-                ids_hbox.close()
                 poll_status_hbox.close()
+                ids_hbox.close()
+                allow_empty_strings_hbox.close()
+                named_graph_uri_hbox.close()
+                base_uri_hbox.close()
                 button.close()
                 output.close()
 
