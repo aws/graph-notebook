@@ -101,9 +101,11 @@ You will need:
 ## Installation
 
 ```
-# pin specific versions of Jupyter, Tornado, and RDFLib dependencies
-pip install notebook==5.7.13
+# pin specific versions of required dependencies
 pip install tornado==4.5.3
+pip install ipykernel==5.3.4
+pip install ipython==7.16.1
+pip install notebook==5.7.13
 pip install rdflib==5.0.0
 
 # install the package
