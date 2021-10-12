@@ -162,8 +162,7 @@ class Client(object):
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        ws_request = httpclient.HTTPRequest(ws_url, headers=dict(request.headers))
-        return client.Client(ws_request, 'g')
+        return client.Client(ws_url, 'g', headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()
