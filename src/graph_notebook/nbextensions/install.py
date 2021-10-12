@@ -10,7 +10,7 @@ PLUGINS = [
     'neptune_menu',
     'gremlin_syntax',
     'sparql_syntax',
-    'opencypher_syntax',
+    'opencypher_syntax',https://github.com/abhishekpradeepmishra/graph-notebook/blob/main/src/graph_notebook/nbextensions/install.py
     'playable_cells'
 ]
 
@@ -23,8 +23,8 @@ def main():
 
     args = parser.parse_args()
     plugin_name = 'graph_notebook.nbextensions' if args.plugin_name == '' else args.plugin_name
-    os.system(f'''jupyter nbextension install --py {plugin_name} --sys-prefix --overwrite''')
-    os.system(f'''jupyter nbextension enable --py {plugin_name} --sys-prefix''')
+    os.system(f'''jupyter nbextension install --py {plugin_name} --overwrite''')
+    os.system(f'''jupyter nbextension enable --py {plugin_name} ''')
 
 
 if __name__ == '__main__':
