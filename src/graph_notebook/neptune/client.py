@@ -16,7 +16,9 @@ from gremlin_python.driver import client
 from neo4j import GraphDatabase
 from tornado import httpclient
 
-import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
+# This patch is no longer needed when graph_notebook is using the a Gremlin Python
+# client >= 3.5.0 as the HashableDict is now part of that client driver.
+# import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
