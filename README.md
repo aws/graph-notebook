@@ -117,7 +117,7 @@ python -m graph_notebook.nbextensions.install
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir  
 
 # start jupyter
-python -m graph_notebook.start_notebook
+python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
 ```
 
 ## Connecting to a graph database
