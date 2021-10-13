@@ -117,7 +117,7 @@ python -m graph_notebook.nbextensions.install
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir  
 
 # start jupyter
-jupyter notebook --NotebookApp.kernel_manager_class=notebook.services.kernels.kernelmanager.AsyncMappingKernelManager ~/notebook/destination/dir
+python -m graph_notebook.start_notebook
 ```
 
 ## Connecting to a graph database
