@@ -14,6 +14,7 @@ neo4j==4.2.1
 rdflib~=5.0.0
 traitlets~=4.3.3
 setuptools~=40.6.2
+nbconvert<6
 
 # requirements for testing
 botocore~=1.18.18
