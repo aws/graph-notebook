@@ -19,14 +19,15 @@ def patch_cm_cypher_config():
         }
     }
 
-    with open(NOTEBOOK_CFG_PATH, 'a+') as file:
-        try:
+    try:
+        with open(NOTEBOOK_CFG_PATH, 'r') as file:
             notebook_cfg = json.load(file)
-        except json.decoder.JSONDecodeError:
-            notebook_cfg = {}
-            pass
-        notebook_cfg["CodeCell"] = cypher_cfg
-        file.seek(0)
+    except (json.decoder.JSONDecodeError, FileNotFoundError) as e:
+        notebook_cfg = {}
+
+    notebook_cfg["CodeCell"] = cypher_cfg
+
+    with open(NOTEBOOK_CFG_PATH, 'w') as file:
         json.dump(notebook_cfg, file)
 
 
