@@ -66,14 +66,13 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython<3.5.*',
+        'gremlinpython>=3.5.1',
         'SPARQLWrapper==1.8.4',
-        'tornado==4.5.3',
         'requests',
         'ipywidgets',
         'networkx==2.4',
         'Jinja2==2.11.3',
-        'notebook',
+        'notebook>=6.1.5',
         'jupyter-contrib-nbextensions',
         'widgetsnbextension',
         'jupyter>=1.0.0',
@@ -82,7 +81,9 @@ setup(
         'boto3>=1.17.58',
         'ipython>=7.16.1',
         'neo4j==4.3.2',
-        'rdflib==5.0.0'
+        'rdflib==5.0.0',
+        'ipykernel==5.3.4',
+        'nbconvert==5.6.1'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
