@@ -79,7 +79,7 @@ setup(
         'requests-aws4auth==1.0.1',
         'botocore>=1.19.37',
         'boto3>=1.17.58',
-        'ipython>=7.16.1',
+        'ipython>=7.16.1,<=7.19.0',
         'neo4j==4.3.2',
         'rdflib==5.0.0',
         'ipykernel==5.3.4',
