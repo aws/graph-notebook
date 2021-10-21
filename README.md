@@ -89,9 +89,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.6.1-3.6.12
-* [Jupyter Notebook](https://jupyter.org/install) 5.7.13
-* [Tornado](https://pypi.org/project/tornado/) 4.5.3
+* [Python](https://www.python.org/downloads/) 3.6.13-3.9.7
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
@@ -102,10 +100,6 @@ You will need:
 
 ```
 # pin specific versions of required dependencies
-pip install tornado==4.5.3
-pip install ipykernel==5.3.4
-pip install "ipython>=7.16.1,<=7.19.0"
-pip install notebook==5.7.13
 pip install rdflib==5.0.0
 
 # install the package
@@ -123,7 +117,7 @@ python -m graph_notebook.nbextensions.install
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir  
 
 # start jupyter
-jupyter notebook ~/notebook/destination/dir
+python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
 ```
 
 ## Connecting to a graph database

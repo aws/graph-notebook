@@ -14,9 +14,11 @@ from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
 from neo4j import GraphDatabase
-from tornado import httpclient
+import nest_asyncio
 
-import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
+# This patch is no longer needed when graph_notebook is using the a Gremlin Python
+# client >= 3.5.0 as the HashableDict is now part of that client driver.
+# import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
@@ -158,12 +160,13 @@ class Client(object):
         return self._query_status('sparql', query_id=query_id, silent=silent, cancelQuery=True)
 
     def get_gremlin_connection(self) -> client.Client:
+        nest_asyncio.apply()
+
         uri = f'{self._http_protocol}://{self.host}:{self.port}/gremlin'
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        ws_request = httpclient.HTTPRequest(ws_url, headers=dict(request.headers))
-        return client.Client(ws_request, 'g')
+        return client.Client(ws_url, 'g', headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()
