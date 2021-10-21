@@ -120,8 +120,16 @@ class Client(object):
             else:
                 data['explain'] = explain
 
-        sparql_path = path if path != '' else self.sparql_path
-        uri = f'{self._http_protocol}://{self.host}:{self.port}/{sparql_path}'
+        if path != '':
+            sparql_path = f'/{path}'
+        elif self.sparql_path != '':
+            sparql_path = f'/{self.sparql_path}'
+        elif "neptune.amazonaws.com" in self.host:
+            sparql_path = f'/{SPARQL_ACTION}'
+        else:
+            sparql_path = ''
+
+        uri = f'{self._http_protocol}://{self.host}:{self.port}{sparql_path}'
         req = self._prepare_request('POST', uri, data=data, headers=headers)
         res = self._http_session.send(req)
         return res

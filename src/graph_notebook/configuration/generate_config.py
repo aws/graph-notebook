@@ -35,8 +35,6 @@ class SparqlSection(object):
             print('endpoint_prefix has been deprecated and will be removed in version 2.0.20 or greater.')
             if path == '':
                 path = f'{endpoint_prefix}/sparql'
-        elif path == '':
-            path = SPARQL_ACTION
 
         self.path = path
 
