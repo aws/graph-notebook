@@ -610,9 +610,11 @@ class Graph(Magics):
             return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
-            print("For more information on the status of your Blazegraph cluster, please visit: ")
-            print()
-            print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
+            if "blazegraph&trade; by SYSTAP" in status_res.text:
+                print("For more information on the status of your Blazegraph cluster, please visit: ")
+                print()
+                print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
+                print()
             return status_res
 
     @line_magic

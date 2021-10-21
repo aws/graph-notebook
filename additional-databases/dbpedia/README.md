@@ -9,6 +9,9 @@ It is possible to connect to this endpoint using the following configuration:
 {
   "host": "dbpedia.org",
   "port": 443,
-  "ssl": true
+  "ssl": true,
+  "sparql": {
+      "path": "sparql"
+  }
 }
 ```
