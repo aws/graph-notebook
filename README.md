@@ -152,7 +152,10 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
 {
   "host": "localhost",
   "port": 9999,
-  "ssl": false
+  "ssl": false,
+  "sparql": {
+    "path": "sparql"
+  }
 }
 ```
 
