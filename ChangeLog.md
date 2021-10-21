@@ -7,7 +7,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Allow `%%neptune_ml` to accept JSON blob as parameter input for most phases ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
 - Added `--silent` option for suppressing query output ([PR #1](https://github.com/aws/graph-notebook/pull/201)) ([PR #2](https://github.com/aws/graph-notebook/pull/203))
 - Added all `parserConfiguration` options to `%load` ([Link to PR](https://github.com/aws/graph-notebook/pull/205))
-- Pinned `ipython` and `ipykernel` dependency versions ([Link to PR](https://github.com/aws/graph-notebook/pull/207))
+- Upgraded to Gremlin-Python 3.5 and Jupyter Notebook 6.x ([Link to PR](https://github.com/aws/graph-notebook/pull/209))
+- Resolved smart indent bug in openCypher magic cells ([Link to PR](https://github.com/aws/graph-notebook/pull/209))
 - Removed default `/sparql` path suffix from non-Neptune SPARQL requests ([Link to PR](https://github.com/aws/graph-notebook/pull/210))
 
 ## Release 3.0.6 (September 20, 2021)
