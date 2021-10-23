@@ -14,8 +14,7 @@ NOTEBOOK_CFG_PATH = HOME_PATH + '/.jupyter/nbconfig/notebook.json'
 def patch_cm_cypher_config():
     cypher_cfg = {
         "cm_config": {
-            "smartIndent": False,
-            "mode": "cypher"
+            "smartIndent": False
         }
     }
 
@@ -28,7 +27,7 @@ def patch_cm_cypher_config():
     notebook_cfg["CodeCell"] = cypher_cfg
 
     with open(NOTEBOOK_CFG_PATH, 'w') as file:
-        json.dump(notebook_cfg, file)
+        json.dump(notebook_cfg, file, indent=2)
 
 
 def main():
