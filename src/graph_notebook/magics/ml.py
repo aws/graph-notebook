@@ -279,7 +279,7 @@ def generate_neptune_ml_parser():
     endpoint_subparsers = parser_endpoint.add_subparsers(help='endpoint sub-command help',
                                                          dest='which_sub')
     endpoint_start_parser = endpoint_subparsers.add_parser('create', help='create a new endpoint')
-    endpoint_start_parser.add_argument('--job-id', type=str, default='')
+    endpoint_start_parser.add_argument('--id', type=str, default='A unique identifier for the new inference endpoint.')
     endpoint_start_parser.add_argument('--model-training-job-id', type=str, default='',
                                        help='The job Id of the completed model-training job. '
                                             'You must supply either model-training-job-id or model-transform-job-id.')
@@ -313,7 +313,7 @@ def generate_neptune_ml_parser():
     endpoint_status_parser = endpoint_subparsers.add_parser('status',
                                                             help='obtain the status of an existing endpoint '
                                                                  'creation job')
-    endpoint_status_parser.add_argument('--job-id', type=str, default='')
+    endpoint_status_parser.add_argument('--id', type=str, default='')
     endpoint_status_parser.add_argument('--store-to', type=str, default='', help='store result to this variable')
     endpoint_status_parser.add_argument('--wait', action='store_true',
                                         help='wait for the exporter to finish running')
@@ -635,7 +635,7 @@ def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widget
     if args.which_sub == 'create':
         if params is None or params == '' or params == {}:
             params = {
-                "id": args.job_id,
+                "id": args.id,
                 'instanceType': args.instance_type
             }
             if args.update:
@@ -699,9 +699,9 @@ def neptune_ml_endpoint(args: argparse.Namespace, client: Client, output: widget
             return create_endpoint_job
     elif args.which_sub == 'status':
         if args.wait:
-            return wait_for_endpoint(args.job_id, client, output, args.wait_interval, args.wait_timeout)
+            return wait_for_endpoint(args.id, client, output, args.wait_interval, args.wait_timeout)
         else:
-            endpoint_status = client.endpoints_status(args.job_id)
+            endpoint_status = client.endpoints_status(args.id)
             endpoint_status.raise_for_status()
             return endpoint_status.json()
     else:
