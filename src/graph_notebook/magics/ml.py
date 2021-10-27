@@ -313,7 +313,7 @@ def generate_neptune_ml_parser():
     endpoint_status_parser = endpoint_subparsers.add_parser('status',
                                                             help='obtain the status of an existing endpoint '
                                                                  'creation job')
-    endpoint_status_parser.add_argument('--id', type=str, default='')
+    endpoint_status_parser.add_argument('--id', type=str, default='The ID of an existing inference endpoint.')
     endpoint_status_parser.add_argument('--store-to', type=str, default='', help='store result to this variable')
     endpoint_status_parser.add_argument('--wait', action='store_true',
                                         help='wait for the exporter to finish running')
