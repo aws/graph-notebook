@@ -139,7 +139,7 @@ class OCNetwork(EventfulNetwork):
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):
-        data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY]}
+        data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY], 'title': rel[EDGE_TYPE_KEY]}
         if self.edge_display_property is not EDGE_TYPE_KEY:
             try:
                 if isinstance(self.edge_display_property, dict):
@@ -164,7 +164,10 @@ class OCNetwork(EventfulNetwork):
                 display_label = rel[EDGE_TYPE_KEY]
         else:
             display_label = rel[EDGE_TYPE_KEY]
-        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), data)
+        data['label'] = str(display_label)
+        data['title'] = str(display_label)
+        self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=str(display_label),
+                      title=str(display_label), data=data)
 
     def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately

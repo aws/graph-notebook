@@ -480,9 +480,11 @@ class GremlinNetwork(EventfulNetwork):
                         display_is_set = True
 
             data['properties'] = properties
-            self.add_edge(from_id, to_id, edge_id, edge_label, data)
+            data['title'] = edge_label
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_label, data=data)
         else:
-            self.add_edge(from_id, to_id, edge, str(edge), data)
+            data['title'] = str(edge)
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=str(edge), title=str(edge), data=data)
 
     def add_blank_edge(self, from_id, to_id, edge_id=None, undirected=True, label=''):
         """
@@ -498,7 +500,7 @@ class GremlinNetwork(EventfulNetwork):
         if edge_id is None:
             edge_id = str(uuid.uuid4())
         edge_data = UNDIRECTED_EDGE if undirected else {}
-        self.add_edge(from_id, to_id, edge_id, label, edge_data)
+        self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=label, title=label, data=edge_data)
 
     def insert_path_element(self, path, i):
         if i == 0:

@@ -666,7 +666,6 @@ export class ForceView extends DOMWidgetView {
     if (edge === null) {
       return;
     }
-
     if (edge.title !== undefined && edge.title !== "") {
       this.detailsText.innerText = "Details - " + edge.title;
     } else {

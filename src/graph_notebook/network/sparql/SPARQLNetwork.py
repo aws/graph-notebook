@@ -341,4 +341,6 @@ class SPARQLNetwork(EventfulNetwork):
 
             if not self.graph.has_node(b[object_binding]['value']):
                 self.add_node(b[object_binding]['value'])
-            self.add_edge(b[subject_binding]['value'], b[object_binding]['value'], pred['value'], edge_label)
+            data = {'title': edge_label}
+            self.add_edge(from_id=b[subject_binding]['value'], to_id=b[object_binding]['value'], edge_id=pred['value'],
+                          label=edge_label, title=edge_label, data=data)

@@ -140,7 +140,7 @@ class EventfulNetwork(Network):
         }
         self.dispatch_callbacks(EVENT_ADD_NODE, payload)
 
-    def add_edge(self, from_id: str, to_id: str, edge_id: str, label: str, data: dict = None):
+    def add_edge(self, from_id: str, to_id: str, edge_id: str, label: str, title: str = None, data: dict = None):
         if data is None:
             data = {}
         super().add_edge(from_id, to_id, edge_id, label, data)
@@ -149,6 +149,7 @@ class EventfulNetwork(Network):
             'to_id': to_id,
             'edge_id': edge_id,
             'label': label,
+            'title': title,
             'data': data
         }
         self.dispatch_callbacks(EVENT_ADD_EDGE, payload)
