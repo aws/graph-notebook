@@ -75,6 +75,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         expected_data = {
             'data': {
                 "label": 'route',
+                "title": 'route',
                 "properties": {
                     "~id": "7389",
                     "~entityType": "relationship",
@@ -85,6 +86,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                 }
             },
             'label': 'route',
+            'title': 'route',
             'from_id': "22",
             'to_id': '151',
             'edge_id': '7389'

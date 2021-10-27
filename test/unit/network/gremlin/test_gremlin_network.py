@@ -1666,7 +1666,8 @@ class TestGremlinNetwork(unittest.TestCase):
                     Direction.OUT: '2',
                     'dist': 763
                 },
-                'label': 'route'
+                'label': 'route',
+                'title': 'route'
             }
         }
 
@@ -1841,7 +1842,8 @@ class TestGremlinNetwork(unittest.TestCase):
                     Direction.OUT: '2',
                     'dist': 763
                 },
-                'label': 'route'
+                'label': 'route',
+                'title': 'route'
             }
         }
 
@@ -1914,7 +1916,8 @@ class TestGremlinNetwork(unittest.TestCase):
                 Direction.OUT: '2',
                 'dist': 763
             },
-            'label': 'route'
+            'label': 'route',
+            'title': 'route'
         }
 
         path = Path([], [edge_map, out_vertex, in_vertex])

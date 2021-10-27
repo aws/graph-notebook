@@ -69,6 +69,7 @@ class TestEventfulNetwork(TestCase):
                 'to_id': to_id,
                 'edge_id': edge_id,
                 'label': edge_label,
+                'title': edge_label,
                 'data': edge_data
             }
             self.assertEqual(expected_payload, data)
@@ -78,7 +79,7 @@ class TestEventfulNetwork(TestCase):
         en = EventfulNetwork(callbacks={EVENT_ADD_EDGE: [add_edge_callback]})
         en.add_node(from_id)
         en.add_node(to_id)
-        en.add_edge(from_id, to_id, edge_id, edge_label, edge_data)
+        en.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_label, data=edge_data)
         self.assertTrue(callback_reached[EVENT_ADD_EDGE])
 
     def test_add_node_data_callback_dispatched(self):
