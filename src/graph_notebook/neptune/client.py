@@ -79,11 +79,12 @@ STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', auth=None, session: Session = None):
+                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
+        self.gremlin_traversal_source = gremlin_traversal_source
         self.region = region
         self._auth = auth
         self._session = session
@@ -174,7 +175,8 @@ class Client(object):
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        return client.Client(ws_url, 'g', headers=dict(request.headers))
+        # return client.Client(ws_url, 'g', headers=dict(request.headers))
+        return client.Client(ws_url, self.gremlin_traversal_source, headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()
@@ -665,6 +667,10 @@ class ClientBuilder(object):
 
     def with_sparql_path(self, path: str):
         self.args['sparql_path'] = path
+        return ClientBuilder(self.args)
+
+    def with_gremlin_traversal_source(self, traversal_source: str):
+        self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):

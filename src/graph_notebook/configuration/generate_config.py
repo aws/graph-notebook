@@ -42,15 +42,36 @@ class SparqlSection(object):
         return self.__dict__
 
 
+class GremlinSection(object):
+    """
+    Used for gremlin-specific settings in a notebook's configuration
+    """
+
+    def __init__(self, traversal_source: str = ''):
+        """
+        :param traversal_source: used to specify the traversal source for a Gremlin traversal, in the case that we are
+        connected to an endpoint that can access multiple graphs.
+        """
+
+        if traversal_source == '':
+            traversal_source = 'g'
+
+        self.traversal_source = traversal_source
+
+    def to_dict(self):
+        return self.__dict__
+
+
 class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT,
                  load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1',
-                 sparql_section: SparqlSection = None):
+                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
+        self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
         if ".neptune.amazonaws.com" in self.host:
             self.is_neptune_config = True
             self.auth_mode = auth_mode
@@ -68,14 +89,16 @@ class Configuration(object):
                 'load_from_s3_arn': self.load_from_s3_arn,
                 'ssl': self.ssl,
                 'aws_region': self.aws_region,
-                'sparql': self.sparql.to_dict()
+                'sparql': self.sparql.to_dict(),
+                'gremlin': self.gremlin.to_dict()
             }
         else:
             return {
                 'host': self.host,
                 'port': self.port,
                 'ssl': self.ssl,
-                'sparql': self.sparql.to_dict()
+                'sparql': self.sparql.to_dict(),
+                'gremlin': self.gremlin.to_dict()
             }
 
     def write_to_file(self, file_path=DEFAULT_CONFIG_LOCATION):
