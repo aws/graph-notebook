@@ -175,8 +175,9 @@ class Client(object):
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        # return client.Client(ws_url, 'g', headers=dict(request.headers))
-        return client.Client(ws_url, self.gremlin_traversal_source, headers=dict(request.headers))
+
+        traversal_source = 'g' if "neptune.amazonaws.com" in self.host else self.gremlin_traversal_source
+        return client.Client(ws_url, traversal_source, headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()

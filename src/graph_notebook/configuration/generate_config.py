@@ -71,14 +71,15 @@ class Configuration(object):
         self.port = port
         self.ssl = ssl
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
-        self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
         if ".neptune.amazonaws.com" in self.host:
             self.is_neptune_config = True
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
+            self.gremlin = GremlinSection()
         else:
             self.is_neptune_config = False
+            self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
 
     def to_dict(self) -> dict:
         if self.is_neptune_config:
