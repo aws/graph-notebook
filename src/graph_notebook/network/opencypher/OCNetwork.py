@@ -164,10 +164,11 @@ class OCNetwork(EventfulNetwork):
                 display_label = rel[EDGE_TYPE_KEY]
         else:
             display_label = rel[EDGE_TYPE_KEY]
-        data['label'] = str(display_label)
-        data['title'] = str(display_label)
-        self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=str(display_label),
-                      title=str(display_label), data=data)
+        edge_title, edge_label = self.strip_and_truncate_label_and_title(display_label, self.label_max_length)
+        data['title'] = edge_title
+        data['label'] = edge_label
+        self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=edge_label,
+                      title=edge_title, data=data)
 
     def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately

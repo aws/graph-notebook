@@ -248,6 +248,8 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -304,7 +306,7 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results, scd_query=True)
 
-                    sn = SPARQLNetwork(expand_all=args.expand_all)
+                    sn = SPARQLNetwork(label_max_length=args.label_max_length, expand_all=args.expand_all)
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)

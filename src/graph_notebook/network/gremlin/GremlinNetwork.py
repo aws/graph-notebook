@@ -455,36 +455,37 @@ class GremlinNetwork(EventfulNetwork):
                             if isinstance(self.edge_display_property[edge_label], tuple) and isinstance(edge[k],list):
                                 if str(k) == self.edge_display_property[edge_label][0]:
                                     try:
-                                        edge_label = str(edge[k][self.edge_display_property[edge_label][1]])
+                                        edge_label = edge[k][self.edge_display_property[edge_label][1]]
                                         display_is_set = True
                                     except (TypeError, IndexError) as e:
                                         logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
                                                      f"{self.edge_display_property[edge_label]}")
                                         continue
                             elif str(k) == self.edge_display_property[edge_label]:
-                                edge_label = str(edge[k])
+                                edge_label = edge[k]
                                 display_is_set = True
                         except KeyError:
                             continue
                     elif isinstance(self.edge_display_property, tuple):
                         if str(k) == self.edge_display_property[0] and isinstance(edge[k], list):
                             try:
-                                edge_label = str(edge[k][self.edge_display_property[1]])
+                                edge_label = edge[k][self.edge_display_property[1]]
                                 display_is_set = True
                             except IndexError:
                                 logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
                                              f"{self.edge_display_property[0]}")
                                 continue
                     elif str(k) == self.edge_display_property:
-                        edge_label = str(edge[k])
+                        edge_label = edge[k]
                         display_is_set = True
-
             data['properties'] = properties
-            data['title'] = edge_label
-            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_label, data=data)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.label_max_length)
+            data['title'] = edge_title
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title, data=data)
         else:
-            data['title'] = str(edge)
-            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=str(edge), title=str(edge), data=data)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge, self.label_max_length)
+            data['title'] = edge_title
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=edge_label, title=edge_title, data=data)
 
     def add_blank_edge(self, from_id, to_id, edge_id=None, undirected=True, label=''):
         """

@@ -55,7 +55,10 @@ class SPARQLNetwork(EventfulNetwork):
             graph = MultiDiGraph()
 
         self.expand_all = expand_all
-        self.label_max_length = label_max_length
+        if label_max_length < 3:
+            self.label_max_length = 3
+        else:
+            self.label_max_length = label_max_length
         super().__init__(graph, callbacks)
         self.namespace_to_prefix = {  # http://foo/bar/ -> bar
             NAMESPACE_RDFS: PREFIX_RDFS,
@@ -291,7 +294,7 @@ class SPARQLNetwork(EventfulNetwork):
                     data['title'] = title
                     data['label'] = label
 
-                # object is a literal. Check if data has this preciate already. If it does, turn its value into an
+                # object is a literal. Check if data has this predicate already. If it does, turn its value into an
                 # array and append the new value to it.
                 if 'properties' in data and f'{prefix}:{value}' in data['properties']:
                     if type(data['properties'][f'{prefix}:{value}']) is list:
@@ -301,7 +304,7 @@ class SPARQLNetwork(EventfulNetwork):
                 else:
                     data['properties'][f'{prefix}:{value}'] = obj_entry
             else:
-                # Check if data has this preciate already. If it does, turn its value into an
+                # Check if data has this predicate already. If it does, turn its value into an
                 # array and append the new value to it.
                 if 'properties' in data and pred['value'] in data['properties']:
                     if type(data['properties'][pred['value']]) is list:
@@ -341,6 +344,7 @@ class SPARQLNetwork(EventfulNetwork):
 
             if not self.graph.has_node(b[object_binding]['value']):
                 self.add_node(b[object_binding]['value'])
-            data = {'title': edge_label}
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.label_max_length)
+            data = {'title': edge_title}
             self.add_edge(from_id=b[subject_binding]['value'], to_id=b[object_binding]['value'], edge_id=pred['value'],
-                          label=edge_label, title=edge_label, data=data)
+                          label=edge_label, title=edge_title, data=data)
