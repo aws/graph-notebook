@@ -50,15 +50,15 @@ class SPARQLNetwork(EventfulNetwork):
                  graph: MultiDiGraph = None,
                  callbacks: list = None,
                  label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
+                 edge_label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
                  expand_all: bool = False):
         if graph is None:
             graph = MultiDiGraph()
 
         self.expand_all = expand_all
-        if label_max_length < 3:
-            self.label_max_length = 3
-        else:
-            self.label_max_length = label_max_length
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
+
         super().__init__(graph, callbacks)
         self.namespace_to_prefix = {  # http://foo/bar/ -> bar
             NAMESPACE_RDFS: PREFIX_RDFS,
@@ -344,7 +344,7 @@ class SPARQLNetwork(EventfulNetwork):
 
             if not self.graph.has_node(b[object_binding]['value']):
                 self.add_node(b[object_binding]['value'])
-            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.label_max_length)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
             data = {'title': edge_title}
             self.add_edge(from_id=b[subject_binding]['value'], to_id=b[object_binding]['value'], edge_id=pred['value'],
                           label=edge_label, title=edge_title, data=data)

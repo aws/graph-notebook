@@ -2397,7 +2397,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'route')
 
-    def test_set_edge_label_length(self):
+    def test_set_relation_label_length_full(self):
         path = {
             "results": [
                 {
@@ -2440,10 +2440,108 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
 
-        gn = OCNetwork(label_max_length=4)
+        gn = OCNetwork(rel_label_max_length=5)
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+        self.assertEqual(edge_route['title'], 'route')
+
+    def test_set_relation_label_length_truncated(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(rel_label_max_length=4)
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'r...')
+        self.assertEqual(edge_route['title'], 'route')
+
+    def test_set_relation_label_length_less_than_3(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "CZM",
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "endpoints": ['365', '136']
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "runways": 2,
+                                "code": "MEX",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(rel_label_max_length=-100)
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], '...')
         self.assertEqual(edge_route['title'], 'route')
 
     def test_add_multiple_edge_with_property_string(self):

@@ -99,14 +99,12 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=T_LABEL, display_property=T_LABEL, edge_display_property=T_LABEL,
-                 ignore_groups=False):
+                 edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
+                 edge_display_property=T_LABEL, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        if label_max_length < 3:
-            self.label_max_length = 3
-        else:
-            self.label_max_length = label_max_length
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
         try:
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
@@ -479,11 +477,11 @@ class GremlinNetwork(EventfulNetwork):
                         edge_label = edge[k]
                         display_is_set = True
             data['properties'] = properties
-            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.label_max_length)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
             data['title'] = edge_title
             self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title, data=data)
         else:
-            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge, self.label_max_length)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge, self.edge_label_max_length)
             data['title'] = edge_title
             self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=edge_label, title=edge_title, data=data)
 
