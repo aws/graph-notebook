@@ -13,6 +13,7 @@ from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
+from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase
 import nest_asyncio
 
@@ -188,6 +189,11 @@ class Client(object):
             c.close()
             return results
         except Exception as e:
+            if isinstance(e, GremlinServerError):
+                if e.status_code == 499:
+                    print("Error returned by the Gremlin Server for the traversal_source specified in notebook "
+                          "configuration. Please ensure that your graph database endpoint supports re-naming of "
+                          "GraphTraversalSource from the default of 'g' in Gremlin Server.")
             c.close()
             raise e
 
