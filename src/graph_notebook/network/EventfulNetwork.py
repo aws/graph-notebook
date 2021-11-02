@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from collections import defaultdict
 import collections
 import re
+import json
 from networkx import MultiDiGraph
 from .Network import Network
 from typing import Tuple
@@ -42,7 +43,7 @@ class EventfulNetwork(Network):
             graph = MultiDiGraph()
         super().__init__(graph)
 
-    def strip_and_truncate_label_and_title(self, old_label, max_len: int) -> Tuple[str, str]:
+    def strip_and_truncate_label_and_title(self, old_label, max_len: int = 10) -> Tuple[str, str]:
         if isinstance(old_label, list) and len(old_label) == 1:
             title = str(old_label).strip("[]'")
         else:
@@ -79,6 +80,12 @@ class EventfulNetwork(Network):
             if converted_property:
                 display_params = converted_property
         return display_params
+
+    def convert_property_name(self, property_name):
+        try:
+            return self.convert_multiproperties_to_tuples(json.loads(property_name.strip('\'"')))
+        except ValueError:
+            return self.convert_multiproperties_to_tuples(property_name.strip('\'"'))
 
     def flatten(self, d: dict, parent_key='', sep='_') -> dict:
         """Flattens dictionaries including nested dictionaries

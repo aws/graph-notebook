@@ -109,15 +109,8 @@ class GremlinNetwork(EventfulNetwork):
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
             self.group_by_property = group_by_property
-        try:
-            self.display_property = self.convert_multiproperties_to_tuples(json.loads(display_property.strip('\'"')))
-        except ValueError:
-            self.display_property = self.convert_multiproperties_to_tuples(display_property.strip('\'"'))
-        try:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(
-                json.loads(edge_display_property.strip('\'"')))
-        except ValueError:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property.strip('\'"'))
+        self.display_property = self.convert_property_name(display_property)
+        self.edge_display_property = self.convert_property_name(edge_display_property)
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
 

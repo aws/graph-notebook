@@ -1549,6 +1549,12 @@ class Graph(Magics):
                             help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-de', '--edge-display-property', type=str, default='~labels',
                             help='Property to display the value of on each edge, default is ~type')
+        parser.add_argument('-t', '--tooltip-property', type=str, default='',
+                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                                 'will default to the node label value.')
+        parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
+                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                                 'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
         parser.add_argument('-rel', '--rel-label-max-length', type=int, default=10,
@@ -1582,6 +1588,8 @@ class Graph(Magics):
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    edge_display_property=args.edge_display_property,
+                                   tooltip_property=args.tooltip_property,
+                                   edge_tooltip_property=args.edge_tooltip_property,
                                    label_max_length=args.label_max_length,
                                    rel_label_max_length=args.rel_label_max_length,
                                    ignore_groups=args.ignore_groups)

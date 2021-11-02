@@ -34,7 +34,9 @@ class OCNetwork(EventfulNetwork):
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  rel_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
-                 display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY, ignore_groups=False):
+                 display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
+                 tooltip_property=None, edge_tooltip_property=None,
+                 ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
 
@@ -44,17 +46,79 @@ class OCNetwork(EventfulNetwork):
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
             self.group_by_property = group_by_property
-        try:
-            self.display_property = self.convert_multiproperties_to_tuples(json.loads(display_property.strip('\'"')))
-        except ValueError:
-            self.display_property = self.convert_multiproperties_to_tuples(display_property.strip('\'"'))
-        try:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(
-                json.loads(edge_display_property.strip('\'"')))
-        except ValueError:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property.strip('\'"'))
+        self.display_property = self.convert_property_name(display_property)
+        self.edge_display_property = self.convert_property_name(edge_display_property)
+        self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
+            else self.display_property
+        self.edge_tooltip_property = self.convert_property_name(edge_tooltip_property) if edge_tooltip_property \
+            else self.edge_display_property
         self.ignore_groups = ignore_groups
         super().__init__(graph, callbacks)
+
+    def get_node_property_value(self, node: dict, props: dict, title, custom_property):
+        try:
+            if isinstance(custom_property, dict):
+                if isinstance(custom_property[title], tuple):
+                    if custom_property[title][0] in props and \
+                            isinstance(props[custom_property[title][0]], list) and \
+                            len(props[custom_property[title][0]]) >= 2:
+                        label = props[custom_property[title][0]][custom_property[title][1]]
+                    else:
+                        label = title
+                elif custom_property[title] in props:
+                    label = props[custom_property[title]]
+                elif LABEL_KEY in props:
+                    label = props[LABEL_KEY]
+                else:
+                    label = props
+            elif isinstance(custom_property, tuple) and custom_property[0] in props:
+                if isinstance(props[custom_property[0]], list) and len(props[custom_property[0]]) >= 2:
+                    label = props[custom_property[0]][custom_property[1]]
+                else:
+                    label = title
+            elif custom_property in [ID_KEY, 'id']:
+                label = node[ID_KEY]
+            elif custom_property in [LABEL_KEY, 'label']:
+                label = node[LABEL_KEY]
+            elif custom_property in [VERTEX_TYPE_KEY, 'type']:
+                label = node[VERTEX_TYPE_KEY]
+            elif custom_property in props:
+                label = props[custom_property]
+            else:
+                label = title
+        except (KeyError, IndexError) as e:
+            logger.debug(e)
+            label = title
+
+        return label
+
+    def get_edge_property_value(self, data: dict, rel: dict, custom_property):
+        if custom_property is not EDGE_TYPE_KEY:
+            try:
+                if isinstance(custom_property, dict):
+                    if isinstance(custom_property[data['label']], tuple) and \
+                            custom_property[data['label']][0] in data['properties']:
+                        if isinstance(data['properties'][custom_property[data['label']][0]], list) and \
+                                len(data['properties'][custom_property[data['label']][0]]) >= 2:
+                            display_label = str(data['properties'][custom_property[data['label']][0]]
+                                                [custom_property[data['label']][1]])
+                        else:
+                            display_label = rel[EDGE_TYPE_KEY]
+                    else:
+                        display_label = data['properties'][custom_property[rel[EDGE_TYPE_KEY]]]
+                elif isinstance(custom_property, tuple) and \
+                        custom_property[0] in data['properties']:
+                    display_label = str(data['properties'][custom_property[0]]
+                                        [custom_property[1]])
+                else:
+                    display_label = data['properties'][custom_property]
+            except (KeyError, IndexError, TypeError) as e:
+                logger.debug(e)
+                display_label = rel[EDGE_TYPE_KEY]
+        else:
+            display_label = rel[EDGE_TYPE_KEY]
+
+        return display_label
 
     def parse_node(self, node: dict):
         """This parses the node parameter and adds the node to the network diagram
@@ -62,12 +126,13 @@ class OCNetwork(EventfulNetwork):
         Args:
             node (dict): The node dictionary to parse
         """
+        # generate placeholder tooltip from label; if not present, amalgamate node property values instead
         if LABEL_KEY in node.keys():
-            title = node[LABEL_KEY][0]
+            title_plc = node[LABEL_KEY][0]
         else:
-            title = ""
+            title_plc = ""
             for key in node:
-                title += str(node[key])
+                title_plc += str(node[key])
 
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
             try:
@@ -97,41 +162,11 @@ class OCNetwork(EventfulNetwork):
                 group = DEFAULT_GRP
 
         props = self.flatten(node)
-        try:
-            if isinstance(self.display_property, dict):
-                if isinstance(self.display_property[title], tuple):
-                    if self.display_property[title][0] in props and \
-                            isinstance(props[self.display_property[title][0]], list) and \
-                            len(props[self.display_property[title][0]]) >= 2:
-                        label = props[self.display_property[title][0]][self.display_property[title][1]]
-                    else:
-                        label = title
-                elif self.display_property[title] in props:
-                    label = props[self.display_property[title]]
-                elif LABEL_KEY in props:
-                    label = props[LABEL_KEY]
-                else:
-                    label = props
-            elif isinstance(self.display_property, tuple) and self.display_property[0] in props:
-                if isinstance(props[self.display_property[0]], list) and len(props[self.display_property[0]]) >= 2:
-                    label = props[self.display_property[0]][self.display_property[1]]
-                else:
-                    label = title
-            elif self.display_property in [ID_KEY, 'id']:
-                label = node[ID_KEY]
-            elif self.display_property in [LABEL_KEY, 'label']:
-                label = node[LABEL_KEY]
-            elif self.display_property in [VERTEX_TYPE_KEY, 'type']:
-                label = node[VERTEX_TYPE_KEY]
-            elif self.display_property in props:
-                label = props[self.display_property]
-            else:
-                label = title
-        except (KeyError, IndexError) as e:
-            logger.debug(e)
-            label = title
-
+        label = self.get_node_property_value(node, props, title_plc, self.display_property)
         title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
+        if self.tooltip_property and self.tooltip_property != self.display_property:
+            title, label_plc = self.strip_and_truncate_label_and_title(
+                self.get_node_property_value(node, props, title_plc, self.tooltip_property))
         data = {'properties': props, 'label': label, 'title': title, 'group': group}
         if self.ignore_groups:
             data['group'] = DEFAULT_GRP
@@ -139,31 +174,10 @@ class OCNetwork(EventfulNetwork):
     
     def parse_rel(self, rel):
         data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY], 'title': rel[EDGE_TYPE_KEY]}
-        if self.edge_display_property is not EDGE_TYPE_KEY:
-            try:
-                if isinstance(self.edge_display_property, dict):
-                    if isinstance(self.edge_display_property[data['label']], tuple) and \
-                            self.edge_display_property[data['label']][0] in data['properties']:
-                        if isinstance(data['properties'][self.edge_display_property[data['label']][0]], list) and \
-                                len(data['properties'][self.edge_display_property[data['label']][0]]) >= 2:
-                            display_label = str(data['properties'][self.edge_display_property[data['label']][0]]
-                                                [self.edge_display_property[data['label']][1]])
-                        else:
-                            display_label = rel[EDGE_TYPE_KEY]
-                    else:
-                        display_label = data['properties'][self.edge_display_property[rel[EDGE_TYPE_KEY]]]
-                elif isinstance(self.edge_display_property, tuple) and \
-                        self.edge_display_property[0] in data['properties']:
-                    display_label = str(data['properties'][self.edge_display_property[0]]
-                                        [self.edge_display_property[1]])
-                else:
-                    display_label = data['properties'][self.edge_display_property]
-            except (KeyError, IndexError, TypeError) as e:
-                logger.debug(e)
-                display_label = rel[EDGE_TYPE_KEY]
-        else:
-            display_label = rel[EDGE_TYPE_KEY]
+        display_label = self.get_edge_property_value(data, rel, self.edge_display_property)
         edge_title, edge_label = self.strip_and_truncate_label_and_title(display_label, self.rel_label_max_length)
+        if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
+            edge_title = self.get_edge_property_value(data, rel, self.edge_tooltip_property)
         data['title'] = edge_title
         data['label'] = edge_label
         self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=edge_label,
