@@ -249,6 +249,10 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex labels, in characters. Default is 10')
+        parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -305,7 +309,8 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results, scd_query=True)
 
-                    sn = SPARQLNetwork(expand_all=args.expand_all)
+                    sn = SPARQLNetwork(label_max_length=args.label_max_length,
+                                       edge_label_max_length=args.edge_label_max_length, expand_all=args.expand_all)
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)
@@ -421,6 +426,8 @@ class Graph(Magics):
                             help='Property to display the value of on each edge, default is T.label')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
+        parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('--no-results', action='store_false', default=True,
@@ -501,7 +508,9 @@ class Graph(Magics):
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
                     gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                         edge_display_property=args.edge_display_property,
-                                        label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                                        label_max_length=args.label_max_length,
+                                        edge_label_max_length=args.edge_label_max_length,
+                                        ignore_groups=args.ignore_groups)
 
                     if args.path_pattern == '':
                         gn.add_results(query_res)
@@ -1543,6 +1552,8 @@ class Graph(Magics):
                             help='Property to display the value of on each edge, default is ~type')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
+        parser.add_argument('-rel', '--rel-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
@@ -1572,7 +1583,9 @@ class Graph(Magics):
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    edge_display_property=args.edge_display_property,
-                                   label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                                   label_max_length=args.label_max_length,
+                                   rel_label_max_length=args.rel_label_max_length,
+                                   ignore_groups=args.ignore_groups)
                     gn.add_results(res)
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                     if len(gn.graph.nodes) > 0:

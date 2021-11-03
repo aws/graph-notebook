@@ -99,14 +99,12 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=T_LABEL, display_property=T_LABEL, edge_display_property=T_LABEL,
-                 ignore_groups=False):
+                 edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
+                 edge_display_property=T_LABEL, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        if label_max_length < 3:
-            self.label_max_length = 3
-        else:
-            self.label_max_length = label_max_length
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
         try:
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
@@ -455,34 +453,37 @@ class GremlinNetwork(EventfulNetwork):
                             if isinstance(self.edge_display_property[edge_label], tuple) and isinstance(edge[k],list):
                                 if str(k) == self.edge_display_property[edge_label][0]:
                                     try:
-                                        edge_label = str(edge[k][self.edge_display_property[edge_label][1]])
+                                        edge_label = edge[k][self.edge_display_property[edge_label][1]]
                                         display_is_set = True
                                     except (TypeError, IndexError) as e:
                                         logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
                                                      f"{self.edge_display_property[edge_label]}")
                                         continue
                             elif str(k) == self.edge_display_property[edge_label]:
-                                edge_label = str(edge[k])
+                                edge_label = edge[k]
                                 display_is_set = True
                         except KeyError:
                             continue
                     elif isinstance(self.edge_display_property, tuple):
                         if str(k) == self.edge_display_property[0] and isinstance(edge[k], list):
                             try:
-                                edge_label = str(edge[k][self.edge_display_property[1]])
+                                edge_label = edge[k][self.edge_display_property[1]]
                                 display_is_set = True
                             except IndexError:
                                 logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
                                              f"{self.edge_display_property[0]}")
                                 continue
                     elif str(k) == self.edge_display_property:
-                        edge_label = str(edge[k])
+                        edge_label = edge[k]
                         display_is_set = True
-
             data['properties'] = properties
-            self.add_edge(from_id, to_id, edge_id, edge_label, data)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
+            data['title'] = edge_title
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title, data=data)
         else:
-            self.add_edge(from_id, to_id, edge, str(edge), data)
+            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge, self.edge_label_max_length)
+            data['title'] = edge_title
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge, label=edge_label, title=edge_title, data=data)
 
     def add_blank_edge(self, from_id, to_id, edge_id=None, undirected=True, label=''):
         """
@@ -498,7 +499,7 @@ class GremlinNetwork(EventfulNetwork):
         if edge_id is None:
             edge_id = str(uuid.uuid4())
         edge_data = UNDIRECTED_EDGE if undirected else {}
-        self.add_edge(from_id, to_id, edge_id, label, edge_data)
+        self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=label, title=label, data=edge_data)
 
     def insert_path_element(self, path, i):
         if i == 0:

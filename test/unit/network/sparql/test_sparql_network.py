@@ -181,6 +181,22 @@ class TestSPARQLNetwork(unittest.TestCase):
         self.assertEqual(['value1', 'value2'], node['properties']['example:prop'])
         self.assertEqual(['value3', 'value4'], node['properties']['propLiteral'])
 
+    def test_sparql_network_label_length_full(self):
+        sparql_network = SPARQLNetwork(label_max_length=20)
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['label'])
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_label_length_truncated(self):
+        sparql_network = SPARQLNetwork(label_max_length=5)
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('re...', node['label'])
+        self.assertEqual('resource:24', node['title'])
+
 
 if __name__ == '__main__':
     unittest.main()
