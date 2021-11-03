@@ -126,7 +126,7 @@ class Client(object):
             sparql_path = f'/{path}'
         elif self.sparql_path != '':
             sparql_path = f'/{self.sparql_path}'
-        elif "neptune.amazonaws.com" in self.host:
+        elif "amazonaws.com" in self.host:
             sparql_path = f'/{SPARQL_ACTION}'
         else:
             sparql_path = ''

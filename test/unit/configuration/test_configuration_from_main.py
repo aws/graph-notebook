@@ -14,7 +14,8 @@ class TestGenerateConfigurationMain(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.generic_host = 'blah'
-        cls.neptune_host = 'instance.cluster.us-west-2.neptune.amazonaws.com'
+        cls.neptune_host_reg = 'instance.cluster.us-west-2.neptune.amazonaws.com'
+        cls.neptune_host_cn = 'instance.cluster.neptune.cn-north-1.amazonaws.com.cn'
         cls.port = 8182
         cls.test_file_path = f'{os.path.abspath(os.path.curdir)}/test_generate_from_main.json'
         cls.python_cmd = os.environ.get('PYTHON_CMD', 'python3')  # environment variable to let ToD hosts specify
@@ -24,17 +25,33 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
 
-    def test_generate_configuration_main_defaults_neptune(self):
-        expected_config = Configuration(self.neptune_host, self.port, auth_mode=AuthModeEnum.DEFAULT,
-                                        load_from_s3_arn='', ssl=True)
+    def test_generate_configuration_main_defaults_neptune_reg(self):
+        expected_config = Configuration(self.neptune_host_reg,
+                                        self.port,
+                                        auth_mode=AuthModeEnum.DEFAULT,
+                                        load_from_s3_arn='',
+                                        ssl=True)
+        self.generate_config_from_main_and_test(expected_config, host_type='neptune')
+
+    def test_generate_configuration_main_defaults_neptune_cn(self):
+        expected_config = Configuration(self.neptune_host_cn,
+                                        self.port,
+                                        auth_mode=AuthModeEnum.DEFAULT,
+                                        load_from_s3_arn='',
+                                        ssl=True)
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_defaults_generic(self):
         expected_config = Configuration(self.generic_host, self.port, ssl=True)
         self.generate_config_from_main_and_test(expected_config)
 
-    def test_generate_configuration_main_override_defaults_neptune(self):
-        expected_config = Configuration(self.neptune_host, self.port, auth_mode=AuthModeEnum.IAM,
+    def test_generate_configuration_main_override_defaults_neptune_reg(self):
+        expected_config = Configuration(self.neptune_host_reg, self.port, auth_mode=AuthModeEnum.IAM,
+                                        load_from_s3_arn='loader_arn', ssl=False)
+        self.generate_config_from_main_and_test(expected_config, host_type='neptune')
+
+    def test_generate_configuration_main_override_defaults_neptune_cn(self):
+        expected_config = Configuration(self.neptune_host_cn, self.port, auth_mode=AuthModeEnum.IAM,
                                         load_from_s3_arn='loader_arn', ssl=False)
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
@@ -43,7 +60,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.generate_config_from_main_and_test(expected_config)
 
     def test_generate_configuration_main_empty_args_neptune(self):
-        expected_config = Configuration(self.neptune_host, self.port)
+        expected_config = Configuration(self.neptune_host_reg, self.port)
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                            f'--host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" '
                            f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" ')
