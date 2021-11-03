@@ -5,6 +5,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Added support for specifying the Gremlin traversal source ([Link to PR](https://github.com/aws/graph-notebook/pull/221))
 - Added edge tooltips, and options for specifying edge label length ([Link to PR](https://github.com/aws/graph-notebook/pull/218))
+- Fixed configuration options missing when using a CN region Neptune host ([Link to PR](https://github.com/aws/graph-notebook/pull/223))
+- Correct naming of ID parameter for NeptuneML Endpoint command ([Link to PR](https://github.com/aws/graph-notebook/pull/217))
 
 ## Release 3.0.7 (October 25, 2021)
 - Added full support for NeptuneML API command parameters to `%neptune_ml` ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
