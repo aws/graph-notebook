@@ -13,6 +13,7 @@ from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
+from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase
 import nest_asyncio
 
@@ -79,11 +80,12 @@ STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', auth=None, session: Session = None):
+                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
+        self.gremlin_traversal_source = gremlin_traversal_source
         self.region = region
         self._auth = auth
         self._session = session
@@ -174,7 +176,9 @@ class Client(object):
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        return client.Client(ws_url, 'g', headers=dict(request.headers))
+
+        traversal_source = 'g' if "neptune.amazonaws.com" in self.host else self.gremlin_traversal_source
+        return client.Client(ws_url, traversal_source, headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()
@@ -185,6 +189,11 @@ class Client(object):
             c.close()
             return results
         except Exception as e:
+            if isinstance(e, GremlinServerError):
+                if e.status_code == 499:
+                    print("Error returned by the Gremlin Server for the traversal_source specified in notebook "
+                          "configuration. Please ensure that your graph database endpoint supports re-naming of "
+                          "GraphTraversalSource from the default of 'g' in Gremlin Server.")
             c.close()
             raise e
 
@@ -665,6 +674,10 @@ class ClientBuilder(object):
 
     def with_sparql_path(self, path: str):
         self.args['sparql_path'] = path
+        return ClientBuilder(self.args)
+
+    def with_gremlin_traversal_source(self, traversal_source: str):
+        self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):

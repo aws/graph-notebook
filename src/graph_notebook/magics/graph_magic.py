@@ -171,7 +171,8 @@ class Graph(Magics):
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
-                .with_sparql_path(config.sparql.path)
+                .with_sparql_path(config.sparql.path) \
+                .with_gremlin_traversal_source(config.gremlin.traversal_source)
 
         self.client = builder.build()
 
