@@ -157,7 +157,7 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if ".neptune.amazonaws.com" in config.host:
+        if "amazonaws.com" in config.host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
