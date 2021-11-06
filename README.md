@@ -124,14 +124,17 @@ python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/d
 
 ### Gremlin Server
 
-In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`.  For a local Gremlin server (HTTP or WebSockets), you can use the following command:
+In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`. Optionally, modify `traversal_source` if your graph traversal source name differs from the default value. For a local Gremlin server (HTTP or WebSockets), you can use the following command:
 
 ```
 %%graph_notebook_config
 {
   "host": "localhost",
   "port": 8182,
-  "ssl": false
+  "ssl": false,
+  "gremlin": {
+    "traversal_source": "g"
+  }
 }
 ```
 
