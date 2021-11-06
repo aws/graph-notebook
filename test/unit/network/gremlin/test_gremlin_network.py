@@ -619,7 +619,6 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['label'], 'Seattle-Taco...')
         self.assertEqual(node['title'], 'Seattle-Tacoma International Airport')
 
-
     def test_add_vertex_with_node_property_json_and_label_length(self):
         vertex = {
             T.id: '1234',
@@ -651,7 +650,7 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['label'], 'airport')
         self.assertEqual(node['title'], 'SEA')
 
-    def test_add_vertex_with_node_property_json(self):
+    def test_add_vertex_with_node_tooltip_json(self):
         vertex = {
             T.id: '1234',
             T.label: 'airport',
@@ -666,7 +665,7 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['label'], 'airport')
         self.assertEqual(node['title'], 'SEA')
 
-    def test_add_vertex_with_node_property_json_invalid(self):
+    def test_add_vertex_with_node_tooltip_json_invalid(self):
         vertex = {
             T.id: '1234',
             T.label: 'airport',
