@@ -145,6 +145,51 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node2['label'], '2')
         self.assertEqual(node2['title'], '2')
 
+    def test_add_explicit_type_vertex_with_node_tooltip_id(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(tooltip_property='id')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['label'], 'vertex')
+        self.assertEqual(node['title'], '1')
+
+    def test_add_explicit_type_vertex_with_node_tooltip_json(self):
+        vertex1 = Vertex(id='1')
+
+        gn = GremlinNetwork(tooltip_property='{"vertex":"id"}')
+        gn.add_vertex(vertex1)
+        node1 = gn.graph.nodes.get('1')
+        self.assertEqual(node1['label'], 'vertex')
+        self.assertEqual(node1['title'], '1')
+
+    def test_add_explicit_type_vertex_with_node_tooltip_json_invalid_value(self):
+        vertex1 = Vertex(id='1')
+
+        gn = GremlinNetwork(tooltip_property='{"vertex":"dist"}')
+        gn.add_vertex(vertex1)
+        node1 = gn.graph.nodes.get('1')
+        self.assertEqual(node1['label'], 'vertex')
+        self.assertEqual(node1['title'], 'vertex')
+
+    def test_add_explicit_type_vertex_with_different_label_and_tooltip(self):
+        vertex1 = Vertex(id='1')
+
+        gn = GremlinNetwork(display_property='{"vertex":"label"}', tooltip_property='{"vertex":"id"}')
+        gn.add_vertex(vertex1)
+        node1 = gn.graph.nodes.get('1')
+        self.assertEqual(node1['label'], 'vertex')
+        self.assertEqual(node1['title'], '1')
+
+    def test_add_explicit_type_vertex_with_valid_label_and_invalid_tooltip(self):
+        vertex1 = Vertex(id='1')
+
+        gn = GremlinNetwork(display_property='{"vertex":"id"}', tooltip_property='{"vertex":"foo"}')
+        gn.add_vertex(vertex1)
+        node1 = gn.graph.nodes.get('1')
+        self.assertEqual(node1['label'], '1')
+        self.assertEqual(node1['title'], '1')
+
     def test_add_vertex_without_node_property(self):
         vertex = {
             T.id: '1234',
@@ -574,6 +619,7 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['label'], 'Seattle-Taco...')
         self.assertEqual(node['title'], 'Seattle-Tacoma International Airport')
 
+
     def test_add_vertex_with_node_property_json_and_label_length(self):
         vertex = {
             T.id: '1234',
@@ -589,6 +635,81 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['label'], 'Seattle-Taco...')
         self.assertEqual(node['title'], 'Seattle-Tacoma International Airport')
+
+    def test_add_vertex_with_node_tooltip_string(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(tooltip_property='code')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+        self.assertEqual(node['title'], 'SEA')
+
+    def test_add_vertex_with_node_property_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(tooltip_property='{"airport":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+        self.assertEqual(node['title'], 'SEA')
+
+    def test_add_vertex_with_node_property_json_invalid(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"foo"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'airport')
+        self.assertEqual(node['title'], 'airport')
+
+    def test_add_vertex_with_different_label_and_tooltip(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"runways"}', tooltip_property='{"airport":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], '4')
+        self.assertEqual(node['title'], 'SEA')
+
+    def test_add_vertex_with_valid_label_and_invalid_tooltip(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        gn = GremlinNetwork(display_property='{"airport":"code"}', tooltip_property='{"airport":"foo"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['label'], 'SEA')
+        self.assertEqual(node['title'], 'SEA')
 
     def test_add_explicit_type_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
@@ -747,6 +868,76 @@ class TestGremlinNetwork(unittest.TestCase):
         edge_path = gn.graph.get_edge_data('2', '3')
         self.assertEqual(edge_route['1']['label'], 'v[2]')
         self.assertEqual(edge_path['2']['label'], '2')
+
+    def test_add_explicit_type_single_edge_with_edge_property_string(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_tooltip_property='id')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], '1')
+
+    def test_add_explicit_type_single_edge_with_edge_property_json(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_tooltip_property='{"route":"inV"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], 'v[2]')
+
+    def test_add_explicit_type_single_edge_with_edge_property_json_invalid(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"foo"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], 'route')
+
+    def test_add_explicit_type_single_edge_with_different_label_and_tooltip(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}', edge_tooltip_property='{"route":"id"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+        self.assertEqual(edge['1']['title'], '1')
+
+    def test_add_explicit_type_single_edge_with_valid_label_and_invalid_tooltip(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = Edge(id='1', outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}', edge_tooltip_property='{"route":"foo"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+        self.assertEqual(edge['1']['title'], 'v[2]')
 
     def test_add_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
@@ -1141,6 +1332,76 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_path_edge(edge1, from_id='1', to_id='2')
         edge = gn.graph.get_edge_data('1', '2')
         self.assertEqual(edge['1']['label'], 'route')
+
+    def test_add_single_edge_with_tooltip_string(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_tooltip_property='T.id')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], '1')
+
+    def test_add_single_edge_with_tooltip_json(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_tooltip_property='{"route":"T.id"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], '1')
+
+    def test_add_single_edge_with_tooltip_json_invalid(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_tooltip_property='{"route":"foo"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'route')
+        self.assertEqual(edge['1']['title'], 'route')
+
+    def test_add_single_edge_with_different_label_and_tooltip(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}', edge_tooltip_property='{"route":"T.id"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+        self.assertEqual(edge['1']['title'], '1')
+
+    def test_add_single_edge_with_valid_label_and_invalid_tooltip(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_display_property='{"route":"inV"}', edge_tooltip_property='{"route":"foo"}')
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'v[2]')
+        self.assertEqual(edge['1']['title'], 'v[2]')
 
     def test_add_path_with_integer(self):
         path = Path([], ['ANC', 3030, 'DFW'])

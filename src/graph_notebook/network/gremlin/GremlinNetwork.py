@@ -396,7 +396,7 @@ class GremlinNetwork(EventfulNetwork):
                 title = label_full
 
             data = {'label': str(label).strip("[]'"), 'title': title, 'group': group,
-                    'properties': {'id': node_id, 'label': title}}
+                    'properties': {'id': node_id, 'label': label_full}}
         elif type(v) is dict:
             properties = {}
             title = ''
