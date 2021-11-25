@@ -248,11 +248,22 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-g', '--group-by', type=str, default='',
+                            help='Property used to group nodes.')
+        parser.add_argument('-d', '--display-property', type=str, default='',
+                            help='Property to display the value of on each node.')
+        parser.add_argument('-de', '--edge-display-property', type=str, default='',
+                            help='Property to display the value of on each edge.')
+        parser.add_argument('-t', '--tooltip-property', type=str, default='',
+                            help='Property to display the value of on each node tooltip.')
+        parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
+                            help='Property to display the value of on each node tooltip.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex labels, in characters. Default is 10')
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
@@ -308,8 +319,15 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results, scd_query=True)
 
-                    sn = SPARQLNetwork(label_max_length=args.label_max_length,
-                                       edge_label_max_length=args.edge_label_max_length, expand_all=args.expand_all)
+                    sn = SPARQLNetwork(group_by_property=args.group_by,
+                                       display_property=args.display_property,
+                                       edge_display_property=args.edge_display_property,
+                                       tooltip_property=args.tooltip_property,
+                                       edge_tooltip_property=args.edge_tooltip_property,
+                                       label_max_length=args.label_max_length,
+                                       edge_label_max_length=args.edge_label_max_length,
+                                       ignore_groups=args.ignore_groups,
+                                       expand_all=args.expand_all)
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)
@@ -1599,7 +1617,7 @@ class Graph(Magics):
                                    tooltip_property=args.tooltip_property,
                                    edge_tooltip_property=args.edge_tooltip_property,
                                    label_max_length=args.label_max_length,
-                                   rel_label_max_length=args.rel_label_max_length,
+                                   edge_label_max_length=args.rel_label_max_length,
                                    ignore_groups=args.ignore_groups)
                     gn.add_results(res)
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
@@ -1664,7 +1682,7 @@ class Graph(Magics):
 
     def handle_opencypher_status(self, line, local_ns):
         """
-        This is refactored into its own handler method so that we can invoke is from
+        This is refactored xinto its own handler method so that we can invoke is from
         %opencypher_status or from %oc_status
         """
         parser = argparse.ArgumentParser()

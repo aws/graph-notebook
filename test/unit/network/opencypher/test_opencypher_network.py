@@ -2536,7 +2536,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
 
-        gn = OCNetwork(rel_label_max_length=5)
+        gn = OCNetwork(edge_label_max_length=5)
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'route')
@@ -2585,7 +2585,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
 
-        gn = OCNetwork(rel_label_max_length=4)
+        gn = OCNetwork(edge_label_max_length=4)
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], 'r...')
@@ -2634,7 +2634,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
 
-        gn = OCNetwork(rel_label_max_length=-100)
+        gn = OCNetwork(edge_label_max_length=-100)
         gn.add_results(path)
         edge_route = gn.graph.get_edge_data('365', '136', '30601')
         self.assertEqual(edge_route['label'], '...')

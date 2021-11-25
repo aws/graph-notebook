@@ -17,6 +17,8 @@ EVENT_ADD_NODE_DATA = 'add_node_data'
 EVENT_ADD_NODE_PROPERTY = 'add_node_property'
 EVENT_ADD_EDGE = 'add_edge'
 EVENT_ADD_EDGE_DATA = 'add_edge_data'
+DEFAULT_GRP = 'DEFAULT_GROUP'
+DEFAULT_LABEL_MAX_LENGTH = 10
 
 VALID_EVENTS = [EVENT_ADD_NODE, EVENT_ADD_NODE_DATA, EVENT_ADD_NODE_PROPERTY, EVENT_ADD_EDGE, EVENT_ADD_EDGE_DATA]
 
@@ -34,11 +36,28 @@ class EventfulNetwork(Network):
     the EventfulNetwork will call super().add_node(...) then look for callbacks to dispatch.
     """
 
-    def __init__(self, graph: MultiDiGraph = None, callbacks: dict = None):
+    def __init__(self, graph: MultiDiGraph = None, callbacks: dict = None,
+                 label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
+                 edge_label_max_length: int = DEFAULT_LABEL_MAX_LENGTH, group_by_property: str = '',
+                 display_property: str = '', edge_display_property: str = '',
+                 tooltip_property: str = '', edge_tooltip_property: str = '',
+                 ignore_groups=False):
         if callbacks is None:
             callbacks = defaultdict(list)
         self.callbacks = callbacks
-
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
+        try:
+            self.group_by_property = json.loads(group_by_property)
+        except (TypeError, ValueError) as e:
+            self.group_by_property = group_by_property
+        self.display_property = self.convert_property_name(display_property)
+        self.edge_display_property = self.convert_property_name(edge_display_property)
+        self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
+            else self.display_property
+        self.edge_tooltip_property = self.convert_property_name(edge_tooltip_property) if edge_tooltip_property \
+            else self.edge_display_property
+        self.ignore_groups = ignore_groups
         if graph is None:
             graph = MultiDiGraph()
         super().__init__(graph)

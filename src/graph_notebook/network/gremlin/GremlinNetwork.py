@@ -9,7 +9,7 @@ import uuid
 import logging
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
 from gremlin_python.process.traversal import T, Direction
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
@@ -19,7 +19,6 @@ logger = logging.getLogger(__file__)
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
-DEFAULT_GRP = 'DEFAULT_GROUP'
 
 INVALID_PATH_ERROR = ValueError("results must be a path with the pattern Vertex -> Edge -> Vertex.")
 INVALID_VERTEX_ERROR = ValueError("when adding a vertex, object must be of type Vertex or Dict")
@@ -103,20 +102,9 @@ class GremlinNetwork(EventfulNetwork):
                  edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        self.label_max_length = 3 if label_max_length < 3 else label_max_length
-        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
-        try:
-            self.group_by_property = json.loads(group_by_property)
-        except ValueError:
-            self.group_by_property = group_by_property
-        self.display_property = self.convert_property_name(display_property)
-        self.edge_display_property = self.convert_property_name(edge_display_property)
-        self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
-            else self.display_property
-        self.edge_tooltip_property = self.convert_property_name(edge_tooltip_property) if edge_tooltip_property \
-            else self.edge_display_property
-        self.ignore_groups = ignore_groups
-        super().__init__(graph, callbacks)
+        super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
+                         display_property, edge_display_property, tooltip_property, edge_tooltip_property,
+                         ignore_groups)
 
     def get_dict_element_property_value(self, element, k, temp_label, custom_property):
         property_value = None
