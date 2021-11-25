@@ -2,11 +2,20 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
-## Upcoming
+## Release 3.0.8 (November 3, 2021)
+- Added support for specifying the Gremlin traversal source ([Link to PR](https://github.com/aws/graph-notebook/pull/221))
+- Added edge tooltips, and options for specifying edge label length ([Link to PR](https://github.com/aws/graph-notebook/pull/218))
+- Fixed configuration options missing when using a CN region Neptune host ([Link to PR](https://github.com/aws/graph-notebook/pull/223))
+- Correct naming of ID parameter for NeptuneML Endpoint command ([Link to PR](https://github.com/aws/graph-notebook/pull/217))
+
+## Release 3.0.7 (October 25, 2021)
 - Added full support for NeptuneML API command parameters to `%neptune_ml` ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
 - Allow `%%neptune_ml` to accept JSON blob as parameter input for most phases ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
 - Added `--silent` option for suppressing query output ([PR #1](https://github.com/aws/graph-notebook/pull/201)) ([PR #2](https://github.com/aws/graph-notebook/pull/203))
 - Added all `parserConfiguration` options to `%load` ([Link to PR](https://github.com/aws/graph-notebook/pull/205))
+- Upgraded to Gremlin-Python 3.5 and Jupyter Notebook 6.x ([Link to PR](https://github.com/aws/graph-notebook/pull/209))
+- Resolved smart indent bug in openCypher magic cells ([Link to PR](https://github.com/aws/graph-notebook/pull/209))
+- Removed default `/sparql` path suffix from non-Neptune SPARQL requests ([Link to PR](https://github.com/aws/graph-notebook/pull/210))
 
 ## Release 3.0.6 (September 20, 2021)
 - Added a new `%stream_viewer` magic that allows interactive exploration of the Neptune CDC stream (if enabled). ([Link to PR](https://github.com/aws/graph-notebook/pull/191))

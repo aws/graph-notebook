@@ -13,10 +13,13 @@ from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client
+from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase
-from tornado import httpclient
+import nest_asyncio
 
-import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
+# This patch is no longer needed when graph_notebook is using the a Gremlin Python
+# client >= 3.5.0 as the HashableDict is now part of that client driver.
+# import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
@@ -77,11 +80,12 @@ STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', auth=None, session: Session = None):
+                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
+        self.gremlin_traversal_source = gremlin_traversal_source
         self.region = region
         self._auth = auth
         self._session = session
@@ -120,8 +124,16 @@ class Client(object):
             else:
                 data['explain'] = explain
 
-        sparql_path = path if path != '' else self.sparql_path
-        uri = f'{self._http_protocol}://{self.host}:{self.port}/{sparql_path}'
+        if path != '':
+            sparql_path = f'/{path}'
+        elif self.sparql_path != '':
+            sparql_path = f'/{self.sparql_path}'
+        elif "amazonaws.com" in self.host:
+            sparql_path = f'/{SPARQL_ACTION}'
+        else:
+            sparql_path = ''
+
+        uri = f'{self._http_protocol}://{self.host}:{self.port}{sparql_path}'
         req = self._prepare_request('POST', uri, data=data, headers=headers)
         res = self._http_session.send(req)
         return res
@@ -158,12 +170,15 @@ class Client(object):
         return self._query_status('sparql', query_id=query_id, silent=silent, cancelQuery=True)
 
     def get_gremlin_connection(self) -> client.Client:
+        nest_asyncio.apply()
+
         uri = f'{self._http_protocol}://{self.host}:{self.port}/gremlin'
         request = self._prepare_request('GET', uri)
 
         ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-        ws_request = httpclient.HTTPRequest(ws_url, headers=dict(request.headers))
-        return client.Client(ws_request, 'g')
+
+        traversal_source = 'g' if "neptune.amazonaws.com" in self.host else self.gremlin_traversal_source
+        return client.Client(ws_url, traversal_source, headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
         c = self.get_gremlin_connection()
@@ -174,6 +189,11 @@ class Client(object):
             c.close()
             return results
         except Exception as e:
+            if isinstance(e, GremlinServerError):
+                if e.status_code == 499:
+                    print("Error returned by the Gremlin Server for the traversal_source specified in notebook "
+                          "configuration. Please ensure that your graph database endpoint supports re-naming of "
+                          "GraphTraversalSource from the default of 'g' in Gremlin Server.")
             c.close()
             raise e
 
@@ -654,6 +674,10 @@ class ClientBuilder(object):
 
     def with_sparql_path(self, path: str):
         self.args['sparql_path'] = path
+        return ClientBuilder(self.args)
+
+    def with_gremlin_traversal_source(self, traversal_source: str):
+        self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):

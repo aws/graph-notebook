@@ -1,19 +1,20 @@
-tornado==4.5.3
 SPARQLWrapper==1.8.4
 networkx==2.4
 Jinja2==2.11.3
 jupyter
-notebook==5.7.13
+notebook>=6.1.5
 ipywidgets==7.5.1
 jupyter-contrib-nbextensions
 widgetsnbextension
-gremlinpython<=3.4.*
+gremlinpython>=3.5.1
 requests==2.24.0
-ipython==7.16.1
+ipython>=7.16.1
+ipykernel==5.3.4
 neo4j==4.2.1
 rdflib~=5.0.0
 traitlets~=4.3.3
 setuptools~=40.6.2
+nbconvert<6
 
 # requirements for testing
 botocore~=1.18.18

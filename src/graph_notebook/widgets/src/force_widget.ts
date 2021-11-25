@@ -139,7 +139,8 @@ export class ForceView extends DOMWidgetView {
       edges: this.edgeDataset,
     };
 
-    this.vis = new Network(this.canvasDiv, dataset, this.visOptions);
+    this.vis = new Network(this.canvasDiv, dataset, this.stripCustomPhysicsOptions());
+
     setTimeout(() => {
       this.vis?.stopSimulation();
     }, this.visOptions.physics.simulationDuration);
@@ -198,7 +199,18 @@ export class ForceView extends DOMWidgetView {
       return;
     }
 
-    this.vis.setOptions(this.visOptions);
+    this.vis.setOptions(this.stripCustomPhysicsOptions());
+  }
+
+  /**
+   * Returns a modified visOptions, with the custom simulationDuration and disablePhysicsAfterInitialSimulation physics
+   * options removed. This prevents an error from being thrown when VisJS parses visOptions.
+   */
+  stripCustomPhysicsOptions() {
+    const visOptionsNoCustomPhysics = Object.assign({}, JSON.parse(JSON.stringify(this.visOptions)));
+    delete visOptionsNoCustomPhysics["physics"]["simulationDuration"];
+    delete visOptionsNoCustomPhysics["physics"]["disablePhysicsAfterInitialSimulation"];
+    return visOptionsNoCustomPhysics;
   }
 
   /**
@@ -654,7 +666,6 @@ export class ForceView extends DOMWidgetView {
     if (edge === null) {
       return;
     }
-
     if (edge.title !== undefined && edge.title !== "") {
       this.detailsText.innerText = "Details - " + edge.title;
     } else {

@@ -43,10 +43,10 @@ class EventfulNetwork(Network):
         super().__init__(graph)
 
     def strip_and_truncate_label_and_title(self, old_label, max_len: int) -> Tuple[str, str]:
-        if isinstance(old_label, list) and len(old_label) > 1:
-            title = str(old_label)
-        else:
+        if isinstance(old_label, list) and len(old_label) == 1:
             title = str(old_label).strip("[]'")
+        else:
+            title = str(old_label)
         if len(title) <= max_len:
             label = title
         else:
@@ -140,7 +140,7 @@ class EventfulNetwork(Network):
         }
         self.dispatch_callbacks(EVENT_ADD_NODE, payload)
 
-    def add_edge(self, from_id: str, to_id: str, edge_id: str, label: str, data: dict = None):
+    def add_edge(self, from_id: str, to_id: str, edge_id: str, label: str, title: str = None, data: dict = None):
         if data is None:
             data = {}
         super().add_edge(from_id, to_id, edge_id, label, data)
@@ -149,6 +149,7 @@ class EventfulNetwork(Network):
             'to_id': to_id,
             'edge_id': edge_id,
             'label': label,
+            'title': title,
             'data': data
         }
         self.dispatch_callbacks(EVENT_ADD_EDGE, payload)

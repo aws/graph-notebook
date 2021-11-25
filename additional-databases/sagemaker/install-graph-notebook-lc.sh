@@ -32,6 +32,7 @@ mkdir -p ~/SageMaker/Neptune
 cd ~/SageMaker/Neptune || exit
 python -m graph_notebook.notebooks.install
 chmod -R a+rw ~/SageMaker/Neptune/*
+python -m graph_notebook.start_notebook --notebooks-dir ~/SageMaker/Neptune/*
 
 source ~/.bashrc || exit
 HOST=${GRAPH_NOTEBOOK_HOST}

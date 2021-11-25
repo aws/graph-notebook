@@ -531,7 +531,7 @@ class TestGremlinNetwork(unittest.TestCase):
     def test_add_vertex_with_bracketed_label_and_label_length(self):
         vertex = {
             T.id: '1234',
-            T.label: "['Seattle-Tacoma International Airport']",
+            T.label: ['Seattle-Tacoma International Airport'],
             'type': 'Airport',
             'runways': '4',
             'code': 'SEA'
@@ -878,6 +878,48 @@ class TestGremlinNetwork(unittest.TestCase):
         edge = gn.graph.get_edge_data('1', '2')
         self.assertEqual(edge['1']['label'], 'route')
 
+    def test_add_edge_with_label_length_full(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'commercial_airway', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_label_max_length=15)
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'commercial_a...')
+        self.assertEqual(edge['1']['title'], 'commercial_airway')
+
+    def test_add_edge_with_label_length_truncated(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'commercial_airway', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_label_max_length=10)
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], 'commerc...')
+        self.assertEqual(edge['1']['title'], 'commercial_airway')
+
+    def test_add_edge_with_label_length_less_than_3(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'commercial_airway', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork(edge_label_max_length=-50)
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertEqual(edge['1']['label'], '...')
+        self.assertEqual(edge['1']['title'], 'commercial_airway')
+
     def test_add_multiple_edges_with_edge_property_string(self):
         vertex1 = Vertex(id='1')
         vertex2 = Vertex(id='2')
@@ -1041,7 +1083,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         gn.add_path_edge(edge1, from_id='1', to_id='2')
         edge = gn.graph.get_edge_data('1', '2')
-        self.assertEqual(edge['1']['label'], "['foo', 'bar']")
+        self.assertEqual(edge['1']['label'], "['foo',...")
 
     def test_add_single_edge_with_edge_property_json_and_multiproperty_access_with_non_multiproperty(self):
         vertex1 = Vertex(id='1')
@@ -1666,7 +1708,8 @@ class TestGremlinNetwork(unittest.TestCase):
                     Direction.OUT: '2',
                     'dist': 763
                 },
-                'label': 'route'
+                'label': 'route',
+                'title': 'route'
             }
         }
 
@@ -1841,7 +1884,8 @@ class TestGremlinNetwork(unittest.TestCase):
                     Direction.OUT: '2',
                     'dist': 763
                 },
-                'label': 'route'
+                'label': 'route',
+                'title': 'route'
             }
         }
 
@@ -1914,7 +1958,8 @@ class TestGremlinNetwork(unittest.TestCase):
                 Direction.OUT: '2',
                 'dist': 763
             },
-            'label': 'route'
+            'label': 'route',
+            'title': 'route'
         }
 
         path = Path([], [edge_map, out_vertex, in_vertex])

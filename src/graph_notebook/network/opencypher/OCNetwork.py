@@ -33,14 +33,13 @@ class OCNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 group_by_property=LABEL_KEY, display_property=LABEL_KEY,
-                 edge_display_property=EDGE_TYPE_KEY, ignore_groups=False):
+                 rel_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
+                 display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        if label_max_length < 3:
-            self.label_max_length = 3
-        else:
-            self.label_max_length = label_max_length
+
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.rel_label_max_length = 3 if rel_label_max_length < 3 else rel_label_max_length
         try:
             self.group_by_property = json.loads(group_by_property)
         except ValueError:
@@ -139,7 +138,7 @@ class OCNetwork(EventfulNetwork):
         self.add_node(node[ID_KEY], data)
     
     def parse_rel(self, rel):
-        data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY]}
+        data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY], 'title': rel[EDGE_TYPE_KEY]}
         if self.edge_display_property is not EDGE_TYPE_KEY:
             try:
                 if isinstance(self.edge_display_property, dict):
@@ -164,7 +163,11 @@ class OCNetwork(EventfulNetwork):
                 display_label = rel[EDGE_TYPE_KEY]
         else:
             display_label = rel[EDGE_TYPE_KEY]
-        self.add_edge(rel[START_KEY], rel[END_KEY], rel[ID_KEY], str(display_label), data)
+        edge_title, edge_label = self.strip_and_truncate_label_and_title(display_label, self.rel_label_max_length)
+        data['title'] = edge_title
+        data['label'] = edge_label
+        self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=edge_label,
+                      title=edge_title, data=data)
 
     def process_result(self, res: dict):
         """Determines the type of element passed in and processes it appropriately

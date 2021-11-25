@@ -43,7 +43,7 @@ def load_configuration():
         data = json.load(f)
         host = data['host']
         port = data['port']
-        if data['auth_mode'] == 'IAM':
+        if data.get('auth_mode') == 'IAM':
             iam = True
         else:
             iam = False

@@ -12,7 +12,10 @@ After local setup of Blazegraph is complete, set the following configuration to 
 {
   "host": "localhost",
   "port": 9999,
-  "ssl": false
+  "ssl": false,
+  "sparql": {
+      "path": "sparql"
+  }
 }
 ```
 

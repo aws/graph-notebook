@@ -157,7 +157,7 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if ".neptune.amazonaws.com" in config.host:
+        if "amazonaws.com" in config.host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
@@ -171,7 +171,8 @@ class Graph(Magics):
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
-                .with_sparql_path(config.sparql.path)
+                .with_sparql_path(config.sparql.path) \
+                .with_gremlin_traversal_source(config.gremlin.traversal_source)
 
         self.client = builder.build()
 
@@ -248,6 +249,10 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-l', '--label-max-length', type=int, default=10,
+                            help='Specifies max length of vertex labels, in characters. Default is 10')
+        parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -304,7 +309,8 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results, scd_query=True)
 
-                    sn = SPARQLNetwork(expand_all=args.expand_all)
+                    sn = SPARQLNetwork(label_max_length=args.label_max_length,
+                                       edge_label_max_length=args.edge_label_max_length, expand_all=args.expand_all)
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)
@@ -420,6 +426,8 @@ class Graph(Magics):
                             help='Property to display the value of on each edge, default is T.label')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
+        parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('--no-results', action='store_false', default=True,
@@ -500,7 +508,9 @@ class Graph(Magics):
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
                     gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                         edge_display_property=args.edge_display_property,
-                                        label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                                        label_max_length=args.label_max_length,
+                                        edge_label_max_length=args.edge_label_max_length,
+                                        ignore_groups=args.ignore_groups)
 
                     if args.path_pattern == '':
                         gn.add_results(query_res)
@@ -610,9 +620,11 @@ class Graph(Magics):
             return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
-            print("For more information on the status of your Blazegraph cluster, please visit: ")
-            print()
-            print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
+            if "blazegraph&trade; by SYSTAP" in status_res.text:
+                print("For more information on the status of your Blazegraph cluster, please visit: ")
+                print()
+                print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
+                print()
             return status_res
 
     @line_magic
@@ -769,10 +781,20 @@ class Graph(Magics):
         # TODO: change widgets to let any arbitrary inputs be added by users
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', '--source', default='s3://')
-        parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
+        try:
+            parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
+        except AttributeError:
+            print(f"Missing required configuration option 'load_from_s3_arn'. Please ensure that you have provided a "
+                  "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
+            return
         parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default=FORMAT_CSV)
         parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
-        parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
+        try:
+            parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
+        except AttributeError:
+            print("Missing required configuration option 'aws_region'. Please ensure that you have provided a "
+                  "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
+            return
         parser.add_argument('--fail-on-failure', action='store_true', default=False)
         parser.add_argument('--update-single-cardinality', action='store_true', default=True)
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -1156,9 +1178,9 @@ class Graph(Magics):
                         kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                 if source.value.startswith("s3://"):
-                    load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
+                    load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
                 else:
-                    load_res = self.client.load(source.value, source_format.value, **kwargs)
+                    load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
                 load_res.raise_for_status()
                 load_result = load_res.json()
                 store_to_ns(args.store_to, load_result, local_ns)
@@ -1540,6 +1562,8 @@ class Graph(Magics):
                             help='Property to display the value of on each edge, default is ~type')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
+        parser.add_argument('-rel', '--rel-label-max-length', type=int, default=10,
+                            help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
@@ -1569,7 +1593,9 @@ class Graph(Magics):
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    edge_display_property=args.edge_display_property,
-                                   label_max_length=args.label_max_length, ignore_groups=args.ignore_groups)
+                                   label_max_length=args.label_max_length,
+                                   rel_label_max_length=args.rel_label_max_length,
+                                   ignore_groups=args.ignore_groups)
                     gn.add_results(res)
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
                     if len(gn.graph.nodes) > 0:
