@@ -83,7 +83,8 @@ setup(
         'neo4j==4.3.2',
         'rdflib==5.0.0',
         'ipykernel==5.3.4',
-        'nbconvert==5.6.1'
+        'nbconvert==5.6.1',
+        'jedi<0.18.0'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
