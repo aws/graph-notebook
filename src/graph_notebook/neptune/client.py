@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging
+import re
 
 import requests
 from SPARQLWrapper import SPARQLWrapper
@@ -190,7 +191,8 @@ class Client(object):
             return results
         except Exception as e:
             if isinstance(e, GremlinServerError):
-                if e.status_code == 499:
+                source_err = re.compile('The traversal source \\[.] for alias \\[.] is not configured on the server\\.')
+                if e.status_code == 499 and source_err.search(str(e)):
                     print("Error returned by the Gremlin Server for the traversal_source specified in notebook "
                           "configuration. Please ensure that your graph database endpoint supports re-naming of "
                           "GraphTraversalSource from the default of 'g' in Gremlin Server.")
@@ -206,7 +208,6 @@ class Client(object):
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
-
 
     def gremlin_status(self, query_id: str = '', include_waiting: bool = False):
         kwargs = {}
