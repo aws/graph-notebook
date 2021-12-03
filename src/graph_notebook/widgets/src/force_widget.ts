@@ -78,6 +78,7 @@ export class ForceView extends DOMWidgetView {
   private menu: HTMLDivElement = document.createElement("div");
   private expandDiv: HTMLDivElement = document.createElement("div");
   private searchDiv: HTMLDivElement = document.createElement("div");
+  private resetDiv: HTMLDivElement = document.createElement("div");
   private detailsDiv: HTMLDivElement = document.createElement("div");
   private physicsDiv: HTMLDivElement = document.createElement("div");
   private nodeDataset: NodeDataSet = new NodeDataSet(new Array<VisNode>(), {});
@@ -104,6 +105,8 @@ export class ForceView extends DOMWidgetView {
     background: "rgba(210, 229, 255, 1)",
     border: "#0978D1",
   };
+  private resetBtn = document.createElement("button");
+  private doingReset = false;
   private detailsBtn = document.createElement("button");
   private selectedNodeID: string | number = "";
   private physicsBtn = document.createElement("button");
@@ -494,6 +497,12 @@ export class ForceView extends DOMWidgetView {
         this.visOptions.physics.enabled = false;
         this.changeOptions();
       }
+      if (this.doingReset) {
+        this.vis?.fit({
+          animation: true,
+        });
+        this.doingReset = false;
+      }
     });
   }
 
@@ -787,6 +796,7 @@ export class ForceView extends DOMWidgetView {
 
     this.expandDiv.classList.add("menu-action", "expand-div");
     this.searchDiv.classList.add("menu-action", "search-div");
+    this.resetDiv.classList.add("menu-action", "reset-div");
     this.detailsDiv.classList.add("menu-action", "details-div");
     this.physicsDiv.classList.add("menu-action", "physics-div");
 
@@ -800,6 +810,17 @@ export class ForceView extends DOMWidgetView {
 
     this.searchDiv.append(searchInput);
     rightActions.append(this.searchDiv);
+
+    this.resetBtn.title = "Reset Graph View";
+    this.resetBtn.innerHTML = feather.icons["refresh-cw"].toSvg();
+    this.resetDiv.appendChild(this.resetBtn);
+    rightActions.append(this.resetDiv);
+    this.resetBtn.onclick = (): void => {
+      this.visOptions.physics.enabled = true;
+      this.changeOptions();
+      this.physicsBtn.innerHTML = feather.icons["unlock"].toSvg();
+      this.doingReset = true;
+    };
 
     this.physicsBtn.title = "Enable/Disable Graph Physics";
     if (
@@ -903,6 +924,8 @@ export class ForceView extends DOMWidgetView {
 
     const zoomInDiv = document.createElement("div");
     const zoomOutDiv = document.createElement("div");
+    const zoomResetDiv = document.createElement("div");
+
     const zoomInButton = document.createElement("button");
     zoomInButton.title = "Zoom In";
     zoomInButton.onclick = () => {
@@ -919,18 +942,28 @@ export class ForceView extends DOMWidgetView {
         animation: true,
       });
     };
+    const zoomResetButton = document.createElement("button");
+    zoomResetButton.title = "Reset Zoom to Default";
+    zoomResetButton.onclick = () => {
+      this.vis?.fit({
+        animation: true,
+      });
+    };
 
     zoomInButton.innerHTML = feather.icons["plus"].toSvg();
     zoomOutButton.innerHTML = feather.icons["minus"].toSvg();
+    zoomResetButton.innerHTML = feather.icons["refresh-cw"].toSvg();
 
     zoomInDiv.classList.add("menu-action", "zoom-in-div");
     zoomOutDiv.classList.add("menu-action", "zoom-out-div");
+    zoomResetDiv.classList.add("menu-action", "zoom-reset-div");
     zoomInDiv.append(zoomInButton);
     zoomOutDiv.append(zoomOutButton);
+    zoomResetDiv.append(zoomResetButton);
 
     const bottomRightActions = document.createElement("div");
     bottomRightActions.classList.add("bottom-right");
-    bottomRightActions.append(zoomInDiv, zoomOutDiv);
+    bottomRightActions.append(zoomInDiv, zoomOutDiv, zoomResetDiv);
     this.networkDiv.append(bottomRightActions);
   }
 
