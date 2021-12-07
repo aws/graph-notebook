@@ -1,3 +1,6 @@
+import shutil
+import urllib
+
 import boto3
 import pandas as pd
 import numpy as np
@@ -13,6 +16,8 @@ from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from datetime import datetime
 from urllib.parse import urlparse
+
+from rdflib import Namespace, ConjunctiveGraph, RDF, Literal, XSD, RDFS
 from sagemaker.s3 import S3Downloader
 
 # How often to check the status
@@ -66,11 +71,14 @@ def get_training_job_name(prefix: str):
 
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
+
+    neptune_client = boto3.client('neptune', region_name=boto3.session.Session().region_name)
+
     response = signed_request(
         "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
-Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
+Please configure the cluster according to the Amazon Neptune ML documentation before proceeding.''')
     else:
         print("This Neptune cluster is configured to use Neptune ML")
 
@@ -178,6 +186,13 @@ def delete_endpoint(training_job_name: str, neptune_iam_role_arn=None):
 def prepare_movielens_data(s3_bucket_uri: str):
     try:
         return MovieLensProcessor().prepare_movielens_data(s3_bucket_uri)
+    except Exception as e:
+        logging.error(e)
+
+
+def prepare_movielens_data_rdf(s3_bucket_uri: str, clear_staging_area: bool = True):
+    try:
+        return MovieLensProcessor().prepare_movielens_data_rdf(s3_bucket_uri, clear_staging_area)
     except Exception as e:
         logging.error(e)
 
@@ -312,6 +327,9 @@ def get_performance_metrics(training_job_name: str, download_location: str = './
 class MovieLensProcessor:
     raw_directory = fr'{HOME_DIRECTORY}/data/raw'
     formatted_directory = fr'{HOME_DIRECTORY}/data/formatted'
+
+    ns_resource = Namespace("http://aws.amazon.com/neptune/resource#")
+    ns_ontology = Namespace("http://aws.amazon.com/neptune/ontology/")
 
     def __download_and_unzip(self):
         if not os.path.exists(f'{HOME_DIRECTORY}/data'):
@@ -471,6 +489,202 @@ class MovieLensProcessor:
         print('Completed Processing, data is ready for loading using the s3 url below:')
         print(bucket_name)
         return bucket_name
+
+    def prepare_movielens_data_rdf(self, s3_bucket: str, clear_staging_area: bool):
+        self.formatted_directory = f'{self.formatted_directory}/rdf'
+        if clear_staging_area:
+            print('clearing staging area by default, use "clear_staging_area=False" to retain')
+            shutil.rmtree(self.formatted_directory, ignore_errors=True)
+            os.makedirs(self.formatted_directory, exist_ok=True)
+        bucket_name = f'{s3_bucket}/neptune-formatted/movielens-100k/rdf/'
+        self.__download_and_unzip()
+        self.__process_movies_genres_rdf()
+        self.__process_users_rdf()
+        self.__process_ratings_users_rdf()
+        self.__upload_to_s3(bucket_name)
+        if clear_staging_area:
+            shutil.rmtree(self.formatted_directory, ignore_errors=True)
+        print('Completed Processing, data is ready for loading using the s3 url below:')
+        print(bucket_name)
+        return bucket_name
+
+    def __process_movies_genres_rdf(self):
+        # process the movies_vertex.csv
+        print('Processing Movies to RDF')
+        movies_df = pd.read_csv(os.path.join(
+            self.raw_directory, 'ml-100k/u.item'), sep='|', encoding='ISO-8859-1',
+            names=['~id', 'title', 'release_date', 'video_release_date', 'imdb_url',
+                   'unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
+                   'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
+                   'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
+        # Parse date and convert to ISO format
+        movies_df['release_date'] = movies_df['release_date'].apply(
+            lambda x: str(
+                datetime.strptime(x, '%d-%b-%Y').isoformat()) if not pd.isna(x) else x)
+        movies_df['~label'] = 'movie'
+        movies_df['~id'] = movies_df['~id'].apply(
+            lambda x: f'movie_{x}')
+
+        genres = ['unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
+                  'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
+                  'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western']
+
+        genre_df = pd.DataFrame(genres, columns=['~id'])
+        genre_df['~label'] = 'genre'
+        genre_df['name'] = genre_df['~id']
+
+        movie_rdf_filename = os.path.join(self.formatted_directory, 'movies.nq')
+        movie_genre_rdf_filename = os.path.join(self.formatted_directory, 'movie_genres.nq')
+        movie_graph = ConjunctiveGraph()
+        movie_genre_graph = ConjunctiveGraph()
+
+        # movie vertex file creation
+        for index, row in movies_df.iterrows():
+            id = row['~id']
+            title = row['title']
+            imdb_url = row['imdb_url']
+            release_date = row['release_date']
+
+            movie_graph.add((
+                self.ns_resource[id], RDF.type, self.ns_ontology.Movie, self.ns_ontology.Movies
+            ))
+            movie_graph.add((
+                self.ns_resource[id], self.ns_ontology.title, Literal(title, datatype=XSD.string), self.ns_ontology.Movies
+            ))
+            movie_graph.add((
+                self.ns_resource[id], RDFS.label, Literal(title, datatype=XSD.string), self.ns_ontology.Movies
+            ))
+            movie_graph.add((
+                self.ns_resource[id], self.ns_ontology.imdbURL, Literal(imdb_url, datatype=XSD.anyURI),
+                self.ns_ontology.Movies
+            ))
+            movie_graph.add((
+                self.ns_resource[id], self.ns_ontology.releaseDate,
+                Literal(release_date, datatype=XSD.dateTime), self.ns_ontology.Movies
+            ))
+            # add genre labels
+            for genre_value in genres:
+                if (id != "movie_172") and (id != "movie_235") and (id != "movie_121"):
+                    if row[genre_value]:
+                        movie_genre_graph.add((
+                            self.ns_resource[id], self.ns_ontology.hasGenre,
+                            Literal(genre_value, datatype=XSD.string), self.ns_ontology.Movie
+                        ))
+                elif row[genre_value]:
+                    movie_genre_graph.add((
+                        self.ns_resource[id], self.ns_ontology.hasOriginalGenre,
+                        Literal(genre_value, datatype=XSD.string), self.ns_ontology.Movie
+                    ))
+
+        movie_graph.serialize(format='nquads', destination=movie_rdf_filename)
+        movie_genre_graph.serialize(format='nquads', destination=movie_genre_rdf_filename)
+
+    def __process_users_rdf(self):
+            print("Processing Users to RDF")
+            # User Vertices - Load, rename column with type, and save
+
+            user_df = pd.read_csv(os.path.join(
+                self.raw_directory, 'ml-100k/u.user'), sep='|', encoding='ISO-8859-1',
+                names=['~id', 'age:Int', 'gender', 'occupation', 'zip_code'])
+            user_df['~id'] = user_df['~id'].apply(
+                lambda x: f'user_{x}'
+            )
+
+            users_graph = ConjunctiveGraph()
+
+            for index, row in user_df.iterrows():
+                users_graph.add((
+                    self.ns_resource[row['~id']], RDF.type, self.ns_ontology.User, self.ns_ontology.DefaultNamedGraph
+                ))
+                users_graph.add((
+                    self.ns_resource[row['~id']], self.ns_ontology.age,
+                    Literal(row['age:Int'], datatype=XSD.integer), self.ns_ontology.Users
+                ))
+                users_graph.add((
+                    self.ns_resource[row['~id']], self.ns_ontology.occupation,
+                    Literal(row['occupation'], datatype=XSD.string),
+                    self.ns_ontology.Users
+                ))
+                users_graph.add((
+                    self.ns_resource[row['~id']], self.ns_ontology.gender, Literal(row['gender'], datatype=XSD.string),
+                    self.ns_ontology.Users
+                ))
+                users_graph.add((
+                    self.ns_resource[row['~id']], self.ns_ontology.zipCode,
+                    Literal(row['zip_code'], datatype=XSD.string),
+                    self.ns_ontology.Users
+                ))
+
+            users_rdf_file = os.path.join(self.formatted_directory, 'users.nq')
+            users_graph.serialize(format='nquads', destination=users_rdf_file)
+
+    def __process_ratings_users_rdf(self):
+        # Create ratings vertices and add edges on both sides
+        print('Processing Ratings to RDF')
+        ratings_vertices = pd.read_csv(
+            os.path.join(self.raw_directory, 'ml-100k/u.data'),
+            sep='\t',
+            encoding='ISO-8859-1',
+            names=['~from', '~to', 'score:Int', 'timestamp']
+        )
+        ratings_vertices['~from'] = ratings_vertices['~from'].apply(lambda x: f'user_{x}')
+        ratings_vertices['~to'] = ratings_vertices['~to'].apply(lambda x: f'movie_{x}')
+        ratings_vertices['~id'] = ratings_vertices['~from'].str.cat(ratings_vertices['~to'], sep="_")
+        ratings_vertices['~label'] = "rating"
+
+        ratings_graph = ConjunctiveGraph()
+
+        averages_graph = ConjunctiveGraph()
+
+        for index, row in ratings_vertices.groupby('~to').mean().iterrows():
+            if (index != "movie_210") and (index != "movie_89") \
+                    and (index != "movie_739") and (index != "movie_450"):
+                score = int(round(row['score:Int']))
+                averages_graph.add((
+                    self.ns_resource[index], self.ns_ontology.criticScore, Literal(score, datatype=XSD.integer),
+                    self.ns_ontology.Rating
+                ))
+
+        for index, row in ratings_vertices.iterrows():
+            uri = urllib.parse.quote_plus(row['~id'])
+
+            if row['~to'] != "movie_225" and row['~to'] != "movie_69" \
+                    and row['~from'] != "user_101" and row['~from'] != "user_601":
+                ratings_graph.add((
+                    self.ns_resource[uri], RDF.type, self.ns_ontology.Rating, self.ns_ontology.Rating
+                ))
+                ratings_graph.add((
+                    self.ns_resource[uri], self.ns_ontology.score,
+                    Literal(row['score:Int'], datatype=XSD.integer),
+                    self.ns_ontology.Rating
+                ))
+                ratings_graph.add((
+                    self.ns_resource[uri], self.ns_ontology.timestamp, Literal(row['timestamp']),
+                    self.ns_ontology.Rating
+                ))
+                ratings_graph.add((
+                    self.ns_resource[uri], self.ns_ontology.forMovie, self.ns_resource[row['~to']],
+                    self.ns_ontology.Rating
+                ))
+                ratings_graph.add((
+                    self.ns_resource[uri], self.ns_ontology.byUser, self.ns_resource[row['~from']],
+                    self.ns_ontology.Rating
+                ))
+                if row['score:Int'] > 3:
+                    ratings_graph.add((
+                        self.ns_resource[row['~from']], self.ns_ontology.recommended, self.ns_resource[row['~to']],
+                        self.ns_ontology.Rating
+                    ))
+                    ratings_graph.add((
+                        self.ns_resource[row['~to']], self.ns_ontology.wasRecommendedBy, self.ns_resource[row['~from']],
+                        self.ns_ontology.Rating
+                    ))
+
+        ratings_rdf_file = os.path.join(self.formatted_directory, 'user_movie_ratings.nq')
+        averages_graph_file = os.path.join(self.formatted_directory, 'critic_movie_scores.nq')
+
+        ratings_graph.serialize(format='nquads', destination=ratings_rdf_file)
+        averages_graph.serialize(format='nquads', destination=averages_graph_file)
 
 
 class PretrainedModels:
