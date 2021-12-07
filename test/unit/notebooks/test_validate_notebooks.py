@@ -43,7 +43,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-03-Introduction-to-Link-Prediction-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-04-Introduction-to-Edge-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-05-Introduction-to-Edge-Regression-Gremlin.ipynb',            
-            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/01-Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/01-Sample-Applications/People-Analytics/People-Analytics-using-Neptune-ML.ipynb']
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
