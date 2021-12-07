@@ -22,6 +22,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/01-Getting-Started/02-Using-Gremlin-to-Access-the-Graph.ipynb',
             f'{NOTEBOOK_BASE_DIR}/01-Getting-Started/03-Using-RDF-and-SPARQL-to-Access-the-Graph.ipynb',
             f'{NOTEBOOK_BASE_DIR}/01-Getting-Started/04-Social-Network-Recommendations-with-Gremlin.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/01-Getting-Started/05-Dining-By-Friends-in-Amazon-Neptune.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/Air-Routes-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/Air-Routes-openCypher.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/Air-Routes-SPARQL.ipynb',
@@ -41,7 +42,8 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-02-Introduction-to-Node-Regression-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-03-Introduction-to-Link-Prediction-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-04-Introduction-to-Edge-Classification-Gremlin.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-05-Introduction-to-Edge-Regression-Gremlin.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-05-Introduction-to-Edge-Regression-Gremlin.ipynb',            
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/01-Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb']
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
