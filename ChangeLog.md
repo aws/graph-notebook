@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Add support for setting custom edge and node tooltips ([Link to PR](https://github.com/aws/graph-notebook/pull/227))
 - Fixed error causing query autocompletion to fail ([Link to PR](https://github.com/aws/graph-notebook/pull/231))
 
 ## Release 3.0.8 (November 3, 2021)

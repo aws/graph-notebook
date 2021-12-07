@@ -680,7 +680,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(nodes_list, [])
         self.assertEqual(edges_list, [])
 
-    def test_do_not_set_vertex_label_property(self):
+    def test_do_not_set_vertex_label_or_vertex_tooltip(self):
         res = {
             "results": [
                 {
@@ -1361,6 +1361,102 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['title'], 'domestic')
         self.assertEqual(node2['label'], 'NATO')
         self.assertEqual(node2['title'], 'NATO')
+
+    def test_set_vertex_tooltip_property_string(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(tooltip_property='type')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'node')
+
+    def test_set_vertex_tooltip_property_json(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(tooltip_property='{"airport":"code"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'SEA')
+
+    def test_set_vertex_tooltip_property_invalid_value(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(tooltip_property='{"airport":"foo"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_different_vertex_tooltip_property_and_label_property(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='{"airport":"runways"}', tooltip_property='{"airport":"code"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], '3')
+        self.assertEqual(node1['title'], 'SEA')
 
     def test_add_edge_without_property(self):
         path = {
@@ -2920,6 +3016,279 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edge_path = gn.graph.get_edge_data('365', '367', '30604')
         self.assertEqual(edge_route['label'], 'foo')
         self.assertEqual(edge_path['label'], 'bar')
+
+    def test_add_edge_with_tooltip_property_string(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_tooltip_property='dist')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+        self.assertEqual(edge_route['title'], 792)
+
+    def test_add_edge_with_tooltip_property_json(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_tooltip_property='{"route":"dist"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+        self.assertEqual(edge_route['title'], 792)
+
+    def test_add_edge_with_tooltip_property_json_invalid_value(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_tooltip_property='{"route":"foo"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'route')
+        self.assertEqual(edge_route['title'], 'route')
+
+    def test_add_edge_with_display_property_and_tooltip_property(self):
+        path = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            "~id": "365",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Cozumel International Airport",
+                                "lon": -86.9255981445312,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-ROO",
+                                "lat": 20.5223999023438,
+                                "elev": 15,
+                                "city": "Cozumel",
+                                "icao": "MMCZ",
+                                "code": "CZM",
+                                "longest": 10165
+                            }
+                        },
+                        {
+                            "~id": "30601",
+                            "~entityType": "relationship",
+                            "~start": "365",
+                            "~end": "136",
+                            "~type": "route",
+                            "~properties": {
+                                "dist": 792,
+                                "lane": 'commercial'
+                            }
+                        },
+                        {
+                            "~id": "136",
+                            "~entityType": "node",
+                            "~labels": [
+                                "airport"
+                            ],
+                            "~properties": {
+                                "desc": "Mexico City, Licenciado Benito Juarez International Airport",
+                                "lon": -99.0720977783203,
+                                "runways": 2,
+                                "type": "airport",
+                                "country": "MX",
+                                "region": "MX-DIF",
+                                "lat": 19.43630027771,
+                                "elev": 7316,
+                                "city": "Mexico City",
+                                "icao": "MMMX",
+                                "code": "MEX",
+                                "longest": 12966
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork(edge_display_property='{"route":"lane"}', edge_tooltip_property='{"route":"dist"}')
+        gn.add_results(path)
+        edge_route = gn.graph.get_edge_data('365', '136', '30601')
+        self.assertEqual(edge_route['label'], 'commercial')
+        self.assertEqual(edge_route['title'], 792)
 
 
 if __name__ == '__main__':
