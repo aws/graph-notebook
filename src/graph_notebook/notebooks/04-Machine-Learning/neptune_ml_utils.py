@@ -72,8 +72,6 @@ def get_training_job_name(prefix: str):
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
 
-    neptune_client = boto3.client('neptune', region_name=boto3.session.Session().region_name)
-
     response = signed_request(
         "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
@@ -81,6 +79,21 @@ def check_ml_enabled():
 Please configure the cluster according to the Amazon Neptune ML documentation before proceeding.''')
     else:
         print("This Neptune cluster is configured to use Neptune ML")
+
+
+def get_neptune_ml_role():
+    with open(f'{HOME_DIRECTORY}/.bashrc') as f:
+        data = f.readlines()
+
+    for d in data:
+        if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
+            parts = d.split('=')
+            if len(parts) == 2:
+                print('ml role: '+parts[1].rstrip())
+                return parts[1].rstrip()
+    print('no ml role')
+    logging.error("Unable to determine the Neptune ML IAM Role.")
+    return None
 
 
 def get_export_service_host():
@@ -209,6 +222,7 @@ def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bo
                                                              setup_edge_classification, setup_edge_regression)
     except Exception as e:
         logging.error(e)
+
 
 def get_neptune_ml_job_output_location(job_name: str, job_type: str):
     assert job_type in ["dataprocessing", "modeltraining", "modeltransform"], "Invalid neptune ml job type"
@@ -717,6 +731,9 @@ class PretrainedModels:
                            container_mode='SingleModel',
                            script_name='infer_entry_point.py',
                            ):
+        print('creating model with arn')
+        print(f'${role}')
+
         model_environment_vars = {self.SCRIPT_PARAM_NAME.upper(): script_name,
                                   self.DIR_PARAM_NAME.upper(): model_s3_location,
                                   self.CONTAINER_LOG_LEVEL_PARAM_NAME.upper(): str(20),
@@ -774,11 +791,14 @@ class PretrainedModels:
     def __get_neptune_ml_role(self):
         with open(f'{HOME_DIRECTORY}/.bashrc') as f:
             data = f.readlines()
+
         for d in data:
             if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
                 parts = d.split('=')
                 if len(parts) == 2:
+                    print('ml role: '+parts[1].rstrip())
                     return parts[1].rstrip()
+        print('no ml role')
         logging.error("Unable to determine the Neptune ML IAM Role.")
         return None
 
@@ -792,6 +812,10 @@ class PretrainedModels:
         s3 = boto3.resource('s3')
         s3.meta.client.copy(
             {"Bucket": source_bucket, "Key": source_file_path}, bucket, file_path)
+
+    def get_neptune_role(self):
+        role = self.__get_neptune_ml_role()
+        return role
 
     def setup_pretrained_endpoints(self, s3_bucket_uri: str,
                                    setup_node_classification: bool, setup_node_regression: bool,
