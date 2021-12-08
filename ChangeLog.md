@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added visualization customization options to `%%sparql` ([Link to PR](https://github.com/aws/graph-notebook/pull/236))
 - Added edge tooltips, and options for specifying edge label length ([Link to PR](https://github.com/aws/graph-notebook/pull/218))
 
 ## Release 3.0.7 (October 25, 2021)
