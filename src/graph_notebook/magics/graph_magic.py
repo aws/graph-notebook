@@ -157,7 +157,7 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if ".neptune.amazonaws.com" in config.host:
+        if "amazonaws.com" in config.host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
@@ -171,7 +171,8 @@ class Graph(Magics):
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
-                .with_sparql_path(config.sparql.path)
+                .with_sparql_path(config.sparql.path) \
+                .with_gremlin_traversal_source(config.gremlin.traversal_source)
 
         self.client = builder.build()
 
@@ -328,6 +329,7 @@ class Graph(Magics):
                                        edge_label_max_length=args.edge_label_max_length,
                                        ignore_groups=args.ignore_groups,
                                        expand_all=args.expand_all)
+                    
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)
@@ -806,10 +808,20 @@ class Graph(Magics):
         # TODO: change widgets to let any arbitrary inputs be added by users
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', '--source', default='s3://')
-        parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
+        try:
+            parser.add_argument('-l', '--loader-arn', default=self.graph_notebook_config.load_from_s3_arn)
+        except AttributeError:
+            print(f"Missing required configuration option 'load_from_s3_arn'. Please ensure that you have provided a "
+                  "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
+            return
         parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default=FORMAT_CSV)
         parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
-        parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
+        try:
+            parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
+        except AttributeError:
+            print("Missing required configuration option 'aws_region'. Please ensure that you have provided a "
+                  "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
+            return
         parser.add_argument('--fail-on-failure', action='store_true', default=False)
         parser.add_argument('--update-single-cardinality', action='store_true', default=True)
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
@@ -1193,9 +1205,9 @@ class Graph(Magics):
                         kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                 if source.value.startswith("s3://"):
-                    load_res = self.client.load(source.value, source_format.value, arn.value, **kwargs)
+                    load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
                 else:
-                    load_res = self.client.load(source.value, source_format.value, **kwargs)
+                    load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
                 load_res.raise_for_status()
                 load_result = load_res.json()
                 store_to_ns(args.store_to, load_result, local_ns)

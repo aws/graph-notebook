@@ -43,7 +43,7 @@ def load_configuration():
         data = json.load(f)
         host = data['host']
         port = data['port']
-        if data['auth_mode'] == 'IAM':
+        if data.get('auth_mode') == 'IAM':
             iam = True
         else:
             iam = False
@@ -183,7 +183,7 @@ def prepare_movielens_data(s3_bucket_uri: str):
 
 
 def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bool,
-                               setup_node_regression: bool, setup_link_prediction: bool, \
+                               setup_node_regression: bool, setup_link_prediction: bool,
                                setup_edge_classification: bool, setup_edge_regression: bool):
     delete_pretrained_data(setup_node_classification,
                            setup_node_regression, setup_link_prediction,
@@ -488,9 +488,12 @@ class PretrainedModels:
     def __init__(self):
         with open('./neptune-ml-pretrained-model-config.json') as f:
             config = json.load(f)
-            self.PRETRAINED_MODEL = config['models']
-            self.PYTORCH_CPU_CONTAINER_IMAGE = config['container_images'][boto3.session.Session(
-            ).region_name]
+            region_name = boto3.session.Session().region_name
+            if region_name in ['cn-north-1', 'cn-northwest-1']:
+                self.PRETRAINED_MODEL = config['models_cn']
+            else:
+                self.PRETRAINED_MODEL = config['models']
+            self.PYTORCH_CPU_CONTAINER_IMAGE = config['container_images'][region_name]
 
     def __run_create_model(self, sm_client,
                            name,

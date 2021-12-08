@@ -8,6 +8,18 @@ echo "export GRAPH_NOTEBOOK_PORT=8182" >> ~/.bashrc
 echo "export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=" >> ~/.bashrc
 echo "export AWS_REGION=us-west-2" >> ~/.bashrc
 
+VERSION=""
+for i in "$@"
+do
+case $i in
+    -v=*|--version=*)
+    VERSION="${i#*=}"
+    echo "set notebook version to ${VERSION}"
+    shift
+    ;;
+esac
+done
+
 source activate JupyterSystemEnv
 
 echo "installing Python 3 kernel"
@@ -32,7 +44,6 @@ mkdir -p ~/SageMaker/Neptune
 cd ~/SageMaker/Neptune || exit
 python -m graph_notebook.notebooks.install
 chmod -R a+rw ~/SageMaker/Neptune/*
-python -m graph_notebook.start_notebook --notebooks-dir ~/SageMaker/Neptune/*
 
 source ~/.bashrc || exit
 HOST=${GRAPH_NOTEBOOK_HOST}
@@ -59,6 +70,12 @@ AWS_REGION:                 ${AWS_REGION}"
   --ssl "${SSL}" \
   --load_from_s3_arn "${LOAD_FROM_S3_ARN}" \
   --aws_region "${AWS_REGION}"
+
+if [[ ${VERSION//./} > 306 ]]; then
+  python -m graph_notebook.start_notebook --notebooks-dir ~/SageMaker/Neptune/*
+else
+  echo "Skipping launch with start_notebook.py, unsupported on v3.0.6 and lower."
+fi
 
 source /home/ec2-user/anaconda3/bin/deactivate
 echo "done."
