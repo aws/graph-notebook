@@ -521,5 +521,6 @@ class TestSPARQLNetwork(unittest.TestCase):
         self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
         self.assertEqual('uri', edge['title'])
 
+
 if __name__ == '__main__':
     unittest.main()
