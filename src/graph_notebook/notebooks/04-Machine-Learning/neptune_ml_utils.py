@@ -91,7 +91,6 @@ def get_neptune_ml_role():
             if len(parts) == 2:
                 print('ml role: '+parts[1].rstrip())
                 return parts[1].rstrip()
-    print('no ml role')
     logging.error("Unable to determine the Neptune ML IAM Role.")
     return None
 
