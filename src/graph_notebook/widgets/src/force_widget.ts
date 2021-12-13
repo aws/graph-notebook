@@ -990,7 +990,7 @@ export class ForceView extends DOMWidgetView {
 
     zoomInButton.innerHTML = feather.icons["zoom-in"].toSvg();
     zoomOutButton.innerHTML = feather.icons["zoom-out"].toSvg();
-    zoomResetButton.innerHTML = feather.icons["maximize"].toSvg();
+    zoomResetButton.innerHTML = feather.icons["square"].toSvg();
 
     zoomInDiv.classList.add("menu-action", "zoom-in-div");
     zoomOutDiv.classList.add("menu-action", "zoom-out-div");
