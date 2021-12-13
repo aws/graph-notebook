@@ -8,8 +8,9 @@ import argparse
 import json
 
 HOME_PATH = os.path.expanduser("~")
-NOTEBOOK_CFG_PATH = HOME_PATH + '/.jupyter/nbconfig/notebook.json'
-
+NBCONFIG_DIR_TREE = HOME_PATH + '/.jupyter/nbconfig'
+CFG_FILE_NAME = 'notebook.json'
+NOTEBOOK_CFG_PATH = NBCONFIG_DIR_TREE + '/' + CFG_FILE_NAME
 
 def patch_cm_cypher_config():
     cypher_cfg = {
@@ -19,6 +20,7 @@ def patch_cm_cypher_config():
     }
 
     try:
+        os.makedirs(NBCONFIG_DIR_TREE, exist_ok=True)
         with open(NOTEBOOK_CFG_PATH, 'r') as file:
             notebook_cfg = json.load(file)
     except (json.decoder.JSONDecodeError, FileNotFoundError) as e:
