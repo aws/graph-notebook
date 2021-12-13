@@ -13,26 +13,26 @@ import {
 import { Network } from "vis-network/standalone";
 
 import {
+  DynamicObject,
+  EdgeDataSet,
+  ForceDraggableOptions,
+  ForceNetwork,
+  ForceResizableOptions,
+  Link,
+  Message,
+  NodeDataSet,
   VisEdge,
   VisNode,
-  DynamicObject,
-  Message,
-  EdgeDataSet,
-  NodeDataSet,
-  Link,
-  ForceNetwork,
-  ForceDraggableOptions,
-  ForceResizableOptions,
 } from "./types";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 import feather from "feather-icons";
 import $ from "jquery";
 import "jqueryui";
-import DraggableOptions = JQueryUI.DraggableOptions;
 
 // Import the CSS
 import "./css/widget.css";
+import DraggableOptions = JQueryUI.DraggableOptions;
 import ResizableOptions = JQueryUI.ResizableOptions;
 
 feather.replace();
@@ -78,6 +78,8 @@ export class ForceView extends DOMWidgetView {
   private menu: HTMLDivElement = document.createElement("div");
   private expandDiv: HTMLDivElement = document.createElement("div");
   private searchDiv: HTMLDivElement = document.createElement("div");
+  private searchOptionsDiv: HTMLDivElement = document.createElement("div");
+  private resetDiv: HTMLDivElement = document.createElement("div");
   private detailsDiv: HTMLDivElement = document.createElement("div");
   private physicsDiv: HTMLDivElement = document.createElement("div");
   private nodeDataset: NodeDataSet = new NodeDataSet(new Array<VisNode>(), {});
@@ -97,13 +99,17 @@ export class ForceView extends DOMWidgetView {
   private expandBtn = document.createElement("button");
   private nodeIDSearchMatches = new Array<string | number>();
   private edgeIDSearchMatches = new Array<string | number>();
+  private excludeIDsFromSearch = false;
   private closeButton = document.createElement("button");
   private detailsText = document.createElement("p");
+  private searchOptionsBtn = document.createElement("button");
   private searchMatchColorEdge = "rgba(9,120,209,1)";
   private searchMatchColorNode = {
     background: "rgba(210, 229, 255, 1)",
     border: "#0978D1",
   };
+  private resetBtn = document.createElement("button");
+  private doingReset = false;
   private detailsBtn = document.createElement("button");
   private selectedNodeID: string | number = "";
   private physicsBtn = document.createElement("button");
@@ -139,7 +145,11 @@ export class ForceView extends DOMWidgetView {
       edges: this.edgeDataset,
     };
 
-    this.vis = new Network(this.canvasDiv, dataset, this.stripCustomPhysicsOptions());
+    this.vis = new Network(
+      this.canvasDiv,
+      dataset,
+      this.stripCustomPhysicsOptions()
+    );
 
     setTimeout(() => {
       this.vis?.stopSimulation();
@@ -207,9 +217,14 @@ export class ForceView extends DOMWidgetView {
    * options removed. This prevents an error from being thrown when VisJS parses visOptions.
    */
   stripCustomPhysicsOptions() {
-    const visOptionsNoCustomPhysics = Object.assign({}, JSON.parse(JSON.stringify(this.visOptions)));
+    const visOptionsNoCustomPhysics = Object.assign(
+      {},
+      JSON.parse(JSON.stringify(this.visOptions))
+    );
     delete visOptionsNoCustomPhysics["physics"]["simulationDuration"];
-    delete visOptionsNoCustomPhysics["physics"]["disablePhysicsAfterInitialSimulation"];
+    delete visOptionsNoCustomPhysics["physics"][
+      "disablePhysicsAfterInitialSimulation"
+    ];
     return visOptionsNoCustomPhysics;
   }
 
@@ -494,6 +509,12 @@ export class ForceView extends DOMWidgetView {
         this.visOptions.physics.enabled = false;
         this.changeOptions();
       }
+      if (this.doingReset) {
+        this.vis?.fit({
+          animation: true,
+        });
+        this.doingReset = false;
+      }
     });
   }
 
@@ -701,7 +722,13 @@ export class ForceView extends DOMWidgetView {
     if (text !== "") {
       // all matched nodes should be colors a light blue
       this.nodeDataset.forEach((item, id) => {
-        if (this.search(text, item, 0)) {
+        const searchFound = this.search(
+          text,
+          item,
+          0,
+          this.excludeIDsFromSearch
+        );
+        if (searchFound) {
           const nodeID = id.toString();
           nodeUpdate.push({
             id: nodeID,
@@ -713,7 +740,13 @@ export class ForceView extends DOMWidgetView {
 
       // all matched edges should be colored a light blue
       this.edgeDataset.forEach((item, id) => {
-        if (this.search(text, item, 0)) {
+        const searchFound = this.search(
+          text,
+          item,
+          0,
+          this.excludeIDsFromSearch
+        );
+        if (searchFound) {
           edgeUpdate.push({
             id: id.toString(),
             width: 3,
@@ -787,8 +820,23 @@ export class ForceView extends DOMWidgetView {
 
     this.expandDiv.classList.add("menu-action", "expand-div");
     this.searchDiv.classList.add("menu-action", "search-div");
+    this.searchOptionsDiv.classList.add("menu-action", "search-options-div");
+    this.resetDiv.classList.add("menu-action", "reset-div");
     this.detailsDiv.classList.add("menu-action", "details-div");
     this.physicsDiv.classList.add("menu-action", "physics-div");
+
+    this.searchOptionsBtn.title = "Exclude/Include UUIDs in Search";
+    this.searchOptionsBtn.innerHTML = feather.icons["user-check"].toSvg();
+    this.searchOptionsDiv.appendChild(this.searchOptionsBtn);
+    rightActions.append(this.searchOptionsDiv);
+    this.searchOptionsBtn.onclick = (): void => {
+      this.excludeIDsFromSearch = !this.excludeIDsFromSearch;
+      if (this.excludeIDsFromSearch) {
+        this.searchOptionsBtn.innerHTML = feather.icons["user-x"].toSvg();
+      } else {
+        this.searchOptionsBtn.innerHTML = feather.icons["user-check"].toSvg();
+      }
+    };
 
     const searchInput = document.createElement("input");
     searchInput.classList.add("search-bar");
@@ -800,6 +848,17 @@ export class ForceView extends DOMWidgetView {
 
     this.searchDiv.append(searchInput);
     rightActions.append(this.searchDiv);
+
+    this.resetBtn.title = "Reset Graph View";
+    this.resetBtn.innerHTML = feather.icons["refresh-cw"].toSvg();
+    this.resetDiv.appendChild(this.resetBtn);
+    rightActions.append(this.resetDiv);
+    this.resetBtn.onclick = (): void => {
+      this.visOptions.physics.enabled = true;
+      this.changeOptions();
+      this.physicsBtn.innerHTML = feather.icons["unlock"].toSvg();
+      this.doingReset = true;
+    };
 
     this.physicsBtn.title = "Enable/Disable Graph Physics";
     if (
@@ -903,6 +962,8 @@ export class ForceView extends DOMWidgetView {
 
     const zoomInDiv = document.createElement("div");
     const zoomOutDiv = document.createElement("div");
+    const zoomResetDiv = document.createElement("div");
+
     const zoomInButton = document.createElement("button");
     zoomInButton.title = "Zoom In";
     zoomInButton.onclick = () => {
@@ -919,18 +980,28 @@ export class ForceView extends DOMWidgetView {
         animation: true,
       });
     };
+    const zoomResetButton = document.createElement("button");
+    zoomResetButton.title = "Reset Zoom to Fit";
+    zoomResetButton.onclick = () => {
+      this.vis?.fit({
+        animation: true,
+      });
+    };
 
-    zoomInButton.innerHTML = feather.icons["plus"].toSvg();
-    zoomOutButton.innerHTML = feather.icons["minus"].toSvg();
+    zoomInButton.innerHTML = feather.icons["zoom-in"].toSvg();
+    zoomOutButton.innerHTML = feather.icons["zoom-out"].toSvg();
+    zoomResetButton.innerHTML = feather.icons["square"].toSvg();
 
     zoomInDiv.classList.add("menu-action", "zoom-in-div");
     zoomOutDiv.classList.add("menu-action", "zoom-out-div");
+    zoomResetDiv.classList.add("menu-action", "zoom-reset-div");
     zoomInDiv.append(zoomInButton);
     zoomOutDiv.append(zoomOutButton);
+    zoomResetDiv.append(zoomResetButton);
 
     const bottomRightActions = document.createElement("div");
     bottomRightActions.classList.add("bottom-right");
-    bottomRightActions.append(zoomInDiv, zoomOutDiv);
+    bottomRightActions.append(zoomInDiv, zoomResetDiv, zoomOutDiv);
     this.networkDiv.append(bottomRightActions);
   }
 
@@ -943,11 +1014,12 @@ export class ForceView extends DOMWidgetView {
    * Search the provided data for an instance of the given text
    * @param text - the search term
    * @param data - data to be searched
+   * @param excludeIDs - boolean indicating whether we want to highlight ID matches
    */
-  search(text: string, data: any, depth: number): boolean {
+  search(text: string, data: any, depth: number, excludeIDs: boolean): boolean {
     if (Array.isArray(data)) {
       for (let i = 0; i < data.length; i++) {
-        if (this.search(text, data[i], depth + 1)) {
+        if (this.search(text, data[i], depth + 1, excludeIDs)) {
           return true;
         }
       }
@@ -968,15 +1040,37 @@ export class ForceView extends DOMWidgetView {
         // we want to ignore the top level set of properties on an object except for "properties"
         // because otherwise we would search for vis-specific settings.
         if (depth === 0) {
-          found = this.search(text, entry[1], depth + 1);
+          // Also include top level label, in case of label by ID
+          if (["properties", "label"].includes(entry[0].toString())) {
+            found = this.search(text, entry[1], depth + 1, excludeIDs);
+          } else {
+            console.log("Not properties or label key, ignoring.");
+          }
         } else {
-          found = this.search(text, entry, depth + 1);
+          if (
+            !(
+              this.excludeIDsFromSearch &&
+              [
+                "~id",
+                "~start",
+                "~end",
+                "T.id",
+                "Direction.IN",
+                "Direction.OUT",
+              ].includes(entry[0].toString())
+            )
+          ) {
+            found = this.search(text, entry, depth + 1, excludeIDs);
+          } else {
+            console.log("entry[0] is ID property, skipping.");
+          }
         }
       });
       return found;
     } else if (data === null || data === undefined) {
       return false;
     } else {
+      // If recursion reached variable not a map or array, check it.
       return data.toString().indexOf(text) !== -1;
     }
   }
