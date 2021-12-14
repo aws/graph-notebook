@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
 from networkx import MultiDiGraph
 
 logging.basicConfig()
@@ -23,7 +23,6 @@ EDGE_TYPE_KEY = "~type"
 LABEL_KEY = "~labels"
 NODE_ENTITY_TYPE = 'node'
 REL_ENTITY_TYPE = 'relationship'
-DEFAULT_GRP = 'DEFAULT_GROUP'
 
 
 class OCNetwork(EventfulNetwork):
@@ -33,27 +32,15 @@ class OCNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 rel_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
+                 edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
                  display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
                  tooltip_property=None, edge_tooltip_property=None,
                  ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-
-        self.label_max_length = 3 if label_max_length < 3 else label_max_length
-        self.rel_label_max_length = 3 if rel_label_max_length < 3 else rel_label_max_length
-        try:
-            self.group_by_property = json.loads(group_by_property)
-        except ValueError:
-            self.group_by_property = group_by_property
-        self.display_property = self.convert_property_name(display_property)
-        self.edge_display_property = self.convert_property_name(edge_display_property)
-        self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
-            else self.display_property
-        self.edge_tooltip_property = self.convert_property_name(edge_tooltip_property) if edge_tooltip_property \
-            else self.edge_display_property
-        self.ignore_groups = ignore_groups
-        super().__init__(graph, callbacks)
+        super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
+                         display_property, edge_display_property, tooltip_property, edge_tooltip_property,
+                         ignore_groups)
 
     def get_node_property_value(self, node: dict, props: dict, title, custom_property):
         try:
@@ -175,7 +162,7 @@ class OCNetwork(EventfulNetwork):
     def parse_rel(self, rel):
         data = {'properties': self.flatten(rel), 'label': rel[EDGE_TYPE_KEY], 'title': rel[EDGE_TYPE_KEY]}
         display_label = self.get_edge_property_value(data, rel, self.edge_display_property)
-        edge_title, edge_label = self.strip_and_truncate_label_and_title(display_label, self.rel_label_max_length)
+        edge_title, edge_label = self.strip_and_truncate_label_and_title(display_label, self.edge_label_max_length)
         if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
             edge_title = self.get_edge_property_value(data, rel, self.edge_tooltip_property)
         data['title'] = edge_title

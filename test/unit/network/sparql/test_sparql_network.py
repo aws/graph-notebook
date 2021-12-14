@@ -98,6 +98,7 @@ class TestSPARQLNetwork(unittest.TestCase):
         def add_node_callback(network, event_name, data):
             expected_data = {
                 'data': {
+                    'group': 'DEFAULT_GROUP',
                     'label': 'resourc...',
                     'prefix': 'resource',
                     'title': 'resource:24'
@@ -112,7 +113,7 @@ class TestSPARQLNetwork(unittest.TestCase):
 
         callbacks = {EVENT_ADD_NODE: [add_node_callback]}
         sn = SPARQLNetwork(callbacks=callbacks)
-        sn.add_node(node_id)
+        sn.parse_node(node_id=node_id)
         self.assertTrue(callback_reached[EVENT_ADD_NODE])
 
     def test_sparql_network_truncated_labels(self):
@@ -173,7 +174,7 @@ class TestSPARQLNetwork(unittest.TestCase):
         icao = sparql_network.graph.nodes['http://kelvinlawrence.net/air-routes/resource/24']['properties']['prop:icao']
         self.assertEqual(icao, 'KSJC')
 
-    def test_sparql_network_mutiple_s_and_p_bindings(self):
+    def test_sparql_network_multiple_s_and_p_bindings(self):
         sparql_network = SPARQLNetwork()
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
@@ -196,6 +197,329 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('re...', node['label'])
         self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_edge_label_full(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property="value")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
+
+    def test_sparql_network_edge_label_truncated(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=10, edge_display_property="value")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://...', edge['label'])
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
+
+    def test_sparql_network_group(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_string(self):
+        sparql_network = SPARQLNetwork(group_by_property='value')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['group'])
+
+    def test_sparql_network_group_string_invalid(self):
+        sparql_network = SPARQLNetwork(group_by_property='foo')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_map(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"uri":"value"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['group'])
+
+    def test_sparql_network_group_map_invalid_key(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"foo":"value"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_map_invalid_value(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"uri":"bar"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_map_invalid_json(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"uri":bar"')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_ignore_groups(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"uri":"value"}', ignore_groups=True)
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('DEFAULT_GROUP', node['group'])
+
+    def test_sparql_network_node_label_string(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='value')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['label'])
+
+    def test_sparql_network_node_label_string_invalid(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='foo')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['label'])
+
+    def test_sparql_network_node_label_map(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"uri":"value"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['label'])
+
+    def test_sparql_network_node_label_map_invalid_key(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"foo":"value"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['label'])
+
+    def test_sparql_network_node_label_map_invalid_value(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"uri":"foo"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['label'])
+
+    def test_sparql_network_node_label_map_invalid_json(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"uri:"foo')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['label'])
+
+    def test_sparql_network_node_tooltip_default(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_tooltip_string(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='type')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['title'])
+
+    def test_sparql_network_node_tooltip_string_invalid(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='foo')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_tooltip_map(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri":"type"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('uri', node['title'])
+
+    def test_sparql_network_node_tooltip_map_invalid_key(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"foo":"type"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_tooltip_map_invalid_value(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri":"bar"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_tooltip_map_invalid_json(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri"type"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_different_label_and_tooltip(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='value', tooltip_property='type')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['label'])
+        self.assertEqual('uri', node['title'])
+
+    def test_sparql_network_edge_label_default(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100)
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['label'])
+
+    def test_sparql_network_edge_label_string(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property="value")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
+
+    def test_sparql_network_edge_label_string_invalid(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property="foo")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['label'])
+
+    def test_sparql_network_edge_label_map(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property='{"uri":"value"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
+
+    def test_sparql_network_edge_label_map_invalid_key(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property='{"foo":"value"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['label'])
+
+    def test_sparql_network_edge_label_map_invalid_value(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property='{"uri":"foo"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['label'])
+
+    def test_sparql_network_edge_label_map_invalid_json(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property='{"uri":"foo')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['label'])
+
+    def test_sparql_network_edge_tooltip_default(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_default_with_custom_label(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_display_property="value")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_string(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property="value")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_string_invalid(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property="foo")
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_map(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property='{"uri":"value"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_map_invalid_key(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property='{"foo":"value"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_map_invalid_value(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property='{"uri":"bar"}')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['title'])
+
+    def test_sparql_network_edge_tooltip_map_invalid_json(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100, edge_tooltip_property='{"uri":"value')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('objectProperty:route', edge['title'])
+
+    def test_sparql_network_edge_different_label_and_tooltip(self):
+        sparql_network = SPARQLNetwork(edge_label_max_length=100,
+                                       edge_display_property='value',
+                                       edge_tooltip_property='type')
+        data = get_sparql_result('009_airroutes_edge_test.json')
+        sparql_network.add_results(data)
+        edge = sparql_network.graph.get_edge_data('http://kelvinlawrence.net/air-routes/resource/365',
+                                                  'http://kelvinlawrence.net/air-routes/resource/31',
+                                                  'http://kelvinlawrence.net/air-routes/objectProperty/route')
+        self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['label'])
+        self.assertEqual('uri', edge['title'])
 
 
 if __name__ == '__main__':
