@@ -31,7 +31,7 @@ job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
 database = args['DATABASE_NAME']
-person_table = 'person'
+user_demographics_table = 'demographics'
 
 # Create Gremlin client
 
@@ -45,7 +45,7 @@ gremlin_client = GlueGremlinClient(gremlin_endpoints)
 # Create Person vertices
 
 # 1. Get data from source SQL database
-datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = person_table, transformation_ctx = "datasource0")
+datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = user_demographics_table, transformation_ctx = "datasource0")
 
 # datasource1 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = product_category_table, transformation_ctx = "datasource1")
 # datasource2 = datasource0.join( ["CATEGORY_ID"],["CATEGORY_ID"], datasource1, transformation_ctx = "join")
@@ -54,7 +54,7 @@ datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database,
 
 applymapping1 = ApplyMapping.apply(frame = datasource0, mappings = [("id", "string", "id:String", "string"), 
     ("name", "string", "name:String", "string"), ("phone", "string", "phone:String", "string"), 
-    ("email", "string", "email:String", "string"), ("city", "string", "city:String", "string"), ("country", "string", "country:String", "string"),
+    ("email", "string", "email:String", "string"), ("city", "string", "city:String", "string"),("state", "string", "state:String", "string"), ("country", "string", "country:String", "string"),("address", "string", "address:String", "string"),
     ("pincode", "string", "pincode:String", "string"),("joineddate", "string", "joineddate:String", "string"), ("updateddate", "string", "updateddate:String", "string")], transformation_ctx = "applymapping1")
 
 # 3. create user vertices
@@ -69,16 +69,32 @@ phoneDF = SelectFields.apply(frame = applymapping1, paths = ["phone:String"], tr
 phoneDF = GlueGremlinCsvTransforms.create_prefixed_columns(phoneDF, [('~id', 'phone:String','phone')])
 phoneDF.toDF().foreachPartition(gremlin_client.upsert_vertices('Phone', batch_size=100))
 
+# 4.1 create email vertices
+
+emailDF = SelectFields.apply(frame = applymapping1, paths = ["email:String"], transformation_ctx = "emailDF")
+emailDF = GlueGremlinCsvTransforms.create_prefixed_columns(emailDF, [('~id', 'email:String','email')])
+emailDF.toDF().foreachPartition(gremlin_client.upsert_vertices('Email', batch_size=100))
+
 # 5. create city vertices
 
 cityDF = SelectFields.apply(frame = applymapping1, paths = ["city:String"], transformation_ctx = "cityDF")
 cityDF = GlueGremlinCsvTransforms.create_prefixed_columns(cityDF, [('~id', 'city:String','city')])
 cityDF.toDF().foreachPartition(gremlin_client.upsert_vertices('City', batch_size=100))
 
+
+stateDF = SelectFields.apply(frame = applymapping1, paths = ["state:String"], transformation_ctx = "stateDF")
+stateDF = GlueGremlinCsvTransforms.create_prefixed_columns(stateDF, [('~id', 'state:String','state')])
+stateDF.toDF().foreachPartition(gremlin_client.upsert_vertices('State', batch_size=100))
+
 # 6. create country vertices
 countryDF = SelectFields.apply(frame = applymapping1, paths = ["country:String"], transformation_ctx = "countryDF")
 countryDF = GlueGremlinCsvTransforms.create_prefixed_columns(countryDF, [('~id', 'country:String','country')])
 countryDF.toDF().foreachPartition(gremlin_client.upsert_vertices('Country', batch_size=100))
+
+# 6.1 create address vertices
+addressDF = SelectFields.apply(frame = applymapping1, paths = ["address:String"], transformation_ctx = "addressDF")
+addressDF = GlueGremlinCsvTransforms.create_prefixed_columns(addressDF, [('~id', 'address:String','address')])
+addressDF.toDF().foreachPartition(gremlin_client.upsert_vertices('Address', batch_size=100))
 
 # 7. create user to phone edges
 
@@ -86,21 +102,42 @@ userToPhoneMapping = SelectFields.apply(frame = applymapping1, paths = ["id:Stri
 userToPhoneMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToPhoneMapping, [('~from', 'id:String','user'),('~to', 'phone:String','phone')])
 userToPhoneMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToPhoneMapping, '~from', '~to')
 userToPhoneMapping.toDF().foreachPartition(gremlin_client.upsert_edges('hasPhone', batch_size=100))
-    
-# 8. create user to city edges
 
-userToCityMapping = SelectFields.apply(frame = applymapping1, paths = ["id:String","city:String"], transformation_ctx = "userToCityMapping")
-userToCityMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToCityMapping, [('~from', 'id:String','user'),('~to', 'city:String','city')])
-userToCityMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToCityMapping, '~from', '~to')
-userToCityMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCity', batch_size=100))
+# 7.1 create user to email edges
 
-# 9. create city to country edges
+userToEmailMapping = SelectFields.apply(frame = applymapping1, paths = ["id:String","email:String"], transformation_ctx = "userToEmailMapping")
+userToEmailMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToEmailMapping, [('~from', 'id:String','user'),('~to', 'email:String','email')])
+userToEmailMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToEmailMapping, '~from', '~to')
+userToEmailMapping.toDF().foreachPartition(gremlin_client.upsert_edges('hasEmail', batch_size=100))
 
-cityToCountryMapping = SelectFields.apply(frame = applymapping1, paths = ["city:String","country:String"], transformation_ctx = "cityToCountryMapping")
-cityToCountryMapping = GlueGremlinCsvTransforms.create_prefixed_columns(cityToCountryMapping, [('~from', 'city:String','city'),('~to', 'country:String','country')])
-cityToCountryMapping = GlueGremlinCsvTransforms.create_edge_id_column(cityToCountryMapping, '~from', '~to')
-cityToCountryMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCountry', batch_size=100))
+# 8. create user to address edges
 
+userToAddressMapping = SelectFields.apply(frame = applymapping1, paths = ["id:String","address:String"], transformation_ctx = "userToAddressMapping")
+userToAddressMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToAddressMapping, [('~from', 'id:String','user'),('~to', 'address:String','address')])
+userToAddressMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToAddressMapping, '~from', '~to')
+userToAddressMapping.toDF().foreachPartition(gremlin_client.upsert_edges('hasAddr', batch_size=100))
+
+# 8.1 create address to city edges
+
+addressToCityMapping = SelectFields.apply(frame = applymapping1, paths = ["address:String","city:String"], transformation_ctx = "addressToCityMapping")
+addressToCityMapping = GlueGremlinCsvTransforms.create_prefixed_columns(addressToCityMapping, [('~from', 'address:String','address'),('~to', 'city:String','city')])
+addressToCityMapping = GlueGremlinCsvTransforms.create_edge_id_column(addressToCityMapping, '~from', '~to')
+addressToCityMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCity', batch_size=100))
+
+# 9. create city to state edges
+
+cityToStateMapping = SelectFields.apply(frame = applymapping1, paths = ["city:String","state:String"], transformation_ctx = "cityToStateMapping")
+cityToStateMapping = GlueGremlinCsvTransforms.create_prefixed_columns(cityToStateMapping, [('~from', 'city:String','city'),('~to', 'state:String','state')])
+cityToStateMapping = GlueGremlinCsvTransforms.create_edge_id_column(cityToStateMapping, '~from', '~to')
+cityToStateMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inState', batch_size=100))
+
+
+# 9.1 create state to country edges
+
+stateToCountryMapping = SelectFields.apply(frame = applymapping1, paths = ["state:String","country:String"], transformation_ctx = "stateToCountryMapping")
+stateToCountryMapping = GlueGremlinCsvTransforms.create_prefixed_columns(stateToCountryMapping, [('~from', 'state:String','state'),('~to', 'country:String','country')])
+stateToCountryMapping = GlueGremlinCsvTransforms.create_edge_id_column(stateToCountryMapping, '~from', '~to')
+stateToCountryMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCountry', batch_size=100))
 
 
 # End
@@ -115,6 +152,6 @@ cityToCountryMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCoun
 
 # countryDF.show()
 
-# job.commit()
+job.commit()
 
 print("Done")
