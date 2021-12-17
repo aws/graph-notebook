@@ -3,10 +3,11 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 from networkx import MultiDiGraph
 from rdflib.namespace import RDF, RDFS, OWL, XSD, SKOS, DOAP, FOAF, DC, DCTERMS, VOID
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
 
 NAMESPACE_RDFS = str(RDFS.uri)
 NAMESPACE_RDF = str(RDF.uri)
@@ -51,15 +52,20 @@ class SPARQLNetwork(EventfulNetwork):
                  callbacks: list = None,
                  label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
                  edge_label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
+                 group_by_property='',
+                 display_property='',
+                 edge_display_property='',
+                 tooltip_property='',
+                 edge_tooltip_property='',
+                 ignore_groups=False,
                  expand_all: bool = False):
         if graph is None:
             graph = MultiDiGraph()
-
         self.expand_all = expand_all
-        self.label_max_length = 3 if label_max_length < 3 else label_max_length
-        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
 
-        super().__init__(graph, callbacks)
+        super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
+                         display_property, edge_display_property, tooltip_property, edge_tooltip_property,
+                         ignore_groups)
         self.namespace_to_prefix = {  # http://foo/bar/ -> bar
             NAMESPACE_RDFS: PREFIX_RDFS,
             NAMESPACE_RDF: PREFIX_RDF,
@@ -97,30 +103,86 @@ class SPARQLNetwork(EventfulNetwork):
                     self.namespace_to_prefix[namespace] = shorthand
                     self.prefix_to_namespace[shorthand] = namespace
 
-    def add_node(self, node_id: str, data: dict = None):
+    def generate_node_label_title(self, node_id: str, data: dict):
+        prefix = self.extract_prefix(node_id)
+        value = self.extract_value(node_id)
+
+        if prefix is not None:
+            title = f'{prefix}:{value}'
+            data['prefix'] = prefix
+        else:
+            title = node_id
+
+        label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
+        data['label'] = label
+        if not data.get('title'):
+            data['title'] = title
+        return data
+
+    def get_property_value(self, binding: dict, custom_property):
+        if isinstance(custom_property, dict):
+            try:
+                if str(binding["type"]) in custom_property:
+                    label = binding[custom_property[binding["type"]]]
+                else:
+                    label = None
+            except KeyError:
+                label = None
+        elif custom_property in binding:
+            label = binding[custom_property]
+        else:
+            label = None
+
+        return label
+
+    def parse_node(self, node_id: str, node_binding: dict = None, data: dict = None):
         """
         overriding parent add_node class to automatically parse the uri for a node
         and add data to the node for prefix and shortened name
         :param node_id: the full uri
+        :param node_binding: the subject or object binding, in dict form
         :param data: dict to set node initial node properties
         """
+
         if data is None:
             data = {}
-        if 'label' not in data:
-            prefix = self.extract_prefix(node_id)
-            value = self.extract_value(node_id)
-
-            if prefix is not None:
-                title = f'{prefix}:{value}'
-                data['prefix'] = prefix
+        label = ''
+        title = ''
+        if self.display_property:
+            label = self.get_property_value(node_binding, self.display_property)
+            if label:
+                title_new, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
+                title = title_new
+        if self.tooltip_property and self.tooltip_property != self.display_property:
+            tooltip_raw = self.get_property_value(node_binding, self.tooltip_property)
+            if tooltip_raw:
+                title, label_plc = self.strip_and_truncate_label_and_title(tooltip_raw)
+                data['title'] = title
+        # TODO: Check back on whether we want to overwrite existing labels
+        if not data.get('label'):
+            if label:
+                data['label'] = label
+                if not data.get('title'):
+                    data['title'] = title
             else:
-                title = node_id
+                data = self.generate_node_label_title(node_id=node_id, data=data)
+        if self.ignore_groups or not node_binding:
+            data['group'] = DEFAULT_GRP
+        else:
+            if isinstance(self.group_by_property, dict):
+                try:
+                    if str(node_binding["type"]) in self.group_by_property:
+                        data['group'] = node_binding[self.group_by_property[node_binding["type"]]]
+                    else:
+                        data['group'] = node_binding["type"]
+                except KeyError:
+                    data['group'] = node_binding["type"]
+            elif self.group_by_property in node_binding:
+                data['group'] = node_binding[self.group_by_property]
+            else:
+                data['group'] = node_binding["type"]
 
-            label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-            data['label'] = label
-            data['title'] = title
-
-        super().add_node(node_id, data)
+        self.add_node(node_id=node_id, data=data)
 
     @staticmethod
     def extract_value(uri: str) -> str:
@@ -251,7 +313,7 @@ class SPARQLNetwork(EventfulNetwork):
         if len(bindings) < 1:
             return
 
-        current_subject = bindings[0][subject_binding]['value']
+        current_subject_binding = bindings[0][subject_binding]
         data = {'properties': {}}
         edge_bindings = []
 
@@ -259,19 +321,21 @@ class SPARQLNetwork(EventfulNetwork):
             # just because the result vars show the needed variables doesn't mean that bindings will have them.
             if subject_binding not in b or predicate_binding not in b or object_binding not in b:
                 if subject_binding in b:
-                    self.add_node(b[subject_binding]['value'])
+                    self.parse_node(node_binding=b[subject_binding], node_id=b[subject_binding]['value'])
 
                 if object_binding in b:
-                    self.add_node(b[object_binding]['value'])
+                    self.parse_node(node_binding=b[object_binding], node_id=b[object_binding]['value'])
                 continue
             sub = b[subject_binding]
             pred = b[predicate_binding]
             obj = b[object_binding]
 
-            if sub['value'] != current_subject:
-                self.add_node(current_subject, data)
+            if sub['value'] != current_subject_binding['value']:
+                self.parse_node(node_binding=current_subject_binding,
+                                node_id=current_subject_binding['value'],
+                                data=data)
                 data = {'properties': {}}
-                current_subject = sub['value']
+                current_subject_binding = sub
 
             # if obj is of type uri, and the predicate value is neither rdfs:label nor rdf:type this binding is an edge.
             if (obj['type'] in NODE_TYPES or self.expand_all) and pred['value'] not in [RDFS_LABEL, RDF_TYPE]:
@@ -315,7 +379,9 @@ class SPARQLNetwork(EventfulNetwork):
                     data['properties'][pred['value']] = obj['value']
 
         # add the last node and all our edges
-        self.add_node(current_subject, data)
+        self.parse_node(node_binding=current_subject_binding,
+                        node_id=current_subject_binding['value'],
+                        data=data)
         self.process_edge_bindings(edge_bindings, use_spo)
         return
 
@@ -335,16 +401,25 @@ class SPARQLNetwork(EventfulNetwork):
 
             pred = b[predicate_binding]
 
-            edge_label = pred['value']
+            edge_label = self.get_property_value(pred, self.edge_display_property)
 
-            if pred['type'] == 'uri':
-                prefix = self.extract_prefix(pred['value'])
-                value = self.extract_value(pred['value'])
-                edge_label = f'{prefix}:{value}'
+            if not edge_label:
+                if pred['type'] == 'uri':
+                    prefix = self.extract_prefix(pred['value'])
+                    value = self.extract_value(pred['value'])
+                    edge_label = f'{prefix}:{value}'
+                else:
+                    edge_label = pred['value']
 
+            # Draw node at other end of the edge, if it doesn't exist yet
             if not self.graph.has_node(b[object_binding]['value']):
-                self.add_node(b[object_binding]['value'])
+                self.parse_node(node_binding=b[object_binding],
+                                node_id=b[object_binding]['value'])
             edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
+            if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
+                tooltip_raw = self.get_property_value(pred, self.edge_tooltip_property)
+                if tooltip_raw:
+                    edge_title, label_plc = self.strip_and_truncate_label_and_title(tooltip_raw)
             data = {'title': edge_title}
             self.add_edge(from_id=b[subject_binding]['value'], to_id=b[object_binding]['value'], edge_id=pred['value'],
                           label=edge_label, title=edge_title, data=data)

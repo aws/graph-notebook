@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from collections import defaultdict
 import collections
 import re
+import json
 from networkx import MultiDiGraph
 from .Network import Network
 from typing import Tuple
@@ -16,6 +17,8 @@ EVENT_ADD_NODE_DATA = 'add_node_data'
 EVENT_ADD_NODE_PROPERTY = 'add_node_property'
 EVENT_ADD_EDGE = 'add_edge'
 EVENT_ADD_EDGE_DATA = 'add_edge_data'
+DEFAULT_GRP = 'DEFAULT_GROUP'
+DEFAULT_LABEL_MAX_LENGTH = 10
 
 VALID_EVENTS = [EVENT_ADD_NODE, EVENT_ADD_NODE_DATA, EVENT_ADD_NODE_PROPERTY, EVENT_ADD_EDGE, EVENT_ADD_EDGE_DATA]
 
@@ -33,16 +36,33 @@ class EventfulNetwork(Network):
     the EventfulNetwork will call super().add_node(...) then look for callbacks to dispatch.
     """
 
-    def __init__(self, graph: MultiDiGraph = None, callbacks: dict = None):
+    def __init__(self, graph: MultiDiGraph = None, callbacks: dict = None,
+                 label_max_length: int = DEFAULT_LABEL_MAX_LENGTH,
+                 edge_label_max_length: int = DEFAULT_LABEL_MAX_LENGTH, group_by_property: str = '',
+                 display_property: str = '', edge_display_property: str = '',
+                 tooltip_property: str = '', edge_tooltip_property: str = '',
+                 ignore_groups=False):
         if callbacks is None:
             callbacks = defaultdict(list)
         self.callbacks = callbacks
-
+        self.label_max_length = 3 if label_max_length < 3 else label_max_length
+        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
+        try:
+            self.group_by_property = json.loads(group_by_property)
+        except (TypeError, ValueError) as e:
+            self.group_by_property = group_by_property
+        self.display_property = self.convert_property_name(display_property)
+        self.edge_display_property = self.convert_property_name(edge_display_property)
+        self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
+            else self.display_property
+        self.edge_tooltip_property = self.convert_property_name(edge_tooltip_property) if edge_tooltip_property \
+            else self.edge_display_property
+        self.ignore_groups = ignore_groups
         if graph is None:
             graph = MultiDiGraph()
         super().__init__(graph)
 
-    def strip_and_truncate_label_and_title(self, old_label, max_len: int) -> Tuple[str, str]:
+    def strip_and_truncate_label_and_title(self, old_label, max_len: int = 10) -> Tuple[str, str]:
         if isinstance(old_label, list) and len(old_label) == 1:
             title = str(old_label).strip("[]'")
         else:
@@ -79,6 +99,12 @@ class EventfulNetwork(Network):
             if converted_property:
                 display_params = converted_property
         return display_params
+
+    def convert_property_name(self, property_name):
+        try:
+            return self.convert_multiproperties_to_tuples(json.loads(property_name.strip('\'"')))
+        except ValueError:
+            return self.convert_multiproperties_to_tuples(property_name.strip('\'"'))
 
     def flatten(self, d: dict, parent_key='', sep='_') -> dict:
         """Flattens dictionaries including nested dictionaries

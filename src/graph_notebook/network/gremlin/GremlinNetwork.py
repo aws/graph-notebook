@@ -9,7 +9,7 @@ import uuid
 import logging
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
 from gremlin_python.process.traversal import T, Direction
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
@@ -19,7 +19,6 @@ logger = logging.getLogger(__file__)
 
 T_LABEL = 'T.label'
 T_ID = 'T.id'
-DEFAULT_GRP = 'DEFAULT_GROUP'
 
 INVALID_PATH_ERROR = ValueError("results must be a path with the pattern Vertex -> Edge -> Vertex.")
 INVALID_VERTEX_ERROR = ValueError("when adding a vertex, object must be of type Vertex or Dict")
@@ -100,26 +99,70 @@ class GremlinNetwork(EventfulNetwork):
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
-                 edge_display_property=T_LABEL, ignore_groups=False):
+                 edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False):
         if graph is None:
             graph = MultiDiGraph()
-        self.label_max_length = 3 if label_max_length < 3 else label_max_length
-        self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
-        try:
-            self.group_by_property = json.loads(group_by_property)
-        except ValueError:
-            self.group_by_property = group_by_property
-        try:
-            self.display_property = self.convert_multiproperties_to_tuples(json.loads(display_property.strip('\'"')))
-        except ValueError:
-            self.display_property = self.convert_multiproperties_to_tuples(display_property.strip('\'"'))
-        try:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(
-                json.loads(edge_display_property.strip('\'"')))
-        except ValueError:
-            self.edge_display_property = self.convert_multiproperties_to_tuples(edge_display_property.strip('\'"'))
-        self.ignore_groups = ignore_groups
-        super().__init__(graph, callbacks)
+        super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
+                         display_property, edge_display_property, tooltip_property, edge_tooltip_property,
+                         ignore_groups)
+
+    def get_dict_element_property_value(self, element, k, temp_label, custom_property):
+        property_value = None
+        if isinstance(custom_property, dict):
+            try:
+                if isinstance(custom_property[temp_label], tuple) and isinstance(element[k], list):
+                    if str(k) == custom_property[temp_label][0]:
+                        try:
+                            property_value = element[k][custom_property[temp_label][1]]
+                        except (TypeError, IndexError):
+                            logger.debug(f"Failed to index into sub-property for: {element[k]} and "
+                                         f"{custom_property[temp_label]}")
+                            return
+                elif str(k) == custom_property[temp_label]:
+                    property_value = element[k]
+            except KeyError:
+                return
+        elif isinstance(custom_property, tuple):
+            if str(k) == custom_property[0] and isinstance(element[k], list):
+                try:
+                    property_value = element[k][custom_property[1]]
+                except IndexError:
+                    logger.debug(f"Failed to index into sub-property for: {element[k]} and "
+                                 f"{custom_property[0]}")
+                    return
+        elif str(k) == custom_property:
+            property_value = element[k]
+
+        return property_value
+
+    def get_explicit_vertex_property_value(self, node_id, temp_label, custom_property):
+        property_value = None
+        if custom_property in [T_ID, 'id']:
+            property_value = str(node_id)
+        elif isinstance(custom_property, dict):
+            try:
+                if custom_property[temp_label] in [T_ID, 'id']:
+                    property_value = str(node_id)
+            except KeyError:
+                return
+        return property_value
+
+    def get_explicit_edge_property_value(self, data, edge, custom_property):
+        property_value = None
+        if isinstance(custom_property, dict):
+            try:
+                property_value = data['properties'][custom_property[edge.label]]
+            except KeyError:
+                return
+        else:
+            if custom_property == T_LABEL:
+                property_value = edge.label
+            else:
+                try:
+                    property_value = data['properties'][custom_property]
+                except KeyError:
+                    return
+        return property_value
 
     def add_results_with_pattern(self, results, pattern_list: list):
         """
@@ -287,6 +330,12 @@ class GremlinNetwork(EventfulNetwork):
         if type(v) is Vertex:
             node_id = v.id
             title = v.label
+            label_full = ''
+            tooltip_display_is_set = True
+            using_custom_tooltip = False
+            if self.tooltip_property and self.tooltip_property != self.display_property:
+                tooltip_display_is_set = False
+                using_custom_tooltip = True
             vertex_dict = v.__dict__
             if not isinstance(self.group_by_property, dict):  # Handle string format group_by
                 if str(self.group_by_property) in [T_LABEL, 'label']:  # this handles if it's just a string
@@ -314,32 +363,49 @@ class GremlinNetwork(EventfulNetwork):
 
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
-            if self.display_property in [T_ID, 'id']:
-                label = str(node_id)
-                title = str(node_id)
-            elif isinstance(self.display_property, dict):
-                try:
-                    if self.display_property[title] in [T_ID, 'id']:
-                        label = str(node_id)
-                        title = str(node_id)
-                except KeyError:
-                    pass
+            if self.display_property:
+                label_property_raw_value = self.get_explicit_vertex_property_value(node_id, title,
+                                                                                    self.display_property)
+                if label_property_raw_value:
+                    label_full, label = self.strip_and_truncate_label_and_title(label_property_raw_value,
+                                                                                self.label_max_length)
+                    if not using_custom_tooltip:
+                        title = label_full
+
+            if using_custom_tooltip:
+                tooltip_property_raw_value = self.get_explicit_vertex_property_value(node_id, title,
+                                                                                      self.tooltip_property)
+                if tooltip_property_raw_value:
+                    title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,
+                                                                               self.label_max_length)
+                    tooltip_display_is_set = True
+
+            if not tooltip_display_is_set and label_full:
+                title = label_full
+
             data = {'label': str(label).strip("[]'"), 'title': title, 'group': group,
-                    'properties': {'id': node_id, 'label': title}}
+                    'properties': {'id': node_id, 'label': label_full}}
         elif type(v) is dict:
             properties = {}
             title = ''
             label = ''
+            label_full = ''
             group = ''
             display_is_set = False
+            using_custom_tooltip = False
+            tooltip_display_is_set = True
             group_is_set = False
+            if self.tooltip_property and self.tooltip_property != self.display_property:
+                using_custom_tooltip = True
+                tooltip_display_is_set = False
             # Before looping though properties, we first search for T.label in vertex dict, then set title = T.label
             # Otherwise, we will hit KeyError if we don't iterate through T.label first to set the title
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
             if T.label in v.keys():
-                title = str(v[T.label])
-                title_plc, label = self.strip_and_truncate_label_and_title(title, self.label_max_length)
+                title_plc = str(v[T.label])
+                title, label = self.strip_and_truncate_label_and_title(title_plc, self.label_max_length)
             else:
+                title_plc = ''
                 group = DEFAULT_GRP
             for k in v:
                 if str(k) == T_ID:
@@ -348,7 +414,7 @@ class GremlinNetwork(EventfulNetwork):
                 if not group_is_set:
                     if isinstance(self.group_by_property, dict):
                         try:
-                            if str(k) == self.group_by_property[title]:
+                            if str(k) == self.group_by_property[title_plc]:
                                 group = str(v[k])
                                 group_is_set = True
                         except KeyError:
@@ -357,36 +423,25 @@ class GremlinNetwork(EventfulNetwork):
                         group = str(v[k])
                         group_is_set = True
                 if not display_is_set:
-                    if isinstance(self.display_property, dict):
-                        try:
-                            if isinstance(self.display_property[title], tuple) and isinstance(v[k], list):
-                                if str(k) == self.display_property[title][0]:
-                                    try:
-                                        title, label = self.strip_and_truncate_label_and_title(
-                                            v[k][self.display_property[title][1]], self.label_max_length)
-                                        display_is_set = True
-                                    except IndexError:
-                                        logger.debug(f"Failed to index into sub-property for: {k} and "
-                                                     f"{self.display_property[title]}")
-                                        continue
-                            elif str(k) == self.display_property[title]:
-                                title, label = self.strip_and_truncate_label_and_title(v[k], self.label_max_length)
-                                display_is_set = True
-                        except KeyError as e:
-                            continue
-                    elif isinstance(self.display_property, tuple):
-                        if str(k) == self.display_property[0] and isinstance(v[k], list):
-                            try:
-                                title, label = self.strip_and_truncate_label_and_title(
-                                    v[k][self.display_property[1]], self.label_max_length)
-                                display_is_set = True
-                            except IndexError:
-                                logger.debug(f"Failed to index into sub-property for: {k} and "
-                                             f"{self.display_property[0]}")
-                                continue
-                    elif str(k) == self.display_property:
-                        title, label = self.strip_and_truncate_label_and_title(v[k], self.label_max_length)
+                    label_property_raw_value = self.get_dict_element_property_value(v, k, title_plc,
+                                                                                    self.display_property)
+                    if label_property_raw_value:
+                        label_full, label = self.strip_and_truncate_label_and_title(label_property_raw_value,
+                                                                                    self.label_max_length)
+                        if not using_custom_tooltip:
+                            title = label_full
                         display_is_set = True
+                if not tooltip_display_is_set:
+                    tooltip_property_raw_value = self.get_dict_element_property_value(v, k, title_plc,
+                                                                                      self.tooltip_property)
+                    if tooltip_property_raw_value:
+                        title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,
+                                                                                   self.label_max_length)
+                        tooltip_display_is_set = True
+
+            if not tooltip_display_is_set and label_full:
+                title = label_full
+
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
@@ -397,8 +452,8 @@ class GremlinNetwork(EventfulNetwork):
             if title == '':
                 for key in v:
                     title += str(v[key])
-                if label == '':
-                    label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
+            if label == '':
+                label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
 
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
@@ -418,28 +473,60 @@ class GremlinNetwork(EventfulNetwork):
         if type(edge) is Edge:
             from_id = from_id if from_id != '' else edge.outV.id
             to_id = to_id if to_id != '' else edge.inV.id
+            edge_label_full = ''
+            using_custom_tooltip = False
+            tooltip_display_is_set = True
+            edge_title = edge.label
+            if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
+                using_custom_tooltip = True
+                tooltip_display_is_set = False
             data['properties'] = {'id': edge.id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
-            if isinstance(self.edge_display_property, dict):
-                try:
-                    display_label = data['properties'][self.edge_display_property[edge.label]]
-                except KeyError:
-                    display_label = edge.label
-            else:
-                if self.edge_display_property == T_LABEL:
-                    display_label = edge.label
-                else:
-                    try:
-                        display_label = data['properties'][self.edge_display_property]
-                    except KeyError:
-                        display_label = edge.label
-            self.add_edge(from_id, to_id, edge.id, display_label, data)
+
+            edge_label = edge_title if len(edge_title) <= self.edge_label_max_length \
+                else edge_title[:self.edge_label_max_length - 3] + '...'
+
+            if self.edge_display_property:
+                label_property_raw_value = self.get_explicit_edge_property_value(data, edge, self.edge_display_property)
+                if label_property_raw_value:
+                    edge_label_full, edge_label = self.strip_and_truncate_label_and_title(label_property_raw_value,
+                                                                                          self.edge_label_max_length)
+                    if not using_custom_tooltip:
+                        edge_title = edge_label_full
+
+            if using_custom_tooltip:
+                tooltip_property_raw_value = self.get_explicit_edge_property_value(data, edge,
+                                                                                   self.edge_tooltip_property)
+                if tooltip_property_raw_value:
+                    edge_title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,
+                                                                                    self.edge_label_max_length)
+                    tooltip_display_is_set = True
+
+            if not tooltip_display_is_set and edge_label_full:
+                edge_title = edge_label_full
+
+            self.get_explicit_edge_property_value(data, edge, self.edge_tooltip_property)
+
+            data['title'] = edge_title
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge.id, label=edge_label, title=edge_title,
+                          data=data)
         elif type(edge) is dict:
             properties = {}
             edge_id = ''
             edge_label = ''
+            edge_label_full = ''
+            edge_title = ''
             display_is_set = False
+            tooltip_display_is_set = True
+            using_custom_tooltip = False
+            if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
+                using_custom_tooltip = True
+                tooltip_display_is_set = False
             if T.label in edge.keys():
-                edge_label = str(edge[T.label])
+                edge_title_plc = str(edge[T.label])
+                edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_title_plc,
+                                                                                 self.edge_label_max_length)
+            else:
+                edge_title_plc = ''
             for k in edge:
                 if str(k) == T_ID:
                     edge_id = str(edge[k])
@@ -448,36 +535,26 @@ class GremlinNetwork(EventfulNetwork):
                 else:
                     properties[k] = edge[k]
                 if self.edge_display_property is not T_LABEL and not display_is_set:
-                    if isinstance(self.edge_display_property, dict):
-                        try:
-                            if isinstance(self.edge_display_property[edge_label], tuple) and isinstance(edge[k],list):
-                                if str(k) == self.edge_display_property[edge_label][0]:
-                                    try:
-                                        edge_label = edge[k][self.edge_display_property[edge_label][1]]
-                                        display_is_set = True
-                                    except (TypeError, IndexError) as e:
-                                        logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
-                                                     f"{self.edge_display_property[edge_label]}")
-                                        continue
-                            elif str(k) == self.edge_display_property[edge_label]:
-                                edge_label = edge[k]
-                                display_is_set = True
-                        except KeyError:
-                            continue
-                    elif isinstance(self.edge_display_property, tuple):
-                        if str(k) == self.edge_display_property[0] and isinstance(edge[k], list):
-                            try:
-                                edge_label = edge[k][self.edge_display_property[1]]
-                                display_is_set = True
-                            except IndexError:
-                                logger.debug(f"Failed to index into edge sub-property for: {edge[k]} and "
-                                             f"{self.edge_display_property[0]}")
-                                continue
-                    elif str(k) == self.edge_display_property:
-                        edge_label = edge[k]
+                    label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
+                                                                                    self.edge_display_property)
+                    if label_property_raw_value:
+                        edge_label_full, edge_label = self.strip_and_truncate_label_and_title(
+                            label_property_raw_value, self.edge_label_max_length)
+                        if not using_custom_tooltip:
+                            edge_title = edge_label_full
                         display_is_set = True
+                if not tooltip_display_is_set:
+                    tooltip_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
+                                                                                      self.edge_tooltip_property)
+                    if tooltip_property_raw_value:
+                        edge_title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,
+                                                                                        self.edge_label_max_length)
+                        tooltip_display_is_set = True
+
+            if not tooltip_display_is_set and edge_label_full:
+                edge_title = edge_label_full
+
             data['properties'] = properties
-            edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
             data['title'] = edge_title
             self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title, data=data)
         else:
