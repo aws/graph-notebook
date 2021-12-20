@@ -28,7 +28,7 @@ An identity graph provides a single unified view of customers and prospects by l
 
 The examples in this notebook shows a sample identity graph solution using an open dataset as well as data visualizations that allow one to better understand the structure of an identity graph.
 
-## [Neptune ML People Analytics](../04-Machine-Learning/Sample-Applications/01-People-Analytics)
+## [People Analytics using Machine Learning](../04-Machine-Learning/Sample-Applications/01-People-Analytics)
 
 Hiring and retaining good personnel is a key characteristic to making an organization successful.  One way that organizations approach this problem is through the use of people analytics.  People analytics allow business leaders to make data-driven decisions about personnel-related issues such as recruiting, evaluation, hiring, promotion, and retention, etc.
 
