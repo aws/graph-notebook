@@ -3,6 +3,7 @@
 - [Fraud Graph](#Fraud-Graph)
 - [Knowledge Graph](#Knowledge-Graph)
 - [Identity Graph](#Identity-Graph)
+- [Neptune ML - People Analytics](#Neptune-ML-People-Analytics)
 
 
 ## [Fraud Graph](./01-Fraud-Graphs/01-Building-a-Fraud-Graph-Application.ipynb)
@@ -26,3 +27,9 @@ The examples in this notebook show how we can use our blog knowledge graph to de
 An identity graph provides a single unified view of customers and prospects by linking multiple identifiers such as cookies, device identifiers, IP addresses, email IDs, and internal enterprise IDs to a known person or anonymous profile using privacy-compliant methods. Typically, identity graphs are part of a larger identity resolution architecture. Identity resolution is the process of matching human identity across a set of devices used by the same person or a household of persons for the purposes of building a representative identity, or known attributes, for targeted advertising.
 
 The examples in this notebook shows a sample identity graph solution using an open dataset as well as data visualizations that allow one to better understand the structure of an identity graph.
+
+## [Neptune ML People Analytics](../04-Machine-Learning/Sample-Applications/01-People-Analytics)
+
+Hiring and retaining good personnel is a key characteristic to making an organization successful.  One way that organizations approach this problem is through the use of people analytics.  People analytics allow business leaders to make data-driven decisions about personnel-related issues such as recruiting, evaluation, hiring, promotion, and retention, etc.
+
+The examples in this notebook shows a sample people analytics graph solution using an open dataset that incorporates graph neural network based machine learning using Neptune ML.
