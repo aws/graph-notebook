@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
+- Added new Neptune ML Sample Application for People Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
 - Added graph customization support for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/236))
 - Added graph reset and search refinement buttons to the graph output tab ([Link to PR](https://github.com/aws/graph-notebook/pull/238))
 - Added support for setting custom edge and node tooltips ([Link to PR](https://github.com/aws/graph-notebook/pull/227))
