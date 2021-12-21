@@ -730,8 +730,6 @@ class PretrainedModels:
                            container_mode='SingleModel',
                            script_name='infer_entry_point.py',
                            ):
-        print('creating model with arn')
-        print(f'${role}')
 
         model_environment_vars = {self.SCRIPT_PARAM_NAME.upper(): script_name,
                                   self.DIR_PARAM_NAME.upper(): model_s3_location,
@@ -795,9 +793,7 @@ class PretrainedModels:
             if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
                 parts = d.split('=')
                 if len(parts) == 2:
-                    print('ml role: '+parts[1].rstrip())
                     return parts[1].rstrip()
-        print('no ml role')
         logging.error("Unable to determine the Neptune ML IAM Role.")
         return None
 
