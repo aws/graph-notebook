@@ -270,6 +270,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
+
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
@@ -349,8 +352,10 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         table_id = f"table-{str(uuid.uuid4())[:8]}"
+                        visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
                         first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id)
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -470,6 +475,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
@@ -558,7 +565,9 @@ class Graph(Magics):
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
                 table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
+                visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
+                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
+                                                               amount=visible_results)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
@@ -1604,6 +1613,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
@@ -1659,8 +1670,10 @@ class Graph(Magics):
             titles.append('Console')
             if rows_and_columns is not None:
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
+                visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
+                                                              rows=rows_and_columns['rows'], guid=table_id,
+                                                              amount=visible_results)
 
             # Display Graph Tab (if exists)
             if force_graph_output:

@@ -34,13 +34,23 @@
     </table>
     <script type="text/javascript">
         require(["datatables"], function (datatables) {
+            function sort_remove_dup_ary(ary) {
+                return ary.sort(function(a, b){return a-b}).filter(function(item, pos, ary) { return !pos || item != ary[pos - 1] })
+            }
+
+            var paginationAry = sort_remove_dup_ary([{{amount}}, 10, 50, 100, -1]);
+            var optionsAry = sort_remove_dup_ary([{{amount}}, 10, 50, 100, "All"]);
+
             var dt = $('#{{guid}}').DataTable({
                 scrollY: true,
                 scrollX: true,
+                //scrollCollapse: true,
                 columnDefs: [
                     {targets: [0], width: "5%"},
                     {targets: [1], minWidth: "95%"}
-                ]
+                ],
+                "lengthMenu": [paginationAry, optionsAry],
+                "pageLength": {{amount}}
             });
 
             var wrapper = $('#{{guid}}_wrapper');
