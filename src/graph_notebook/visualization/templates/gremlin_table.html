@@ -38,8 +38,8 @@
                 return ary.sort(function(a, b){return a-b}).filter(function(item, pos, ary) { return !pos || item != ary[pos - 1] })
             }
 
-            var paginationAry = sort_remove_dup_ary([{{amount}}, 10, 50, 100, -1]);
-            var optionsAry = sort_remove_dup_ary([{{amount}}, 10, 50, 100, "All"]);
+            var paginationAry = sort_remove_dup_ary([{{amount}}, 10, 25, 50, 100, -1]);
+            var optionsAry = sort_remove_dup_ary([{{amount}}, 10, 25, 50, 100, "All"]);
 
             var dt = $('#{{guid}}').DataTable({
                 scrollY: true,
