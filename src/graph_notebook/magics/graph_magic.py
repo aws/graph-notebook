@@ -131,6 +131,15 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
+def results_per_page_check(results_per_page):
+    if results_per_page < 1:
+        return 1
+    elif results_per_page > 1000:
+        return 1000
+    else:
+        return int(results_per_page)
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -352,7 +361,7 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         table_id = f"table-{str(uuid.uuid4())[:8]}"
-                        visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
+                        visible_results = results_per_page_check(args.results_per_page)
                         first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
                                                                       rows=rows_and_columns['rows'], guid=table_id,
                                                                       amount=visible_results)
@@ -565,7 +574,7 @@ class Graph(Magics):
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
                 table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
+                visible_results = results_per_page_check(args.results_per_page)
                 first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
                                                                amount=visible_results)
 
@@ -1670,7 +1679,7 @@ class Graph(Magics):
             titles.append('Console')
             if rows_and_columns is not None:
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
-                visible_results = int(args.results_per_page) if args.results_per_page >= 1 else 1
+                visible_results = results_per_page_check(args.results_per_page)
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
                                                               rows=rows_and_columns['rows'], guid=table_id,
                                                               amount=visible_results)
