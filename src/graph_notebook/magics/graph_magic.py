@@ -259,7 +259,7 @@ class Graph(Magics):
         parser.add_argument('-t', '--tooltip-property', type=str, default='',
                             help='Property to display the value of on each node tooltip.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip.')
+                            help='Property to display the value of on each edge tooltip.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex labels, in characters. Default is 10')
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
@@ -455,7 +455,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
@@ -1606,7 +1606,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
