@@ -114,7 +114,11 @@ python -m graph_notebook.static_resources.install
 python -m graph_notebook.nbextensions.install
 
 # copy premade starter notebooks
-python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir  
+python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
+
+# create nbconfig file and directory tree, if they do not already exist
+mkdir ~/.jupyter/nbconfig
+touch ~/.jupyter/nbconfig/notebook.json
 
 # start jupyter
 python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
