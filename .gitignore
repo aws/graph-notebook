@@ -11,6 +11,8 @@ src/graph_notebook.egg-info
 **.pyc
 build
 dist
+.python-version
+unins
 
 MANIFEST
 

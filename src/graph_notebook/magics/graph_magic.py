@@ -56,6 +56,7 @@ error_template = retrieve_template("error.html")
 
 loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
+UNRESTRICTED_LAYOUT = widgets.Layout()
 
 logging.basicConfig()
 logger = logging.getLogger("graph_magic")
@@ -267,7 +268,7 @@ class Graph(Magics):
         parser.add_argument('-t', '--tooltip-property', type=str, default='',
                             help='Property to display the value of on each node tooltip.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip.')
+                            help='Property to display the value of on each edge tooltip.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex labels, in characters. Default is 10')
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
@@ -281,16 +282,22 @@ class Graph(Magics):
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
-
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
+
+        if args.no_scroll:
+            sparql_layout = UNRESTRICTED_LAYOUT
+        else:
+            sparql_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             titles = []
             children = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=sparql_layout)
             children.append(first_tab_output)
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
@@ -372,7 +379,7 @@ class Graph(Magics):
                         lines = []
                         for b in results['results']['bindings']:
                             lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
-                        raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                        raw_output = widgets.Output(layout=sparql_layout)
                         with raw_output:
                             html = sparql_construct_template.render(lines=lines)
                             display(HTML(html))
@@ -382,14 +389,14 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results)
 
-                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                json_output = widgets.Output(layout=sparql_layout)
                 with json_output:
                     print(json.dumps(results, indent=2))
                 children.append(json_output)
                 titles.append('JSON')
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=sparql_layout)
             children.append(metadata_output)
             titles.append('Query Metadata')
 
@@ -461,7 +468,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
@@ -486,17 +493,24 @@ class Graph(Magics):
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+
+        if args.no_scroll:
+            gremlin_layout = UNRESTRICTED_LAYOUT
+        else:
+            gremlin_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             children = []
             titles = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=gremlin_layout)
             children.append(first_tab_output)
 
         if mode == QueryMode.EXPLAIN:
@@ -579,7 +593,7 @@ class Graph(Magics):
                                                                amount=visible_results)
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=gremlin_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
@@ -1609,7 +1623,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
@@ -1624,9 +1638,16 @@ class Graph(Magics):
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+
+        if args.no_scroll:
+            oc_layout = UNRESTRICTED_LAYOUT
+        else:
+            oc_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
@@ -1668,13 +1689,13 @@ class Graph(Magics):
         if not args.silent:
             rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
             display(tab)
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            table_output = widgets.Output(layout=oc_layout)
             # Assign an empty value so we can always display to table output.
             table_html = ""
 
             # Display Console Tab
             # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+            hbox = widgets.HBox([table_output], layout=oc_layout)
             children.append(hbox)
             titles.append('Console')
             if rows_and_columns is not None:
@@ -1690,14 +1711,14 @@ class Graph(Magics):
                 children.append(force_graph_output)
 
             # Display JSON tab
-            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            json_output = widgets.Output(layout=oc_layout)
             with json_output:
                 print(json.dumps(res, indent=2))
             children.append(json_output)
             titles.append('JSON')
 
             # Display Query Metadata Tab
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=oc_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
