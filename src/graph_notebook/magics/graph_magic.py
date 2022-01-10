@@ -56,6 +56,7 @@ error_template = retrieve_template("error.html")
 
 loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
+UNRESTRICTED_LAYOUT = widgets.Layout()
 
 logging.basicConfig()
 logger = logging.getLogger("graph_magic")
@@ -270,15 +271,22 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
+
+        if args.no_scroll:
+            sparql_layout = UNRESTRICTED_LAYOUT
+        else:
+            sparql_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             titles = []
             children = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=sparql_layout)
             children.append(first_tab_output)
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
@@ -358,7 +366,7 @@ class Graph(Magics):
                         lines = []
                         for b in results['results']['bindings']:
                             lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
-                        raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                        raw_output = widgets.Output(layout=sparql_layout)
                         with raw_output:
                             html = sparql_construct_template.render(lines=lines)
                             display(HTML(html))
@@ -368,14 +376,14 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results)
 
-                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                json_output = widgets.Output(layout=sparql_layout)
                 with json_output:
                     print(json.dumps(results, indent=2))
                 children.append(json_output)
                 titles.append('JSON')
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=sparql_layout)
             children.append(metadata_output)
             titles.append('Query Metadata')
 
@@ -470,17 +478,24 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+
+        if args.no_scroll:
+            gremlin_layout = UNRESTRICTED_LAYOUT
+        else:
+            gremlin_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             children = []
             titles = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=gremlin_layout)
             children.append(first_tab_output)
 
         if mode == QueryMode.EXPLAIN:
@@ -561,7 +576,7 @@ class Graph(Magics):
                 first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=gremlin_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
@@ -1604,9 +1619,16 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+
+        if args.no_scroll:
+            oc_layout = UNRESTRICTED_LAYOUT
+        else:
+            oc_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
@@ -1648,13 +1670,13 @@ class Graph(Magics):
         if not args.silent:
             rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
             display(tab)
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            table_output = widgets.Output(layout=oc_layout)
             # Assign an empty value so we can always display to table output.
             table_html = ""
 
             # Display Console Tab
             # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+            hbox = widgets.HBox([table_output], layout=oc_layout)
             children.append(hbox)
             titles.append('Console')
             if rows_and_columns is not None:
@@ -1668,14 +1690,14 @@ class Graph(Magics):
                 children.append(force_graph_output)
 
             # Display JSON tab
-            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            json_output = widgets.Output(layout=oc_layout)
             with json_output:
                 print(json.dumps(res, indent=2))
             children.append(json_output)
             titles.append('JSON')
 
             # Display Query Metadata Tab
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=oc_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
