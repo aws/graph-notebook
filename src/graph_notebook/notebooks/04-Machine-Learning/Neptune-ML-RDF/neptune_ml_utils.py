@@ -712,7 +712,7 @@ class PretrainedModels:
     PRETRAINED_MODEL = {}
 
     def __init__(self):
-        with open('./neptune-ml-pretrained-model-config.json') as f:
+        with open('neptune-ml-pretrained-model-config.json') as f:
             config = json.load(f)
             region_name = boto3.session.Session().region_name
             if region_name in ['cn-north-1', 'cn-northwest-1']:
