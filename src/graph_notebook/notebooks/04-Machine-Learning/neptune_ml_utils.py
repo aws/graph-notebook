@@ -70,7 +70,7 @@ def check_ml_enabled():
         "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
         print('''This Neptune cluster \033[1mis not\033[0m configured to use Neptune ML.
-Please configure the cluster according to the Amazpnm Neptune ML documentation before proceeding.''')
+Please configure the cluster according to the Amazon Neptune ML documentation before proceeding.''')
     else:
         print("This Neptune cluster is configured to use Neptune ML")
 
