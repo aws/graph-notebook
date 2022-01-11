@@ -71,7 +71,6 @@ def get_training_job_name(prefix: str):
 
 def check_ml_enabled():
     host, port, use_iam = load_configuration()
-
     response = signed_request(
         "GET", url=f'https://{host}:{port}/ml/modeltraining', service='neptune-db')
     if response.status_code != 200:
