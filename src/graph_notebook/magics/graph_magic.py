@@ -94,6 +94,14 @@ class QueryMode(Enum):
     EMPTY = ''
 
 
+def generate_seed_error_msg(error_content, file_index, line_index=None):
+    error_message = f"Terminated seed due to error in file {file_index}"
+    if line_index:
+        error_message = error_message + f" at line {line_index}"
+    print(error_message)
+    print(error_content)
+
+
 def store_to_ns(key: str, value, ns: dict = None):
     if key == '' or ns is None:
         return
@@ -1406,7 +1414,7 @@ class Graph(Magics):
                             help='prefix path to query endpoint. For example, "foo/bar". '
                                  'The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
-        parser.add_argument('-n', '--no-fail-on-error', action='store_true', default=False,
+        parser.add_argument('--ignore-errors', action='store_true', default=False,
                             help='Continue loading from the seed file on failure of any individual query.')
         args = parser.parse_args(line.split())
 
@@ -1466,14 +1474,14 @@ class Graph(Magics):
 
             error_count = 0
             any_errors_flag = False
-            for q_index,q in enumerate(queries):
+            for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
                 if model == 'propertygraph':
                     # IMPORTANT: We treat each line as its own query!
                     for line_index, line in enumerate(q['content'].splitlines()):
                         if not line:
-                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q_index + 1}")
+                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                             continue
                         try:
                             self.client.gremlin_query(line)
@@ -1487,12 +1495,13 @@ class Graph(Magics):
                                 content = {
                                     'error': gremlinEx
                                 }
-                            with output:
-                                logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q_index + 1}")
-                                logger.debug(content)
-                            if args.no_fail_on_error:
+                            logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
                                 continue
                             else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
                                 progress.close()
                                 return
                         except Exception as e:
@@ -1501,12 +1510,13 @@ class Graph(Magics):
                             content = {
                                 'error': e
                             }
-                            with output:
-                                logger.debug(f"Exception at line {line_index + 1}")
-                                logger.debug(content)
-                            if args.no_fail_on_error:
+                            logger.debug(f"Exception at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
                                 continue
                             else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
                                 progress.close()
                                 return
                 else:
@@ -1523,12 +1533,12 @@ class Graph(Magics):
                             content = {
                                 'error': httpEx
                             }
-                        with output:
-                            logger.debug(content)
-                        if args.no_fail_on_error:
+                        logger.debug(content)
+                        if args.ignore_errors:
                             continue
                         else:
-                            print(content)
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
                             progress.close()
                             return
                     except Exception as ex:
@@ -1537,12 +1547,12 @@ class Graph(Magics):
                         content = {
                             'error': str(ex)
                         }
-                        with output:
-                            logger.error(content)
-                        if args.no_fail_on_error:
+                        logger.error(content)
+                        if args.ignore_errors:
                             continue
                         else:
-                            print(content)
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
                             progress.close()
                             return
 
@@ -1553,8 +1563,8 @@ class Graph(Magics):
             with output:
                 print('Done.')
                 if any_errors_flag:
-                    print()
-                    print(f'{error_count} individual queries were skipped due to errors.')
+                    print(f'\n{error_count} individual queries were skipped due to errors. For more '
+                          f'information, please rerun the query with debug logs enabled (%enable_debug).')
             return
 
         submit_button.on_click(on_button_clicked)
