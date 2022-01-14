@@ -18,9 +18,12 @@ def normalize_model_name(name):
 
 
 # returns a list of queries which correspond to a given query language and name
-def get_queries(model, name):
-    d = os.path.dirname(os.path.realpath(__file__))
-    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
+def get_queries(model, name, location):
+    if location == 'Samples':
+        d = os.path.dirname(os.path.realpath(__file__))
+        path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
+    else:
+        path_to_data_sets = name
     queries = []
 
     for file in os.listdir(path_to_data_sets):

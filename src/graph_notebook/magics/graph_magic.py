@@ -70,6 +70,7 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
+SOURCE_OPTIONS = ['', 'Samples', 'Custom']
 
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
@@ -1399,8 +1400,10 @@ class Graph(Magics):
     @display_exceptions
     def seed(self, line):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--source-type', type=str, default='', choices=SOURCE_OPTIONS)
         parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
+        parser.add_argument('--custom-directory', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
                             help='prefix path to query endpoint. For example, "foo/bar". '
@@ -1410,6 +1413,12 @@ class Graph(Magics):
 
         output = widgets.Output()
         progress_output = widgets.Output()
+        source_dropdown = widgets.Dropdown(
+            options=SOURCE_OPTIONS,
+            description='Source type:',
+            disabled=False
+        )
+
         model_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
             description='Data model:',
@@ -1421,29 +1430,59 @@ class Graph(Magics):
             disabled=False
         )
 
+        seed_file_location = widgets.Text(
+            placeholder='path/to/seedfiles/directory',
+            description='Directory:',
+            disabled=False
+        )
+
         submit_button = widgets.Button(description="Submit")
+        model_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
+        seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
 
-        def on_value_change(change):
+        def on_source_value_change(change):
+            selected_source = change['new']
+            if selected_source == 'Custom':
+                data_set_drop_down.layout.visibility = 'hidden'
+                if model_dropdown.value:
+                    seed_file_location.layout.visibility = 'visible'
+            else:
+                seed_file_location.layout.visibility = 'hidden'
+                if model_dropdown.value:
+                    data_set_drop_down.layout.visibility = 'visible'
+            model_dropdown.layout.visibility = 'visible'
+            return
+
+        def on_model_value_change(change):
             selected_model = change['new']
-            data_sets = get_data_sets(selected_model)
-            data_sets.sort()
-            data_set_drop_down.options = [ds for ds in data_sets if
-                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
-            data_set_drop_down.layout.visibility = 'visible'
+            if source_dropdown.value == 'Samples':
+                data_sets = get_data_sets(selected_model)
+                data_sets.sort()
+                data_set_drop_down.options = [ds for ds in data_sets if
+                                              ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
+                data_set_drop_down.layout.visibility = 'visible'
+            else:
+                seed_file_location.layout.visibility = 'visible'
             submit_button.layout.visibility = 'visible'
             return
 
         def on_button_clicked(b=None):
             submit_button.close()
+            source_dropdown.disabled = True
             model_dropdown.disabled = True
             data_set_drop_down.disabled = True
+            seed_file_location.disabled = True
+
             model = normalize_model_name(model_dropdown.value)
-            data_set = data_set_drop_down.value.lower()
+            if source_dropdown.value == 'Samples':
+                data_set = data_set_drop_down.value.lower()
+            else:
+                data_set = seed_file_location.value.lower()
             with output:
                 print(f'Loading data set {data_set} for {model}')
-            queries = get_queries(model, data_set)
+            queries = get_queries(model, data_set, source_dropdown.value)
             if len(queries) < 1:
                 with output:
                     print('Did not find any queries for the given dataset')
@@ -1526,15 +1565,23 @@ class Graph(Magics):
             return
 
         submit_button.on_click(on_button_clicked)
-        model_dropdown.observe(on_value_change, names='value')
+        source_dropdown.observe(on_source_value_change, names='value')
+        model_dropdown.observe(on_model_value_change, names='value')
 
-        display(model_dropdown, data_set_drop_down, submit_button, progress_output, output)
-        if args.model != '':
-            model_dropdown.value = args.model
-            if args.dataset != '' and args.dataset in data_set_drop_down.options:
-                data_set_drop_down.value = args.dataset.lower()
-                if args.run:
-                    on_button_clicked()
+        display(source_dropdown, model_dropdown, data_set_drop_down, seed_file_location, submit_button,
+                progress_output, output)
+        if args.source_type != '':
+            source_dropdown.value = args.source_type
+            if args.model != '':
+                model_dropdown.value = args.model
+                if args.dataset != '' and args.source_type == 'Samples' and args.dataset in data_set_drop_down.options:
+                    data_set_drop_down.value = args.dataset.lower()
+                    if args.run:
+                        on_button_clicked()
+                if args.custom_directory != '' and args.source_type == 'Custom':
+                    seed_file_location.value = args.custom_directory.lower()
+                    if args.run:
+                        on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):
