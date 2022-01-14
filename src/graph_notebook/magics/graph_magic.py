@@ -1403,7 +1403,7 @@ class Graph(Magics):
         parser.add_argument('--source-type', type=str, default='', choices=SOURCE_OPTIONS)
         parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
-        parser.add_argument('--custom-directory', type=str, default='')
+        parser.add_argument('--file', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
                             help='prefix path to query endpoint. For example, "foo/bar". '
@@ -1427,13 +1427,15 @@ class Graph(Magics):
 
         data_set_drop_down = widgets.Dropdown(
             description='Data set:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(display='none')
         )
 
         seed_file_location = widgets.Text(
-            placeholder='path/to/seedfiles/directory',
-            description='Directory:',
-            disabled=False
+            placeholder='path/to/seedfile',
+            description='File path:',
+            disabled=False,
+            layout=widgets.Layout(display='none')
         )
 
         submit_button = widgets.Button(description="Submit")
@@ -1446,12 +1448,16 @@ class Graph(Magics):
             selected_source = change['new']
             if selected_source == 'Custom':
                 data_set_drop_down.layout.visibility = 'hidden'
+                data_set_drop_down.layout.display = 'none'
                 if model_dropdown.value:
                     seed_file_location.layout.visibility = 'visible'
+                    seed_file_location.layout.display = 'flex'
             else:
                 seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
                 if model_dropdown.value:
                     data_set_drop_down.layout.visibility = 'visible'
+                    data_set_drop_down.layout.display = 'flex'
             model_dropdown.layout.visibility = 'visible'
             return
 
@@ -1463,8 +1469,10 @@ class Graph(Magics):
                 data_set_drop_down.options = [ds for ds in data_sets if
                                               ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
                 data_set_drop_down.layout.visibility = 'visible'
+                data_set_drop_down.layout.display = 'flex'
             else:
                 seed_file_location.layout.visibility = 'visible'
+                seed_file_location.layout.display = 'flex'
             submit_button.layout.visibility = 'visible'
             return
 
@@ -1578,8 +1586,8 @@ class Graph(Magics):
                     data_set_drop_down.value = args.dataset.lower()
                     if args.run:
                         on_button_clicked()
-                if args.custom_directory != '' and args.source_type == 'Custom':
-                    seed_file_location.value = args.custom_directory.lower()
+                if args.file != '' and args.source_type == 'Custom':
+                    seed_file_location.value = args.file.lower()
                     if args.run:
                         on_button_clicked()
 
