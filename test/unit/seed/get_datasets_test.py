@@ -27,7 +27,6 @@ class TestGetDataSets(unittest.TestCase):
         name = 'local_seed_test_propertygraph'
         location = 'Custom'
         name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
-        print(name_full_path)
         queries = get_queries(language, name_full_path, location)
         self.assertEqual(2, len(queries))
         self.assertEqual('0_test_nodes.txt', queries[0]['name'])
@@ -50,7 +49,6 @@ class TestGetDataSets(unittest.TestCase):
         name = 'local_seed_test_rdf'
         location = 'Custom'
         name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
-        print(name_full_path)
         queries = get_queries(language, name_full_path, location)
         self.assertEqual(1, len(queries))
         self.assertEqual('0_test_data.txt', queries[0]['name'])
