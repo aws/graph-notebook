@@ -16,7 +16,8 @@ class TestGetDataSets(unittest.TestCase):
     def test_get_queries_gremlin(self):
         language = 'gremlin'
         name = 'airports'
-        queries = get_queries(language, name)
+        location = 'Samples'
+        queries = get_queries(language, name, location)
         self.assertEqual(3, len(queries))
         self.assertEqual('0_nodes.txt', queries[0]['name'])
 
@@ -27,6 +28,7 @@ class TestGetDataSets(unittest.TestCase):
     def test_get_queries_sparql(self):
         language = 'sparql'
         name = 'airports'
-        queries = get_queries(language, name)
+        location = 'Samples'
+        queries = get_queries(language, name, location)
         self.assertEqual(3, len(queries))
         self.assertEqual('0_nodes.txt', queries[0]['name'])
