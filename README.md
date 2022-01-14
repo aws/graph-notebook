@@ -63,7 +63,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
-`%seed` - Provides a form to add data to your graph without the use of a bulk loader. Supports both RDF and Property Graph data models.
+`%seed` - Provides a form to add data to your graph, using sets of insert queries instead of a bulk loader. Sample RDF and Property Graph data models are provided with this command. Alternatively, you can select a language type and provide a file path(or a directory path containing one or more of these files) to load the queries from.
 
 `%stream_viewer` - Interactively explore the Neptune CDC stream (if enabled)
 
