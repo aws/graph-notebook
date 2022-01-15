@@ -69,7 +69,8 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
-SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
+SEED_MODEL_OPTIONS = ['', 'Property_Graph', 'RDF']
+SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'Cypher', 'RDF']
 SOURCE_OPTIONS = ['', 'Samples', 'Custom']
 
 LOADER_FORMAT_CHOICES = ['']
@@ -1401,7 +1402,8 @@ class Graph(Magics):
     def seed(self, line):
         parser = argparse.ArgumentParser()
         parser.add_argument('--source-type', type=str, default='', choices=SOURCE_OPTIONS)
-        parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
+        parser.add_argument('--model', type=str, default='', choices=SEED_MODEL_OPTIONS)
+        parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
         parser.add_argument('--file', type=str, default='')
         # TODO: Gremlin api paths are not yet supported.
@@ -1420,9 +1422,17 @@ class Graph(Magics):
         )
 
         model_dropdown = widgets.Dropdown(
-            options=SEED_LANGUAGE_OPTIONS,
+            options=SEED_MODEL_OPTIONS,
             description='Data model:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(display='none')
+        )
+
+        language_dropdown = widgets.Dropdown(
+            options=SEED_LANGUAGE_OPTIONS,
+            description='Language:',
+            disabled=False,
+            layout=widgets.Layout(display='none')
         )
 
         data_set_drop_down = widgets.Dropdown(
@@ -1440,6 +1450,7 @@ class Graph(Magics):
 
         submit_button = widgets.Button(description="Submit")
         model_dropdown.layout.visibility = 'hidden'
+        language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
         seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
@@ -1447,32 +1458,43 @@ class Graph(Magics):
         def on_source_value_change(change):
             selected_source = change['new']
             if selected_source == 'Custom':
+                data_set_drop_down.value = None
+                model_dropdown.layout.visibility = 'hidden'
+                model_dropdown.layout.display = 'none'
                 data_set_drop_down.layout.visibility = 'hidden'
                 data_set_drop_down.layout.display = 'none'
-                if model_dropdown.value:
+                language_dropdown.layout.visibility = 'visible'
+                language_dropdown.layout.display = 'flex'
+                if language_dropdown.value:
                     seed_file_location.layout.visibility = 'visible'
                     seed_file_location.layout.display = 'flex'
             else:
+                language_dropdown.value = None
+                language_dropdown.layout.visibility = 'hidden'
+                language_dropdown.layout.display = 'none'
                 seed_file_location.layout.visibility = 'hidden'
                 seed_file_location.layout.display = 'none'
+                model_dropdown.layout.visibility = 'visible'
+                model_dropdown.layout.display = 'flex'
                 if model_dropdown.value:
                     data_set_drop_down.layout.visibility = 'visible'
                     data_set_drop_down.layout.display = 'flex'
-            model_dropdown.layout.visibility = 'visible'
             return
 
         def on_model_value_change(change):
             selected_model = change['new']
-            if source_dropdown.value == 'Samples':
-                data_sets = get_data_sets(selected_model)
-                data_sets.sort()
-                data_set_drop_down.options = [ds for ds in data_sets if
-                                              ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
-                data_set_drop_down.layout.visibility = 'visible'
-                data_set_drop_down.layout.display = 'flex'
-            else:
-                seed_file_location.layout.visibility = 'visible'
-                seed_file_location.layout.display = 'flex'
+            data_sets = get_data_sets(selected_model)
+            data_sets.sort()
+            data_set_drop_down.options = [ds for ds in data_sets if
+                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
+            data_set_drop_down.layout.visibility = 'visible'
+            data_set_drop_down.layout.display = 'flex'
+            submit_button.layout.visibility = 'visible'
+            return
+
+        def on_language_value_change(change):
+            seed_file_location.layout.visibility = 'visible'
+            seed_file_location.layout.display = 'flex'
             submit_button.layout.visibility = 'visible'
             return
 
@@ -1483,7 +1505,10 @@ class Graph(Magics):
             data_set_drop_down.disabled = True
             seed_file_location.disabled = True
 
-            model = normalize_model_name(model_dropdown.value)
+            if language_dropdown.value and seed_file_location.value:
+                model = normalize_model_name(language_dropdown.value)
+            else:
+                model = normalize_model_name(model_dropdown.value)
             if source_dropdown.value == 'Samples':
                 data_set = data_set_drop_down.value.lower()
             else:
@@ -1513,6 +1538,7 @@ class Graph(Magics):
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
                 if model == 'propertygraph':
+                    print("Executing on Gremlin endpoint")
                     # IMPORTANT: We treat each line as its own query!
                     for line in q['content'].splitlines():
                         try:
@@ -1538,7 +1564,8 @@ class Graph(Magics):
                                 print(content)
                             progress.close()
                             return
-                else:
+                elif model == 'rdf':
+                    print("Executing on Sparql endpoint")
                     try:
                         self.client.sparql(q['content'], path=args.path)
                     except HTTPError as httpEx:
@@ -1563,6 +1590,33 @@ class Graph(Magics):
 
                         progress.close()
                         return
+                else:
+                    print("Executing on Cypher endpoint")
+                    # TODO: Modify Cypher error handling later to match https://github.com/aws/graph-notebook/pull/246
+                    for line in q['content'].splitlines():
+                        try:
+                            cypher_res = self.client.opencypher_http(line)
+                            cypher_res.raise_for_status()
+                        except HTTPError as httpEx:
+                            try:
+                                error = json.loads(httpEx.response.content.decode('utf-8'))
+                                content = json.dumps(error, indent=2)
+                            except Exception:
+                                content = {
+                                    'error': httpEx
+                                }
+                            with output:
+                                print(content)
+                            progress.close()
+                            return
+                        except Exception as ex:
+                            content = {
+                                'error': str(ex)
+                            }
+                            with output:
+                                print(content)
+                            progress.close()
+                            return
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
@@ -1575,9 +1629,10 @@ class Graph(Magics):
         submit_button.on_click(on_button_clicked)
         source_dropdown.observe(on_source_value_change, names='value')
         model_dropdown.observe(on_model_value_change, names='value')
+        language_dropdown.observe(on_language_value_change, names='value')
 
-        display(source_dropdown, model_dropdown, data_set_drop_down, seed_file_location, submit_button,
-                progress_output, output)
+        display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, seed_file_location,
+                submit_button, progress_output, output)
         if args.source_type != '':
             source_dropdown.value = args.source_type
             if args.model != '':
@@ -1586,6 +1641,8 @@ class Graph(Magics):
                     data_set_drop_down.value = args.dataset.lower()
                     if args.run:
                         on_button_clicked()
+            elif args.language != '':
+                language_dropdown.value = args.language
                 if args.file != '' and args.source_type == 'Custom':
                     seed_file_location.value = args.file.lower()
                     if args.run:
