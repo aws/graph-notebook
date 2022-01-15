@@ -70,7 +70,7 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_MODEL_OPTIONS = ['', 'Property_Graph', 'RDF']
-SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'Cypher', 'RDF']
+SEED_LANGUAGE_OPTIONS = ['', 'Gremlin', 'Cypher', 'Sparql']
 SOURCE_OPTIONS = ['', 'Samples', 'Custom']
 
 LOADER_FORMAT_CHOICES = ['']
