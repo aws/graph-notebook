@@ -94,6 +94,14 @@ class QueryMode(Enum):
     EMPTY = ''
 
 
+def generate_seed_error_msg(error_content, file_index, line_index=None):
+    error_message = f"Terminated seed due to error in file {file_index}"
+    if line_index:
+        error_message = error_message + f" at line {line_index}"
+    print(error_message)
+    print(error_content)
+
+
 def store_to_ns(key: str, value, ns: dict = None):
     if key == '' or ns is None:
         return
@@ -1406,6 +1414,8 @@ class Graph(Magics):
                             help='prefix path to query endpoint. For example, "foo/bar". '
                                  'The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
+        parser.add_argument('--ignore-errors', action='store_true', default=False,
+                            help='Continue loading from the seed file on failure of any individual query.')
         args = parser.parse_args(line.split())
 
         output = widgets.Output()
@@ -1462,15 +1472,22 @@ class Graph(Magics):
             with progress_output:
                 display(progress)
 
+            error_count = 0
+            any_errors_flag = False
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
                 if model == 'propertygraph':
                     # IMPORTANT: We treat each line as its own query!
-                    for line in q['content'].splitlines():
+                    for line_index, line in enumerate(q['content'].splitlines()):
+                        if not line:
+                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                            continue
                         try:
                             self.client.gremlin_query(line)
                         except GremlinServerError as gremlinEx:
+                            any_errors_flag = True
+                            error_count += 1
                             try:
                                 error = json.loads(gremlinEx.args[0][5:])  # remove the leading error code.
                                 content = json.dumps(error, indent=2)
@@ -1478,19 +1495,30 @@ class Graph(Magics):
                                 content = {
                                     'error': gremlinEx
                                 }
-
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
+                                progress.close()
+                                return
                         except Exception as e:
+                            any_errors_flag = True
+                            error_count += 1
                             content = {
                                 'error': e
                             }
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.debug(f"Exception at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
+                                progress.close()
+                                return
                 else:
                     try:
                         self.client.sparql(q['content'], path=args.path)
@@ -1500,22 +1528,33 @@ class Graph(Magics):
                             error = json.loads(httpEx.response.content.decode('utf-8'))
                             content = json.dumps(error, indent=2)
                         except Exception:
+                            any_errors_flag = True
+                            error_count += 1
                             content = {
                                 'error': httpEx
                             }
-                        with output:
-                            print(content)
-                        progress.close()
-                        return
+                        logger.debug(content)
+                        if args.ignore_errors:
+                            continue
+                        else:
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
+                            progress.close()
+                            return
                     except Exception as ex:
+                        any_errors_flag = True
+                        error_count += 1
                         content = {
                             'error': str(ex)
                         }
-                        with output:
-                            print(content)
-
-                        progress.close()
-                        return
+                        logger.error(content)
+                        if args.ignore_errors:
+                            continue
+                        else:
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
+                            progress.close()
+                            return
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
@@ -1523,6 +1562,9 @@ class Graph(Magics):
             progress.close()
             with output:
                 print('Done.')
+                if any_errors_flag:
+                    print(f'\n{error_count} individual queries were skipped due to errors. For more '
+                          f'information, please rerun the query with debug logs enabled (%enable_debug).')
             return
 
         submit_button.on_click(on_button_clicked)
