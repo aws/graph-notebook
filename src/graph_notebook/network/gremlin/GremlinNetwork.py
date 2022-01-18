@@ -202,6 +202,16 @@ class GremlinNetwork(EventfulNetwork):
                     previous_pattern = pattern_list[i - 1] if i != 0 else pattern_list[-1]
                     next_pattern = pattern_list[i + 1] if i < len(pattern_list) - 1 else pattern_list[0]
 
+                    current_node_id = str(get_id(path[path_index]))
+                    try:
+                        prev_node_id = str(get_id(path[path_index - 1]))
+                    except IndexError:
+                        prev_node_id = None
+                    try:
+                        next_node_id = str(get_id(path[path_index + 1]))
+                    except IndexError:
+                        next_node_id = None
+
                     # the current pattern is V, inV, or outV
                     if path_pattern in V_PATTERNS:
                         # we cannot reconcile an edge type with a node
@@ -212,11 +222,12 @@ class GremlinNetwork(EventfulNetwork):
                         self.add_vertex(path[path_index])
                         # if the path index is over 0, we need to handle edges between this node and the previous one
                         if path_index > 0:
+                            # TODO: First node (PathPattern.V) is rendered blank if T.id is a integer instead of a string.
                             if path_pattern == PathPattern.V:
                                 # two V patterns next to each other is an undirected, unlabeled edge
                                 if previous_pattern == PathPattern.V:
-                                    self.add_blank_edge(get_id(path[path_index - 1]),
-                                                        get_id(path[path_index]),
+                                    self.add_blank_edge(prev_node_id,
+                                                        current_node_id,
                                                         undirected=True)
                                 # IN_V -> V will draw an outgoing edge from the current element to the previous one.
                                 elif previous_pattern == PathPattern.IN_V:
@@ -229,7 +240,7 @@ class GremlinNetwork(EventfulNetwork):
                                 # draw an unlabeled, directed edge from previous -> current
                                 # we can only process V and OUT_V as no two adjacent vertices can both be incoming.
                                 if (previous_pattern == PathPattern.V or PathPattern.OUT_V) and path_index > 0:
-                                    self.add_blank_edge(get_id(path[path_index - 1]), get_id(path[path_index]), undirected=False)
+                                    self.add_blank_edge(prev_node_id, current_node_id, undirected=False)
                                 else:
                                     raise SAME_DIRECTION_ADJACENT_VERTICES
                             # path_pattern (OUT_V) -> previous_pattern (V, IN_V)
@@ -237,35 +248,33 @@ class GremlinNetwork(EventfulNetwork):
                                 # draw an unlabeled, directed edge from current -> previous
                                 # we can only process V and IN_V as no two adjacent vertices can both be outgoing.
                                 if (previous_pattern == PathPattern.V or PathPattern.IN_V) and path_index > 0:
-                                    self.add_blank_edge(get_id(path[path_index]), get_id(path[path_index - 1]), undirected=False)
+                                    self.add_blank_edge(current_node_id, prev_node_id, undirected=False)
                                 else:
                                     raise SAME_DIRECTION_ADJACENT_VERTICES
                     elif path_pattern in E_PATTERNS:
                         # if the type of the given path element is not Edge,
                         # draw an undirected edge using this element for edge data
                         edge = path[path_index]
-                        path_previous = get_id(path[path_index - 1])
-                        path_next = get_id(path[path_index + 1])
 
                         if path_pattern == PathPattern.E:
                             # V -> V where the Vertex pattern is identical on either side of the edge
                             if next_pattern == previous_pattern:
                                 # this is only valid if both are V, two connected vertices cannot have same direction
                                 if next_pattern == PathPattern.V:
-                                    self.add_path_edge(edge, path_previous, path_next, UNDIRECTED_EDGE)
+                                    self.add_path_edge(edge, prev_node_id, next_node_id, UNDIRECTED_EDGE)
                                 else:
                                     raise SAME_DIRECTION_ADJACENT_VERTICES
                             # IN_V -> E -> V
                             elif previous_pattern == PathPattern.IN_V:
-                                self.add_path_edge(edge, path_next, path_previous)
+                                self.add_path_edge(edge, next_node_id, prev_node_id)
                             # OUT_V -> E -> V
                             elif previous_pattern == PathPattern.OUT_V:
-                                self.add_path_edge(edge, path_previous, path_next)
+                                self.add_path_edge(edge, prev_node_id, next_node_id)
                         # If the edge direction is specified, use it as the source of truth
                         elif path_pattern == PathPattern.IN_E:
-                            self.add_path_edge(edge, from_id=path_next, to_id=path_previous)
+                            self.add_path_edge(edge, from_id=next_node_id, to_id=prev_node_id)
                         elif path_pattern == PathPattern.OUT_E:
-                            self.add_path_edge(edge, from_id=path_previous, to_id=path_next)
+                            self.add_path_edge(edge, from_id=prev_node_id, to_id=next_node_id)
                     else:
                         raise INVALID_PATH_ERROR
                     path_index += 1
