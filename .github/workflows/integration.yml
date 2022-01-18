@@ -9,6 +9,9 @@ on:
       - 'test/**'
       - '**.py'
       - './requirements.txt'
+  push:
+    branches:
+      - austinkline/localtests-merged
 jobs:
   gremlin-tests:
     runs-on: ubuntu-latest
