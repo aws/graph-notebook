@@ -1512,7 +1512,7 @@ class Graph(Magics):
             if source_dropdown.value == 'Samples':
                 data_set = data_set_drop_down.value.lower()
             else:
-                data_set = seed_file_location.value.lower()
+                data_set = seed_file_location.value
             with output:
                 print(f'Loading data set {data_set} for {model}')
             queries = get_queries(model, data_set, source_dropdown.value)
@@ -1538,7 +1538,6 @@ class Graph(Magics):
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
                 if model == 'propertygraph':
-                    print("Executing on Gremlin endpoint")
                     # IMPORTANT: We treat each line as its own query!
                     for line in q['content'].splitlines():
                         try:
@@ -1565,7 +1564,6 @@ class Graph(Magics):
                             progress.close()
                             return
                 elif model == 'rdf':
-                    print("Executing on Sparql endpoint")
                     try:
                         self.client.sparql(q['content'], path=args.path)
                     except HTTPError as httpEx:
@@ -1591,7 +1589,6 @@ class Graph(Magics):
                         progress.close()
                         return
                 else:
-                    print("Executing on Cypher endpoint")
                     # TODO: Modify Cypher error handling later to match https://github.com/aws/graph-notebook/pull/246
                     for line in q['content'].splitlines():
                         try:
@@ -1644,7 +1641,7 @@ class Graph(Magics):
             elif args.language != '':
                 language_dropdown.value = args.language
                 if args.file != '' and args.source_type == 'Custom':
-                    seed_file_location.value = args.file.lower()
+                    seed_file_location.value = args.file
                     if args.run:
                         on_button_clicked()
 
