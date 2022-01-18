@@ -1,11 +1,11 @@
 rm -rf /tmp/apache-tinkerpop-gremlin-server*
 pkill -f gremlin-server
 
-curl https://downloads.apache.org/tinkerpop/3.4.10/apache-tinkerpop-gremlin-server-3.4.10-bin.zip -o /tmp/apache-tinkerpop-gremlin-server.zip
+curl https://downloads.apache.org/tinkerpop/3.5.2/apache-tinkerpop-gremlin-console-3.5.2-bin.zip -o /tmp/apache-tinkerpop-gremlin-server.zip
 unzip /tmp/apache-tinkerpop-gremlin-server.zip -d /tmp/
 echo "gremlin.graph=org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 gremlin.tinkergraph.vertexIdManager=ANY
-gremlin.tinkergraph.edgeIdManager=ANY" > /tmp/apache-tinkerpop-gremlin-server-3.4.10/conf/tinkergraph-empty.properties
+gremlin.tinkergraph.edgeIdManager=ANY" > /tmp/apache-tinkerpop-gremlin-server-3.5.2/conf/tinkergraph-empty.properties
 
 echo "host: $(hostname -i)
 port: 8182
@@ -45,13 +45,13 @@ resultIterationBatchSize: 64
 writeBufferLowWaterMark: 32768
 writeBufferHighWaterMark: 65536
 ssl: {
-  enabled: false}" > /tmp/apache-tinkerpop-gremlin-server-3.4.10/conf/gremlin-server.yaml
+  enabled: false}" > /tmp/apache-tinkerpop-gremlin-server-3.5.2/conf/gremlin-server.yaml
 
 echo "tinkergraph-empty.properties:"
-cat /tmp/apache-tinkerpop-gremlin-server-3.4.10/conf/tinkergraph-empty.properties
+cat /tmp/apache-tinkerpop-gremlin-server-3.5.2/conf/tinkergraph-empty.properties
 
 echo "gremlin-server.yaml:"
-cat /tmp/apache-tinkerpop-gremlin-server-3.4.10/conf/gremlin-server.yaml
+cat /tmp/apache-tinkerpop-gremlin-server-3.5.2/conf/gremlin-server.yaml
 
 echo "{
   \"host\": \"$(hostname -i)\",

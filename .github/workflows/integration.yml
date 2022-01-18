@@ -36,7 +36,7 @@ jobs:
           JAVA_OPTIONS: "-Xms512m -Xmx4096m -Xss2m"
           GRAPH_NOTEBOOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
-          /tmp/apache-tinkerpop-gremlin-server-3.4.10/bin/gremlin-server.sh start
+          /tmp/apache-tinkerpop-gremlin-server-3.5.2/bin/gremlin-server.sh start
           cat /tmp/graph_notebook_config_integration_test.json
           echo "waiting for 10 seconds while gremlin-server starts..."
           sleep 10
