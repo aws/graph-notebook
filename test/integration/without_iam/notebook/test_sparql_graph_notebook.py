@@ -12,7 +12,7 @@ class TestGraphMagicSparql(GraphNotebookIntegrationTest):
     @pytest.mark.jupyter
     @pytest.mark.sparql
     def test_sparql_query(self):
-        query = 'SELECT ?s ?o ?p WHERE {?s ?p ?o } LIMIT 1'
+        query = 'SELECT * WHERE {?s ?p ?o } LIMIT 1'
         store_to_var = 'sparql_res'
         self.ip.run_cell_magic('sparql', f'--store-to {store_to_var}', query)
         assert 'graph_notebook_error' not in self.ip.user_ns
