@@ -7,7 +7,7 @@ import unittest
 from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
-from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork
+from graph_notebook.network.gremlin.GremlinNetwork import GremlinNetwork, PathPattern
 
 
 class TestGremlinNetwork(unittest.TestCase):
@@ -2400,6 +2400,51 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(outv_data['properties'], out_vertex_expected)
         self.assertEqual(inv_data['properties'], in_vertex_expected)
         self.assertEqual(edge_data_value, edge_value_expected)
+
+    def test_add_path_with_v_oute_inv_pattern_integer_ids(self):
+        path = Path([], [{T.id: 13, T.label: 'airport', 'country': ['US'], 'code': ['LAX'], 'longest': [12091],
+                          'city': ['Los Angeles'], 'elev': [127], 'icao': ['KLAX'], 'lon': [-118.4079971],
+                          'type': ['airport'], 'region': ['US-CA'], 'runways': [4], 'lat': [33.94250107],
+                          'desc': ['Los Angeles International Airport']}, 6512,
+                         {T.id: 63, T.label: 'airport', 'country': ['NZ'], 'code': ['AKL'], 'longest': [11926],
+                          'city': ['Auckland'], 'elev': [23], 'icao': ['NZAA'], 'lon': [174.792007446],
+                          'type': ['airport'], 'region': ['NZ-AUK'], 'runways': [2], 'lat': [-37.0080986023],
+                          'desc': ['Auckland  International Airport']}])
+        pattern = [PathPattern.V, PathPattern.OUT_E, PathPattern.IN_V]
+        gn = GremlinNetwork()
+        gn.add_results_with_pattern([path], pattern)
+        edge_data = gn.graph.get_edge_data('13', '63')
+        self.assertIn(6512, edge_data)
+
+    def test_add_path_with_blank_edge_pattern_integer_ids(self):
+        path = Path([], [{T.id: 13, T.label: 'airport', 'country': ['US'], 'code': ['LAX'], 'longest': [12091],
+                          'city': ['Los Angeles'], 'elev': [127], 'icao': ['KLAX'], 'lon': [-118.4079971],
+                          'type': ['airport'], 'region': ['US-CA'], 'runways': [4], 'lat': [33.94250107],
+                          'desc': ['Los Angeles International Airport']},
+                         {T.id: 63, T.label: 'airport', 'country': ['NZ'], 'code': ['AKL'], 'longest': [11926],
+                          'city': ['Auckland'], 'elev': [23], 'icao': ['NZAA'], 'lon': [174.792007446],
+                          'type': ['airport'], 'region': ['NZ-AUK'], 'runways': [2], 'lat': [-37.0080986023],
+                          'desc': ['Auckland  International Airport']}])
+        pattern = [PathPattern.V, PathPattern.IN_V]
+        gn = GremlinNetwork()
+        gn.add_results_with_pattern([path], pattern)
+        edge_data = gn.graph.get_edge_data('13', '63')
+        self.assertIsNotNone(edge_data)
+
+    def test_add_path_with_v_oute_inv_pattern_string_ids(self):
+        path = Path([], [{T.id: '13', T.label: 'airport', 'country': ['US'], 'code': ['LAX'], 'longest': [12091],
+                          'city': ['Los Angeles'], 'elev': [127], 'icao': ['KLAX'], 'lon': [-118.4079971],
+                          'type': ['airport'], 'region': ['US-CA'], 'runways': [4], 'lat': [33.94250107],
+                          'desc': ['Los Angeles International Airport']}, 6512,
+                         {T.id: '63', T.label: 'airport', 'country': ['NZ'], 'code': ['AKL'], 'longest': [11926],
+                          'city': ['Auckland'], 'elev': [23], 'icao': ['NZAA'], 'lon': [174.792007446],
+                          'type': ['airport'], 'region': ['NZ-AUK'], 'runways': [2], 'lat': [-37.0080986023],
+                          'desc': ['Auckland  International Airport']}])
+        pattern = [PathPattern.V, PathPattern.OUT_E, PathPattern.IN_V]
+        gn = GremlinNetwork()
+        gn.add_results_with_pattern([path], pattern)
+        edge_data = gn.graph.get_edge_data('13', '63')
+        self.assertIn(6512, edge_data)
 
 
 if __name__ == '__main__':
