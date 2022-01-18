@@ -96,8 +96,8 @@ class QueryMode(Enum):
     EMPTY = ''
 
 
-def generate_seed_error_msg(error_content, file_index, line_index=None):
-    error_message = f"Terminated seed due to error in file {file_index}"
+def generate_seed_error_msg(error_content, file_name, line_index=None):
+    error_message = f"Terminated seed due to error in file {file_name}"
     if line_index:
         error_message = error_message + f" at line {line_index}"
     print(error_message)
@@ -1591,7 +1591,7 @@ class Graph(Magics):
                                     generate_seed_error_msg(content, q['name'], line_index + 1)
                                 progress.close()
                                 return
-              elif model == 'rdf':
+                elif model == 'rdf':
                     try:
                         self.client.sparql(q['content'], path=args.path)
                     except HTTPError as httpEx:
@@ -1628,8 +1628,10 @@ class Graph(Magics):
                             progress.close()
                             return
                 else:
-                    # TODO: Modify Cypher error handling later to match https://github.com/aws/graph-notebook/pull/246
-                    for line in q['content'].splitlines():
+                    for line_index, line in enumerate(q['content'].splitlines()):
+                        if not line:
+                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                            continue
                         try:
                             cypher_res = self.client.opencypher_http(line)
                             cypher_res.raise_for_status()
@@ -1638,21 +1640,33 @@ class Graph(Magics):
                                 error = json.loads(httpEx.response.content.decode('utf-8'))
                                 content = json.dumps(error, indent=2)
                             except Exception:
+                                any_errors_flag = True
+                                error_count += 1
                                 content = {
                                     'error': httpEx
                                 }
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.debug(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'])
+                                progress.close()
+                                return
                         except Exception as ex:
+                            any_errors_flag = True
+                            error_count += 1
                             content = {
                                 'error': str(ex)
                             }
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.error(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'])
+                                progress.close()
+                                return
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete

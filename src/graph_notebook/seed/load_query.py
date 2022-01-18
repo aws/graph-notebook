@@ -36,7 +36,7 @@ def get_queries(model, name, location):
                 'content': f.read()
             }
             queries.append(query)
-    queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexographical order.
+    queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexicographical order.
     return queries
 
 
