@@ -15,7 +15,11 @@ class DataDrivenGremlinTest(IntegrationTest):
         super().setUp()
 
         self.client = self.client_builder.build()
-        query_check_for_airports = "g.V('3684').outE().inV().has(id, '3444')"
+        # TODO: Check below fails as this doesn't exist in the dataset anymore.
+        # Check updates to airports seed data in:
+        # https://github.com/aws/graph-notebook/commit/44caecfbd6ad40ac62cce36155345a19c6017949
+        #query_check_for_airports = "g.V('3684').outE().inV().has(id, '3444')"
+        query_check_for_airports = "g.V('3745').outE().inV().has(id, '3195')"
         res = self.client.gremlin_query(query_check_for_airports)
         if len(res) < 1:
             logging.info('did not find final airports edge, seeding database now...')
