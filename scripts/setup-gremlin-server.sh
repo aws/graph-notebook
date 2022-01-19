@@ -1,7 +1,7 @@
 rm -rf /tmp/apache-tinkerpop-gremlin-server*
 pkill -f gremlin-server
 
-curl https://downloads.apache.org/tinkerpop/3.5.2/apache-tinkerpop-gremlin-console-3.5.2-bin.zip -o /tmp/apache-tinkerpop-gremlin-server.zip
+curl https://downloads.apache.org/tinkerpop/3.5.2/apache-tinkerpop-gremlin-server-3.5.2-bin.zip -o /tmp/apache-tinkerpop-gremlin-server.zip
 unzip /tmp/apache-tinkerpop-gremlin-server.zip -d /tmp/
 echo "gremlin.graph=org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 gremlin.tinkergraph.vertexIdManager=ANY
