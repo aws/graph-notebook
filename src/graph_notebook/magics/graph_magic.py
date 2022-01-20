@@ -59,6 +59,7 @@ DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='10
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
 logging.basicConfig()
+root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
@@ -160,6 +161,7 @@ class Graph(Magics):
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         self._generate_client_from_config(self.graph_notebook_config)
+        root_logger.setLevel(logging.CRITICAL)
         logger.setLevel(logging.ERROR)
 
     def _generate_client_from_config(self, config: Configuration):
@@ -1581,10 +1583,12 @@ class Graph(Magics):
     @line_magic
     def enable_debug(self, line):
         logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.ERROR)
 
     @line_magic
     def disable_debug(self, line):
         logger.setLevel(logging.ERROR)
+        root_logger.setLevel(logging.CRITICAL)
 
     @line_magic
     def graph_notebook_version(self, line):
