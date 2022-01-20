@@ -9,18 +9,17 @@ from test.integration import IntegrationTest
 
 class TestSparqlQuery(IntegrationTest):
     @pytest.mark.sparql
-    @pytest.mark.neptune
     def test_do_sparql_query(self):
         query = "SELECT * WHERE {?s ?p ?o} LIMIT 1"
 
-        sparql_res = self.client.sparql(query)
+        sparql_res = self.client.sparql(query, headers={'Accept': 'application/sparql-results+json'})
         assert sparql_res.status_code == 200
         res = sparql_res.json()
 
         self.assertEqual(type(res), dict)
-        self.assertTrue('s' in res['head']['vars'])
-        self.assertTrue('p' in res['head']['vars'])
-        self.assertTrue('o' in res['head']['vars'])
+        self.assertTrue('s' or 'subject' in res['head']['vars'])
+        self.assertTrue('p' or 'predicate' in res['head']['vars'])
+        self.assertTrue('o' or 'object' in res['head']['vars'])
 
     @pytest.mark.sparql
     @pytest.mark.neptune

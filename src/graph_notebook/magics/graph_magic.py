@@ -310,7 +310,7 @@ class Graph(Magics):
                 first_tab_html = sparql_explain_template.render(table=explain)
         else:
             query_type = get_query_type(cell)
-            headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
+            headers = {} if query_type not in ['INSERT', 'SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
                 'Accept': 'application/sparql-results+json'}
 
             query_res = self.client.sparql(cell, path=path, headers=headers)

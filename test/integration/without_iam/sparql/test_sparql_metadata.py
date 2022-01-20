@@ -23,7 +23,7 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
                     FILTER contains(?city,"ou")
                 }
                 '''
-        res = self.client.sparql(query)
+        res = self.client.sparql(query, headers={'Accept': 'application/sparql-results+json'})
         results = res.json()
         sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=res, results=results, scd_query=True)
         meta_dict = sparql_metadata.to_dict()
@@ -32,7 +32,7 @@ class TestMetadataClassFunctions(DataDrivenSparqlTest):
         self.assertIsInstance(meta_dict["Request execution time (ms)"], float)
         self.assertEqual(meta_dict["Status code"], 200)
         self.assertEqual(meta_dict["Status OK?"], True)
-        self.assertEqual(meta_dict["# of results"], 2)
+        self.assertGreaterEqual(meta_dict["# of results"], 2)
         self.assertIsInstance(meta_dict["Response content size (bytes)"], int)
 
     @pytest.mark.sparql
