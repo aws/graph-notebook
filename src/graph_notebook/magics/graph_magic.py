@@ -455,6 +455,8 @@ class Graph(Magics):
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
         parser.add_argument('-d', '--display-property', type=str, default='T.label',
                             help='Property to display the value of on each node, default is T.label')
         parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
@@ -554,7 +556,8 @@ class Graph(Magics):
                     logger.debug(f'edge_display_property: {args.edge_display_property}')
                     logger.debug(f'label_max_length: {args.label_max_length}')
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
-                    gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                    gn = GremlinNetwork(group_by_property=args.group_by, group_by_depth=args.group_by_depth,
+                                        display_property=args.display_property,
                                         edge_display_property=args.edge_display_property,
                                         tooltip_property=args.tooltip_property,
                                         edge_tooltip_property=args.edge_tooltip_property,
@@ -1638,6 +1641,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
                             choices=['query', 'bolt'])
         parser.add_argument('-d', '--display-property', type=str, default='~labels',
@@ -1688,7 +1693,8 @@ class Graph(Magics):
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                    query_time=query_time)
                 try:
-                    gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                    gn = OCNetwork(group_by_property=args.group_by, group_by_depth=args.group_by_depth,
+                                   display_property=args.display_property,
                                    edge_display_property=args.edge_display_property,
                                    tooltip_property=args.tooltip_property,
                                    edge_tooltip_property=args.edge_tooltip_property,

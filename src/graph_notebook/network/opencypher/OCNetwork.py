@@ -3,10 +3,9 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 import logging
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY
 from networkx import MultiDiGraph
 
 logging.basicConfig()
@@ -35,9 +34,11 @@ class OCNetwork(EventfulNetwork):
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
                  display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
                  tooltip_property=None, edge_tooltip_property=None,
-                 ignore_groups=False):
+                 ignore_groups=False, group_by_depth=False):
         if graph is None:
             graph = MultiDiGraph()
+        if group_by_depth:
+            group_by_property = DEPTH_GRP_KEY
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
                          ignore_groups)
@@ -131,7 +132,7 @@ class OCNetwork(EventfulNetwork):
                     group = node[LABEL_KEY][0]
                 elif self.group_by_property in [ID_KEY, 'id']:
                     group = node[ID_KEY]
-                elif self.group_by_property == "TRAVERSAL_DEPTH":
+                elif self.group_by_property == DEPTH_GRP_KEY:
                     group = depth_group
                 elif self.group_by_property in node[PROPERTIES_KEY]:
                     group = node[PROPERTIES_KEY][self.group_by_property]
@@ -147,7 +148,7 @@ class OCNetwork(EventfulNetwork):
                         group = node[LABEL_KEY][0]
                     elif self.group_by_property[key] in [ID_KEY, 'id']:
                         group = node[ID_KEY]
-                    elif self.group_by_property[key] == "TRAVERSAL_DEPTH":
+                    elif self.group_by_property[key] == DEPTH_GRP_KEY:
                         group = depth_group
                     else:
                         group = node[PROPERTIES_KEY][self.group_by_property[key]]
