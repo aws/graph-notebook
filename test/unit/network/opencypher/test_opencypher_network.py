@@ -499,15 +499,15 @@ class TestOpenCypherNetwork(unittest.TestCase):
 
     def test_group_with_groupby_depth_string(self):
         node = {
-                "~id": "3",
-                "~entityType": "node",
-                "~labels": [
-                    "airport"
-                ],
-                "~properties": {
-                    "desc": "Austin Bergstrom International Airport",
-                }
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
             }
+        }
 
         gn = OCNetwork(group_by_property='TRAVERSAL_DEPTH')
         gn.parse_node(node, path_index=2)

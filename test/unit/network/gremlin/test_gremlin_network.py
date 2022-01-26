@@ -1793,7 +1793,7 @@ class TestGremlinNetwork(unittest.TestCase):
             T.label: 'airport'
         }
 
-        gn = GremlinNetwork(group_by_depth=True,group_by_property=T.label)
+        gn = GremlinNetwork(group_by_depth=True, group_by_property=T.label)
         gn.add_vertex(vertex, path_index=2)
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['group'], '__DEPTH-2__')
