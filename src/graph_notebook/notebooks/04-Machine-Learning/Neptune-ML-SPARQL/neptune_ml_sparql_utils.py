@@ -88,7 +88,7 @@ def get_neptune_ml_role():
         if str.startswith(d, 'export NEPTUNE_ML_ROLE_ARN'):
             parts = d.split('=')
             if len(parts) == 2:
-                print('ml role: '+parts[1].rstrip())
+                print('ml role: ' + parts[1].rstrip())
                 return parts[1].rstrip()
     logging.error("Unable to determine the Neptune ML IAM Role.")
     return None
@@ -108,72 +108,18 @@ def get_export_service_host():
     return None
 
 
-def delete_pretrained_data(setup_node_classification: bool,
-                           setup_node_regression: bool, setup_link_prediction: bool,
-                           setup_edge_regression: bool, setup_edge_classification: bool):
-    host, port, use_iam = load_configuration()
-    if setup_node_classification:
-        response = signed_request("POST", service='neptune-db',
-                                  url=f'https://{host}:{port}/gremlin',
-                                  headers={'content-type': 'application/json'},
-                                  data=json.dumps(
-                                      {
-                                          'gremlin': "g.V('movie_28', 'movie_69', 'movie_88').properties('genre').drop()"}))
-
-        if response.status_code != 200:
-            print(response.content.decode('utf-8'))
-    if setup_node_regression:
-        response = signed_request("POST", service='neptune-db',
-                                  url=f'https://{host}:{port}/gremlin',
-                                  headers={'content-type': 'application/json'},
-                                  data=json.dumps({'gremlin': "g.V('user_1').out('wrote').properties('score').drop()"}))
-        if response.status_code != 200:
-            print(response.content.decode('utf-8'))
-    if setup_link_prediction:
-        response = signed_request("POST", service='neptune-db',
-                                  url=f'https://{host}:{port}/gremlin',
-                                  headers={'content-type': 'application/json'},
-                                  data=json.dumps({'gremlin': "g.V('user_1').outE('rated').drop()"}))
-        if response.status_code != 200:
-            print(response.content.decode('utf-8'))
-
-    if setup_edge_regression:
-        response = signed_request("POST", service='neptune-db',
-                                  url=f'https://{host}:{port}/gremlin',
-                                  headers={'content-type': 'application/json'},
-                                  data=json.dumps(
-                                      {'gremlin': "g.V('user_1').outE('rated').properties('score').drop()"}))
-        if response.status_code != 200:
-            print(response.content.decode('utf-8'))
-
-    if setup_edge_classification:
-        response = signed_request("POST", service='neptune-db',
-                                  url=f'https://{host}:{port}/gremlin',
-                                  headers={'content-type': 'application/json'},
-                                  data=json.dumps(
-                                      {'gremlin': "g.V('user_1').outE('rated').properties('scale').drop()"}))
-        if response.status_code != 200:
-            print(response.content.decode('utf-8'))
-
-
 def delete_pretrained_endpoints(endpoints: dict):
     sm = boto3.client("sagemaker")
     try:
-        if 'node_classification_endpoint_name' in endpoints and endpoints['node_classification_endpoint_name']:
+        if 'object_classification_endpoint_name' in endpoints and endpoints['object_classification_endpoint_name']:
             sm.delete_endpoint(
-                EndpointName=endpoints['node_classification_endpoint_name']["EndpointName"])
-        if 'node_regression_endpoint_name' in endpoints and endpoints['node_regression_endpoint_name']:
+                EndpointName=endpoints['object_classification_endpoint_name']["EndpointName"])
+        if 'object_regression_endpoint_name' in endpoints and endpoints['object_regression_endpoint_name']:
             sm.delete_endpoint(
-                EndpointName=endpoints['node_regression_endpoint_name']["EndpointName"])
-        if 'prediction_endpoint_name' in endpoints and endpoints['prediction_endpoint_name']:
+                EndpointName=endpoints['object_regression_endpoint_name']["EndpointName"])
+        if 'link_prediction_endpoint_name' in endpoints and endpoints['link_prediction_endpoint_name']:
             sm.delete_endpoint(
-                EndpointName=endpoints['prediction_endpoint_name']["EndpointName"])
-        if 'edge_classification_endpoint_name' in endpoints and endpoints['edge_classification_endpoint_name']:
-            sm.delete_endpoint(
-                EndpointName=endpoints['edge_classification_endpoint_name']["EndpointName"])
-        if 'edge_regression_endpoint_name' in endpoints and endpoints['edge_regression_endpoint_name']:
-            sm.delete_endpoint(
-                EndpointName=endpoints['edge_regression_endpoint_name']["EndpointName"])
+                EndpointName=endpoints['link_prediction_endpoint_name']["EndpointName"])
         print(f'Endpoint(s) have been deleted')
     except Exception as e:
         logging.error(e)
@@ -208,16 +154,11 @@ def prepare_movielens_data_rdf(s3_bucket_uri: str, clear_staging_area: bool = Tr
         logging.error(e)
 
 
-def setup_pretrained_endpoints(s3_bucket_uri: str, setup_node_classification: bool,
-                               setup_node_regression: bool, setup_link_prediction: bool,
-                               setup_edge_classification: bool, setup_edge_regression: bool):
-    delete_pretrained_data(setup_node_classification,
-                           setup_node_regression, setup_link_prediction,
-                           setup_edge_classification, setup_edge_regression)
+def setup_pretrained_endpoints_rdf(s3_bucket_uri: str, setup_object_classification: bool, setup_object_regression: bool,
+                                   setup_link_prediction: bool):
     try:
-        return PretrainedModels().setup_pretrained_endpoints(s3_bucket_uri, setup_node_classification,
-                                                             setup_node_regression, setup_link_prediction,
-                                                             setup_edge_classification, setup_edge_regression)
+        return PretrainedModels().setup_pretrained_endpoints_rdf(s3_bucket_uri, setup_object_classification,
+                                                                 setup_object_regression, setup_link_prediction)
     except Exception as e:
         logging.error(e)
 
@@ -358,128 +299,6 @@ class MovieLensProcessor:
         with zipfile.ZipFile(os.path.join(self.raw_directory, 'ml-100k.zip'), 'r') as zip_ref:
             zip_ref.extractall(self.raw_directory)
 
-    def __process_movies_genres(self):
-        # process the movies_vertex.csv
-        print('Processing Movies', end='\r')
-        movies_df = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.item'), sep='|', encoding='ISO-8859-1',
-            names=['~id', 'title', 'release_date', 'video_release_date', 'imdb_url',
-                   'unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
-                   'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
-                   'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
-        # Parse date and convert to ISO format
-        movies_df['release_date'] = movies_df['release_date'].apply(
-            lambda x: str(
-                datetime.strptime(x, '%d-%b-%Y').isoformat()) if not pd.isna(x) else x)
-        movies_df['~label'] = 'movie'
-        movies_df['~id'] = movies_df['~id'].apply(
-            lambda x: f'movie_{x}')
-        movie_genre_df = movies_df[[
-            '~id', 'unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
-            'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
-            'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western']]
-        genres_edges_df = pd.DataFrame(
-            columns=['~id', '~from', '~to', '~label'])
-
-        genres = ['unknown', 'Action', 'Adventure', 'Animation', 'Childrens', 'Comedy',
-                  'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
-                  'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western']
-
-        genre_df = pd.DataFrame(genres, columns=['~id'])
-        genre_df['~label'] = 'genre'
-        genre_df['name'] = genre_df['~id']
-        genre_df.to_csv(os.path.join(self.formatted_directory,
-                                     'genre_vertex.csv'), index=False)
-
-        # Loop through all the movies and pull out the genres
-        for index, row in movie_genre_df.iterrows():
-            genre_lst = []
-            for g in genres:
-                if row[g] == 1:
-                    genres_edges_df = genres_edges_df.append(
-                        {'~id': f"{row['~id']}-included_in-{g}", '~label': 'included_in',
-                         '~from': row['~id'], '~to': g}, ignore_index=True)
-                    genre_lst.append(g)
-            movies_df.loc[index, 'genre:String[]'] = ';'.join(genre_lst)
-
-        # rename the release data column to specify the data type
-        movies_df['release_date:Date'] = movies_df['release_date']
-        # Drop the genre columns as well as the uneeded release date columns
-        genres.append('video_release_date')
-        genres.append('release_date')
-        movies_df = movies_df.drop(columns=genres)
-
-        movies_df.to_csv(os.path.join(self.formatted_directory,
-                                      'movie_vertex.csv'), index=False)
-        genres_edges_df.to_csv(os.path.join(self.formatted_directory,
-                                            'genre_edges.csv'), index=False)
-
-    def __process_ratings_users(self):
-        # Create ratings vertices and add edges on both sides
-        print('Processing Ratings', end='\r')
-        ratings_vertices = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.data'), sep='\t', encoding='ISO-8859-1',
-            names=['~from', '~to', 'score:Int', 'timestamp'])
-        ratings_vertices['~from'] = ratings_vertices['~from'].apply(
-            lambda x: f'user_{x}')
-        ratings_vertices['~to'] = ratings_vertices['~to'].apply(
-            lambda x: f'movie_{x}')
-        rated_edges = ratings_vertices.copy(deep=True)
-
-        ratings_vertices['~id'] = ratings_vertices['~from'].str.cat(
-            ratings_vertices['~to'], sep=":")
-        ratings_vertices['~label'] = "rating"
-        dict = {}
-        edges = {}
-        for index, row in ratings_vertices.iterrows():
-            id_from = row['~from']
-            id_to = row['~to']
-            id_id = row['~id']
-            dict[index * 2] = {'~id': f"{id_from}-wrote-{id_id}", '~label': 'wrote',
-                               '~from': id_from, '~to': id_id}
-            dict[index * 2 + 1] = {'~id': f"{id_id}-about-{id_to}", '~label': 'about',
-                                   '~from': id_id, '~to': id_to}
-            score = row['score:Int']
-            scale = ''
-            if score == 1:
-                scale = 'Hate'
-            elif score == 2:
-                scale = 'Dislike'
-            elif score == 3:
-                scale = 'Neutral'
-            elif score == 4:
-                scale = 'Like'
-            elif score == 5:
-                scale = 'Love'
-            edges[index] = {'~id': f"{id_from}-rated-{id_to}", '~label': 'rated',
-                            '~from': id_from, '~to': id_to, 'score:Int': score, 'scale': scale}
-        rating_edges_df = pd.DataFrame.from_dict(dict, "index")
-
-        # Remove the from and to columns and write this out as a vertex now
-        ratings_vertices = ratings_vertices.drop(columns=['~from', '~to'])
-        ratings_vertices.to_csv(os.path.join(self.formatted_directory,
-                                             'ratings_vertices.csv'), index=False)
-        # Write out the rating vertex edges for wrote and about
-        rating_edges_df.to_csv(os.path.join(self.formatted_directory,
-                                            'ratings_vertex_edges.csv'), index=False)
-        # Write out the rated edges
-        rated_edges_df = pd.DataFrame.from_dict(edges, "index")
-        rated_edges_df.to_csv(os.path.join(self.formatted_directory,
-                                           'rated_edges.csv'), index=False)
-
-    def __process_users(self):
-        print("Processing Users", end='\r')
-        # User Vertices - Load, rename column with type, and save
-
-        user_df = pd.read_csv(os.path.join(
-            self.raw_directory, 'ml-100k/u.user'), sep='|', encoding='ISO-8859-1',
-            names=['~id', 'age:Int', 'gender', 'occupation', 'zip_code'])
-        user_df['~id'] = user_df['~id'].apply(
-            lambda x: f'user_{x}')
-        user_df['~label'] = 'user'
-        user_df.to_csv(os.path.join(self.formatted_directory,
-                                    'user_vertex.csv'), index=False)
-
     def __upload_to_s3(self, bucketname: str):
         path = urlparse(bucketname, allow_fragments=False)
         bucket = path.netloc
@@ -490,17 +309,6 @@ class MovieLensProcessor:
             for file in files:
                 s3_client.upload_file(os.path.join(
                     self.formatted_directory, file), bucket, f'{file_path}/{file}')
-
-    def prepare_movielens_data(self, s3_bucket: str):
-        bucket_name = f'{s3_bucket}/neptune-formatted/movielens-100k'
-        self.__download_and_unzip()
-        self.__process_movies_genres()
-        self.__process_users()
-        self.__process_ratings_users()
-        self.__upload_to_s3(bucket_name)
-        print('Completed Processing, data is ready for loading using the s3 url below:')
-        print(bucket_name)
-        return bucket_name
 
     def prepare_movielens_data_rdf(self, s3_bucket: str, clear_staging_area: bool):
         self.formatted_directory = f'{self.formatted_directory}/rdf'
@@ -561,7 +369,8 @@ class MovieLensProcessor:
                 self.ns_resource[id], RDF.type, self.ns_ontology.Movie, self.ns_ontology.Movies
             ))
             movie_graph.add((
-                self.ns_resource[id], self.ns_ontology.title, Literal(title, datatype=XSD.string), self.ns_ontology.Movies
+                self.ns_resource[id], self.ns_ontology.title, Literal(title, datatype=XSD.string),
+                self.ns_ontology.Movies
             ))
             movie_graph.add((
                 self.ns_resource[id], RDFS.label, Literal(title, datatype=XSD.string), self.ns_ontology.Movies
@@ -592,43 +401,43 @@ class MovieLensProcessor:
         movie_genre_graph.serialize(format='nquads', destination=movie_genre_rdf_filename)
 
     def __process_users_rdf(self):
-            print("Processing Users to RDF")
-            # User Vertices - Load, rename column with type, and save
+        print("Processing Users to RDF")
+        # User Vertices - Load, rename column with type, and save
 
-            user_df = pd.read_csv(os.path.join(
-                self.raw_directory, 'ml-100k/u.user'), sep='|', encoding='ISO-8859-1',
-                names=['~id', 'age:Int', 'gender', 'occupation', 'zip_code'])
-            user_df['~id'] = user_df['~id'].apply(
-                lambda x: f'user_{x}'
-            )
+        user_df = pd.read_csv(os.path.join(
+            self.raw_directory, 'ml-100k/u.user'), sep='|', encoding='ISO-8859-1',
+            names=['~id', 'age:Int', 'gender', 'occupation', 'zip_code'])
+        user_df['~id'] = user_df['~id'].apply(
+            lambda x: f'user_{x}'
+        )
 
-            users_graph = ConjunctiveGraph()
+        users_graph = ConjunctiveGraph()
 
-            for index, row in user_df.iterrows():
-                users_graph.add((
-                    self.ns_resource[row['~id']], RDF.type, self.ns_ontology.User, self.ns_ontology.DefaultNamedGraph
-                ))
-                users_graph.add((
-                    self.ns_resource[row['~id']], self.ns_ontology.age,
-                    Literal(row['age:Int'], datatype=XSD.integer), self.ns_ontology.Users
-                ))
-                users_graph.add((
-                    self.ns_resource[row['~id']], self.ns_ontology.occupation,
-                    Literal(row['occupation'], datatype=XSD.string),
-                    self.ns_ontology.Users
-                ))
-                users_graph.add((
-                    self.ns_resource[row['~id']], self.ns_ontology.gender, Literal(row['gender'], datatype=XSD.string),
-                    self.ns_ontology.Users
-                ))
-                users_graph.add((
-                    self.ns_resource[row['~id']], self.ns_ontology.zipCode,
-                    Literal(row['zip_code'], datatype=XSD.string),
-                    self.ns_ontology.Users
-                ))
+        for index, row in user_df.iterrows():
+            users_graph.add((
+                self.ns_resource[row['~id']], RDF.type, self.ns_ontology.User, self.ns_ontology.DefaultNamedGraph
+            ))
+            users_graph.add((
+                self.ns_resource[row['~id']], self.ns_ontology.age,
+                Literal(row['age:Int'], datatype=XSD.integer), self.ns_ontology.Users
+            ))
+            users_graph.add((
+                self.ns_resource[row['~id']], self.ns_ontology.occupation,
+                Literal(row['occupation'], datatype=XSD.string),
+                self.ns_ontology.Users
+            ))
+            users_graph.add((
+                self.ns_resource[row['~id']], self.ns_ontology.gender, Literal(row['gender'], datatype=XSD.string),
+                self.ns_ontology.Users
+            ))
+            users_graph.add((
+                self.ns_resource[row['~id']], self.ns_ontology.zipCode,
+                Literal(row['zip_code'], datatype=XSD.string),
+                self.ns_ontology.Users
+            ))
 
-            users_rdf_file = os.path.join(self.formatted_directory, 'users.nq')
-            users_graph.serialize(format='nquads', destination=users_rdf_file)
+        users_rdf_file = os.path.join(self.formatted_directory, 'users.nq')
+        users_graph.serialize(format='nquads', destination=users_rdf_file)
 
     def __process_ratings_users_rdf(self):
         # Create ratings vertices and add edges on both sides
@@ -809,58 +618,38 @@ class PretrainedModels:
         role = self.__get_neptune_ml_role()
         return role
 
-    def setup_pretrained_endpoints(self, s3_bucket_uri: str,
-                                   setup_node_classification: bool, setup_node_regression: bool,
-                                   setup_link_prediction: bool, setup_edge_classification: bool,
-                                   setup_edge_regression: bool):
+    def setup_pretrained_endpoints_rdf(self, s3_bucket_uri: str, setup_object_classification: bool,
+                                       setup_object_regression: bool, setup_link_prediction: bool):
         print('Beginning endpoint creation', end='\r')
-        if setup_node_classification:
+        if setup_object_classification:
             # copy model
-            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/node-classification/model.tar.gz',
-                           self.PRETRAINED_MODEL['node_classification'])
+            self.__copy_s3(f'{s3_bucket_uri}/rdf/pretrained-models/object-classification/model.tar.gz',
+                           self.PRETRAINED_MODEL['object_classification'])
             # create model
             classification_output = self.__create_model(
-                'classifi', f'{s3_bucket_uri}/pretrained-models/node-classification/model.tar.gz')
-        if setup_node_regression:
+                'classifi', f'{s3_bucket_uri}/rdf/pretrained-models/object-classification/model.tar.gz')
+        if setup_object_regression:
             # copy model
-            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/node-regression/model.tar.gz',
-                           self.PRETRAINED_MODEL['node_regression'])
+            self.__copy_s3(f'{s3_bucket_uri}/rdf/pretrained-models/object-regression/model.tar.gz',
+                           self.PRETRAINED_MODEL['object_regression'])
             # create model
             regression_output = self.__create_model(
-                'regressi', f'{s3_bucket_uri}/pretrained-models/node-regression/model.tar.gz')
+                'regressi', f'{s3_bucket_uri}/rdf/pretrained-models/object-regression/model.tar.gz')
         if setup_link_prediction:
             # copy model
-            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/link-prediction/model.tar.gz',
+            self.__copy_s3(f'{s3_bucket_uri}/rdf/pretrained-models/link-prediction/model.tar.gz',
                            self.PRETRAINED_MODEL['link_prediction'])
             # create model
             prediction_output = self.__create_model(
-                'linkpred', f'{s3_bucket_uri}/pretrained-models/link-prediction/model.tar.gz')
-        if setup_edge_classification:
-            # copy model
-            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/edge-classification/model.tar.gz',
-                           self.PRETRAINED_MODEL['edge_classification'])
-            # create model
-            edgeclass_output = self.__create_model(
-                'edgeclass', f'{s3_bucket_uri}/pretrained-models/edge-classification/model.tar.gz')
-        if setup_edge_regression:
-            # copy model
-            self.__copy_s3(f'{s3_bucket_uri}/pretrained-models/edge-regression/model.tar.gz',
-                           self.PRETRAINED_MODEL['edge_regression'])
-            # create model
-            edgereg_output = self.__create_model(
-                'edgereg', f'{s3_bucket_uri}/pretrained-models/edge-regression/model.tar.gz')
+                'linkpred', f'{s3_bucket_uri}/rdf/pretrained-models/link-prediction/model.tar.gz')
 
         sleep(UPDATE_DELAY_SECONDS)
-        classification_running = setup_node_classification
-        regression_running = setup_node_regression
+        classification_running = setup_object_classification
+        regression_running = setup_object_regression
         prediction_running = setup_link_prediction
-        edgeclass_running = setup_edge_classification
-        edgereg_running = setup_edge_regression
         classification_endpoint_name = ""
         regression_endpoint_name = ""
         prediction_endpoint_name = ""
-        edge_classification_endpoint_name = ""
-        edge_regression_endpoint_name = ""
         sucessful = False
         sm = boto3.client("sagemaker")
         while classification_running or regression_running or prediction_running or edgeclass_running or edgereg_running:
@@ -888,22 +677,6 @@ class PretrainedModels:
                     if response['EndpointStatus'] == 'InService':
                         prediction_endpoint_name = response
                     prediction_running = False
-            if edgeclass_running:
-                response = sm.describe_endpoint(
-                    EndpointName=edgeclass_output
-                )
-                if response['EndpointStatus'] in ['InService', 'Failed']:
-                    if response['EndpointStatus'] == 'InService':
-                        edge_classification_endpoint_name = response
-                    edgeclass_running = False
-            if edgereg_running:
-                response = sm.describe_endpoint(
-                    EndpointName=edgereg_output
-                )
-                if response['EndpointStatus'] in ['InService', 'Failed']:
-                    if response['EndpointStatus'] == 'InService':
-                        edge_regression_endpoint_name = response
-                    edgereg_running = False
 
             print(
                 f'Checking Endpoint Creation Statuses at {datetime.now().strftime("%H:%M:%S")}', end='\r')
@@ -919,17 +692,10 @@ class PretrainedModels:
         if prediction_endpoint_name:
             print(
                 f"Link Prediction Endpoint Name: {prediction_endpoint_name['EndpointName']}")
-        if edge_classification_endpoint_name:
-            print(
-                f"Edge Classification Endpoint Name: {edge_classification_endpoint_name['EndpointName']}")
-        if edge_regression_endpoint_name:
-            print(
-                f"Edge Regression Endpoint Name: {edge_regression_endpoint_name['EndpointName']}")
+
         print('Endpoint creation complete', end='\r')
         return {
             'node_classification_endpoint_name': classification_endpoint_name,
             'node_regression_endpoint_name': regression_endpoint_name,
-            'prediction_endpoint_name': prediction_endpoint_name,
-            'edge_classification_endpoint_name': edge_classification_endpoint_name,
-            'edge_regression_endpoint_name': edge_regression_endpoint_name
+            'prediction_endpoint_name': prediction_endpoint_name
         }
