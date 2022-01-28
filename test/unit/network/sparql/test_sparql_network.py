@@ -239,6 +239,13 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('uri', node['group'])
 
+    def test_sparql_network_group_by_raw_string(self):
+        sparql_network = SPARQLNetwork(group_by_raw='__RAW_RESULT__')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual("{'type': 'uri', 'value': 'http://kelvinlawrence.net/air-routes/resource/24'}", node['group'])
+
     def test_sparql_network_group_map(self):
         sparql_network = SPARQLNetwork(group_by_property='{"uri":"value"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
@@ -266,6 +273,27 @@ class TestSPARQLNetwork(unittest.TestCase):
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_by_raw_json(self):
+        sparql_network = SPARQLNetwork(group_by_raw='{"uri":"__RAW_RESULT__"}')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual("{'type': 'uri', 'value': 'http://kelvinlawrence.net/air-routes/resource/24'}", node['group'])
+
+    def test_sparql_network_group_by_raw_explicit(self):
+        sparql_network = SPARQLNetwork(group_by_raw=True)
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual("{'type': 'uri', 'value': 'http://kelvinlawrence.net/air-routes/resource/24'}", node['group'])
+
+    def test_sparql_network_group_by_raw_explicit_overrule_gbp(self):
+        sparql_network = SPARQLNetwork(group_by_raw=True, group_by_property='value')
+        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        self.assertEqual("{'type': 'uri', 'value': 'http://kelvinlawrence.net/air-routes/resource/24'}", node['group'])
 
     def test_sparql_network_ignore_groups(self):
         sparql_network = SPARQLNetwork(group_by_property='{"uri":"value"}', ignore_groups=True)
