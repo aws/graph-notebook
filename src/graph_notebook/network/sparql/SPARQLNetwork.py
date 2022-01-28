@@ -7,7 +7,7 @@ import json
 from networkx import MultiDiGraph
 from rdflib.namespace import RDF, RDFS, OWL, XSD, SKOS, DOAP, FOAF, DC, DCTERMS, VOID
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEFAULT_RAW_GRP_KEY
 
 NAMESPACE_RDFS = str(RDFS.uri)
 NAMESPACE_RDF = str(RDF.uri)
@@ -58,14 +58,15 @@ class SPARQLNetwork(EventfulNetwork):
                  tooltip_property='',
                  edge_tooltip_property='',
                  ignore_groups=False,
-                 expand_all: bool = False):
+                 expand_all: bool = False,
+                 group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
         self.expand_all = expand_all
 
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
-                         ignore_groups)
+                         ignore_groups, group_by_raw)
         self.namespace_to_prefix = {  # http://foo/bar/ -> bar
             NAMESPACE_RDFS: PREFIX_RDFS,
             NAMESPACE_RDF: PREFIX_RDF,
@@ -168,11 +169,16 @@ class SPARQLNetwork(EventfulNetwork):
                 data = self.generate_node_label_title(node_id=node_id, data=data)
         if self.ignore_groups or not node_binding:
             data['group'] = DEFAULT_GRP
+        elif str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
+            data['group'] = str(node_binding)
         else:
             if isinstance(self.group_by_property, dict):
                 try:
                     if str(node_binding["type"]) in self.group_by_property:
-                        data['group'] = node_binding[self.group_by_property[node_binding["type"]]]
+                        if self.group_by_property[node_binding["type"]] == DEFAULT_RAW_GRP_KEY:
+                            data['group'] = str(node_binding)
+                        else:
+                            data['group'] = node_binding[self.group_by_property[node_binding["type"]]]
                     else:
                         data['group'] = node_binding["type"]
                 except KeyError:

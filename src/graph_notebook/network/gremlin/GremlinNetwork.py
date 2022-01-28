@@ -9,7 +9,7 @@ import uuid
 import logging
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEFAULT_RAW_GRP_KEY
 from gremlin_python.process.traversal import T, Direction
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
@@ -99,12 +99,13 @@ class GremlinNetwork(EventfulNetwork):
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
-                 edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False):
+                 edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False,
+                 group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
-                         ignore_groups)
+                         ignore_groups, group_by_raw)
 
     def get_dict_element_property_value(self, element, k, temp_label, custom_property):
         property_value = None
@@ -347,7 +348,9 @@ class GremlinNetwork(EventfulNetwork):
                 using_custom_tooltip = True
             vertex_dict = v.__dict__
             if not isinstance(self.group_by_property, dict):  # Handle string format group_by
-                if str(self.group_by_property) in [T_LABEL, 'label']:  # this handles if it's just a string
+                if str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
+                    group = str(v)
+                elif str(self.group_by_property) in [T_LABEL, 'label']:  # this handles if it's just a string
                     # This sets the group key to the label if either "label" is passed in or
                     # T.label is set in order to handle the default case of grouping by label
                     # when no explicit key is specified
@@ -359,7 +362,9 @@ class GremlinNetwork(EventfulNetwork):
             else:  # handle dict format group_by
                 try:
                     if str(v.label) in self.group_by_property:
-                        if self.group_by_property[str(v.label)] in [T_LABEL, 'label']:
+                        if self.group_by_property[str(v.label)] == DEFAULT_RAW_GRP_KEY:
+                            group = str(v)
+                        elif self.group_by_property[str(v.label)] in [T_LABEL, 'label']:
                             group = v.label
                         elif self.group_by_property[str(v.label)] in [T_ID, 'id']:
                             group = v.id
@@ -416,6 +421,10 @@ class GremlinNetwork(EventfulNetwork):
             else:
                 title_plc = ''
                 group = DEFAULT_GRP
+
+            if str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
+                group = str(v)
+                group_is_set = True
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
@@ -423,7 +432,10 @@ class GremlinNetwork(EventfulNetwork):
                 if not group_is_set:
                     if isinstance(self.group_by_property, dict):
                         try:
-                            if str(k) == self.group_by_property[title_plc]:
+                            if self.group_by_property[title_plc] == DEFAULT_RAW_GRP_KEY:
+                                group = str(v)
+                                group_is_set = True
+                            elif str(k) == self.group_by_property[title_plc]:
                                 group = str(v[k])
                                 group_is_set = True
                         except KeyError:
@@ -468,8 +480,12 @@ class GremlinNetwork(EventfulNetwork):
         else:
             node_id = str(v)
             title = str(v)
+            if str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
+                group = str(v)
+            else:
+                group = DEFAULT_GRP
             label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-            data = {'title': title, 'label': label, 'group': DEFAULT_GRP}
+            data = {'title': title, 'label': label, 'group': group}
 
         if self.ignore_groups:
             data['group'] = DEFAULT_GRP
