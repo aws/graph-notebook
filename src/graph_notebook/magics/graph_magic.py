@@ -140,6 +140,15 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
+def results_per_page_check(results_per_page):
+    if results_per_page < 1:
+        return 1
+    elif results_per_page > 1000:
+        return 1000
+    else:
+        return int(results_per_page)
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -279,6 +288,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
@@ -365,8 +376,10 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         table_id = f"table-{str(uuid.uuid4())[:8]}"
+                        visible_results = results_per_page_check(args.results_per_page)
                         first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id)
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -486,6 +499,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
 
@@ -581,7 +596,9 @@ class Graph(Magics):
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
                 table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
+                visible_results = results_per_page_check(args.results_per_page)
+                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
+                                                               amount=visible_results)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -1661,6 +1678,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
@@ -1723,8 +1742,10 @@ class Graph(Magics):
             titles.append('Console')
             if rows_and_columns is not None:
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
+                visible_results = results_per_page_check(args.results_per_page)
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
+                                                              rows=rows_and_columns['rows'], guid=table_id,
+                                                              amount=visible_results)
 
             # Display Graph Tab (if exists)
             if force_graph_output:
