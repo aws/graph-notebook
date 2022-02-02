@@ -471,15 +471,15 @@ class Graph(Magics):
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
-        parser.add_argument('--no-results', action='store_false', default=True,
+        parser.add_argument('--profile-no-results', action='store_false', default=True,
                             help='Display only the result count. If not used, all query results will be displayed in '
                                  'the profile report by default.')
-        parser.add_argument('--chop', type=int, default=250,
+        parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--serializer', type=str, default='application/json',
+        parser.add_argument('--profile-serializer', type=str, default='application/json',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
-        parser.add_argument('--indexOps', action='store_true', default=False,
+        parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -518,18 +518,18 @@ class Graph(Magics):
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
-            logger.debug(f'results: {args.no_results}')
-            logger.debug(f'chop: {args.chop}')
-            logger.debug(f'serializer: {args.serializer}')
-            logger.debug(f'indexOps: {args.indexOps}')
-            if args.serializer in serializers_map:
-                serializer = serializers_map[args.serializer]
+            logger.debug(f'results: {args.profile_no_results}')
+            logger.debug(f'chop: {args.profile_chop}')
+            logger.debug(f'serializer: {args.profile_serializer}')
+            logger.debug(f'indexOps: {args.profile_indexOps}')
+            if args.profile_serializer in serializers_map:
+                serializer = serializers_map[args.profile_serializer]
             else:
-                serializer = args.serializer
-            profile_args = {"profile.results": args.no_results,
-                            "profile.chop": args.chop,
+                serializer = args.profile_serializer
+            profile_args = {"profile.results": args.profile_no_results,
+                            "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
-                            "profile.indexOps": args.indexOps}
+                            "profile.indexOps": args.profile_indexOps}
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
