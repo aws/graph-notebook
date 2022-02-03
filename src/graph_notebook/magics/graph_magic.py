@@ -1706,7 +1706,12 @@ class Graph(Magics):
                     logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
                     logger.debug(f'Error: {network_creation_error}')
         elif args.mode == 'bolt':
-            res = self.client.opencyper_bolt(cell)            
+            query_start = time.time() * 1000
+            res = self.client.opencyper_bolt(cell)
+            query_time = time.time() * 1000 - query_start
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
+                                                                   query_time=query_time)
             # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
