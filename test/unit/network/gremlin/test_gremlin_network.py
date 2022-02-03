@@ -1448,6 +1448,22 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'Seattle-Tacoma International Airport')
         self.assertEqual(node2['group'], 'Austria')
 
+    def test_group_with_groupby_raw_string(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+
+        gn = GremlinNetwork(group_by_property='__RAW_RESULT__')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
+
     def test_group_with_groupby_properties_json_single_label(self):
         vertex1 = {
             T.id: '1234',
@@ -1486,6 +1502,21 @@ class TestGremlinNetwork(unittest.TestCase):
         node2 = gn.graph.nodes.get(vertex2[T.id])
         self.assertEqual(node1['group'], 'SEA')
         self.assertEqual(node2['group'], 'Europe')
+
+    def test_group_with_groupby_raw_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_property='{"airport":"__RAW_RESULT__"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
 
     def test_group_with_groupby_invalid_json_single_label(self):
         vertex1 = {
@@ -2004,6 +2035,36 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '1')
+
+    def test_group_by_raw_explicit(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_raw=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
+
+    def test_group_by_raw_explicit_overrule_gbp(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_raw=True, group_by_property='{"airport":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
 
     def test_add_elementmap_edge(self):
         edge_map = {

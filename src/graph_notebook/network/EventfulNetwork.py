@@ -18,6 +18,7 @@ EVENT_ADD_NODE_PROPERTY = 'add_node_property'
 EVENT_ADD_EDGE = 'add_edge'
 EVENT_ADD_EDGE_DATA = 'add_edge_data'
 DEFAULT_GRP = 'DEFAULT_GROUP'
+DEFAULT_RAW_GRP_KEY = '__RAW_RESULT__'
 DEFAULT_LABEL_MAX_LENGTH = 10
 DEPTH_GRP_KEY = 'TRAVERSAL_DEPTH'
 
@@ -42,16 +43,19 @@ class EventfulNetwork(Network):
                  edge_label_max_length: int = DEFAULT_LABEL_MAX_LENGTH, group_by_property: str = '',
                  display_property: str = '', edge_display_property: str = '',
                  tooltip_property: str = '', edge_tooltip_property: str = '',
-                 ignore_groups=False):
+                 ignore_groups=False, group_by_raw=False):
         if callbacks is None:
             callbacks = defaultdict(list)
         self.callbacks = callbacks
         self.label_max_length = 3 if label_max_length < 3 else label_max_length
         self.edge_label_max_length = 3 if edge_label_max_length < 3 else edge_label_max_length
-        try:
-            self.group_by_property = json.loads(group_by_property)
-        except (TypeError, ValueError) as e:
-            self.group_by_property = group_by_property
+        if group_by_raw:
+            self.group_by_property = DEFAULT_RAW_GRP_KEY
+        else:
+            try:
+                self.group_by_property = json.loads(group_by_property)
+            except (TypeError, ValueError) as e:
+                self.group_by_property = group_by_property
         self.display_property = self.convert_property_name(display_property)
         self.edge_display_property = self.convert_property_name(edge_display_property)
         self.tooltip_property = self.convert_property_name(tooltip_property) if tooltip_property \
