@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
 
 logging.basicConfig()
@@ -35,12 +35,12 @@ class OCNetwork(EventfulNetwork):
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
                  display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
                  tooltip_property=None, edge_tooltip_property=None,
-                 ignore_groups=False):
+                 ignore_groups=False, group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
-                         ignore_groups)
+                         ignore_groups, group_by_raw)
 
     def get_node_property_value(self, node: dict, props: dict, title, custom_property):
         try:
@@ -127,7 +127,9 @@ class OCNetwork(EventfulNetwork):
 
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
             try:
-                if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
+                if self.group_by_property == DEFAULT_RAW_GRP_KEY:
+                    group = str(node)
+                elif self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
                     group = node[LABEL_KEY][0]
                 elif self.group_by_property in [ID_KEY, 'id']:
                     group = node[ID_KEY]
@@ -143,7 +145,9 @@ class OCNetwork(EventfulNetwork):
             try:
                 if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
                     key = node[LABEL_KEY][0]
-                    if self.group_by_property[key] in [LABEL_KEY, 'labels']:
+                    if self.group_by_property[key] == DEFAULT_RAW_GRP_KEY:
+                        group = str(node)
+                    elif self.group_by_property[key] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
                     elif self.group_by_property[key] in [ID_KEY, 'id']:
                         group = node[ID_KEY]
