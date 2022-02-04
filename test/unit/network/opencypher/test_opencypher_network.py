@@ -480,6 +480,91 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'US-AK')
         self.assertEqual(node2['group'], 'US-TX')
 
+    def test_group_with_groupby_depth_default(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.parse_node(node)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH--1__')
+
+    def test_group_with_groupby_depth_string(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_json(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='{"airport":"TRAVERSAL_DEPTH"}')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_explicit_command(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_depth=True)
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_explicit_command_overwrite_gbp(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_depth=True, group_by_property='{"airport":"desc"}')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
     def test_group_by_raw_string(self):
         res = {
             "results": [

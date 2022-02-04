@@ -9,7 +9,7 @@ import uuid
 import logging
 from enum import Enum
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEFAULT_RAW_GRP_KEY
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from gremlin_python.process.traversal import T, Direction
 from gremlin_python.structure.graph import Path, Vertex, Edge
 from networkx import MultiDiGraph
@@ -100,9 +100,11 @@ class GremlinNetwork(EventfulNetwork):
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
                  edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False,
-                 group_by_raw=False):
+                 group_by_depth=False, group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
+        if group_by_depth:
+            group_by_property = DEPTH_GRP_KEY
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
                          ignore_groups, group_by_raw)
@@ -220,10 +222,9 @@ class GremlinNetwork(EventfulNetwork):
                             raise INVALID_VERTEX_PATH_PATTERN_ERROR
 
                         # add the vertex, no matter what patterns border a vertex pattern, it will always be added.
-                        self.add_vertex(path[path_index])
+                        self.add_vertex(path[path_index], path_index=i)
                         # if the path index is over 0, we need to handle edges between this node and the previous one
                         if path_index > 0:
-                            # TODO: First node (PathPattern.V) is rendered blank if T.id is a integer instead of a string.
                             if path_pattern == PathPattern.V:
                                 # two V patterns next to each other is an undirected, unlabeled edge
                                 if previous_pattern == PathPattern.V:
@@ -294,7 +295,7 @@ class GremlinNetwork(EventfulNetwork):
         if not isinstance(results, list):
             raise ValueError("results must be a list of paths")
 
-        for path in results:
+        for path_index, path in enumerate(results):
             if isinstance(path, Path):
                 if type(path[0]) is Edge or type(path[-1]) is Edge:
                     raise INVALID_PATH_ERROR
@@ -324,18 +325,20 @@ class GremlinNetwork(EventfulNetwork):
                     else:
                         self.insert_path_element(path, i)
             elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
-                self.insert_elementmap(path)
+                self.insert_elementmap(path, index=path_index)
             else:
                 raise ValueError("all entries in results must be paths or elementMaps")
 
-    def add_vertex(self, v):
+    def add_vertex(self, v, path_index: int = -1):
         """
         Adds a vertex to the network. If v is of :type Vertex, we will gather its id and label.
         If v comes from a valueMap, it will be a dict, with the keys T.label and T.ID being present in
         the dict for gathering the label and id, respectively.
 
         :param v: The vertex taken from a path traversal object.
+        :param path_index: Position of the element in the path traversal order
         """
+        depth_group = "__DEPTH-" + str(path_index) + "__"
         node_id = ''
         if type(v) is Vertex:
             node_id = v.id
@@ -357,6 +360,8 @@ class GremlinNetwork(EventfulNetwork):
                     group = v.label
                 elif str(self.group_by_property) in [T_ID, 'id']:
                     group = v.id
+                elif self.group_by_property == DEPTH_GRP_KEY:
+                    group = depth_group
                 else:
                     group = DEFAULT_GRP
             else:  # handle dict format group_by
@@ -368,6 +373,8 @@ class GremlinNetwork(EventfulNetwork):
                             group = v.label
                         elif self.group_by_property[str(v.label)] in [T_ID, 'id']:
                             group = v.id
+                        elif self.group_by_property[str(v.label)] == DEPTH_GRP_KEY:
+                            group = depth_group
                         else:
                             group = vertex_dict[self.group_by_property[str(v.label)]]
                     else:
@@ -379,7 +386,7 @@ class GremlinNetwork(EventfulNetwork):
 
             if self.display_property:
                 label_property_raw_value = self.get_explicit_vertex_property_value(node_id, title,
-                                                                                    self.display_property)
+                                                                                   self.display_property)
                 if label_property_raw_value:
                     label_full, label = self.strip_and_truncate_label_and_title(label_property_raw_value,
                                                                                 self.label_max_length)
@@ -432,7 +439,10 @@ class GremlinNetwork(EventfulNetwork):
                 if not group_is_set:
                     if isinstance(self.group_by_property, dict):
                         try:
-                            if self.group_by_property[title_plc] == DEFAULT_RAW_GRP_KEY:
+                            if DEPTH_GRP_KEY == self.group_by_property[title_plc]:
+                                group = depth_group
+                                group_is_set = True
+                            elif DEFAULT_RAW_GRP_KEY == self.group_by_property[title_plc]:
                                 group = str(v)
                                 group_is_set = True
                             elif str(k) == self.group_by_property[title_plc]:
@@ -440,9 +450,13 @@ class GremlinNetwork(EventfulNetwork):
                                 group_is_set = True
                         except KeyError:
                             pass
-                    elif str(k) == self.group_by_property:
-                        group = str(v[k])
-                        group_is_set = True
+                    else:
+                        if DEPTH_GRP_KEY == self.group_by_property:
+                            group = depth_group
+                            group_is_set = True
+                        elif str(k) == self.group_by_property:
+                            group = str(v[k])
+                            group_is_set = True
                 if not display_is_set:
                     label_property_raw_value = self.get_dict_element_property_value(v, k, title_plc,
                                                                                     self.display_property)
@@ -480,7 +494,9 @@ class GremlinNetwork(EventfulNetwork):
         else:
             node_id = str(v)
             title = str(v)
-            if str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
+            if self.group_by_property == DEPTH_GRP_KEY:
+                group = depth_group
+            if self.group_by_property == DEFAULT_RAW_GRP_KEY:
                 group = str(v)
             else:
                 group = DEFAULT_GRP
@@ -605,7 +621,7 @@ class GremlinNetwork(EventfulNetwork):
 
     def insert_path_element(self, path, i):
         if i == 0:
-            self.add_vertex(path[i])
+            self.add_vertex(path[i], path_index=0)
             return
 
         if type(path[i]) is Edge:
@@ -634,7 +650,7 @@ class GremlinNetwork(EventfulNetwork):
         else:
             from_id = get_id(path[i - 1])
 
-        self.add_vertex(path[i])
+        self.add_vertex(path[i], path_index=i)
         if type(path[i - 1]) is not Edge:
             if type(path[i - 1]) is dict:
                 if Direction.IN not in path[i-1]:
@@ -658,14 +674,14 @@ class GremlinNetwork(EventfulNetwork):
             # Ensure that the default nodes includes with edge elementMaps do not overwrite nodes
             # with the same ID that have been explicitly inserted.
             if not self.graph.has_node(from_id):
-                self.add_vertex(e_map[Direction.OUT])
+                self.add_vertex(e_map[Direction.OUT], path_index=index-1)
             if not self.graph.has_node(to_id):
-                self.add_vertex(e_map[Direction.IN])
+                self.add_vertex(e_map[Direction.IN], path_index=index+1)
             self.add_path_edge(e_map, from_id, to_id)
         # Handle vertex elementMap
         else:
-            # Overwrite the the default node created by edge elementMap, if it exists already.
+            # If a default node was created at the same index by an edge elementMap, overwrite it.
             if check_emap:
                 self.insert_path_element(path_element, index)
             else:
-                self.add_vertex(e_map)
+                self.add_vertex(e_map, path_index=index)
