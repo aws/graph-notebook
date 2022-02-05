@@ -1445,6 +1445,22 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(edge['1']['label'], 'v[2]')
         self.assertEqual(edge['1']['title'], 'v[2]')
 
+    def test_add_edge_with_decimal_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]',
+                 'dist': Decimal('917.09438902349805490380928798847027304002305757893')}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        edge_dist = edge['1']['properties']['dist']
+        self.assertEqual(edge_dist, 917.094389023498)
+        self.assertIsInstance(edge_dist, float)
+
     def test_add_path_with_integer(self):
         path = Path([], ['ANC', 3030, 'DFW'])
         gn = GremlinNetwork()

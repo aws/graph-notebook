@@ -553,10 +553,14 @@ class GremlinNetwork(EventfulNetwork):
             for k in edge:
                 if str(k) == T_ID:
                     edge_id = str(edge[k])
-                if type(edge[k]) is dict:  # Handle Direction properties, where the value is a map
+
+                if isinstance(edge[k], dict):  # Handle Direction properties, where the value is a map
                     properties[k] = get_id(edge[k])
+                elif isinstance(edge[k], Decimal):
+                    properties[k] = float(edge[k])
                 else:
                     properties[k] = edge[k]
+
                 if self.edge_display_property is not T_LABEL and not display_is_set:
                     label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
                                                                                     self.edge_display_property)
