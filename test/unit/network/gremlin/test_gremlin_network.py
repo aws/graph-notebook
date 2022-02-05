@@ -1820,13 +1820,13 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_add_path_with_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
-                          T.label: 'airport', 'lon': [Decimal('-122.30899810791')], 'type': ['airport'], 'elev': [432],
+                          T.label: 'airport', 'lon': ['-122.30899810791'], 'type': ['airport'], 'elev': [432],
                           T.id: '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
-                          'lat': [Decimal('47.4490013122559')], 'desc': ['Seattle-Tacoma']},
+                          'lat': ['47.4490013122559'], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
-                          T.label: 'airport', 'lon': [Decimal('-84.4281005859375')], 'type': ['airport'], 'elev': [1026],
+                          T.label: 'airport', 'lon': ['-84.4281005859375'], 'type': ['airport'], 'elev': [1026],
                           T.id: '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
-                          'lat': [Decimal('33.6366996765137')], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
+                          'lat': ['33.6366996765137'], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork(group_by_property="code")
         gn.add_results([path])
         node = gn.graph.nodes.get('1')
