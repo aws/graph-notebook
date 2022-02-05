@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
+from decimal import *
 from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
@@ -709,6 +710,48 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get(vertex[T.id])
         self.assertEqual(node['label'], 'SEA')
         self.assertEqual(node['title'], 'SEA')
+
+    def test_add_vertex_with_Decimal_type_property(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA',
+            'lon': Decimal('-21.940599441500001631766281207092106342315673828125'),
+            'lat': Decimal('64.129997253400006229639984667301177978515625')
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        final_lon_value = node['properties']['lon']
+        final_lat_value = node['properties']['lat']
+        self.assertEqual(final_lon_value, -21.9405994415)
+        self.assertEqual(final_lat_value, 64.1299972534)
+        self.assertIsInstance(final_lon_value, float)
+        self.assertIsInstance(final_lat_value, float)
+
+    def test_add_vertex_with_Decimal_type_property_in_list(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': ['Airport'],
+            'runways': ['4'],
+            'code': ['SEA'],
+            'lon': [Decimal('-21.940599441500001631766281207092106342315673828125')],
+            'lat': [Decimal('64.129997253400006229639984667301177978515625')]
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        final_lon_value = node['properties']['lon'][0]
+        final_lat_value = node['properties']['lat'][0]
+        self.assertEqual(final_lon_value, -21.9405994415)
+        self.assertEqual(final_lat_value, 64.1299972534)
+        self.assertIsInstance(final_lon_value, float)
+        self.assertIsInstance(final_lat_value, float)
 
     def test_add_explicit_type_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
@@ -1777,13 +1820,13 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_add_path_with_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
-                          T.label: 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          T.label: 'airport', 'lon': [Decimal('-122.30899810791')], 'type': ['airport'], 'elev': [432],
                           T.id: '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
-                          'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
+                          'lat': [Decimal('47.4490013122559')], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
-                          T.label: 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                          T.label: 'airport', 'lon': [Decimal('-84.4281005859375')], 'type': ['airport'], 'elev': [1026],
                           T.id: '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
-                          'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
+                          'lat': [Decimal('33.6366996765137')], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork(group_by_property="code")
         gn.add_results([path])
         node = gn.graph.nodes.get('1')

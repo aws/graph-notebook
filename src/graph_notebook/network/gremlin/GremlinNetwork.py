@@ -7,6 +7,7 @@ import hashlib
 import json
 import uuid
 import logging
+from decimal import *
 from enum import Enum
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
@@ -419,7 +420,20 @@ class GremlinNetwork(EventfulNetwork):
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
-                properties[k] = str(v[k]) if isinstance(v[k], dict) else v[k]
+
+                if isinstance(v[k], dict):
+                    properties[k] = str(v[k])
+                elif isinstance(v[k], list):
+                    copy_val = v[k]
+                    for i, subvalue in enumerate(copy_val):
+                        if isinstance(subvalue, Decimal):
+                            copy_val[i] = float(subvalue)
+                    properties[k] = copy_val
+                elif isinstance(v[k], Decimal):
+                    properties[k] = float(v[k])
+                else:
+                    properties[k] = v[k]
+
                 if not group_is_set:
                     if isinstance(self.group_by_property, dict):
                         try:
