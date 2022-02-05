@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
-from decimal import *
+from decimal import Decimal
 from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
