@@ -2,6 +2,9 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
+## Release TBD
+- - Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
+
 ## Release 3.1.1 (December 21, 2021)
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
 - Added new Neptune ML Sample Application for People Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
@@ -10,7 +13,6 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added support for setting custom edge and node tooltips ([Link to PR](https://github.com/aws/graph-notebook/pull/227))
 - Added edge tooltips, and options for specifying edge label length ([Link to PR](https://github.com/aws/graph-notebook/pull/218))
 - Updated NeptuneML pre-trained model resources for CN regions ([Link to PR](https://github.com/aws/graph-notebook/pull/226))
-- Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
 - Fixed inaccurate help message being displayed for certain GremlinServerErrors ([Link to PR](https://github.com/aws/graph-notebook/pull/230))
 - Fixed error causing query autocompletion to fail ([Link to PR](https://github.com/aws/graph-notebook/pull/231))
 - Fixed Jupyter start script for cases where the nbconfig directory is missing ([Link to PR](https://github.com/aws/graph-notebook/pull/239))
