@@ -2,6 +2,9 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
+## Upcoming
+- Enhanced %seed with support for loading from file path([Link to PR](https://github.com/aws/graph-notebook/pull/247))
+
 ## Release 3.1.1 (December 21, 2021)
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
 - Added new Neptune ML Sample Application for People Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
