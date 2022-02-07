@@ -3,7 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Release TBD
-- - Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
+- Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
 
 ## Release 3.1.1 (December 21, 2021)
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
