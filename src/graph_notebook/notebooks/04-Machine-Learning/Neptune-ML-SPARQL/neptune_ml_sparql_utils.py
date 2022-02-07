@@ -385,7 +385,7 @@ class MovieLensProcessor:
             ))
             # add genre labels
             for genre_value in genres:
-                if (id != "movie_172") and (id != "movie_235") and (id != "movie_121"):
+                if id not in ["movie_172", "movie_235", "movie_121"]:
                     if row[genre_value]:
                         movie_genre_graph.add((
                             self.ns_resource[id], self.ns_ontology.hasGenre,
@@ -458,8 +458,7 @@ class MovieLensProcessor:
         averages_graph = ConjunctiveGraph()
 
         for index, row in ratings_vertices.groupby('~to').mean().iterrows():
-            if (index != "movie_210") and (index != "movie_89") \
-                    and (index != "movie_739") and (index != "movie_450"):
+            if index not in ["movie_210", "movie_89", "movie_739", "movie_450"]:
                 score = int(round(row['score:Int']))
                 averages_graph.add((
                     self.ns_resource[index], self.ns_ontology.criticScore, Literal(score, datatype=XSD.integer),
