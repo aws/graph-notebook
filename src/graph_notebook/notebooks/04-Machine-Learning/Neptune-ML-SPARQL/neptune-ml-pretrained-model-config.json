@@ -1,17 +1,13 @@
 {
   "models": {
-    "node_classification": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/v2/node-classification/model.tar.gz",
-    "node_regression": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/v2/node-regression/model.tar.gz",
-    "link_prediction": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/v2/link-prediction/model.tar.gz",
-    "edge_regression": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/v2/edge-regression/model.tar.gz",
-    "edge_classification": "s3://aws-neptune-customer-samples/v2/neptune-ml/pretrained-models/v2/edge-classification/model.tar.gz"
+    "object_classification": "s3://charivie-pretrained-models/rdf/object-classification/model.tar.gz",
+    "object_regression": "s3://charivie-pretrained-models/rdf/object-regression/model.tar.gz",
+    "link_prediction": "s3://charivie-pretrained-models/rdf/link-prediction/model.tar.gz"
   },
   "models_cn": {
-    "node_classification": "s3://aws-neptune-customer-samples-cn-northwest-1/v2/neptune-ml/pretrained-models/v2/node-classification/model.tar.gz",
-    "node_regression": "s3://aws-neptune-customer-samples-cn-northwest-1/v2/neptune-ml/pretrained-models/v2/node-regression/model.tar.gz",
-    "link_prediction": "s3://aws-neptune-customer-samples-cn-northwest-1/v2/neptune-ml/pretrained-models/v2/link-prediction/model.tar.gz",
-    "edge_regression": "s3://aws-neptune-customer-samples-cn-northwest-1/v2/neptune-ml/pretrained-models/v2/edge-regression/model.tar.gz",
-    "edge_classification": "s3://aws-neptune-customer-samples-cn-northwest-1/v2/neptune-ml/pretrained-models/v2/edge-classification/model.tar.gz"
+    "object_classification": "s3://charivie-pretrained-models/rdf/object-classification/model.tar.gz",
+    "object_regression": "s3://charivie-pretrained-models/rdf/object-regression/model.tar.gz",
+    "link_prediction": "s3://charivie-pretrained-models/rdf/link-prediction/model.tar.gz"
   },
   "container_images": {
     "us-west-1":"891482049861.dkr.ecr.us-west-1.amazonaws.com/graphlytics-pytorch-inference:v1-1.6.0-cpu-py3",

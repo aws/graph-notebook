@@ -313,7 +313,7 @@ class MovieLensProcessor:
     def prepare_movielens_data_rdf(self, s3_bucket: str, clear_staging_area: bool):
         self.formatted_directory = f'{self.formatted_directory}/rdf'
         if clear_staging_area:
-            print('clearing staging area by default, use "clear_staging_area=False" to retain')
+            print('Clearing staging area by default, use "clear_staging_area=False" to retain')
             shutil.rmtree(self.formatted_directory, ignore_errors=True)
             os.makedirs(self.formatted_directory, exist_ok=True)
         bucket_name = f'{s3_bucket}/neptune-formatted/movielens-100k/rdf/'
@@ -385,13 +385,11 @@ class MovieLensProcessor:
             ))
             # add genre labels
             for genre_value in genres:
-                if id not in ["movie_172", "movie_235", "movie_121"]:
-                    if row[genre_value]:
-                        movie_genre_graph.add((
-                            self.ns_resource[id], self.ns_ontology.hasGenre,
-                            Literal(genre_value, datatype=XSD.string), self.ns_ontology.Movie
-                        ))
-                elif row[genre_value]:
+                if row[genre_value]:
+                    movie_genre_graph.add((
+                        self.ns_resource[id], self.ns_ontology.hasGenre,
+                        Literal(genre_value, datatype=XSD.string), self.ns_ontology.Movie
+                    ))
                     movie_genre_graph.add((
                         self.ns_resource[id], self.ns_ontology.hasOriginalGenre,
                         Literal(genre_value, datatype=XSD.string), self.ns_ontology.Movie
@@ -649,9 +647,9 @@ class PretrainedModels:
         classification_endpoint_name = ""
         regression_endpoint_name = ""
         prediction_endpoint_name = ""
-        sucessful = False
         sm = boto3.client("sagemaker")
-        while classification_running or regression_running or prediction_running or edgeclass_running or edgereg_running:
+
+        while classification_running or regression_running or prediction_running:
             if classification_running:
                 response = sm.describe_endpoint(
                     EndpointName=classification_output
