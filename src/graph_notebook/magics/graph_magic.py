@@ -59,6 +59,7 @@ DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='10
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
 logging.basicConfig()
+root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
@@ -142,6 +143,15 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
+def results_per_page_check(results_per_page):
+    if results_per_page < 1:
+        return 1
+    elif results_per_page > 1000:
+        return 1000
+    else:
+        return int(results_per_page)
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -162,6 +172,7 @@ class Graph(Magics):
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         self._generate_client_from_config(self.graph_notebook_config)
+        root_logger.setLevel(logging.CRITICAL)
         logger.setLevel(logging.ERROR)
 
     def _generate_client_from_config(self, config: Configuration):
@@ -262,6 +273,8 @@ class Graph(Magics):
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes.')
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw binding")
         parser.add_argument('-d', '--display-property', type=str, default='',
                             help='Property to display the value of on each node.')
         parser.add_argument('-de', '--edge-display-property', type=str, default='',
@@ -281,6 +294,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
@@ -346,7 +361,8 @@ class Graph(Magics):
                                        label_max_length=args.label_max_length,
                                        edge_label_max_length=args.edge_label_max_length,
                                        ignore_groups=args.ignore_groups,
-                                       expand_all=args.expand_all)
+                                       expand_all=args.expand_all,
+                                       group_by_raw=args.group_by_raw)
                     
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
@@ -367,8 +383,10 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         table_id = f"table-{str(uuid.uuid4())[:8]}"
+                        visible_results = results_per_page_check(args.results_per_page)
                         first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id)
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -457,6 +475,10 @@ class Graph(Magics):
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw result")
         parser.add_argument('-d', '--display-property', type=str, default='T.label',
                             help='Property to display the value of on each node, default is T.label')
         parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
@@ -473,21 +495,23 @@ class Graph(Magics):
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
-        parser.add_argument('--no-results', action='store_false', default=True,
+        parser.add_argument('--profile-no-results', action='store_false', default=True,
                             help='Display only the result count. If not used, all query results will be displayed in '
                                  'the profile report by default.')
-        parser.add_argument('--chop', type=int, default=250,
+        parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--serializer', type=str, default='application/json',
+        parser.add_argument('--profile-serializer', type=str, default='application/json',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
-        parser.add_argument('--indexOps', action='store_true', default=False,
+        parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
 
@@ -520,18 +544,18 @@ class Graph(Magics):
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
-            logger.debug(f'results: {args.no_results}')
-            logger.debug(f'chop: {args.chop}')
-            logger.debug(f'serializer: {args.serializer}')
-            logger.debug(f'indexOps: {args.indexOps}')
-            if args.serializer in serializers_map:
-                serializer = serializers_map[args.serializer]
+            logger.debug(f'results: {args.profile_no_results}')
+            logger.debug(f'chop: {args.profile_chop}')
+            logger.debug(f'serializer: {args.profile_serializer}')
+            logger.debug(f'indexOps: {args.profile_indexOps}')
+            if args.profile_serializer in serializers_map:
+                serializer = serializers_map[args.profile_serializer]
             else:
-                serializer = args.serializer
-            profile_args = {"profile.results": args.no_results,
-                            "profile.chop": args.chop,
+                serializer = args.profile_serializer
+            profile_args = {"profile.results": args.profile_no_results,
+                            "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
-                            "profile.indexOps": args.indexOps}
+                            "profile.indexOps": args.profile_indexOps}
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             query_res = res.content.decode('utf-8')
@@ -557,6 +581,8 @@ class Graph(Magics):
                     logger.debug(f'label_max_length: {args.label_max_length}')
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
                     gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                        group_by_raw=args.group_by_raw,
+                                        group_by_depth=args.group_by_depth,
                                         edge_display_property=args.edge_display_property,
                                         tooltip_property=args.tooltip_property,
                                         edge_tooltip_property=args.edge_tooltip_property,
@@ -583,7 +609,9 @@ class Graph(Magics):
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
                 table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
+                visible_results = results_per_page_check(args.results_per_page)
+                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
+                                                               amount=visible_results)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -1704,10 +1732,12 @@ class Graph(Magics):
     @line_magic
     def enable_debug(self, line):
         logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.ERROR)
 
     @line_magic
     def disable_debug(self, line):
         logger.setLevel(logging.ERROR)
+        root_logger.setLevel(logging.CRITICAL)
 
     @line_magic
     def graph_notebook_version(self, line):
@@ -1761,6 +1791,10 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw result")
         parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
                             choices=['query', 'bolt'])
         parser.add_argument('-d', '--display-property', type=str, default='~labels',
@@ -1784,6 +1818,8 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
@@ -1812,6 +1848,8 @@ class Graph(Magics):
                                                                    query_time=query_time)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                   group_by_raw=args.group_by_raw,
+                                   group_by_depth=args.group_by_depth,
                                    edge_display_property=args.edge_display_property,
                                    tooltip_property=args.tooltip_property,
                                    edge_tooltip_property=args.edge_tooltip_property,
@@ -1829,7 +1867,12 @@ class Graph(Magics):
                     logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
                     logger.debug(f'Error: {network_creation_error}')
         elif args.mode == 'bolt':
-            res = self.client.opencyper_bolt(cell)            
+            query_start = time.time() * 1000
+            res = self.client.opencyper_bolt(cell)
+            query_time = time.time() * 1000 - query_start
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
+                                                                   query_time=query_time)
             # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
@@ -1846,8 +1889,10 @@ class Graph(Magics):
             titles.append('Console')
             if rows_and_columns is not None:
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
+                visible_results = results_per_page_check(args.results_per_page)
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
+                                                              rows=rows_and_columns['rows'], guid=table_id,
+                                                              amount=visible_results)
 
             # Display Graph Tab (if exists)
             if force_graph_output:

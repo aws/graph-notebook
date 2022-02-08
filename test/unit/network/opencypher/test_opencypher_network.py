@@ -480,6 +480,199 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'US-AK')
         self.assertEqual(node2['group'], 'US-TX')
 
+    def test_group_with_groupby_depth_default(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.parse_node(node)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH--1__')
+
+    def test_group_with_groupby_depth_string(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_json(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_property='{"airport":"TRAVERSAL_DEPTH"}')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_explicit_command(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_depth=True)
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_with_groupby_depth_explicit_command_overwrite_gbp(self):
+        node = {
+            "~id": "3",
+            "~entityType": "node",
+            "~labels": [
+                "airport"
+            ],
+            "~properties": {
+                "desc": "Austin Bergstrom International Airport",
+            }
+        }
+
+        gn = OCNetwork(group_by_depth=True, group_by_property='{"airport":"desc"}')
+        gn.parse_node(node, path_index=2)
+        node1 = gn.graph.nodes.get('3')
+        self.assertEqual(node1['group'], '__DEPTH-1__')
+
+    def test_group_by_raw_string(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        expected = "{'~id': '22', '~entityType': 'node', '~labels': ['airport'], " \
+                   "'~properties': {'runways': 3, 'code': 'SEA'}}"
+
+        gn = OCNetwork(group_by_property='__RAW_RESULT__')
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], expected)
+
+    def test_group_by_raw_json(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        expected = "{'~id': '22', '~entityType': 'node', '~labels': ['airport'], " \
+                   "'~properties': {'runways': 3, 'code': 'SEA'}}"
+
+        gn = OCNetwork(group_by_property='{"airport":"__RAW_RESULT__"}')
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], expected)
+
+    def test_group_by_raw_explicit(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        expected = "{'~id': '22', '~entityType': 'node', '~labels': ['airport'], " \
+                   "'~properties': {'runways': 3, 'code': 'SEA'}}"
+
+        gn = OCNetwork(group_by_raw=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], expected)
+
+    def test_group_by_raw_explicit_overrule_gbp(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        expected = "{'~id': '22', '~entityType': 'node', '~labels': ['airport'], " \
+                   "'~properties': {'runways': 3, 'code': 'SEA'}}"
+
+        gn = OCNetwork(group_by_raw=True, group_by_property='{"airport":"code"}')
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], expected)
+
     def test_group_with_groupby_depth(self):
         res = {
             "results": [
