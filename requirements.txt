@@ -8,7 +8,7 @@ jupyter-contrib-nbextensions
 widgetsnbextension
 gremlinpython>=3.5.1
 requests==2.24.0
-ipython>=7.16.1
+ipython>=7.16.1,<7.17.0
 ipykernel==5.3.4
 neo4j==4.2.1
 rdflib~=5.0.0
