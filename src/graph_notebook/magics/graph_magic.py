@@ -1555,6 +1555,18 @@ class Graph(Magics):
                         if not line:
                             logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                             continue
+                        elif not line.startswith(("g.addV", "g.addE")):
+                            bad_gremlin_query_msg = f"\nInvalid Gremlin insert data query found at line " \
+                                                    f"{line_index + 1} in seed file {q['name']}.\nQuery: {line}"
+                            if args.ignore_errors:
+                                logger.debug(bad_gremlin_query_msg)
+                                continue
+                            else:
+                                with output:
+                                    print(bad_gremlin_query_msg)
+                                    print("\nTerminated seed.")
+                                progress.close()
+                                return
                         try:
                             self.client.gremlin_query(line)
                         except GremlinServerError as gremlinEx:
@@ -1632,6 +1644,19 @@ class Graph(Magics):
                         if not line:
                             logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                             continue
+                        elif not line.startswith("CREATE"):
+                            bad_cypher_query_msg = f"\nInvalid Cypher insert data query found at line " \
+                                                    f"{line_index + 1} in seed file {q['name']}:\n{line}"
+
+                            if args.ignore_errors:
+                                logger.debug(bad_cypher_query_msg)
+                                continue
+                            else:
+                                with output:
+                                    print(bad_cypher_query_msg)
+                                    print("\nTerminated seed.")
+                                progress.close()
+                                return
                         try:
                             cypher_res = self.client.opencypher_http(line)
                             cypher_res.raise_for_status()
