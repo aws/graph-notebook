@@ -456,12 +456,11 @@ class MovieLensProcessor:
         averages_graph = ConjunctiveGraph()
 
         for index, row in ratings_vertices.groupby('~to').mean().iterrows():
-            if index not in ["movie_210", "movie_89", "movie_739", "movie_450"]:
-                score = int(round(row['score:Int']))
-                averages_graph.add((
-                    self.ns_resource[index], self.ns_ontology.criticScore, Literal(score, datatype=XSD.integer),
-                    self.ns_ontology.Rating
-                ))
+            score = int(round(row['score:Int']))
+            averages_graph.add((
+                self.ns_resource[index], self.ns_ontology.criticScore, Literal(score, datatype=XSD.integer),
+                self.ns_ontology.Rating
+            ))
 
         for index, row in ratings_vertices.iterrows():
             uri = urllib.parse.quote_plus(row['~id'])
