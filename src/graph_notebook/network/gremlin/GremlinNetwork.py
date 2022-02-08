@@ -7,6 +7,7 @@ import hashlib
 import json
 import uuid
 import logging
+from decimal import *
 from enum import Enum
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
@@ -435,7 +436,20 @@ class GremlinNetwork(EventfulNetwork):
             for k in v:
                 if str(k) == T_ID:
                     node_id = str(v[k])
-                properties[k] = str(v[k]) if isinstance(v[k], dict) else v[k]
+
+                if isinstance(v[k], dict):
+                    properties[k] = str(v[k])
+                elif isinstance(v[k], list):
+                    copy_val = v[k]
+                    for i, subvalue in enumerate(copy_val):
+                        if isinstance(subvalue, Decimal):
+                            copy_val[i] = float(subvalue)
+                    properties[k] = copy_val
+                elif isinstance(v[k], Decimal):
+                    properties[k] = float(v[k])
+                else:
+                    properties[k] = v[k]
+
                 if not group_is_set:
                     if isinstance(self.group_by_property, dict):
                         try:
@@ -571,10 +585,14 @@ class GremlinNetwork(EventfulNetwork):
             for k in edge:
                 if str(k) == T_ID:
                     edge_id = str(edge[k])
-                if type(edge[k]) is dict:  # Handle Direction properties, where the value is a map
+
+                if isinstance(edge[k], dict):  # Handle Direction properties, where the value is a map
                     properties[k] = get_id(edge[k])
+                elif isinstance(edge[k], Decimal):
+                    properties[k] = float(edge[k])
                 else:
                     properties[k] = edge[k]
+
                 if self.edge_display_property is not T_LABEL and not display_is_set:
                     label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
                                                                                     self.edge_display_property)
