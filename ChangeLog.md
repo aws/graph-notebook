@@ -3,6 +3,15 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added grouping by depth for Gremlin and openCypher queries ([PR #1](https://github.com/aws/graph-notebook/pull/241))([PR #2](https://github.com/aws/graph-notebook/pull/251))
+- Added grouping by raw node results ([Link to PR](https://github.com/aws/graph-notebook/pull/253))
+- Added `--no-scroll` option for disabling truncation of query result pages ([Link to PR](https://github.com/aws/graph-notebook/pull/243))
+- Added `--results-per-page` option ([Link to PR](https://github.com/aws/graph-notebook/pull/242))
+- Added relaxed seed command error handling ([Link to PR](https://github.com/aws/graph-notebook/pull/246))
+- Renamed Gremlin profile query options for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/249))
+- Suppressed default root logger error output ([Link to PR](https://github.com/aws/graph-notebook/pull/248))
+- Fixed Gremlin visualizer bug with handling non-string node IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/245))
+- Fixed error in openCypher Bolt query metadata output ([Link to PR](https://github.com/aws/graph-notebook/pull/255))
 - Fixed handling of Decimal type properties when rendering Gremlin query results ([Link to PR](https://github.com/aws/graph-notebook/pull/256))
 
 ## Release 3.1.1 (December 21, 2021)
