@@ -688,7 +688,7 @@ class PretrainedModels:
 
         print('Endpoint creation complete', end='\r')
         return {
-            'node_classification_endpoint_name': classification_endpoint_name,
-            'node_regression_endpoint_name': regression_endpoint_name,
-            'prediction_endpoint_name': prediction_endpoint_name
+            'object_classification_endpoint_name': classification_endpoint_name,
+            'object_regression_endpoint_name': regression_endpoint_name,
+            'link_prediction_endpoint_name': prediction_endpoint_name
         }
