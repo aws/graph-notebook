@@ -464,38 +464,35 @@ class MovieLensProcessor:
 
         for index, row in ratings_vertices.iterrows():
             uri = urllib.parse.quote_plus(row['~id'])
-
-            if row['~to'] != "movie_225" and row['~to'] != "movie_69" \
-                    and row['~from'] != "user_101" and row['~from'] != "user_601":
+            ratings_graph.add((
+                self.ns_resource[uri], RDF.type, self.ns_ontology.Rating, self.ns_ontology.Rating
+            ))
+            ratings_graph.add((
+                self.ns_resource[uri], self.ns_ontology.score,
+                Literal(row['score:Int'], datatype=XSD.integer),
+                self.ns_ontology.Rating
+            ))
+            ratings_graph.add((
+                self.ns_resource[uri], self.ns_ontology.timestamp, Literal(row['timestamp']),
+                self.ns_ontology.Rating
+            ))
+            ratings_graph.add((
+                self.ns_resource[uri], self.ns_ontology.forMovie, self.ns_resource[row['~to']],
+                self.ns_ontology.Rating
+            ))
+            ratings_graph.add((
+                self.ns_resource[uri], self.ns_ontology.byUser, self.ns_resource[row['~from']],
+                self.ns_ontology.Rating
+            ))
+            if row['score:Int'] > 3:
                 ratings_graph.add((
-                    self.ns_resource[uri], RDF.type, self.ns_ontology.Rating, self.ns_ontology.Rating
-                ))
-                ratings_graph.add((
-                    self.ns_resource[uri], self.ns_ontology.score,
-                    Literal(row['score:Int'], datatype=XSD.integer),
+                    self.ns_resource[row['~from']], self.ns_ontology.recommended, self.ns_resource[row['~to']],
                     self.ns_ontology.Rating
                 ))
                 ratings_graph.add((
-                    self.ns_resource[uri], self.ns_ontology.timestamp, Literal(row['timestamp']),
+                    self.ns_resource[row['~to']], self.ns_ontology.wasRecommendedBy, self.ns_resource[row['~from']],
                     self.ns_ontology.Rating
                 ))
-                ratings_graph.add((
-                    self.ns_resource[uri], self.ns_ontology.forMovie, self.ns_resource[row['~to']],
-                    self.ns_ontology.Rating
-                ))
-                ratings_graph.add((
-                    self.ns_resource[uri], self.ns_ontology.byUser, self.ns_resource[row['~from']],
-                    self.ns_ontology.Rating
-                ))
-                if row['score:Int'] > 3:
-                    ratings_graph.add((
-                        self.ns_resource[row['~from']], self.ns_ontology.recommended, self.ns_resource[row['~to']],
-                        self.ns_ontology.Rating
-                    ))
-                    ratings_graph.add((
-                        self.ns_resource[row['~to']], self.ns_ontology.wasRecommendedBy, self.ns_resource[row['~from']],
-                        self.ns_ontology.Rating
-                    ))
 
         ratings_rdf_file = os.path.join(self.formatted_directory, 'user_movie_ratings.nq')
         averages_graph_file = os.path.join(self.formatted_directory, 'critic_movie_scores.nq')
@@ -517,7 +514,7 @@ class PretrainedModels:
     PRETRAINED_MODEL = {}
 
     def __init__(self):
-        with open('./neptune-ml-pretrained-model-config.json') as f:
+        with open('./neptune-ml-pretrained-rdf-model-config.json') as f:
             config = json.load(f)
             region_name = boto3.session.Session().region_name
             if region_name in ['cn-north-1', 'cn-northwest-1']:
