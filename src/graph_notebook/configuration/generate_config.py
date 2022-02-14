@@ -63,12 +63,14 @@ class GremlinSection(object):
 
 
 class Configuration(object):
-    def __init__(self, host: str, port: int,
+    def __init__(self, host: str, port: int, username:str, password:str,
                  auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT,
                  load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1',
                  sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
         self.host = host
         self.port = port
+        self.username = username
+        self.password = password
         self.ssl = ssl
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
         if "amazonaws.com" in self.host:
@@ -97,6 +99,8 @@ class Configuration(object):
             return {
                 'host': self.host,
                 'port': self.port,
+                'username': self.username,
+                'password': self.password,
                 'ssl': self.ssl,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict()
@@ -110,10 +114,10 @@ class Configuration(object):
         return
 
 
-def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
-                    aws_region: str = 'us-east-1'):
+def generate_config(host, port, username:str, password:str, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
+                     aws_region: str = 'us-east-1'):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region)
+    c = Configuration(host, port, username, password, auth_mode, load_from_s3_arn, use_ssl, aws_region)
     return c
 
 

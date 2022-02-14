@@ -80,10 +80,12 @@ STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
 
 class Client(object):
-    def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
+    def __init__(self, host: str, username:str='', password:str='', port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
                  sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None):
         self.host = host
         self.port = port
+        self.username = username
+        self.password = password
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
@@ -134,15 +136,25 @@ class Client(object):
         else:
             sparql_path = ''
 
+
+
         uri = f'{self._http_protocol}://{self.host}:{self.port}{sparql_path}'
         req = self._prepare_request('POST', uri, data=data, headers=headers)
         res = self._http_session.send(req)
         return res
 
-    def sparql(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
+    def sparql(self, query: str, headers=None, explain: str = '', path: str = '', token=None, auth=False) -> requests.Response:
         if headers is None:
             headers = {}
-
+        
+        if token and auth:
+            headers['Authorization'] = token
+        
+        # if auth and not token:
+        #     print("Not authorized!")
+        #     # return requests.Response()
+        #     # resp.text = 'Not authorized!'
+        #     # return resp
         s = SPARQLWrapper('')
         s.setQuery(query)
         query_type = s.queryType.upper()
@@ -671,6 +683,14 @@ class ClientBuilder(object):
 
     def with_port(self, port: int):
         self.args['port'] = port
+        return ClientBuilder(self.args)
+    
+    def with_username(self, username:str):
+        self.args['username'] = username
+        return ClientBuilder(self.args)
+    
+    def with_password(self, password:str):
+        self.args['password'] = password
         return ClientBuilder(self.args)
 
     def with_sparql_path(self, path: str):

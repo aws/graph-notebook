@@ -221,6 +221,60 @@ Additionally, you should have the following Amazon Web Services credentials avai
 - Default Region
 - Session Token (OPTIONAL. Use if you are using temporary credentials)
 
+## GraphDB With Authentication Compatibility
+
+How I managed to make it work on my machine (highly likely would not work exactly in this way on another machine):
+
+```
+# Setup virtualenv
+python3 -m venv graph_notebook_auth
+cd graph_notebook_auth
+
+# Clone the contents (not the dir) of this repository inside the virutal env created above
+git clone https://github.com/Ontotext-AD/graph-notebook
+
+# Activate virtual env
+source bin/activate
+
+# Install graph-notebook using this command
+python setup.py install --single-version-externally-managed --root=/
+
+# pin specific versions of required dependencies
+pip3 install rdflib==5.0.0
+
+# Install requirements
+pip3 install -r requirements.txt
+
+# Note: if the folder graph-notebook/widgets/nbextension is not present in the lib/python3.8/site-packages/graph_notebook folder of the virtual env, copy it there 
+
+# install and enable the visualization widget
+jupyter nbextension install --py --sys-prefix graph_notebook.widgets
+jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
+
+# copy static html resources
+python -m graph_notebook.static_resources.install
+python -m graph_notebook.nbextensions.install
+
+# start jupyter
+cd to source folder
+python3 -m graph_notebook.start_notebook --notebooks-dir .
+```
+
+### Example GraphDB Config with authentication
+```
+%%graph_notebook_config
+{
+  "host": "localhost",
+  "username": "my_username",
+  "password": "123456",
+  "port": 7200,
+  "ssl": false,
+  "sparql": {
+    "path": "repositories/repo_id"
+  }
+}
+```
+
 These variables must follow a specific naming convention, as listed in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables)
 
 A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).

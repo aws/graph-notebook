@@ -20,7 +20,7 @@ def get_config_from_dict(data: dict) -> Configuration:
                                aws_region=data['aws_region'], sparql_section=sparql_section,
                                gremlin_section=gremlin_section)
     else:
-        config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], sparql_section=sparql_section,
+        config = Configuration(host=data['host'], port=data['port'], username=data['username'], password=data['password'], ssl=data['ssl'], sparql_section=sparql_section,
                                gremlin_section=gremlin_section)
     return config
 
