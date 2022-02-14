@@ -101,7 +101,7 @@ class StreamViewer:
         self.back_button.layout.width = '10%'
         self.back_button.on_click(self.on_back)
         self.dropdown = widgets.Dropdown(options=[STREAM_PG, STREAM_RDF], value=language, disabled=False)
-        self.dropdown.layout.width = '10%'
+        self.dropdown.layout.width = '15%'
         self.dropdown.observe(self.on_dropdown_changed)
         self.out = widgets.Output()
         self.ui = widgets.HBox([self.slider, self.back_button, self.next_button, self.dropdown])
