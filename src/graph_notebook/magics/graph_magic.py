@@ -33,7 +33,7 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -227,9 +227,9 @@ class Graph(Magics):
     @line_magic
     def stream_viewer(self,line):
         parser = argparse.ArgumentParser()
-        parser.add_argument('language', type=str.lower, nargs='?', default='gremlin',
-                            help='language  (default=gremlin) [gremlin|sparql]',
-                            choices = ['gremlin','sparql'])
+        parser.add_argument('language', nargs='?', default=STREAM_PG,
+                            help=f'language  (default={STREAM_PG}) [{STREAM_PG}|{STREAM_RDF}]',
+                            choices = [STREAM_PG, STREAM_RDF])
 
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
