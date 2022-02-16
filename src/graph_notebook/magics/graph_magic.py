@@ -330,13 +330,11 @@ class Graph(Magics):
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
             query_res.raise_for_status()
-            results = query_res.json()
-            store_to_ns(args.store_to, results, local_ns)
             try:
-                res = query_res.json()
-            except JSONDecodeError:
-                res = query_res.content.decode('utf-8')
-            store_to_ns(args.store_to, res, local_ns)
+                results = query_res.json()
+            except Exception:
+                results = query_res.content.decode('utf-8')
+            store_to_ns(args.store_to, results, local_ns)
 
             if not args.silent:
                 # Assign an empty value so we can always display to table output.
