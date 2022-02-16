@@ -269,7 +269,7 @@ class Graph(Magics):
         parser.add_argument('--expand-all', action='store_true')
         parser.add_argument('--explain-type', default='dynamic',
                             help='explain mode to use when using the explain query mode',
-                            choices=['dynamic', 'static', 'details', 'debug'])
+                            choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-g', '--group-by', type=str, default='',
