@@ -236,7 +236,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def opencypher_http(self, query: str, headers: dict = None) -> requests.Response:
+    def opencypher_http(self, query: str, headers: dict = None, explain: str = None) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -247,6 +247,9 @@ class Client(object):
         data = {
             'query': query
         }
+        if explain:
+            data['explain'] = explain
+            headers['Accept'] = "text/html"
 
         req = self._prepare_request('POST', url, data=data, headers=headers)
         res = self._http_session.send(req)

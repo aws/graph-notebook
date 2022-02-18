@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function  # Python 2/3 compatibility
 
 import argparse
+import base64
 import logging
 import json
 import time
@@ -50,6 +51,8 @@ sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
 gremlin_table_template = retrieve_template("gremlin_table.html")
 opencypher_table_template = retrieve_template("opencypher_table.html")
+opencypher_explain_template = retrieve_template("opencypher_explain.html")
+gremlin_explain_profile_template = retrieve_template("gremlin_explain_profile.html")
 pre_container_template = retrieve_template("pre_container.html")
 loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
@@ -322,7 +325,9 @@ class Graph(Magics):
             if not args.silent:
                 sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
                 titles.append('Explain')
-                first_tab_html = sparql_explain_template.render(table=explain)
+                explain_bytes = explain.encode('ascii')
+                base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                first_tab_html = sparql_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -536,7 +541,9 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
                 titles.append('Explain')
                 if 'Neptune Gremlin Explain' in query_res:
-                    first_tab_html = pre_container_template.render(content=query_res)
+                    explain_bytes = query_res.encode('ascii')
+                    base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
@@ -559,7 +566,9 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
                 titles.append('Profile')
                 if 'Neptune Gremlin Profile' in query_res:
-                    first_tab_html = pre_container_template.render(content=query_res)
+                    explain_bytes = query_res.encode('ascii')
+                    base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
@@ -1664,14 +1673,17 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
+        parser.add_argument('--explain-type', default='dynamic',
+                            help='explain mode to use when using the explain query mode',
+                            choices=['dynamic', 'static', 'details', 'debug'])
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
                             help="Group nodes based on path hierarchy")
         parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
                             help="Group nodes by the raw result")
-        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
-                            choices=['query', 'bolt'])
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt|explain]',
+                            choices=['query', 'bolt', 'explain'])
         parser.add_argument('-d', '--display-property', type=str, default='~labels',
                             help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-de', '--edge-display-property', type=str, default='~labels',
@@ -1711,8 +1723,22 @@ class Graph(Magics):
             titles = []
             children = []
             force_graph_output = None
+            explain_html = ""
 
-        if args.mode == 'query':
+        if args.mode == 'explain':
+            query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
+            res = self.client.opencypher_http(cell, explain=args.explain_type)
+            query_time = time.time() * 1000 - query_start
+            explain = res.content.decode("utf-8")
+            res.raise_for_status()
+            ##store_to_ns(args.store_to, explain, local_ns)
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
+                                                                   query_time=query_time)
+                explain_bytes = explain.encode('utf-8')
+                base64_str = base64.b64encode(explain_bytes).decode('utf-8')
+                explain_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+        elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
@@ -1751,35 +1777,44 @@ class Graph(Magics):
             # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
-            rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
+            rows_and_columns = None
+            if args.mode != "explain":
+                rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
+
             display(tab)
-            table_output = widgets.Output(layout=oc_layout)
+            first_tab_output = widgets.Output(layout=oc_layout)
             # Assign an empty value so we can always display to table output.
             table_html = ""
 
             # Display Console Tab
             # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([table_output], layout=oc_layout)
+            hbox = widgets.HBox([first_tab_output], layout=oc_layout)
             children.append(hbox)
-            titles.append('Console')
             if rows_and_columns is not None:
+                titles.append('Console')
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
                 visible_results = results_per_page_check(args.results_per_page)
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id,
-                                                              amount=visible_results)
+                                                                  rows=rows_and_columns['rows'], guid=table_id,
+                                                                  amount=visible_results)
 
             # Display Graph Tab (if exists)
-            if force_graph_output:
-                titles.append('Graph')
-                children.append(force_graph_output)
+            if explain_html != "":
+                titles.append('Explain')
+                with first_tab_output:
+                    display(HTML(explain_html))
+            else:
+                # Display Graph Tab (if exists)
+                if force_graph_output:
+                    titles.append('Graph')
+                    children.append(force_graph_output)
 
-            # Display JSON tab
-            json_output = widgets.Output(layout=oc_layout)
-            with json_output:
-                print(json.dumps(res, indent=2))
-            children.append(json_output)
-            titles.append('JSON')
+                # Display JSON tab
+                json_output = widgets.Output(layout=oc_layout)
+                with json_output:
+                    print(json.dumps(res, indent=2))
+                children.append(json_output)
+                titles.append('JSON')
 
             # Display Query Metadata Tab
             metadata_output = widgets.Output(layout=oc_layout)
@@ -1791,7 +1826,7 @@ class Graph(Magics):
                 tab.set_title(i, titles[i])
 
             if table_html != "":
-                with table_output:
+                with first_tab_output:
                     display(HTML(table_html))
 
             with metadata_output:
