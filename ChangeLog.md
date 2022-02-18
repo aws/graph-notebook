@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Changed the `%stream_viewer` magic to use `PropertyGraph` and `RDF` as the stream types. This better aligns with Gremlin and openCypher sharing the `PropertyGraph` stream. ([Link to PR](https://github.com/aws/graph-notebook/pull/261))
 - Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
 - Added grouping by depth for Gremlin and openCypher queries ([PR #1](https://github.com/aws/graph-notebook/pull/241))([PR #2](https://github.com/aws/graph-notebook/pull/251))
 - Added grouping by raw node results ([Link to PR](https://github.com/aws/graph-notebook/pull/253))
