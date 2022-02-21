@@ -101,6 +101,7 @@ You will need:
 ```
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
+pip install markupsafe==2.0.1
 
 # install the package
 pip install graph-notebook
