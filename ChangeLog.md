@@ -17,6 +17,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed Gremlin visualizer bug with handling non-string node IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/245))
 - Fixed error in openCypher Bolt query metadata output ([Link to PR](https://github.com/aws/graph-notebook/pull/255))
 - Fixed handling of Decimal type properties when rendering Gremlin query results ([Link to PR](https://github.com/aws/graph-notebook/pull/256))
+- Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
 
 ## Release 3.1.1 (December 21, 2021)
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
