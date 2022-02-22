@@ -12,6 +12,7 @@ import time
 import datetime
 import os
 import uuid
+from ipyfilechooser import FileChooser
 from enum import Enum
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
@@ -1479,12 +1480,8 @@ class Graph(Magics):
             layout=widgets.Layout(display='none')
         )
 
-        seed_file_location = widgets.Text(
-            placeholder='path/to/seedfile',
-            description='File path:',
-            disabled=False,
-            layout=widgets.Layout(display='none')
-        )
+        seed_file_location = FileChooser()
+        seed_file_location.layout.display = 'none'
 
         submit_button = widgets.Button(description="Submit")
         model_dropdown.layout.visibility = 'hidden'
@@ -1536,21 +1533,24 @@ class Graph(Magics):
             submit_button.layout.visibility = 'visible'
             return
 
-        def on_button_clicked(b=None):
+        def on_button_clicked(b=None, filename=None):
             submit_button.close()
             source_dropdown.disabled = True
             model_dropdown.disabled = True
             data_set_drop_down.disabled = True
             seed_file_location.disabled = True
 
-            if language_dropdown.value and seed_file_location.value:
+            if not filename:
+                filename = seed_file_location.value
+
+            if language_dropdown.value and filename:
                 model = normalize_model_name(language_dropdown.value)
             else:
                 model = normalize_model_name(model_dropdown.value)
             if source_dropdown.value == 'Samples':
                 data_set = data_set_drop_down.value.lower()
             else:
-                data_set = seed_file_location.value
+                data_set = filename
             with output:
                 print(f'Loading data set {data_set} for {model}')
             queries = get_queries(model, data_set, source_dropdown.value)
@@ -1725,9 +1725,14 @@ class Graph(Magics):
             elif args.language != '':
                 language_dropdown.value = args.language
                 if args.file != '' and args.source_type == 'Custom':
-                    seed_file_location.value = args.file
+                    '''
+                    seed_file_location._selected_path = args.file
+                    seed_file_location._filename.value = args.file
+                    seed_file_location._apply_selection()
+                    '''
+                    arg_filename = args.file
                     if args.run:
-                        on_button_clicked()
+                        on_button_clicked(filename=arg_filename)
 
     @line_magic
     def enable_debug(self, line):
