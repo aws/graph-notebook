@@ -3,7 +3,8 @@ import json
 import ipywidgets as widgets
 import queue
 from IPython.display import display, HTML
-from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,STREAM_EXCEPTION_NOT_ENABLED
+from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,\
+                                          STREAM_EXCEPTION_NOT_ENABLED, STREAM_PG, STREAM_RDF, STREAM_ENDPOINTS
 
 
 class EventId:
@@ -99,8 +100,8 @@ class StreamViewer:
         self.back_button = widgets.Button(description='Back', tooltip='Back', disabled=True)
         self.back_button.layout.width = '10%'
         self.back_button.on_click(self.on_back)
-        self.dropdown = widgets.Dropdown(options=['gremlin', 'sparql'], value=language, disabled=False)
-        self.dropdown.layout.width = '10%'
+        self.dropdown = widgets.Dropdown(options=[STREAM_PG, STREAM_RDF], value=language, disabled=False)
+        self.dropdown.layout.width = '15%'
         self.dropdown.observe(self.on_dropdown_changed)
         self.out = widgets.Output()
         self.ui = widgets.HBox([self.slider, self.back_button, self.next_button, self.dropdown])
@@ -159,6 +160,8 @@ class StreamViewer:
             self.last_displayed_event_id.update(last_event)
             
     def init_display(self, language):
+        # Map the selected stream type to the actual endpoint name
+        language = STREAM_ENDPOINTS[language] 
         self.history = queue.LifoQueue(100)
         self.back_button.disabled = True
         self.update_slider_min_max_values(language)

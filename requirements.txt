@@ -17,6 +17,7 @@ setuptools~=40.6.2
 nbconvert<6
 jedi<0.18.0
 ipyfilechooser==0.6.0
+markupsafe<2.1.0
 
 # requirements for testing
 botocore~=1.18.18

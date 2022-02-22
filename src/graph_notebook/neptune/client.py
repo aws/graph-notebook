@@ -72,11 +72,21 @@ EXPORT_ACTION = 'neptune-export'
 EXTRA_HEADERS = {'content-type': 'application/json'}
 SPARQL_ACTION = 'sparql'
 
+# Constants used by the Stream Viewer.
 STREAM_AT = 'AT_SEQUENCE_NUMBER'
 STREAM_AFTER = 'AFTER_SEQUENCE_NUMBER'
 STREAM_TRIM = 'TRIM_HORIZON'
+STREAM_LATEST = 'LATEST'
 STREAM_EXCEPTION_NOT_FOUND = 'StreamRecordsNotFoundException'
 STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
+
+# A mapping from the name in the stream_viewer widget dropdown, to the actual Neptune
+# Streams endpoint (API) name. We do not map 'PropertyGraph' to 'pg' to maintain
+# compatability with older engine releases that did not have a 'pg' endpoint.
+
+STREAM_PG = 'PropertyGraph'
+STREAM_RDF = 'RDF'
+STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
 
 class Client(object):
@@ -236,7 +246,7 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def opencypher_http(self, query: str, headers: dict = None) -> requests.Response:
+    def opencypher_http(self, query: str, headers: dict = None, explain: str = None) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -247,6 +257,9 @@ class Client(object):
         data = {
             'query': query
         }
+        if explain:
+            data['explain'] = explain
+            headers['Accept'] = "text/html"
 
         req = self._prepare_request('POST', url, data=data, headers=headers)
         res = self._http_session.send(req)
