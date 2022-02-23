@@ -1480,6 +1480,12 @@ class Graph(Magics):
             layout=widgets.Layout(display='none')
         )
 
+        seed_file_location_text = widgets.Text(
+            placeholder='path/to/seedfiles/directory',
+            description='Directory:',
+            disabled=False
+        )
+
         seed_file_location = FileChooser()
         seed_file_location.layout.display = 'none'
 
@@ -1487,10 +1493,18 @@ class Graph(Magics):
         model_dropdown.layout.visibility = 'hidden'
         language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
+        seed_file_location_text.layout.visibility = 'hidden'
         seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
 
+        def reset_seedfile_textbox():
+            seed_file_location_text.layout.visibility = 'hidden'
+            seed_file_location_text.layout.display = 'none'
+            seed_file_location_text.value = ''
+
         def on_source_value_change(change):
+            reset_seedfile_textbox()
+            submit_button.layout.visibility = 'hidden'
             selected_source = change['new']
             if selected_source == 'Custom':
                 data_set_drop_down.value = None
@@ -1528,31 +1542,50 @@ class Graph(Magics):
             return
 
         def on_language_value_change(change):
-            seed_file_location.layout.visibility = 'visible'
-            seed_file_location.layout.display = 'flex'
-            submit_button.layout.visibility = 'visible'
+            # Preserve the value/state of the text/selector widget if it's already rendered
+            # Otherwise, display the default selector widget (file browser)
+            if not seed_file_location_text.value and seed_file_location_text.layout.visibility == 'hidden':
+                seed_file_location.layout.visibility = 'visible'
+                seed_file_location.layout.display = 'flex'
+                submit_button.layout.visibility = 'visible'
             return
 
-        def on_button_clicked(b=None, filename=None):
-            submit_button.close()
+        def on_seedfile_value_change(change):
+            if seed_file_location.value or seed_file_location_text.value:
+                submit_button.layout.visibility = 'visible'
+            else:
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def disable_seed_widgets():
             source_dropdown.disabled = True
             model_dropdown.disabled = True
             data_set_drop_down.disabled = True
+            seed_file_location_text.disabled = True
             seed_file_location.disabled = True
+            submit_button.close()
 
-            if not filename:
-                filename = seed_file_location.value
-
-            if language_dropdown.value and filename:
-                model = normalize_model_name(language_dropdown.value)
-            else:
-                model = normalize_model_name(model_dropdown.value)
+        def on_button_clicked(b=None):
+            filename = None
             if source_dropdown.value == 'Samples':
                 data_set = data_set_drop_down.value.lower()
             else:
+                if seed_file_location_text.value:
+                    filename = seed_file_location_text.value
+                elif seed_file_location.value:
+                    filename = seed_file_location.value
+                else:
+                    return
                 data_set = filename
+            disable_seed_widgets()
+            if language_dropdown.value and filename:
+                model = normalize_model_name(language_dropdown.value)
+                loading_msg_model = language_dropdown.value
+            else:
+                model = normalize_model_name(model_dropdown.value)
+                loading_msg_model = model
             with output:
-                print(f'Loading data set {data_set} for {model}')
+                print(f'Loading data set {data_set} for {loading_msg_model}')
             queries = get_queries(model, data_set, source_dropdown.value)
             if len(queries) < 1:
                 with output:
@@ -1711,9 +1744,10 @@ class Graph(Magics):
         source_dropdown.observe(on_source_value_change, names='value')
         model_dropdown.observe(on_model_value_change, names='value')
         language_dropdown.observe(on_language_value_change, names='value')
+        seed_file_location_text.observe(on_seedfile_value_change, names='value')
 
         display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, seed_file_location,
-                submit_button, progress_output, output)
+                seed_file_location_text, submit_button, progress_output, output)
         if args.source_type != '':
             source_dropdown.value = args.source_type
             if args.model != '':
@@ -1725,14 +1759,13 @@ class Graph(Magics):
             elif args.language != '':
                 language_dropdown.value = args.language
                 if args.file != '' and args.source_type == 'Custom':
-                    '''
-                    seed_file_location._selected_path = args.file
-                    seed_file_location._filename.value = args.file
-                    seed_file_location._apply_selection()
-                    '''
-                    arg_filename = args.file
+                    seed_file_location_text.value = args.file
+                    seed_file_location_text.layout.visibility = 'visible'
+                    seed_file_location_text.layout.display = 'flex'
+                    seed_file_location.layout.visibility = 'hidden'
+                    seed_file_location.layout.display = 'none'
                     if args.run:
-                        on_button_clicked(filename=arg_filename)
+                        on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):
