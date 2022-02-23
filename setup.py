@@ -85,7 +85,8 @@ setup(
         'ipykernel==5.3.4',
         'nbconvert==5.6.1',
         'jedi<0.18.0',
-        'ipyfilechooser==0.6.0'
+        'ipyfilechooser==0.6.0',
+        'markupsafe<2.1.0'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',

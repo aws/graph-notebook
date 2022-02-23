@@ -218,7 +218,7 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
 
 
 def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
-    if query_type == 'bolt':
+    if query_type in ['bolt', 'explain']:
         res_final = results
     else:
         res_final = results['results']
@@ -230,6 +230,7 @@ def build_opencypher_metadata_from_query(query_type: str, results: any, res: Res
 def build_propertygraph_metadata_from_default_query(results: any, query_type: str = 'query', query_time: float = None) -> Metadata:
     propertygraph_metadata = create_propertygraph_metadata_obj(query_type)
     propertygraph_metadata.set_metric_value('request_time', query_time)
-    propertygraph_metadata.set_metric_value('resp_size', sys.getsizeof(results))
-    propertygraph_metadata.set_metric_value('results', len(results))
+    if query_type != 'explain':
+        propertygraph_metadata.set_metric_value('resp_size', sys.getsizeof(results))
+        propertygraph_metadata.set_metric_value('results', len(results))
     return propertygraph_metadata
