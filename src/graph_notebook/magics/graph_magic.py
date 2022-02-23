@@ -1567,6 +1567,7 @@ class Graph(Magics):
         def disable_seed_widgets():
             source_dropdown.disabled = True
             model_dropdown.disabled = True
+            language_dropdown.disabled = True
             data_set_drop_down.disabled = True
             seed_file_location_text.disabled = True
             seed_file_location.disabled = True
