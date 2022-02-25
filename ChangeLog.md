@@ -3,6 +3,9 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.2.0 (February 25, 2021)
+- Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
 - Added the ability to run explain plans to openCypher queries via `%%oc explain`. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
 - Added the ability to download the explain/profile plans for openCypher/Gremlin/SPARQL. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
 - Changed the `%stream_viewer` magic to use `PropertyGraph` and `RDF` as the stream types. This better aligns with Gremlin and openCypher sharing the `PropertyGraph` stream. ([Link to PR](https://github.com/aws/graph-notebook/pull/261))
@@ -17,7 +20,6 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed Gremlin visualizer bug with handling non-string node IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/245))
 - Fixed error in openCypher Bolt query metadata output ([Link to PR](https://github.com/aws/graph-notebook/pull/255))
 - Fixed handling of Decimal type properties when rendering Gremlin query results ([Link to PR](https://github.com/aws/graph-notebook/pull/256))
-- Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
 
 ## Release 3.1.1 (December 21, 2021)
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
