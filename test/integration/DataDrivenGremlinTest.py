@@ -15,7 +15,7 @@ class DataDrivenGremlinTest(IntegrationTest):
         super().setUp()
 
         self.client = self.client_builder.build()
-        query_check_for_airports = "g.V('3684').outE().inV().has(id, '3444')"
+        query_check_for_airports = "g.V('3745').outE().inV().has(id, '3195')"
         res = self.client.gremlin_query(query_check_for_airports)
         if len(res) < 1:
             logging.info('did not find final airports edge, seeding database now...')
