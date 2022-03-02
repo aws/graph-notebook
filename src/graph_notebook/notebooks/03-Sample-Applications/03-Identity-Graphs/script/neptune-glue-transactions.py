@@ -54,7 +54,7 @@ datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database,
 
 applymapping1 = ApplyMapping.apply(frame = datasource0, mappings = [("transaction_id", "string", "transaction_id:String", "string"), 
     ("user_id", "string", "user_id:String", "string"), ("product_id", "string", "product_id:String", "string"), 
-    ("product_name", "string", "product_name:String", "string"), ("purchased_date", "string", "purchased_date:String","string")], transformation_ctx = "applymapping1")
+    ("product_name", "string", "product_name:String", "string"), ("purchased_date", "string", "purchased_date:String","string"),("review", "string", "review:String","string")], transformation_ctx = "applymapping1")
 
 # 3. create product vertices
 
@@ -68,6 +68,14 @@ userToProductMapping = SelectFields.apply(frame = applymapping1, paths = ["user_
 userToProductMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToProductMapping, [('~from', 'user_id:String','user'),('~to', 'product_id:String','product')])
 userToProductMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToProductMapping, '~from', '~to')
 userToProductMapping.toDF().foreachPartition(gremlin_client.upsert_edges('purchased', batch_size=100))
+
+
+# 5. create user to review edges
+
+# userToReviewMapping = SelectFields.apply(frame = applymapping1, paths = ["user_id:String","product_id:String","review:String"], transformation_ctx = "userToReviewMapping")
+# userToReviewMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToReviewMapping, [('~from', 'user_id:String','user'),('~to', 'product_id:String','productreview'),('sentiment', 'review:String','review')])
+# userToReviewMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToReviewMapping, '~from', '~to')
+# userToReviewMapping.toDF().foreachPartition(gremlin_client.upsert_edges('reviewed', batch_size=100))
 
 
 # End

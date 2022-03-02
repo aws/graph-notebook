@@ -7,6 +7,7 @@ from awsglue.job import Job
 from awsglue.transforms import ApplyMapping
 from awsglue.transforms import RenameField
 from awsglue.transforms import SelectFields
+from awsglue.transforms import Filter
 from awsglue.dynamicframe import DynamicFrame
 from pyspark.sql.functions import lit
 from pyspark.sql.functions import format_string
@@ -93,9 +94,12 @@ useragentDF.toDF().foreachPartition(gremlin_client.upsert_vertices('UserAgent', 
 # 7. create session to user edges
 
 userToSessionMapping = SelectFields.apply(frame = applymapping1, paths = ["user_id:String","session_id:String",'session_start:String'], transformation_ctx = "userToSessionMapping")
+#fetch records with valid user ids 
+userToSessionMapping = Filter.apply(frame = userToSessionMapping, f = lambda x: x["user_id:String"] not in [""])
 userToSessionMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToSessionMapping, [('~to', 'user_id:String','user'),('~from', 'session_id:String','session_id'),('session_start', 'session_start:String','session_start')])
 userToSessionMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToSessionMapping, '~from', '~to')
 userToSessionMapping.toDF().foreachPartition(gremlin_client.upsert_edges('linkedTo', batch_size=100))
+
 
 # 7.1 create session to user_agent mapping
 
