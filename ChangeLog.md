@@ -4,7 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-## Release 3.2.0 (February 25, 2021)
+## Release 3.2.0 (February 25, 2022)
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
 - Added the ability to run explain plans to openCypher queries via `%%oc explain`. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
 - Added the ability to download the explain/profile plans for openCypher/Gremlin/SPARQL. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
