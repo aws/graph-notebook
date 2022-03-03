@@ -144,7 +144,7 @@ class TestOpenCypherStatusWithoutIam(DataDrivenOpenCypherTest):
         assert 'd' in query_res['result']['head']['vars']
         assert [] == query_res['result']['results']['bindings']
 
-    def test_do_gremlin_status_include_waiting(self):
+    def test_do_opencypher_status_include_waiting(self):
         query = '''MATCH(a)-->(b)-->(c)-->(d)-->(e)
                     RETURN a,b,c,d,e'''
 
