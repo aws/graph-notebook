@@ -320,14 +320,17 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
-            explain = res.content.decode('utf-8')
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            explain = explain_bytes.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
                 titles.append('Explain')
-                explain_bytes = explain.encode('ascii')
+                explain_bytes = explain.encode('ascii', 'ignore')
                 base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                first_tab_html = sparql_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = sparql_explain_template.render(table=explain,
+                                                                link=f"data:text/html;base64,{base64_str}")
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -536,14 +539,18 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            # Replace strikethrough character bytes, can't be encoded to ASCII
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            query_res = explain_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
                 titles.append('Explain')
                 if 'Neptune Gremlin Explain' in query_res:
-                    explain_bytes = query_res.encode('ascii')
+                    explain_bytes = query_res.encode('ascii', 'ignore')
                     base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
@@ -561,14 +568,17 @@ class Graph(Magics):
                             "profile.indexOps": args.profile_indexOps}
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            profile_bytes = res.content.replace(b'\xcc', b'-')
+            profile_bytes = profile_bytes.replace(b'\xb6', b'')
+            query_res = profile_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
                 titles.append('Profile')
                 if 'Neptune Gremlin Profile' in query_res:
-                    explain_bytes = query_res.encode('ascii')
+                    explain_bytes = query_res.encode('ascii', 'ignore')
                     base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
