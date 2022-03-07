@@ -10,31 +10,31 @@ from setupbase import (
     combine_commands, HERE, widgets_root
 )
 
-nb_path = pjoin(HERE, 'src', 'graph_notebook', 'widgets', 'nbextension', 'static')
-lab_path = pjoin(HERE, 'src', 'graph_notebook', 'widgets', 'labextension')
+nb_path = pjoin(widgets_root, 'nbextension')
+lab_path = pjoin(widgets_root, 'labextension')
 
 js_targets = [
     pjoin(nb_path, 'index.js'),
-    pjoin(HERE, 'src', 'graph_notebook', 'widgets', 'lib', 'plugin.d.ts')
+    pjoin(lab_path, 'package.json')
 ]
 
 package_data_spec = {
     'graph_notebook_widgets': [
-        'nbextension/static/*.*js*',
-        'labextension/*.tgz'
+        'nbextension/**js*',
+        'labextension/**'
     ]
 }
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/graph_notebook_widgets',
-     nb_path, '*.js*'),
-    ('share/jupyter/lab/extensions', lab_path, '*.tgz'),
+    ('share/jupyter/nbextensions/graph_notebook_widgets', nb_path, '**'),
+    ('share/jupyter/labextensions/graph_notebook_widgets', lab_path, '**'),
+    ('share/jupyter/labextensions/graph_notebook_widgets', HERE, 'install.json'),
     ('etc/jupyter/nbconfig/notebook.d', HERE, 'graph_notebook_widgets.json')
 ]
 
 cmd_class = create_cmdclass('jsdeps', package_data_spec=package_data_spec, data_files_spec=data_files_spec)
 cmd_class['jsdeps'] = combine_commands(
-    install_npm(widgets_root, build_cmd='build:all'),
+    install_npm(widgets_root, build_cmd='build:prod'),
     ensure_targets(js_targets),
 )
 
@@ -88,8 +88,8 @@ setup(
         'markupsafe<2.1.0'
     ],
     package_data={
-        'graph_notebook': ['graph_notebook/widgets/nbextensions/static/*.js',
-                           'graph_notebook/widgets/labextension/*.tgz'],
+        'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
+                           'graph_notebook/widgets/labextension/**'],
         '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
     },
     cmdclass=cmd_class,
