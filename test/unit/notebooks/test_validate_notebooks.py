@@ -51,8 +51,6 @@ class TestValidateAllNotebooks(unittest.TestCase):
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
-        print(notebook_paths)
-        print(len(notebook_paths))
 
         self.assertEqual(len(expected_paths), len(notebook_paths))
         for i in range(len(expected_paths)):
