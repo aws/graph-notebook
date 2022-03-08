@@ -27,7 +27,7 @@ jobs:
       - name: Install
         run: |
           python setup.py bdist_wheel
-          pip install ./dist/graph_notebook-3.2.0-py3-none-any.whl
+          pip install ./dist/graph_notebook-*-py3-none-any.whl
       - name: Post-install commands
         run: |
           jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
