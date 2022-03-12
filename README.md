@@ -121,8 +121,11 @@ python -m graph_notebook.notebooks.install --destination ~/notebook/destination/
 mkdir ~/.jupyter/nbconfig
 touch ~/.jupyter/nbconfig/notebook.json
 
-# start jupyter
+# start with jupyter classic notebook
 python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
+
+# start with jupyterlab (>3.2.0 ONLY)
+python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
 ```
 
 ## Connecting to a graph database
