@@ -292,7 +292,7 @@ class MovieLensProcessor:
         if not os.path.exists(f'{HOME_DIRECTORY}/data/formatted'):
             os.makedirs(f'{HOME_DIRECTORY}/data/formatted')
         # Download the MovieLens dataset
-        url = 'http://files.grouplens.org/datasets/movielens/ml-100k.zip'
+        url = 'https://files.grouplens.org/datasets/movielens/ml-100k.zip'
         r = requests.get(url, allow_redirects=True)
         open(os.path.join(self.raw_directory, 'ml-100k.zip'), 'wb').write(r.content)
 
