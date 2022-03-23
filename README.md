@@ -107,7 +107,7 @@ pip install markupsafe==2.0.1
 pip install graph-notebook
 
 # install and enable the visualization widget
-jupyter nbextension install --py --sys-prefix graph_notebook.widgets
+jupyter nbextension install --py --sys-prefix graph_notebook.widgets # Run this line only if graph-notebook<=3.2.0
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 # copy static html resources
@@ -225,6 +225,45 @@ Additionally, you should have the following Amazon Web Services credentials avai
 These variables must follow a specific naming convention, as listed in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables)
 
 A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+
+## Building From Source
+
+A pre-release distribution can be built from the graph-notebook repository via the following steps:
+
+```
+# Clone the repository and navigate to it
+git clone https://github.com/aws/graph-notebook.git
+cd graph-notebook
+
+# Create a new virtual environment
+pyenv install 3.9.7  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.9.7 build-graph-notebook
+pyenv local build-graph-notebook
+
+# Install build dependencies
+pip install --upgrade pip setuptools wheel twine
+pip install jupyterlab>=3
+
+# Build the distribution
+python3 setup.py bdist_wheel
+```
+
+You should now be able to find the built distribution at
+
+`./dist/graph_notebook-3.2.0-py3-none-any.whl`
+
+And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
+
+```
+pip install graph-notebook
+```
+
+with
+
+```
+pip install ./dist/graph_notebook-3.2.0-py3-none-any.whl
+```
+
 
 ## Contributing Guidelines
 
