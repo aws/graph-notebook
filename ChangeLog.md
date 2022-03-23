@@ -3,6 +3,10 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
+- Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
+- Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
+- Fixed integration tests to address updated air routes data and other changes ([Link to PR](https://github.com/aws/graph-notebook/pull/270))
 
 ## Release 3.2.0 (February 25, 2022)
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
