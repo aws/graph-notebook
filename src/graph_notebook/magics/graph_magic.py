@@ -1454,22 +1454,19 @@ class Graph(Magics):
         or a directory containing multiple of these files.
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--source-type', type=str, default='', choices=SOURCE_OPTIONS,
-                            help='Specifies whether you want to load from a provided sample dataset, or a local '
-                                 'file/directory. Accepted values: samples, custom')
-        parser.add_argument('--model', type=str, default='', choices=SEED_MODEL_OPTIONS,
-                            help='NOTE: This option is only valid if source_type is "Samples". '
+        parser.add_argument('--model', type=str.lower, default='', choices=SEED_MODEL_OPTIONS,
+                            help='NOTE: This option is only valid if source_type is "samples". '
                                  'Specifies what data model you would like to load for. '
                                  'Accepted values: property_graph, rdf')
-        parser.add_argument('--language', type=str, default='', choices=SEED_LANGUAGE_OPTIONS,
-                            help='NOTE: This option is only valid if source_type is "Custom". '
+        parser.add_argument('--language', type=str.lower, default='', choices=SEED_LANGUAGE_OPTIONS,
+                            help='NOTE: This option is only valid if source_type is "custom". '
                                  'Specifies what language you would like to load for. '
                                  'Accepted values: gremlin, sparql, cypher')
         parser.add_argument('--dataset', type=str, default='',
-                            help='NOTE: This option is only valid if source_type is "Samples". '
+                            help='NOTE: This option is only valid if source_type is "samples". '
                                  'Specifies what sample dataset you would like to load.')
         parser.add_argument('--source', type=str, default='',
-                            help='NOTE: This option is only valid if source_type is "Custom". '
+                            help='NOTE: This option is only valid if source_type is "custom". '
                                  'Specifies the full path to a local file or directory that you would like to '
                                  'load from.')
         # TODO: Gremlin api paths are not yet supported.
@@ -1597,7 +1594,7 @@ class Graph(Magics):
 
         def on_button_clicked(b=None):
             filename = None
-            if source_dropdown.value == 'Samples':
+            if source_dropdown.value == 'samples':
                 data_set = data_set_drop_down.value.lower()
             else:
                 if seed_file_location_text.value:
@@ -1778,36 +1775,26 @@ class Graph(Magics):
 
         display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, seed_file_location,
                 seed_file_location_text, submit_button, progress_output, output)
-        if args.source != '' and not args.source_type:
+
+        if args.source != '' or args.language != '':
             source_dropdown.value = 'custom'
-            seed_file_location_text.value = args.source
-            seed_file_location_text.layout.visibility = 'visible'
-            seed_file_location_text.layout.display = 'flex'
-            seed_file_location.layout.visibility = 'hidden'
-            seed_file_location.layout.display = 'none'
             if args.language != '':
                 language_dropdown.value = args.language.lower()
+            if args.source != '':
+                seed_file_location_text.value = args.source
+                seed_file_location_text.layout.visibility = 'visible'
+                seed_file_location_text.layout.display = 'flex'
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+            if seed_file_location_text.value and language_dropdown.value and args.run:
+                on_button_clicked()
+        elif args.model.lower() != '':
+            source_dropdown.value = 'samples'
+            model_dropdown.value = args.model.lower()
+            if args.dataset != '' and args.dataset in data_set_drop_down.options:
+                data_set_drop_down.value = args.dataset.lower()
                 if args.run:
                     on_button_clicked()
-        elif args.source_type != '':
-            source_dropdown.value = args.source_type.lower()
-            if args.model.lower() != '':
-                model_dropdown.value = args.model.lower()
-                if args.dataset != '' and args.source_type.lower() == 'samples' and \
-                        args.dataset in data_set_drop_down.options:
-                    data_set_drop_down.value = args.dataset.lower()
-                    if args.run:
-                        on_button_clicked()
-            elif args.language != '':
-                language_dropdown.value = args.language.lower()
-                if args.source != '' and args.source_type.lower() == 'custom':
-                    seed_file_location_text.value = args.source
-                    seed_file_location_text.layout.visibility = 'visible'
-                    seed_file_location_text.layout.display = 'flex'
-                    seed_file_location.layout.visibility = 'hidden'
-                    seed_file_location.layout.display = 'none'
-                    if args.run:
-                        on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):

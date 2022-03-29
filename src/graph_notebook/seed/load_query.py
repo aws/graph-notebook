@@ -31,7 +31,7 @@ def file_to_query(file, path_to_data_sets):
 
 # returns a list of queries which correspond to a given query language and name
 def get_queries(model, name, location):
-    if location == 'Samples':
+    if location == 'samples':
         d = os.path.dirname(os.path.realpath(__file__))
         path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
     else:
