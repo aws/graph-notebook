@@ -2,7 +2,7 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
-## Upcoming
+## Release 3.2.1 (March 28, 2022)
 - Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
 - Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
 - Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
