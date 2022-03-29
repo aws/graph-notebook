@@ -7,6 +7,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
 - Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
 - Fixed integration tests to address updated air routes data and other changes ([Link to PR](https://github.com/aws/graph-notebook/pull/270))
+- Bump jinja2 from 2.10.1 to 3.0.3 ([Link to PR](https://github.com/aws/graph-notebook/pull/283))
 
 ## Release 3.2.0 (February 25, 2022)
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
