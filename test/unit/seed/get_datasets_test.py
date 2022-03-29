@@ -17,12 +17,12 @@ class TestGetDataSets(unittest.TestCase):
     def test_get_sample_queries_gremlin(self):
         language = 'gremlin'
         name = 'airports'
-        location = 'Samples'
+        location = 'samples'
         queries = get_queries(language, name, location)
         self.assertEqual(3, len(queries))
         self.assertEqual('0_nodes.txt', queries[0]['name'])
 
-    def test_get_custom_queries_gremlin(self):
+    def test_get_custom_queries_from_directory_gremlin(self):
         language = ''
         name = 'local_seed_test_propertygraph'
         location = 'Custom'
@@ -32,6 +32,15 @@ class TestGetDataSets(unittest.TestCase):
         self.assertEqual('0_test_nodes.txt', queries[0]['name'])
         self.assertEqual('1_test_edges.txt', queries[1]['name'])
 
+    def test_get_custom_queries_from_file_gremlin(self):
+        language = ''
+        name = 'local_seed_test_propertygraph/0_test_nodes.txt'
+        location = 'Custom'
+        name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
+        queries = get_queries(language, name_full_path, location)
+        self.assertEqual(1, len(queries))
+        self.assertEqual('0_test_nodes.txt', queries[0]['name'])
+
     def test_get_data_sets_sparql(self):
         data_sets = get_data_sets('sparql')
         self.assertTrue('airports' in data_sets)
@@ -39,12 +48,12 @@ class TestGetDataSets(unittest.TestCase):
     def test_get_sample_queries_sparql(self):
         language = 'sparql'
         name = 'airports'
-        location = 'Samples'
+        location = 'samples'
         queries = get_queries(language, name, location)
         self.assertEqual(3, len(queries))
         self.assertEqual('0_nodes.txt', queries[0]['name'])
 
-    def test_get_custom_queries_sparql(self):
+    def test_get_custom_queries_from_directory_sparql(self):
         language = ''
         name = 'local_seed_test_rdf'
         location = 'Custom'
@@ -53,9 +62,27 @@ class TestGetDataSets(unittest.TestCase):
         self.assertEqual(1, len(queries))
         self.assertEqual('0_test_data.txt', queries[0]['name'])
 
-    def test_get_custom_queries_cypher(self):
+    def test_get_custom_queries_from_file_sparql(self):
+        language = ''
+        name = 'local_seed_test_rdf/0_test_data.txt'
+        location = 'Custom'
+        name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
+        queries = get_queries(language, name_full_path, location)
+        self.assertEqual(1, len(queries))
+        self.assertEqual('0_test_data.txt', queries[0]['name'])
+
+    def test_get_custom_queries_from_directory_cypher(self):
         language = ''
         name = 'local_seed_test_cypher'
+        location = 'Custom'
+        name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
+        queries = get_queries(language, name_full_path, location)
+        self.assertEqual(1, len(queries))
+        self.assertEqual('0_test_data.txt', queries[0]['name'])
+
+    def test_get_custom_queries_from_file_cypher(self):
+        language = ''
+        name = 'local_seed_test_cypher/0_test_data.txt'
         location = 'Custom'
         name_full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
         queries = get_queries(language, name_full_path, location)
