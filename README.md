@@ -98,6 +98,8 @@ You will need:
   
 ## Installation
 
+Begin by installing `graph-notebook` and its prerequisites, then follow the remaining instructions for either Jupyter Classic Notebook or JupyterLab.
+
 ```
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
@@ -105,9 +107,16 @@ pip install markupsafe==2.0.1
 
 # install the package
 pip install graph-notebook
+```
 
+### Jupyter Classic Notebook
+
+```
 # install and enable the visualization widget
+
+# ONLY RUN THIS LINE IF USING graph-notebook<=3.2.0
 jupyter nbextension install --py --sys-prefix graph_notebook.widgets
+
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 # copy static html resources
@@ -121,8 +130,21 @@ python -m graph_notebook.notebooks.install --destination ~/notebook/destination/
 mkdir ~/.jupyter/nbconfig
 touch ~/.jupyter/nbconfig/notebook.json
 
-# start jupyter
+# start jupyter notebook
 python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
+```
+
+### JupyterLab 3.x
+
+```
+# install jupyterlab
+pip install "jupyterlab>=3"
+
+# copy premade starter notebooks
+python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
+
+# start jupyterlab
+jupyter lab ~/notebook/destination/dir
 ```
 
 ## Connecting to a graph database
