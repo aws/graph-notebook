@@ -1455,19 +1455,15 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', type=str.lower, default='', choices=SEED_MODEL_OPTIONS,
-                            help='NOTE: This option is only valid if source_type is "samples". '
-                                 'Specifies what data model you would like to load for. '
+                            help='Specifies what data model you would like to load for. '
                                  'Accepted values: property_graph, rdf')
         parser.add_argument('--language', type=str.lower, default='', choices=SEED_LANGUAGE_OPTIONS,
-                            help='NOTE: This option is only valid if source_type is "custom". '
-                                 'Specifies what language you would like to load for. '
+                            help='Specifies what language you would like to load for. '
                                  'Accepted values: gremlin, sparql, cypher')
         parser.add_argument('--dataset', type=str, default='',
-                            help='NOTE: This option is only valid if source_type is "samples". '
-                                 'Specifies what sample dataset you would like to load.')
+                            help='Specifies what sample dataset you would like to load.')
         parser.add_argument('--source', type=str, default='',
-                            help='NOTE: This option is only valid if source_type is "custom". '
-                                 'Specifies the full path to a local file or directory that you would like to '
+                            help='Specifies the full path to a local file or directory that you would like to '
                                  'load from.')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
