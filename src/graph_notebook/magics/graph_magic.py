@@ -1465,8 +1465,8 @@ class Graph(Magics):
         parser.add_argument('--source', type=str, default='',
                             help='Specifies the full path to a local file or directory that you would like to '
                                  'load from.')
-        parser.add_argument('-f', '--full-file-gremlin-query', action='store_true', default=False,
-                            help='Read all content of a file as a single Gremlin query, instead of per line')
+        parser.add_argument('-f', '--full-file-query', action='store_true', default=False,
+                            help='Read all content of a file as a single query, instead of per line')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
                             help='prefix path to query endpoint. For example, "foo/bar". '
@@ -1504,10 +1504,10 @@ class Graph(Magics):
             layout=widgets.Layout(display='none')
         )
 
-        gremlin_option_dropdown = widgets.Dropdown(
+        fullfile_option_dropdown = widgets.Dropdown(
             description='Full File Query:',
             options=['TRUE', 'FALSE'],
-            value=str(args.full_file_gremlin_query).upper(),
+            value=str(args.full_file_query).upper(),
             disabled=False,
             layout=widgets.Layout(display='none')
         )
@@ -1525,7 +1525,7 @@ class Graph(Magics):
         model_dropdown.layout.visibility = 'hidden'
         language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
-        gremlin_option_dropdown.layout.visibility = 'hidden'
+        fullfile_option_dropdown.layout.visibility = 'hidden'
         seed_file_location_text.layout.visibility = 'hidden'
         seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
@@ -1548,17 +1548,17 @@ class Graph(Magics):
                 language_dropdown.layout.visibility = 'visible'
                 language_dropdown.layout.display = 'flex'
                 if language_dropdown.value:
-                    if language_dropdown.value == 'gremlin':
-                        gremlin_option_dropdown.layout.visibility = 'visible'
-                        gremlin_option_dropdown.layout.display = 'flex'
+                    if language_dropdown.value != 'sparql':
+                        fullfile_option_dropdown.layout.visibility = 'visible'
+                        fullfile_option_dropdown.layout.display = 'flex'
                     seed_file_location.layout.visibility = 'visible'
                     seed_file_location.layout.display = 'flex'
             else:
                 language_dropdown.value = None
                 language_dropdown.layout.visibility = 'hidden'
                 language_dropdown.layout.display = 'none'
-                gremlin_option_dropdown.layout.visibility = 'hidden'
-                gremlin_option_dropdown.layout.display = 'none'
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
                 seed_file_location.layout.visibility = 'hidden'
                 seed_file_location.layout.display = 'none'
                 model_dropdown.layout.visibility = 'visible'
@@ -1583,12 +1583,12 @@ class Graph(Magics):
             # Preserve the value/state of the text/selector widget if it's already rendered
             # Otherwise, display the default selector widget (file browser)
             selected_language = change['new']
-            if selected_language == 'gremlin':
-                gremlin_option_dropdown.layout.visibility = 'visible'
-                gremlin_option_dropdown.layout.display = 'flex'
+            if selected_language != 'sparql':
+                fullfile_option_dropdown.layout.visibility = 'visible'
+                fullfile_option_dropdown.layout.display = 'flex'
             else:
-                gremlin_option_dropdown.layout.visibility = 'hidden'
-                gremlin_option_dropdown.layout.display = 'none'
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
             if not seed_file_location_text.value and seed_file_location_text.layout.visibility == 'hidden':
                 seed_file_location.layout.visibility = 'visible'
                 seed_file_location.layout.display = 'flex'
@@ -1607,12 +1607,12 @@ class Graph(Magics):
             model_dropdown.disabled = True
             language_dropdown.disabled = True
             data_set_drop_down.disabled = True
-            gremlin_option_dropdown.disabled = True
+            fullfile_option_dropdown.disabled = True
             seed_file_location_text.disabled = True
             seed_file_location.disabled = True
             submit_button.close()
 
-        def process_propertygraph_query_line(query_line, line_index, q):
+        def process_gremlin_query_line(query_line, line_index, q):
             # Return a state here, with indication of any other variable states that need changing.
             #  return 0 = continue
             #  return 1 = continue, set any_errors_flag = True, error_count += 1
@@ -1650,6 +1650,41 @@ class Graph(Magics):
                 else:
                     with output:
                         generate_seed_error_msg(content, q['name'], line_index + 1)
+                    return 2
+
+        def process_cypher_query_line(query_line, line_index, q):
+            if not line:
+                logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                return 0
+            try:
+                cypher_res = self.client.opencypher_http(query_line)
+                cypher_res.raise_for_status()
+                return 0
+            except HTTPError as httpEx:
+                try:
+                    error = json.loads(httpEx.response.content.decode('utf-8'))
+                    content = json.dumps(error, indent=2)
+                except Exception:
+                    content = {
+                        'error': httpEx
+                    }
+                logger.debug(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'])
+                    return 2
+            except Exception as ex:
+                content = {
+                    'error': str(ex)
+                }
+                logger.error(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'])
                     return 2
 
         def on_button_clicked(b=None):
@@ -1697,32 +1732,7 @@ class Graph(Magics):
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
-                if model == 'propertygraph':
-                    # treat entire file content as one Gremlin query
-                    if args.full_file_gremlin_query:
-                        query_status = process_propertygraph_query_line(q['content'], 0, q)
-                        if query_status == 2:
-                            progress.close()
-                            return
-                        else:
-                            if query_status == 1:
-                                any_errors_flag = True
-                                error_count += 1
-                            progress.value += 1
-                            continue
-                    else:  # treat each line as its own Gremlin query
-                        for line_index, query_line in enumerate(q['content'].splitlines()):
-                            query_status = process_propertygraph_query_line(query_line, line_index, q)
-                            if query_status == 2:
-                                progress.close()
-                                return
-                            else:
-                                if query_status == 1:
-                                    any_errors_flag = True
-                                    error_count += 1
-                                progress.value += 1
-                                continue
-                elif model == 'rdf':
+                if model == 'rdf':
                     try:
                         self.client.sparql(q['content'], path=args.path)
                     except HTTPError as httpEx:
@@ -1760,48 +1770,36 @@ class Graph(Magics):
                                 generate_seed_error_msg(content, q['name'])
                             progress.close()
                             return
-                else:
-                    for line_index, line in enumerate(q['content'].splitlines()):
-                        if not line:
-                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
-                            continue
-                        try:
-                            cypher_res = self.client.opencypher_http(line)
-                            cypher_res.raise_for_status()
-                        except HTTPError as httpEx:
-                            try:
-                                error = json.loads(httpEx.response.content.decode('utf-8'))
-                                content = json.dumps(error, indent=2)
-                            except Exception:
+                else:  # gremlin and cypher
+                    if args.full_file_query:  # treat entire file content as one query
+                        if model == 'propertygraph':
+                            query_status = process_gremlin_query_line(q['content'], 0, q)
+                        else:
+                            query_status = process_cypher_query_line(q['content'], 0, q)
+                        if query_status == 2:
+                            progress.close()
+                            return
+                        else:
+                            if query_status == 1:
                                 any_errors_flag = True
                                 error_count += 1
-                                content = {
-                                    'error': httpEx
-                                }
-                            logger.debug(content)
-                            if args.ignore_errors:
-                                progress.value += 1
-                                continue
+                            progress.value += 1
+                            continue
+                    else:  # treat each line as its own query
+                        for line_index, query_line in enumerate(q['content'].splitlines()):
+                            if model == 'propertygraph':
+                                query_status = process_gremlin_query_line(query_line, line_index, q)
                             else:
-                                with output:
-                                    generate_seed_error_msg(content, q['name'])
+                                query_status = process_cypher_query_line(query_line, line_index, q)
+                            if query_status == 2:
                                 progress.close()
                                 return
-                        except Exception as ex:
-                            any_errors_flag = True
-                            error_count += 1
-                            content = {
-                                'error': str(ex)
-                            }
-                            logger.error(content)
-                            if args.ignore_errors:
+                            else:
+                                if query_status == 1:
+                                    any_errors_flag = True
+                                    error_count += 1
                                 progress.value += 1
                                 continue
-                            else:
-                                with output:
-                                    generate_seed_error_msg(content, q['name'])
-                                progress.close()
-                                return
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
@@ -1820,7 +1818,7 @@ class Graph(Magics):
         language_dropdown.observe(on_language_value_change, names='value')
         seed_file_location_text.observe(on_seedfile_value_change, names='value')
 
-        display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, gremlin_option_dropdown,
+        display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, fullfile_option_dropdown,
                 seed_file_location, seed_file_location_text, submit_button, progress_output, output)
 
         if args.source != '' or args.language != '':
