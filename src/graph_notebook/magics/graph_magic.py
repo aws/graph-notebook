@@ -585,8 +585,6 @@ class Graph(Magics):
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             query_res = self.client.gremlin_query(cell)
             query_time = time.time() * 1000 - query_start
-            print(f"Gremlin results:")
-            print(query_res)
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
