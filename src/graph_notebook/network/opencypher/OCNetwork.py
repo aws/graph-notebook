@@ -121,8 +121,15 @@ class OCNetwork(EventfulNetwork):
 
         # generate placeholder tooltip from label; if not present, amalgamate node property values instead
         if LABEL_KEY in node.keys():
-            title_plc = node[LABEL_KEY][0]
+            if len(node[LABEL_KEY]) > 0:
+                title_plc = node[LABEL_KEY][0]
+                create_title_placeholder = False
+            else:
+                create_title_placeholder = True
         else:
+            create_title_placeholder = True
+
+        if create_title_placeholder:
             title_plc = ""
             for key in node:
                 title_plc += str(node[key])
@@ -164,6 +171,8 @@ class OCNetwork(EventfulNetwork):
 
         props = self.flatten(node)
         label = self.get_node_property_value(node, props, title_plc, self.display_property)
+        if not label:
+            label = node[ID_KEY]
         title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
         if self.tooltip_property and self.tooltip_property != self.display_property:
             title, label_plc = self.strip_and_truncate_label_and_title(
