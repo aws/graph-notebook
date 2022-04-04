@@ -5,32 +5,28 @@ import time
 
 class glueutil:
     
-    def __init__(self, aws_region, accountid):
+    def __init__(self):
+        aws_region = boto3.session.Session().region_name
         session = boto3.Session(region_name=aws_region)
-        
         self.region_name = aws_region
         self.ec2_resource = session.resource("ec2")
         self.ec2_client = session.client("ec2")
         self.glue_client = session.client("glue")
         self.iam = boto3.client('iam')
         self.s3 = boto3.resource('s3')
+        self.neptune = boto3.client('neptune')
+        self.accountid = boto3.client('sts').get_caller_identity().get('Account');
 
         self.etlid = str(uuid.uuid4())
-        
-        print(self.etlid)
         self.etlformatted = self.etlid.replace("-","")
-        self.accountid = accountid
-        
     
     def setupiamrole(self):
-
-        # Create a policy
         my_managed_policy = {
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Action": "neptune-db:connect",
-                    "Resource": f"arn:aws:neptune-db:us-west-2:{self.accountid}:*/*",
+                    "Resource": f"arn:aws:neptune-db:{self.region_name}:{self.accountid}:*/*",
                     "Effect": "Allow"
                 }
             ]
@@ -41,11 +37,7 @@ class glueutil:
           PolicyDocument=json.dumps(my_managed_policy)
         )
         
-        print(policyRef)
-        
-        
         self.glueNeptuneRole = 'Glue-Neptune-Role' + self.etlformatted
-
         assumerole_policy = {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -85,9 +77,7 @@ class glueutil:
             RoleName=self.glueNeptuneRole
         )
 
-        self.iamroleArn = role['Role']['Arn']
-        print(self.iamroleArn)
-    
+        print('Created IAM role for AWS Glue Job')
         self.iamrole = role['Role']['RoleName']
         print(self.iamrole)
         
@@ -125,16 +115,51 @@ class glueutil:
             RoleName= self.glueNeptuneRole,
             PolicyDocument=json.dumps(assumerole_policy)
         )
+    
+    
+    def getclusterdetails(self,clusterEndpoint):
         
-    def setdefaultvalues(self, s3bucket, glue_database_name, jobs,db_vpc_id,dbsecuritygroup, neptune_endpoint):
+        clusters = self.neptune.describe_db_clusters()
+
+        db_config = {};
+
+        for cluster in clusters['DBClusters']:
+            if cluster['Endpoint'] == clusterEndpoint:
+                for member in cluster['DBClusterMembers']:
+                    if member['IsClusterWriter']== True:
+                        instanceidentifier = member["DBInstanceIdentifier"]
+                        instances = self.neptune.describe_db_instances(DBInstanceIdentifier=instanceidentifier)
+                        for instance in instances['DBInstances']:
+                            instanceAZ = instance['AvailabilityZone']
+                            db_config['db_subnetIds'] = []
+                            
+                            for subnet in instance['DBSubnetGroup']['Subnets']:
+                                if instance['AvailabilityZone'] == subnet['SubnetAvailabilityZone']['Name'] == instanceAZ:
+                                    db_config['region'] = subnet['SubnetAvailabilityZone']['Name']
+                                    db_config['db_subnetIds'].append(subnet['SubnetIdentifier'])
+                                    
+                            db_config['vpcId'] = instance['DBSubnetGroup']['VpcId']
+                            db_config['port'] = instance['Endpoint']['Port']
+                            db_config['dbsecuritygroups'] = []
+
+                            for vpc in instance['VpcSecurityGroups']:
+                                db_config['dbsecuritygroups'].append(vpc['VpcSecurityGroupId'])
+
+
+        
+        return db_config
+
+    def setdefaultvalues(self, s3bucket,neptune_endpoint):
         
         self.s3_bucket = s3bucket
-        self.glue_database_name = glue_database_name + self.etlformatted
-        self.jobs = jobs
-        self.db_vpc_id = db_vpc_id
-        self.dbsecuritygroup = dbsecuritygroup
-        self.neptune_endpoint = neptune_endpoint
-       
+        self.glue_database_name = f'identitygraph-{self.etlformatted}'
+        self.jobs = ["demographics","telemetry","transactions"]
+        
+        config = self.getclusterdetails(neptune_endpoint);
+        
+        self.db_subnetIds = config['db_subnetIds']
+        self.dbsecuritygroups = config['dbsecuritygroups']
+        self.neptune_endpoint = f'wss://{neptune_endpoint}:{config["port"]}/gremlin'
         
     def setupgluejob(self):
     
@@ -212,15 +237,9 @@ class glueutil:
             
 
     def setupglueconnections(self):
+        
         subnet_ids = []
-
-        for vpc in self.ec2_resource.vpcs.all():
-            if vpc.id == self.db_vpc_id:
-                for subnet in vpc.subnets.all():
-                    subnet_ids.append(subnet.id)
-
-
-        subnets = self.ec2_client.describe_subnets(SubnetIds=subnet_ids)
+        subnets = self.ec2_client.describe_subnets(SubnetIds=self.db_subnetIds)
 
         # create connection objects from subnets
         self.connections = []
@@ -236,9 +255,7 @@ class glueutil:
                     'ConnectionProperties': {},
                     'PhysicalConnectionRequirements': {
                         'SubnetId': subnet["SubnetId"],
-                        'SecurityGroupIdList': [
-                            self.dbsecuritygroup,
-                        ],
+                        'SecurityGroupIdList': self.dbsecuritygroups,
                         'AvailabilityZone': subnet["AvailabilityZone"]
                     }
                 }
@@ -246,7 +263,7 @@ class glueutil:
 
             self.connections.append({"connectionName": connectionName, "subnet": subnet["AvailabilityZone"]})
 
-
+        
 
 
     def updategluejobwithconnection(self,glueconnection):
@@ -272,7 +289,7 @@ class glueutil:
                     '--NEPTUNE_CONNECTION_NAME': glueconnection,
                     '--DATABASE_NAME': self.glue_database_name,
                     '--CONNECT_TO_NEPTUNE_ROLE_ARN': self.iamroleArn,
-                    '--AWS_REGION':'us-west-2'
+                    '--AWS_REGION':self.region_name
 
                 },
                 NonOverridableArguments={},

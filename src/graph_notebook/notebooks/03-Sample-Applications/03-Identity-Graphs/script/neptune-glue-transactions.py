@@ -69,28 +69,5 @@ userToProductMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToPr
 userToProductMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToProductMapping, '~from', '~to')
 userToProductMapping.toDF().foreachPartition(gremlin_client.upsert_edges('purchased', batch_size=100))
 
-
-# 5. create user to review edges
-
-# userToReviewMapping = SelectFields.apply(frame = applymapping1, paths = ["user_id:String","product_id:String","review:String"], transformation_ctx = "userToReviewMapping")
-# userToReviewMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToReviewMapping, [('~from', 'user_id:String','user'),('~to', 'product_id:String','productreview'),('sentiment', 'review:String','review')])
-# userToReviewMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToReviewMapping, '~from', '~to')
-# userToReviewMapping.toDF().foreachPartition(gremlin_client.upsert_edges('reviewed', batch_size=100))
-
-
-# End
-
-#productDF.show()
-#userToProductMapping.printSchema()
-#userToProductMapping.show()
-# phoneDF.printSchema()
-# cityToCountyrMapping.show()
-# userToPhoneMapping.show()
-# userToCityMapping.show()
-# cityToCountryMapping.show()
-
-# countryDF.show()
-
 job.commit()
-
 print("Done")

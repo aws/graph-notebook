@@ -139,19 +139,6 @@ stateToCountryMapping = GlueGremlinCsvTransforms.create_prefixed_columns(stateTo
 stateToCountryMapping = GlueGremlinCsvTransforms.create_edge_id_column(stateToCountryMapping, '~from', '~to')
 stateToCountryMapping.toDF().foreachPartition(gremlin_client.upsert_edges('inCountry', batch_size=100))
 
-
-# End
-
-# datasource0.printSchema()
-# applymapping1.printSchema()
-# phoneDF.printSchema()
-# cityToCountyrMapping.show()
-# userToPhoneMapping.show()
-# userToCityMapping.show()
-# cityToCountryMapping.show()
-
-# countryDF.show()
-
 job.commit()
 
 print("Done")

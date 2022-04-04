@@ -122,19 +122,6 @@ sessionToPageMapping = GlueGremlinCsvTransforms.create_prefixed_columns(sessionT
 sessionToPageMapping = GlueGremlinCsvTransforms.create_edge_id_column(sessionToPageMapping, '~from', '~to')
 sessionToPageMapping.toDF().foreachPartition(gremlin_client.upsert_edges('viewed', batch_size=100))
 
-
-
-# End
-
-# datasource0.printSchema()
-# sessionDF.printSchema()
-# ipDF.printSchema()
-# useragentDF.show()
-# userToSessionMapping.show()
-# sessionToUserAgentMapping.show()
-# sessionToIPAddressMapping.show()
-# sessionToPageMapping.show()
-
-# job.commit()
+job.commit()
 
 print("Done")
