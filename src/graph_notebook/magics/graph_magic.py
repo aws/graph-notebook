@@ -199,9 +199,11 @@ class Graph(Magics):
 
         self.client = builder.build()
 
+    @magic_variables
     @line_cell_magic
+    @needs_local_scope
     @display_exceptions
-    def graph_notebook_config(self, line='', cell=''):
+    def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
