@@ -1,18 +1,17 @@
-    {% block style %}
     <style>
-        .sparql_explain {
+        .oc_explain {
             overflow: hidden;
         }
 
-        .sparql_explain form {
+        .oc_explain form {
             margin-bottom: 5px;
         }
 
-        .sparql_explain form a {
+        .oc_explain form a {
             float: right;
         }
 
-        .sparql_explain table {
+        .oc_explain table {
             font-family: "Courier New", Courier, monospace !important;
             border-collapse: collapse;
             width: 100%;
@@ -22,27 +21,26 @@
             overflow-x: scroll;
         }
 
-        .sparql_explain table td, .sparql_explain table th {
+        .oc_explain table td, .oc_explain table th {
             border: 1px solid #ddd;
             padding: 8px;
+            word-wrap: break-word;
             text-align: center;
         }
 
-        .sparql_explain table tr:nth-child(even){background-color: white;}
+        .oc_explain table tr:nth-child(even){background-color: white;}
 
-        .sparql_explain table tr:hover {background-color: #ddd;}
+        .oc_explain table tr:hover {background-color: #ddd;}
 
-        .sparql_explain table th {
+        .oc_explain table th {
             padding-top: 12px;
             padding-bottom: 12px;
             text-align: left;
         }
     </style>
-    {% endblock %}
-<div class="sparql_explain">
+<div class="oc_explain">
     <form method="get" action="file.doc">
         <a download="explain.html" href={{link}}>Download</a>
     </form>
-
     {{ table }}
 </div>

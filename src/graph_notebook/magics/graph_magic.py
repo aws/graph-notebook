@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function  # Python 2/3 compatibility
 
 import argparse
+import base64
 import logging
 import json
 import time
@@ -33,7 +34,7 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -50,14 +51,18 @@ sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
 gremlin_table_template = retrieve_template("gremlin_table.html")
 opencypher_table_template = retrieve_template("opencypher_table.html")
+opencypher_explain_template = retrieve_template("opencypher_explain.html")
+gremlin_explain_profile_template = retrieve_template("gremlin_explain_profile.html")
 pre_container_template = retrieve_template("pre_container.html")
 loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
 
 loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
+UNRESTRICTED_LAYOUT = widgets.Layout()
 
 logging.basicConfig()
+root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
@@ -91,6 +96,14 @@ class QueryMode(Enum):
     EXPLAIN = 'explain'
     PROFILE = 'profile'
     EMPTY = ''
+
+
+def generate_seed_error_msg(error_content, file_index, line_index=None):
+    error_message = f"Terminated seed due to error in file {file_index}"
+    if line_index:
+        error_message = error_message + f" at line {line_index}"
+    print(error_message)
+    print(error_content)
 
 
 def store_to_ns(key: str, value, ns: dict = None):
@@ -131,6 +144,15 @@ def query_type_to_action(query_type):
         return 'sparqlupdate'
 
 
+def results_per_page_check(results_per_page):
+    if results_per_page < 1:
+        return 1
+    elif results_per_page > 1000:
+        return 1000
+    else:
+        return int(results_per_page)
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -151,6 +173,7 @@ class Graph(Magics):
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         self._generate_client_from_config(self.graph_notebook_config)
+        root_logger.setLevel(logging.CRITICAL)
         logger.setLevel(logging.ERROR)
 
     def _generate_client_from_config(self, config: Configuration):
@@ -207,9 +230,9 @@ class Graph(Magics):
     @line_magic
     def stream_viewer(self,line):
         parser = argparse.ArgumentParser()
-        parser.add_argument('language', type=str.lower, nargs='?', default='gremlin',
-                            help='language  (default=gremlin) [gremlin|sparql]',
-                            choices = ['gremlin','sparql'])
+        parser.add_argument('language', nargs='?', default=STREAM_PG,
+                            help=f'language  (default={STREAM_PG}) [{STREAM_PG}|{STREAM_RDF}]',
+                            choices = [STREAM_PG, STREAM_RDF])
 
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
@@ -251,6 +274,8 @@ class Graph(Magics):
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes.')
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw binding")
         parser.add_argument('-d', '--display-property', type=str, default='',
                             help='Property to display the value of on each node.')
         parser.add_argument('-de', '--edge-display-property', type=str, default='',
@@ -258,7 +283,7 @@ class Graph(Magics):
         parser.add_argument('-t', '--tooltip-property', type=str, default='',
                             help='Property to display the value of on each node tooltip.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip.')
+                            help='Property to display the value of on each edge tooltip.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex labels, in characters. Default is 10')
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
@@ -270,15 +295,24 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
+
+        if args.no_scroll:
+            sparql_layout = UNRESTRICTED_LAYOUT
+        else:
+            sparql_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             titles = []
             children = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=sparql_layout)
             children.append(first_tab_output)
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
@@ -286,12 +320,17 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
-            explain = res.content.decode('utf-8')
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            explain = explain_bytes.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
                 titles.append('Explain')
-                first_tab_html = sparql_explain_template.render(table=explain)
+                explain_bytes = explain.encode('ascii', 'ignore')
+                base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                first_tab_html = sparql_explain_template.render(table=explain,
+                                                                link=f"data:text/html;base64,{base64_str}")
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -299,13 +338,11 @@ class Graph(Magics):
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
             query_res.raise_for_status()
-            results = query_res.json()
-            store_to_ns(args.store_to, results, local_ns)
             try:
-                res = query_res.json()
-            except JSONDecodeError:
-                res = query_res.content.decode('utf-8')
-            store_to_ns(args.store_to, res, local_ns)
+                results = query_res.json()
+            except Exception:
+                results = query_res.content.decode('utf-8')
+            store_to_ns(args.store_to, results, local_ns)
 
             if not args.silent:
                 # Assign an empty value so we can always display to table output.
@@ -328,7 +365,8 @@ class Graph(Magics):
                                        label_max_length=args.label_max_length,
                                        edge_label_max_length=args.edge_label_max_length,
                                        ignore_groups=args.ignore_groups,
-                                       expand_all=args.expand_all)
+                                       expand_all=args.expand_all,
+                                       group_by_raw=args.group_by_raw)
                     
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
@@ -349,8 +387,10 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         table_id = f"table-{str(uuid.uuid4())[:8]}"
+                        visible_results = results_per_page_check(args.results_per_page)
                         first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id)
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -358,7 +398,7 @@ class Graph(Magics):
                         lines = []
                         for b in results['results']['bindings']:
                             lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
-                        raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                        raw_output = widgets.Output(layout=sparql_layout)
                         with raw_output:
                             html = sparql_construct_template.render(lines=lines)
                             display(HTML(html))
@@ -368,14 +408,14 @@ class Graph(Magics):
                     sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
                                                                        results=results)
 
-                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                json_output = widgets.Output(layout=sparql_layout)
                 with json_output:
                     print(json.dumps(results, indent=2))
                 children.append(json_output)
                 titles.append('JSON')
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=sparql_layout)
             children.append(metadata_output)
             titles.append('Query Metadata')
 
@@ -439,6 +479,10 @@ class Graph(Magics):
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw result")
         parser.add_argument('-d', '--display-property', type=str, default='T.label',
                             help='Property to display the value of on each node, default is T.label')
         parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
@@ -447,7 +491,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
@@ -455,66 +499,86 @@ class Graph(Magics):
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
-        parser.add_argument('--no-results', action='store_false', default=True,
+        parser.add_argument('--profile-no-results', action='store_false', default=True,
                             help='Display only the result count. If not used, all query results will be displayed in '
                                  'the profile report by default.')
-        parser.add_argument('--chop', type=int, default=250,
+        parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--serializer', type=str, default='application/json',
+        parser.add_argument('--profile-serializer', type=str, default='application/json',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
-        parser.add_argument('--indexOps', action='store_true', default=False,
+        parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+
+        if args.no_scroll:
+            gremlin_layout = UNRESTRICTED_LAYOUT
+        else:
+            gremlin_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             children = []
             titles = []
 
-            first_tab_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=gremlin_layout)
             children.append(first_tab_output)
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            # Replace strikethrough character bytes, can't be encoded to ASCII
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            query_res = explain_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
                 titles.append('Explain')
                 if 'Neptune Gremlin Explain' in query_res:
-                    first_tab_html = pre_container_template.render(content=query_res)
+                    explain_bytes = query_res.encode('ascii', 'ignore')
+                    base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
-            logger.debug(f'results: {args.no_results}')
-            logger.debug(f'chop: {args.chop}')
-            logger.debug(f'serializer: {args.serializer}')
-            logger.debug(f'indexOps: {args.indexOps}')
-            if args.serializer in serializers_map:
-                serializer = serializers_map[args.serializer]
+            logger.debug(f'results: {args.profile_no_results}')
+            logger.debug(f'chop: {args.profile_chop}')
+            logger.debug(f'serializer: {args.profile_serializer}')
+            logger.debug(f'indexOps: {args.profile_indexOps}')
+            if args.profile_serializer in serializers_map:
+                serializer = serializers_map[args.profile_serializer]
             else:
-                serializer = args.serializer
-            profile_args = {"profile.results": args.no_results,
-                            "profile.chop": args.chop,
+                serializer = args.profile_serializer
+            profile_args = {"profile.results": args.profile_no_results,
+                            "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
-                            "profile.indexOps": args.indexOps}
+                            "profile.indexOps": args.profile_indexOps}
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            profile_bytes = res.content.replace(b'\xcc', b'-')
+            profile_bytes = profile_bytes.replace(b'\xb6', b'')
+            query_res = profile_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
                 titles.append('Profile')
                 if 'Neptune Gremlin Profile' in query_res:
-                    first_tab_html = pre_container_template.render(content=query_res)
+                    explain_bytes = query_res.encode('ascii', 'ignore')
+                    base64_str = base64.b64encode(explain_bytes).decode('ascii')
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
@@ -532,6 +596,8 @@ class Graph(Magics):
                     logger.debug(f'label_max_length: {args.label_max_length}')
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
                     gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                        group_by_raw=args.group_by_raw,
+                                        group_by_depth=args.group_by_depth,
                                         edge_display_property=args.edge_display_property,
                                         tooltip_property=args.tooltip_property,
                                         edge_tooltip_property=args.edge_tooltip_property,
@@ -558,10 +624,12 @@ class Graph(Magics):
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
                 table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res)
+                visible_results = results_per_page_check(args.results_per_page)
+                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
+                                                               amount=visible_results)
 
         if not args.silent:
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=gremlin_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
@@ -1391,6 +1459,8 @@ class Graph(Magics):
                             help='prefix path to query endpoint. For example, "foo/bar". '
                                  'The queried path would then be host:port/foo/bar for sparql seed commands')
         parser.add_argument('--run', action='store_true')
+        parser.add_argument('--ignore-errors', action='store_true', default=False,
+                            help='Continue loading from the seed file on failure of any individual query.')
         args = parser.parse_args(line.split())
 
         output = widgets.Output()
@@ -1447,15 +1517,22 @@ class Graph(Magics):
             with progress_output:
                 display(progress)
 
+            error_count = 0
+            any_errors_flag = False
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
                 if model == 'propertygraph':
                     # IMPORTANT: We treat each line as its own query!
-                    for line in q['content'].splitlines():
+                    for line_index, line in enumerate(q['content'].splitlines()):
+                        if not line:
+                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                            continue
                         try:
                             self.client.gremlin_query(line)
                         except GremlinServerError as gremlinEx:
+                            any_errors_flag = True
+                            error_count += 1
                             try:
                                 error = json.loads(gremlinEx.args[0][5:])  # remove the leading error code.
                                 content = json.dumps(error, indent=2)
@@ -1463,19 +1540,30 @@ class Graph(Magics):
                                 content = {
                                     'error': gremlinEx
                                 }
-
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
+                                progress.close()
+                                return
                         except Exception as e:
+                            any_errors_flag = True
+                            error_count += 1
                             content = {
                                 'error': e
                             }
-                            with output:
-                                print(content)
-                            progress.close()
-                            return
+                            logger.debug(f"Exception at line {line_index + 1} in seed file {q['name']}")
+                            logger.debug(content)
+                            if args.ignore_errors:
+                                continue
+                            else:
+                                with output:
+                                    generate_seed_error_msg(content, q['name'], line_index + 1)
+                                progress.close()
+                                return
                 else:
                     try:
                         self.client.sparql(q['content'], path=args.path)
@@ -1485,22 +1573,33 @@ class Graph(Magics):
                             error = json.loads(httpEx.response.content.decode('utf-8'))
                             content = json.dumps(error, indent=2)
                         except Exception:
+                            any_errors_flag = True
+                            error_count += 1
                             content = {
                                 'error': httpEx
                             }
-                        with output:
-                            print(content)
-                        progress.close()
-                        return
+                        logger.debug(content)
+                        if args.ignore_errors:
+                            continue
+                        else:
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
+                            progress.close()
+                            return
                     except Exception as ex:
+                        any_errors_flag = True
+                        error_count += 1
                         content = {
                             'error': str(ex)
                         }
-                        with output:
-                            print(content)
-
-                        progress.close()
-                        return
+                        logger.error(content)
+                        if args.ignore_errors:
+                            continue
+                        else:
+                            with output:
+                                generate_seed_error_msg(content, q['name'])
+                            progress.close()
+                            return
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
@@ -1508,6 +1607,9 @@ class Graph(Magics):
             progress.close()
             with output:
                 print('Done.')
+                if any_errors_flag:
+                    print(f'\n{error_count} individual queries were skipped due to errors. For more '
+                          f'information, please rerun the query with debug logs enabled (%enable_debug).')
             return
 
         submit_button.on_click(on_button_clicked)
@@ -1524,10 +1626,12 @@ class Graph(Magics):
     @line_magic
     def enable_debug(self, line):
         logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.ERROR)
 
     @line_magic
     def disable_debug(self, line):
         logger.setLevel(logging.ERROR)
+        root_logger.setLevel(logging.CRITICAL)
 
     @line_magic
     def graph_notebook_version(self, line):
@@ -1579,10 +1683,17 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
+        parser.add_argument('--explain-type', default='dynamic',
+                            help='explain mode to use when using the explain query mode',
+                            choices=['dynamic', 'static', 'details', 'debug'])
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
-        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt]',
-                            choices=['query', 'bolt'])
+        parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
+                            help="Group nodes based on path hierarchy")
+        parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
+                            help="Group nodes by the raw result")
+        parser.add_argument('mode', nargs='?', default='query', help='query mode [query|bolt|explain]',
+                            choices=['query', 'bolt', 'explain'])
         parser.add_argument('-d', '--display-property', type=str, default='~labels',
                             help='Property to display the value of on each node, default is ~labels')
         parser.add_argument('-de', '--edge-display-property', type=str, default='~labels',
@@ -1591,7 +1702,7 @@ class Graph(Magics):
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
                                  'will default to the node label value.')
         parser.add_argument('-te', '--edge-tooltip-property', type=str, default='',
-                            help='Property to display the value of on each node tooltip. If not specified, tooltip '
+                            help='Property to display the value of on each edge tooltip. If not specified, tooltip '
                                  'will default to the edge label value.')
         parser.add_argument('-l', '--label-max-length', type=int, default=10,
                             help='Specifies max length of vertex label, in characters. Default is 10')
@@ -1604,17 +1715,40 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-r', '--results-per-page', type=int, default=10,
+                            help='Specifies how many query results to display per page in the output. Default is 10')
+        parser.add_argument('--no-scroll', action='store_true', default=False,
+                            help="Display the entire output without a scroll bar.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+
+        if args.no_scroll:
+            oc_layout = UNRESTRICTED_LAYOUT
+        else:
+            oc_layout = DEFAULT_LAYOUT
 
         if not args.silent:
             tab = widgets.Tab()
             titles = []
             children = []
             force_graph_output = None
+            explain_html = ""
 
-        if args.mode == 'query':
+        if args.mode == 'explain':
+            query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
+            res = self.client.opencypher_http(cell, explain=args.explain_type)
+            query_time = time.time() * 1000 - query_start
+            explain = res.content.decode("utf-8")
+            res.raise_for_status()
+            ##store_to_ns(args.store_to, explain, local_ns)
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
+                                                                   query_time=query_time)
+                explain_bytes = explain.encode('utf-8')
+                base64_str = base64.b64encode(explain_bytes).decode('utf-8')
+                explain_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+        elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
@@ -1625,6 +1759,8 @@ class Graph(Magics):
                                                                    query_time=query_time)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                   group_by_raw=args.group_by_raw,
+                                   group_by_depth=args.group_by_depth,
                                    edge_display_property=args.edge_display_property,
                                    tooltip_property=args.tooltip_property,
                                    edge_tooltip_property=args.edge_tooltip_property,
@@ -1642,40 +1778,56 @@ class Graph(Magics):
                     logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
                     logger.debug(f'Error: {network_creation_error}')
         elif args.mode == 'bolt':
-            res = self.client.opencyper_bolt(cell)            
+            query_start = time.time() * 1000
+            res = self.client.opencyper_bolt(cell)
+            query_time = time.time() * 1000 - query_start
+            if not args.silent:
+                oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
+                                                                   query_time=query_time)
             # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
-            rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
+            rows_and_columns = None
+            if args.mode != "explain":
+                rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
+
             display(tab)
-            table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            first_tab_output = widgets.Output(layout=oc_layout)
             # Assign an empty value so we can always display to table output.
             table_html = ""
 
             # Display Console Tab
             # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([table_output], layout=DEFAULT_LAYOUT)
+            hbox = widgets.HBox([first_tab_output], layout=oc_layout)
             children.append(hbox)
-            titles.append('Console')
             if rows_and_columns is not None:
+                titles.append('Console')
                 table_id = f"table-{str(uuid.uuid4())[:8]}"
+                visible_results = results_per_page_check(args.results_per_page)
                 table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                              rows=rows_and_columns['rows'], guid=table_id)
+                                                                  rows=rows_and_columns['rows'], guid=table_id,
+                                                                  amount=visible_results)
 
             # Display Graph Tab (if exists)
-            if force_graph_output:
-                titles.append('Graph')
-                children.append(force_graph_output)
+            if explain_html != "":
+                titles.append('Explain')
+                with first_tab_output:
+                    display(HTML(explain_html))
+            else:
+                # Display Graph Tab (if exists)
+                if force_graph_output:
+                    titles.append('Graph')
+                    children.append(force_graph_output)
 
-            # Display JSON tab
-            json_output = widgets.Output(layout=DEFAULT_LAYOUT)
-            with json_output:
-                print(json.dumps(res, indent=2))
-            children.append(json_output)
-            titles.append('JSON')
+                # Display JSON tab
+                json_output = widgets.Output(layout=oc_layout)
+                with json_output:
+                    print(json.dumps(res, indent=2))
+                children.append(json_output)
+                titles.append('JSON')
 
             # Display Query Metadata Tab
-            metadata_output = widgets.Output(layout=DEFAULT_LAYOUT)
+            metadata_output = widgets.Output(layout=oc_layout)
             titles.append('Query Metadata')
             children.append(metadata_output)
 
@@ -1684,7 +1836,7 @@ class Graph(Magics):
                 tab.set_title(i, titles[i])
 
             if table_html != "":
-                with table_output:
+                with first_tab_output:
                     display(HTML(table_html))
 
             with metadata_output:

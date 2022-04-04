@@ -28,10 +28,11 @@ import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 import feather from "feather-icons";
 import $ from "jquery";
-import "jqueryui";
+import "jquery-ui/ui/widgets/draggable";
+import "jquery-ui/ui/widgets/resizable";
 
 // Import the CSS
-import "./css/widget.css";
+import "../css/widget.css";
 import DraggableOptions = JQueryUI.DraggableOptions;
 import ResizableOptions = JQueryUI.ResizableOptions;
 

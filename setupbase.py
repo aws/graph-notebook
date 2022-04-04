@@ -384,7 +384,7 @@ def install_npm(path=None, build_dir=None, source_dir=None, build_cmd='build', f
 
             # ensure that __init__.py files are added to generated directories, otherwise it will not be packaged with
             # package distribution to pypi
-            dirs_from_node_path = ['nbextension', pjoin('nbextension', 'static'), 'lib', 'labextension']
+            dirs_from_node_path = ['nbextension', 'nbextension', 'lib', 'labextension']
             for init_path in dirs_from_node_path:
                 full_path = pjoin(node_package, init_path, '__init__.py')
                 with open(full_path, 'w+'):

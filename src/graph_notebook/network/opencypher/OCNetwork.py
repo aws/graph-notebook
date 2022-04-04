@@ -3,10 +3,9 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 import logging
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
 
 logging.basicConfig()
@@ -35,12 +34,15 @@ class OCNetwork(EventfulNetwork):
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
                  display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
                  tooltip_property=None, edge_tooltip_property=None,
-                 ignore_groups=False):
+                 ignore_groups=False, 
+                 group_by_depth=False, group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
+        if group_by_depth:
+            group_by_property = DEPTH_GRP_KEY
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
-                         ignore_groups)
+                         ignore_groups, group_by_raw)
 
     def get_node_property_value(self, node: dict, props: dict, title, custom_property):
         try:
@@ -107,12 +109,16 @@ class OCNetwork(EventfulNetwork):
 
         return display_label
 
-    def parse_node(self, node: dict):
+    def parse_node(self, node: dict, path_index: int = -2):
         """This parses the node parameter and adds the node to the network diagram
 
         Args:
             node (dict): The node dictionary to parse
+            path_index: Position of the element in the path traversal order
         """
+
+        depth_group = "__DEPTH-" + str(path_index//2) + "__"
+
         # generate placeholder tooltip from label; if not present, amalgamate node property values instead
         if LABEL_KEY in node.keys():
             title_plc = node[LABEL_KEY][0]
@@ -123,7 +129,11 @@ class OCNetwork(EventfulNetwork):
 
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
             try:
-                if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
+                if self.group_by_property == DEPTH_GRP_KEY:
+                    group = depth_group
+                elif self.group_by_property == DEFAULT_RAW_GRP_KEY:
+                    group = str(node)
+                elif self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
                     group = node[LABEL_KEY][0]
                 elif self.group_by_property in [ID_KEY, 'id']:
                     group = node[ID_KEY]
@@ -137,12 +147,16 @@ class OCNetwork(EventfulNetwork):
             try:
                 if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
                     key = node[LABEL_KEY][0]
-                    if self.group_by_property[key]['groupby'] in [LABEL_KEY, 'labels']:
+                    if self.group_by_property[key] == DEPTH_GRP_KEY:
+                        group = depth_group
+                    elif self.group_by_property[key] == DEFAULT_RAW_GRP_KEY:
+                        group = str(node)
+                    elif self.group_by_property[key] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
+                    elif self.group_by_property[key] in [ID_KEY, 'id']:
+                        group = node[ID_KEY]
                     else:
-                        group = node[PROPERTIES_KEY][self.group_by_property[key]['groupby']]
-                elif ID_KEY in self.group_by_property:
-                    group = node[ID_KEY]
+                        group = node[PROPERTIES_KEY][self.group_by_property[key]]
                 else:
                     group = DEFAULT_GRP
             except KeyError:
@@ -170,15 +184,16 @@ class OCNetwork(EventfulNetwork):
         self.add_edge(from_id=rel[START_KEY], to_id=rel[END_KEY], edge_id=rel[ID_KEY], label=edge_label,
                       title=edge_title, data=data)
 
-    def process_result(self, res: dict):
+    def process_result(self, res: dict, path_index: int = -2):
         """Determines the type of element passed in and processes it appropriately
 
         Args:
             res (dict): The dictionary to parse
+            path_index: Position of the element in the path traversal order
         """
         if ENTITY_KEY in res:
             if res[ENTITY_KEY] == NODE_ENTITY_TYPE:
-                self.parse_node(res)
+                self.parse_node(res, path_index)
             else:
                 self.parse_rel(res)
 
@@ -194,9 +209,9 @@ class OCNetwork(EventfulNetwork):
                     if type(res[k]) is dict:
                         self.process_result(res[k]) 
                     elif type(res[k]) is list:
-                        for res_sublist in res[k]:
+                        for path_index, res_sublist in enumerate(res[k]):
                             try:
-                                self.process_result(res_sublist)
+                                self.process_result(res_sublist, path_index)
                             except TypeError as e:
                                 logger.debug(f'Property {res_sublist} in list results set is invalid, skipping')
                                 logger.debug(f'Error: {e}')
