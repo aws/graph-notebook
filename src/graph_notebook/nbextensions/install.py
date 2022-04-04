@@ -23,8 +23,8 @@ def main():
 
     args = parser.parse_args()
     plugin_name = 'graph_notebook.nbextensions' if args.plugin_name == '' else args.plugin_name
-    os.system(f'''jupyter nbextension install --py {plugin_name} --overwrite''')
-    os.system(f'''jupyter nbextension enable --py {plugin_name} ''')
+    os.system(f'''jupyter nbextension install --py {plugin_name} --sys-prefix --overwrite''')
+    os.system(f'''jupyter nbextension enable --py {plugin_name} --sys-prefix''')
 
 
 if __name__ == '__main__':
