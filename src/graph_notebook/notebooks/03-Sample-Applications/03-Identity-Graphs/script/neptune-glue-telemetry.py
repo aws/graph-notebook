@@ -39,21 +39,6 @@ user_telemetry_table = 'telemetry'
 gremlin_endpoints = GlueNeptuneConnectionInfo(args['AWS_REGION'], args['CONNECT_TO_NEPTUNE_ROLE_ARN']).neptune_endpoints(args['NEPTUNE_CONNECTION_NAME'])
 gremlin_client = GlueGremlinClient(gremlin_endpoints)
 
-# Create Session vertices
-# Create IP vertices
-# Create User Agent Vertices
-# Create User to Session ID
-# Create Session ID to IP or User to IP address??
-# Create Session to User Agent Vertices or User to User Agent Vertices
-
-# session_id
-# user_id
-# user_agent
-# ip_address
-# siteid
-# pageid
-# session_start
-
 # 1. Get data from source SQL database
 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = user_telemetry_table, transformation_ctx = "datasource0")
 

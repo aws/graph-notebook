@@ -38,17 +38,8 @@ user_demographics_table = 'demographics'
 gremlin_endpoints = GlueNeptuneConnectionInfo(args['AWS_REGION'], args['CONNECT_TO_NEPTUNE_ROLE_ARN']).neptune_endpoints(args['NEPTUNE_CONNECTION_NAME'])
 gremlin_client = GlueGremlinClient(gremlin_endpoints)
 
-# Create Phone vertices
-# Create Email vertices
-# Create City vertices
-# Create Country vertices
-# Create Person vertices
-
 # 1. Get data from source SQL database
 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = user_demographics_table, transformation_ctx = "datasource0")
-
-# datasource1 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = product_category_table, transformation_ctx = "datasource1")
-# datasource2 = datasource0.join( ["CATEGORY_ID"],["CATEGORY_ID"], datasource1, transformation_ctx = "join")
 
 # 2. Map fields to bulk load CSV column headings format
 

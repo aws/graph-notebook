@@ -38,12 +38,6 @@ user_transactions_table = 'transactions'
 gremlin_endpoints = GlueNeptuneConnectionInfo(args['AWS_REGION'], args['CONNECT_TO_NEPTUNE_ROLE_ARN']).neptune_endpoints(args['NEPTUNE_CONNECTION_NAME'])
 gremlin_client = GlueGremlinClient(gremlin_endpoints)
 
-# Create Phone vertices
-# Create Email vertices
-# Create City vertices
-# Create Country vertices
-# Create Person vertices
-
 # 1. Get data from source SQL database
 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = user_transactions_table, transformation_ctx = "datasource0")
 
