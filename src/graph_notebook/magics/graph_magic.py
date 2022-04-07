@@ -73,7 +73,7 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
-SEED_MODEL_OPTIONS = ['', 'property_graph', 'rdf']
+SEED_MODEL_OPTIONS = ['', 'propertygraph', 'rdf']
 SEED_LANGUAGE_OPTIONS = ['', 'gremlin', 'cypher', 'sparql']
 SOURCE_OPTIONS = ['', 'samples', 'custom']
 
@@ -1454,10 +1454,10 @@ class Graph(Magics):
         or a directory containing multiple of these files.
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--model', type=str.lower, default='', choices=SEED_MODEL_OPTIONS,
+        parser.add_argument('--model', type=str.lower, default='',
                             help='Specifies what data model you would like to load for. '
                                  'Accepted values: property_graph, rdf')
-        parser.add_argument('--language', type=str.lower, default='', choices=SEED_LANGUAGE_OPTIONS,
+        parser.add_argument('--language', type=str.lower, default='',
                             help='Specifies what language you would like to load for. '
                                  'Accepted values: gremlin, sparql, cypher')
         parser.add_argument('--dataset', type=str, default='',
@@ -1823,23 +1823,28 @@ class Graph(Magics):
 
         if args.source != '' or args.language != '':
             source_dropdown.value = 'custom'
+            valid_language_value = False
             if args.language != '':
-                language_dropdown.value = args.language.lower()
+                if args.language.lower() in SEED_LANGUAGE_OPTIONS:
+                    language_dropdown.value = args.language.lower()
+                    valid_language_value = True
             if args.source != '':
                 seed_file_location_text.value = args.source
                 seed_file_location_text.layout.visibility = 'visible'
                 seed_file_location_text.layout.display = 'flex'
                 seed_file_location.layout.visibility = 'hidden'
                 seed_file_location.layout.display = 'none'
-            if seed_file_location_text.value and language_dropdown.value and args.run:
+            if seed_file_location_text.value and valid_language_value and args.run:
                 on_button_clicked()
-        elif args.model.lower() != '':
+        elif args.model != '':
             source_dropdown.value = 'samples'
-            model_dropdown.value = args.model.lower()
-            if args.dataset != '' and args.dataset in data_set_drop_down.options:
-                data_set_drop_down.value = args.dataset.lower()
-                if args.run:
-                    on_button_clicked()
+            normed_model = normalize_model_name(args.model)
+            if normed_model in SEED_MODEL_OPTIONS:
+                model_dropdown.value = normed_model
+                if args.dataset != '' and args.dataset in data_set_drop_down.options:
+                    data_set_drop_down.value = args.dataset.lower()
+                    if args.run:
+                        on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):
