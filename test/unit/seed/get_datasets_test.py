@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import unittest
 import os
 
-from graph_notebook.seed.load_query import get_data_sets, get_queries
+from graph_notebook.seed.load_query import get_queries
 
 
 class TestGetDataSets(unittest.TestCase):
