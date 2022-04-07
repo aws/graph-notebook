@@ -4,7 +4,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import os
+import zipfile
+import boto3
+from botocore.exceptions import ClientError
 from os.path import join as pjoin
+from shutil import rmtree
 
 
 def normalize_model_name(name):
@@ -32,8 +36,22 @@ def file_to_query(file, path_to_data_sets):
 # returns a list of queries which correspond to a given query language and name
 def get_queries(model, name, location):
     if location == 'samples':
-        d = os.path.dirname(os.path.realpath(__file__))
-        path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
+        bucketname = 'aws-neptune-notebook'  # replace with your bucket name
+        filename_parent = 'queries/' + normalize_model_name(model)
+        filename_base = name + '.zip'
+        filename = filename_parent + '/' + filename_base
+        s3 = boto3.resource('s3')
+        try:
+            s3.Bucket(bucketname).download_file(filename, os.path.basename(filename))
+        except ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                print("The sample dataset specified is unavailable.")
+            else:
+                raise
+        with zipfile.ZipFile(filename_base, 'r') as zf:
+            zf.extractall()
+        os.remove(filename_base)
+        path_to_data_sets = pjoin(os.getcwd(), name)
     else:
         path_to_data_sets = name
     queries = []
@@ -44,6 +62,8 @@ def get_queries(model, name, location):
             if new_query:
                 queries.append(new_query)
         queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexicographical order.
+        if location == 'samples':  # if sample data was downloaded, delete the temp folder.
+            rmtree(path_to_data_sets, ignore_errors=True)
     else:  # path_to_data_sets is a file
         file = os.path.basename(path_to_data_sets)
         folder = os.path.dirname(path_to_data_sets)
