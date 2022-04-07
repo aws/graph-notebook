@@ -17,9 +17,9 @@ from shutil import rmtree
 def normalize_model_name(name):
     name = name.lower().replace('_', '')
     # handles legacy scenarios
-    if name in ('gremlin', 'opencypher'):
+    if name in ('gremlin', 'opencypher', 'property_graph', 'propertygraph'):
         name = 'propertygraph'
-    elif name == 'sparql':
+    elif name in ('sparql', 'rdf'):
         name = 'rdf'
     return name
 
