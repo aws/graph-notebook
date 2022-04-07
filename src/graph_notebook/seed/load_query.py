@@ -6,7 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import zipfile
 import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
 from botocore.exceptions import ClientError
+from botocore.handlers import disable_signing
 from os.path import join as pjoin
 from shutil import rmtree
 
@@ -41,13 +44,13 @@ def get_queries(model, name, location):
         filename_base = name + '.zip'
         filename = filename_parent + '/' + filename_base
         s3 = boto3.resource('s3')
+        s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
         try:
             s3.Bucket(bucketname).download_file(filename, os.path.basename(filename))
         except ClientError as e:
             if e.response['Error']['Code'] == "404":
-                print("The sample dataset specified is unavailable.")
-            else:
-                raise
+                print("Unable to access the sample dataset specified.")
+            raise
         with zipfile.ZipFile(filename_base, 'r') as zf:
             zf.extractall()
         os.remove(filename_base)
@@ -76,11 +79,20 @@ def get_queries(model, name, location):
 
 def get_data_sets(model):
     if model == '':
-      return []
-    d = os.path.dirname(os.path.realpath(__file__))
-    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model))
+        return []
+    bucketname = 'aws-neptune-notebook'
+    model_folder = normalize_model_name(model) + '/'
+    s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
     data_sets = []
-    for data_set in os.listdir(path_to_data_sets):
-        if data_set != '__pycache__' and os.path.isdir(pjoin(path_to_data_sets, data_set)):
-            data_sets.append(data_set)
+    try:
+        objects = s3.list_objects_v2(Bucket=bucketname)
+        for obj in objects['Contents']:
+            if model_folder in obj['Key']:
+                filename = os.path.basename(obj['Key'])
+                if filename != '__init__.py':
+                    data_sets.append(filename[:-len('.zip')])
+    except ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print("Unable to access samples bucket, please check your network connection.")
+        raise
     return data_sets
