@@ -36,7 +36,7 @@ def file_to_query(file, path_to_data_sets):
 # returns a list of queries which correspond to a given query language and name
 def get_queries(model, name, location):
     if location == 'samples':
-        bucketname = 'aws-neptune-notebook'  # replace with your bucket name
+        bucketname = 'aws-neptune-notebook'
         filename_parent = 'queries/' + normalize_model_name(model)
         filename_base = name + '.zip'
         filename = filename_parent + '/' + filename_base

@@ -10,9 +10,6 @@ from graph_notebook.seed.load_query import get_data_sets, get_queries
 
 
 class TestGetDataSets(unittest.TestCase):
-    def test_get_data_sets_gremlin(self):
-        data_sets = get_data_sets('gremlin')
-        self.assertTrue('airports' in data_sets)
 
     def test_get_sample_queries_gremlin(self):
         language = 'gremlin'
@@ -40,10 +37,6 @@ class TestGetDataSets(unittest.TestCase):
         queries = get_queries(language, name_full_path, location)
         self.assertEqual(1, len(queries))
         self.assertEqual('0_test_nodes.txt', queries[0]['name'])
-
-    def test_get_data_sets_sparql(self):
-        data_sets = get_data_sets('sparql')
-        self.assertTrue('airports' in data_sets)
 
     def test_get_sample_queries_sparql(self):
         language = 'sparql'
