@@ -1549,16 +1549,16 @@ class Graph(Magics):
                     if language_dropdown.value != 'sparql':
                         fullfile_option_dropdown.layout.visibility = 'visible'
                         fullfile_option_dropdown.layout.display = 'flex'
-                    # If textbox has a value, display it instead of the filepicker
-                    if seed_file_location_text.value:
-                        seed_file_location_text.layout.visibility = 'visible'
-                        seed_file_location_text.layout.display = 'flex'
-                        submit_button.layout.visibility = 'visible'
-                    else:
-                        seed_file_location.layout.visibility = 'visible'
-                        seed_file_location.layout.display = 'flex'
-                        if seed_file_location.value:
-                            submit_button.layout.visibility = 'visible'
+                # If textbox has a value, display it instead of the filepicker
+                if seed_file_location_text.value:
+                    seed_file_location_text.layout.visibility = 'visible'
+                    seed_file_location_text.layout.display = 'flex'
+                    submit_button.layout.visibility = 'visible'
+                else:
+                    seed_file_location.layout.visibility = 'visible'
+                    seed_file_location.layout.display = 'flex'
+                if language_dropdown.value and (seed_file_location.value or seed_file_location_text.value):
+                    submit_button.layout.visibility = 'visible'
             elif selected_source == 'samples':
                 language_dropdown.layout.visibility = 'hidden'
                 language_dropdown.layout.display = 'none'
