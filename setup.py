@@ -71,7 +71,7 @@ setup(
         'requests',
         'ipywidgets',
         'networkx==2.4',
-        'Jinja2==2.11.3',
+        'Jinja2==3.0.3',
         'notebook>=6.1.5',
         'jupyter-contrib-nbextensions',
         'widgetsnbextension',
