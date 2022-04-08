@@ -1506,8 +1506,8 @@ class Graph(Magics):
 
         fullfile_option_dropdown = widgets.Dropdown(
             description='Full File Query:',
-            options=['TRUE', 'FALSE'],
-            value=str(args.full_file_query).upper(),
+            options=[True, False],
+            value=args.full_file_query,
             disabled=False,
             layout=widgets.Layout(display='none')
         )
@@ -1533,14 +1533,12 @@ class Graph(Magics):
         def reset_seedfile_textbox():
             seed_file_location_text.layout.visibility = 'hidden'
             seed_file_location_text.layout.display = 'none'
-            seed_file_location_text.value = ''
 
         def on_source_value_change(change):
             reset_seedfile_textbox()
             submit_button.layout.visibility = 'hidden'
             selected_source = change['new']
             if selected_source == 'custom':
-                data_set_drop_down.value = None
                 model_dropdown.layout.visibility = 'hidden'
                 model_dropdown.layout.display = 'none'
                 data_set_drop_down.layout.visibility = 'hidden'
@@ -1551,10 +1549,17 @@ class Graph(Magics):
                     if language_dropdown.value != 'sparql':
                         fullfile_option_dropdown.layout.visibility = 'visible'
                         fullfile_option_dropdown.layout.display = 'flex'
-                    seed_file_location.layout.visibility = 'visible'
-                    seed_file_location.layout.display = 'flex'
-            else:
-                language_dropdown.value = None
+                    # If textbox has a value, display it instead of the filepicker
+                    if seed_file_location_text.value:
+                        seed_file_location_text.layout.visibility = 'visible'
+                        seed_file_location_text.layout.display = 'flex'
+                        submit_button.layout.visibility = 'visible'
+                    else:
+                        seed_file_location.layout.visibility = 'visible'
+                        seed_file_location.layout.display = 'flex'
+                        if seed_file_location.value:
+                            submit_button.layout.visibility = 'visible'
+            elif selected_source == 'samples':
                 language_dropdown.layout.visibility = 'hidden'
                 language_dropdown.layout.display = 'none'
                 fullfile_option_dropdown.layout.visibility = 'hidden'
@@ -1566,17 +1571,41 @@ class Graph(Magics):
                 if model_dropdown.value:
                     data_set_drop_down.layout.visibility = 'visible'
                     data_set_drop_down.layout.display = 'flex'
+                    if data_set_drop_down.value:
+                        submit_button.layout.visibility = 'visible'
+            else:
+                language_dropdown.layout.visibility = 'hidden'
+                language_dropdown.layout.display = 'none'
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+                model_dropdown.layout.visibility = 'hidden'
+                model_dropdown.layout.display = 'none'
+                data_set_drop_down.layout.visibility = 'hidden'
+                data_set_drop_down.layout.display = 'none'
             return
 
         def on_model_value_change(change):
             selected_model = change['new']
             data_sets = get_data_sets(selected_model)
-            data_sets.sort()
-            data_set_drop_down.options = [ds for ds in data_sets if
-                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
-            data_set_drop_down.layout.visibility = 'visible'
-            data_set_drop_down.layout.display = 'flex'
-            submit_button.layout.visibility = 'visible'
+            if data_sets:
+                data_sets.sort()
+                data_set_drop_down.options = [ds for ds in data_sets if
+                                              ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
+                data_set_drop_down.layout.visibility = 'visible'
+                data_set_drop_down.layout.display = 'flex'
+                submit_button.layout.visibility = 'visible'
+            else:
+                data_set_drop_down.layout.visibility = 'hidden'
+                data_set_drop_down.layout.display = 'none'
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_dataset_value_change(change):
+            selected_dataset = change['new']
+            if not selected_dataset:
+                submit_button.layout.visibility = 'hidden'
             return
 
         def on_language_value_change(change):
@@ -1691,6 +1720,7 @@ class Graph(Magics):
             filename = None
             if source_dropdown.value == 'samples':
                 data_set = data_set_drop_down.value.lower()
+                fullfile_query = False
             else:
                 if seed_file_location_text.value:
                     filename = seed_file_location_text.value
@@ -1699,6 +1729,7 @@ class Graph(Magics):
                 else:
                     return
                 data_set = filename
+                fullfile_query = fullfile_option_dropdown.value
             disable_seed_widgets()
             if language_dropdown.value and filename:
                 model = normalize_model_name(language_dropdown.value)
@@ -1771,7 +1802,7 @@ class Graph(Magics):
                             progress.close()
                             return
                 else:  # gremlin and cypher
-                    if args.full_file_query:  # treat entire file content as one query
+                    if fullfile_query:  # treat entire file content as one query
                         if model == 'propertygraph':
                             query_status = process_gremlin_query_line(q['content'], 0, q)
                         else:
@@ -1815,6 +1846,7 @@ class Graph(Magics):
         submit_button.on_click(on_button_clicked)
         source_dropdown.observe(on_source_value_change, names='value')
         model_dropdown.observe(on_model_value_change, names='value')
+        data_set_drop_down.observe(on_dataset_value_change, names='value')
         language_dropdown.observe(on_language_value_change, names='value')
         seed_file_location_text.observe(on_seedfile_value_change, names='value')
 
