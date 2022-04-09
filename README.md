@@ -147,6 +147,18 @@ python -m graph_notebook.notebooks.install --destination ~/notebook/destination/
 jupyter lab ~/notebook/destination/dir
 ```
 
+#### Loading magic extensions in JupyterLab
+
+When attempting to run a line/cell magic on a new notebook in JupyterLab, you may encounter an error like:
+```
+UsageError: Cell magic `%%graph_notebook_config` not found.
+```
+
+To fix this, manually reload the magic extensions by running:
+```
+%load_ext graph_notebook.magics
+```
+
 ## Connecting to a graph database
 
 ### Gremlin Server
