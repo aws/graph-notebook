@@ -3,7 +3,7 @@ import boto3
 import uuid
 import time
 
-class glueutil:
+class glue_utils:
     
     def __init__(self):
         aws_region = boto3.session.Session().region_name
@@ -79,12 +79,10 @@ class glueutil:
 
         print('Created IAM role for AWS Glue Job')
         self.iamrole = role['Role']['RoleName']
-        print(self.iamrole)
-        
-        
+        self.iamroleArn = role['Role']['Arn']
+        print(self.iamroleArn)     
     
     def setassumerole(self):
-        
         assumerole_policy = {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -116,11 +114,8 @@ class glueutil:
             PolicyDocument=json.dumps(assumerole_policy)
         )
     
-    
     def getclusterdetails(self,clusterEndpoint):
-        
         clusters = self.neptune.describe_db_clusters()
-
         db_config = {};
 
         for cluster in clusters['DBClusters']:
@@ -237,8 +232,6 @@ class glueutil:
             
 
     def setupglueconnections(self):
-        
-        subnet_ids = []
         subnets = self.ec2_client.describe_subnets(SubnetIds=self.db_subnetIds)
 
         # create connection objects from subnets
@@ -262,9 +255,6 @@ class glueutil:
             )
 
             self.connections.append({"connectionName": connectionName, "subnet": subnet["AvailabilityZone"]})
-
-        
-
 
     def updategluejobwithconnection(self,glueconnection):
         
@@ -303,8 +293,6 @@ class glueutil:
                 WorkerType='G.2X'
             )
         
- 
-
     def startjob(self,jobname):
         
         startjobresponse = self.glue_client.start_job_run(
@@ -312,8 +300,7 @@ class glueutil:
         )
         
         return startjobresponse
-    
-    
+     
     def checkjobstatus(self,jobname,jobrunid):
         
         while 1==1:
