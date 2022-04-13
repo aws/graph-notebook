@@ -1814,8 +1814,8 @@ class Graph(Magics):
                             if query_status == 1:
                                 any_errors_flag = True
                                 error_count += 1
-                            progress.value += 1
-                            continue
+                                progress.value += 1
+                                continue
                     else:  # treat each line as its own query
                         for line_index, query_line in enumerate(q['content'].splitlines()):
                             if model == 'propertygraph':
@@ -1829,8 +1829,6 @@ class Graph(Magics):
                                 if query_status == 1:
                                     any_errors_flag = True
                                     error_count += 1
-                                progress.value += 1
-                                continue
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
