@@ -1512,60 +1512,76 @@ class Graph(Magics):
             layout=widgets.Layout(display='none')
         )
 
+        location_option_dropdown = widgets.Dropdown(
+            description='Location:',
+            options=['Local', 'S3'],
+            value='Local',
+            disabled=False,
+            layout=widgets.Layout(display='none')
+        )
+
         seed_file_location_text = widgets.Text(
+            description='Source:',
             placeholder='path/to/seedfiles/directory',
-            description='Directory:',
             disabled=False
         )
 
         seed_file_location = FileChooser()
         seed_file_location.layout.display = 'none'
 
+        seed_file_location_text_hbox = widgets.HBox([seed_file_location_text])
+
         submit_button = widgets.Button(description="Submit")
         model_dropdown.layout.visibility = 'hidden'
         language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
         fullfile_option_dropdown.layout.visibility = 'hidden'
-        seed_file_location_text.layout.visibility = 'hidden'
+        location_option_dropdown.layout.visibility = 'hidden'
+        seed_file_location_text_hbox.layout.visibility = 'hidden'
         seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
 
-        def reset_seedfile_textbox():
-            seed_file_location_text.layout.visibility = 'hidden'
-            seed_file_location_text.layout.display = 'none'
+        def hide_all_widgets():
+            location_option_dropdown.layout.visibility = 'hidden'
+            location_option_dropdown.layout.display = 'none'
+            seed_file_location_text_hbox.layout.visibility = 'hidden'
+            seed_file_location_text_hbox.layout.display = 'none'
+            language_dropdown.layout.visibility = 'hidden'
+            language_dropdown.layout.display = 'none'
+            fullfile_option_dropdown.layout.visibility = 'hidden'
+            fullfile_option_dropdown.layout.display = 'none'
+            seed_file_location.layout.visibility = 'hidden'
+            seed_file_location.layout.display = 'none'
+            model_dropdown.layout.visibility = 'hidden'
+            model_dropdown.layout.display = 'none'
+            data_set_drop_down.layout.visibility = 'hidden'
+            data_set_drop_down.layout.display = 'none'
+            submit_button.layout.visibility = 'hidden'
 
         def on_source_value_change(change):
-            reset_seedfile_textbox()
-            submit_button.layout.visibility = 'hidden'
+            hide_all_widgets()
             selected_source = change['new']
             if selected_source == 'custom':
-                model_dropdown.layout.visibility = 'hidden'
-                model_dropdown.layout.display = 'none'
-                data_set_drop_down.layout.visibility = 'hidden'
-                data_set_drop_down.layout.display = 'none'
                 language_dropdown.layout.visibility = 'visible'
                 language_dropdown.layout.display = 'flex'
+                location_option_dropdown.layout.visibility = 'visible'
+                location_option_dropdown.layout.display = 'flex'
                 if language_dropdown.value:
                     if language_dropdown.value != 'sparql':
                         fullfile_option_dropdown.layout.visibility = 'visible'
                         fullfile_option_dropdown.layout.display = 'flex'
-                # If textbox has a value, display it instead of the filepicker
-                if seed_file_location_text.value:
-                    seed_file_location_text.layout.visibility = 'visible'
-                    seed_file_location_text.layout.display = 'flex'
-                    submit_button.layout.visibility = 'visible'
-                else:
+                # If textbox has a value, OR we are loading from S3, display textbox instead of the filepicker
+                if seed_file_location_text.value or location_option_dropdown.value == 'S3':
+                    seed_file_location_text_hbox.layout.visibility = 'visible'
+                    seed_file_location_text_hbox.layout.display = 'flex'
+                elif seed_file_location.value or location_option_dropdown.value == 'Local':
                     seed_file_location.layout.visibility = 'visible'
                     seed_file_location.layout.display = 'flex'
-                if language_dropdown.value and (seed_file_location.value or seed_file_location_text.value):
+                if language_dropdown.value \
+                        and (seed_file_location_text.value or
+                             (seed_file_location.value and location_option_dropdown.value == 'Local')):
                     submit_button.layout.visibility = 'visible'
             elif selected_source == 'samples':
-                language_dropdown.layout.visibility = 'hidden'
-                language_dropdown.layout.display = 'none'
-                fullfile_option_dropdown.layout.visibility = 'hidden'
-                fullfile_option_dropdown.layout.display = 'none'
-                seed_file_location.layout.visibility = 'hidden'
-                seed_file_location.layout.display = 'none'
                 model_dropdown.layout.visibility = 'visible'
                 model_dropdown.layout.display = 'flex'
                 if model_dropdown.value:
@@ -1573,17 +1589,6 @@ class Graph(Magics):
                     data_set_drop_down.layout.display = 'flex'
                     if data_set_drop_down.value:
                         submit_button.layout.visibility = 'visible'
-            else:
-                language_dropdown.layout.visibility = 'hidden'
-                language_dropdown.layout.display = 'none'
-                fullfile_option_dropdown.layout.visibility = 'hidden'
-                fullfile_option_dropdown.layout.display = 'none'
-                seed_file_location.layout.visibility = 'hidden'
-                seed_file_location.layout.display = 'none'
-                model_dropdown.layout.visibility = 'hidden'
-                model_dropdown.layout.display = 'none'
-                data_set_drop_down.layout.visibility = 'hidden'
-                data_set_drop_down.layout.display = 'none'
             return
 
         def on_model_value_change(change):
@@ -1618,14 +1623,35 @@ class Graph(Magics):
             else:
                 fullfile_option_dropdown.layout.visibility = 'hidden'
                 fullfile_option_dropdown.layout.display = 'none'
-            if not seed_file_location_text.value and seed_file_location_text.layout.visibility == 'hidden':
+            if not seed_file_location_text.value and seed_file_location_text_hbox.layout.visibility == 'hidden':
                 seed_file_location.layout.visibility = 'visible'
                 seed_file_location.layout.display = 'flex'
                 submit_button.layout.visibility = 'visible'
             return
 
-        def on_seedfile_value_change(change):
-            if seed_file_location.value or seed_file_location_text.value:
+        def on_location_value_change(change):
+            selected_location = change['new']
+            if selected_location == 'Local' and not seed_file_location_text.value:
+                seed_file_location_text_hbox.layout.visibility = 'hidden'
+                seed_file_location_text_hbox.layout.display = 'none'
+                seed_file_location.layout.visibility = 'visible'
+                seed_file_location.layout.display = 'flex'
+            else:
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+                seed_file_location_text_hbox.layout.visibility = 'visible'
+                seed_file_location_text_hbox.layout.display = 'flex'
+            return
+
+        def on_seedfile_text_value_change(change):
+            if seed_file_location_text.value:
+                submit_button.layout.visibility = 'visible'
+            else:
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_seedfile_select_value_change(change):
+            if seed_file_location.value:
                 submit_button.layout.visibility = 'visible'
             else:
                 submit_button.layout.visibility = 'hidden'
@@ -1637,9 +1663,16 @@ class Graph(Magics):
             language_dropdown.disabled = True
             data_set_drop_down.disabled = True
             fullfile_option_dropdown.disabled = True
+            location_option_dropdown.disabled = True
             seed_file_location_text.disabled = True
             seed_file_location.disabled = True
             submit_button.close()
+
+        def normalize_language_name(lang):
+            lang = lang.lower().replace('_', '')
+            if lang in ['opencypher', 'oc', 'cypher']:
+                lang = 'cypher'
+            return lang
 
         def process_gremlin_query_line(query_line, line_index, q):
             # Return a state here, with indication of any other variable states that need changing.
@@ -1717,12 +1750,19 @@ class Graph(Magics):
                     return 2
 
         def on_button_clicked(b=None):
+            seed_file_location_text_hbox.children = (seed_file_location_text,)
             filename = None
             if source_dropdown.value == 'samples':
                 data_set = data_set_drop_down.value.lower()
                 fullfile_query = False
             else:
                 if seed_file_location_text.value:
+                    if location_option_dropdown.value == 'S3' and not seed_file_location_text.value.startswith('s3://'):
+                        seed_file_location_text_validation_label = widgets.HTML(
+                            '<p style="color:red;">S3 source URI must start with s3://</p>')
+                        seed_file_location_text_validation_label.style = DescriptionStyle(color='red')
+                        seed_file_location_text_hbox.children += (seed_file_location_text_validation_label,)
+                        return
                     filename = seed_file_location_text.value
                 elif seed_file_location.value:
                     filename = seed_file_location.value
@@ -1848,22 +1888,29 @@ class Graph(Magics):
         model_dropdown.observe(on_model_value_change, names='value')
         data_set_drop_down.observe(on_dataset_value_change, names='value')
         language_dropdown.observe(on_language_value_change, names='value')
-        seed_file_location_text.observe(on_seedfile_value_change, names='value')
+        location_option_dropdown.observe(on_location_value_change, names='value')
+        seed_file_location_text.observe(on_seedfile_text_value_change, names='value')
+        seed_file_location.observe(on_seedfile_select_value_change, names='value')
 
         display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, fullfile_option_dropdown,
-                seed_file_location, seed_file_location_text, submit_button, progress_output, output)
+                location_option_dropdown, seed_file_location, seed_file_location_text_hbox,  # seed_file_location_text,
+                submit_button, progress_output, output)
 
         if args.source != '' or args.language != '':
             source_dropdown.value = 'custom'
             valid_language_value = False
-            if args.language != '':
-                if args.language.lower() in SEED_LANGUAGE_OPTIONS:
-                    language_dropdown.value = args.language.lower()
-                    valid_language_value = True
+            language = normalize_language_name(args.language)
+            if language != '' and language in SEED_LANGUAGE_OPTIONS:
+                language_dropdown.value = language
+                valid_language_value = True
             if args.source != '':
                 seed_file_location_text.value = args.source
-                seed_file_location_text.layout.visibility = 'visible'
-                seed_file_location_text.layout.display = 'flex'
+                seed_file_location_text_hbox.layout.visibility = 'visible'
+                seed_file_location_text_hbox.layout.display = 'flex'
+                if seed_file_location_text.value.startswith('s3://'):
+                    location_option_dropdown.value = 'S3'
+                location_option_dropdown.layout.visibility = 'visible'
+                location_option_dropdown.layout.display = 'flex'
                 seed_file_location.layout.visibility = 'hidden'
                 seed_file_location.layout.display = 'none'
             if seed_file_location_text.value and valid_language_value and args.run:
