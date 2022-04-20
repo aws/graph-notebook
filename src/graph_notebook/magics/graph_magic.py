@@ -706,14 +706,20 @@ class Graph(Magics):
         self.handle_opencypher_status(line, local_ns)
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def status(self, line):
+    def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
         status_res = self.client.status()
         status_res.raise_for_status()
         try:
             res = status_res.json()
             logger.info(f'got the json format response {res}')
+            store_to_ns(args.store_to, res, local_ns)
             return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
@@ -722,6 +728,7 @@ class Graph(Magics):
                 print()
                 print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
                 print()
+            store_to_ns(args.store_to, status_res.text, local_ns)
             return status_res
 
     @line_magic
