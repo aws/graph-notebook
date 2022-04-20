@@ -57,7 +57,7 @@ module.exports = [
     entry: "./src/extension.js",
     output: {
       filename: "extension.js",
-      path: path.resolve(__dirname, "nbextension", "static"),
+      path: path.resolve(__dirname, "nbextension"),
       libraryTarget: "var",
     },
     module: {
@@ -80,7 +80,7 @@ module.exports = [
     entry: "./src/extension.ts",
     output: {
       filename: "index.js",
-      path: path.resolve(__dirname, "nbextension", "static"),
+      path: path.resolve(__dirname, "nbextension"),
       // Using amd target without giving a library name requires the module being loaded by a RequireJS module loader.
       // See https://webpack.js.org/configuration/output/#outputlibrary and src/extension.js.
       libraryTarget: "amd",

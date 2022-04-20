@@ -3,7 +3,17 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
 - Add includeWaiting param to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
+- Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
+
+## Release 3.3.0 (March 28, 2022)
+- Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
+- Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
+- Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
+- Fixed integration tests to address updated air routes data and other changes ([Link to PR](https://github.com/aws/graph-notebook/pull/270))
+- Bumped jinja2 from 2.10.1 to 3.0.3 ([Link to PR](https://github.com/aws/graph-notebook/pull/283))
+- Added documentation for JupyterLab installation ([Link to PR](https://github.com/aws/graph-notebook/pull/284))
 
 ## Release 3.2.0 (February 25, 2022)
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
