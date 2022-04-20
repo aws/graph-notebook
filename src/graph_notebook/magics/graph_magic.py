@@ -665,7 +665,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.gremlin_status(args.queryId)
+            status_res = self.client.gremlin_status(query_id=args.queryId, include_waiting=args.includeWaiting)
             status_res.raise_for_status()
             res = status_res.json()
         else:
@@ -1848,16 +1848,20 @@ class Graph(Magics):
 
     def handle_opencypher_status(self, line, local_ns):
         """
-        This is refactored xinto its own handler method so that we can invoke is from
+        This is refactored into its own handler method so that we can invoke it from
         %opencypher_status or from %oc_status
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
                             help='The ID of a running OpenCypher query. '
                                  'Only displays the status of the specified query.')
-        parser.add_argument('-c', '--cancelQuery', action='store_true',
-                            help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
+        parser.add_argument('-c', '--cancelQuery', action='store_true', default=False,
+                            help='Tells the status command to cancel a query. This parameter does not take a value.')
+        parser.add_argument('-w', '--includeWaiting', action='store_true', default=False,
+                            help='When set to true and other parameters are not present, causes status information '
+                                 'for waiting queries to be returned as well as for running queries. '
+                                 'This parameter does not take a value.')
+        parser.add_argument('-s', '--silent', action='store_true', default=False,
                             help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
                                  ' If silent is not present or silent=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
@@ -1865,7 +1869,10 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            res = self.client.opencypher_status(args.queryId)
+            if args.includeWaiting and not args.queryId:
+                res = self.client.opencypher_status(include_waiting=args.includeWaiting)
+            else:
+                res = self.client.opencypher_status(query_id=args.queryId)
             res.raise_for_status()
         else:
             if args.queryId == '':
