@@ -5,7 +5,6 @@ import time
 
 
 class glue_utils:
-    
     def __init__(self):
         aws_region = boto3.session.Session().region_name
         session = boto3.Session(region_name=aws_region)

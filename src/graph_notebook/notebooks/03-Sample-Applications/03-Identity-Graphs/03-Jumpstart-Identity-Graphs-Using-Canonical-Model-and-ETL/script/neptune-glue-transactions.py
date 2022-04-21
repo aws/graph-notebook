@@ -23,41 +23,31 @@ from neptune_python_utils.endpoints import Endpoints
 from neptune_python_utils.gremlin_utils import GremlinUtils
 
 args = getResolvedOptions(sys.argv, ['JOB_NAME', 'DATABASE_NAME', 'NEPTUNE_CONNECTION_NAME', 'AWS_REGION', 'CONNECT_TO_NEPTUNE_ROLE_ARN'])
-
 sc = SparkContext()
 glueContext = GlueContext(sc)
- 
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
-
 database = args['DATABASE_NAME']
 user_transactions_table = 'transactions'
 
 # Create Gremlin client
-
 gremlin_endpoints = GlueNeptuneConnectionInfo(args['AWS_REGION'], args['CONNECT_TO_NEPTUNE_ROLE_ARN']).neptune_endpoints(args['NEPTUNE_CONNECTION_NAME'])
 gremlin_client = GlueGremlinClient(gremlin_endpoints)
 
 # 1. Get data from source SQL database
 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = user_transactions_table, transformation_ctx = "datasource0")
 
-# datasource1 = glueContext.create_dynamic_frame.from_catalog(database = database, table_name = product_category_table, transformation_ctx = "datasource1")
-# datasource2 = datasource0.join( ["CATEGORY_ID"],["CATEGORY_ID"], datasource1, transformation_ctx = "join")
-
 # 2. Map fields to bulk load CSV column headings format
-
 applymapping1 = ApplyMapping.apply(frame = datasource0, mappings = [("transaction_id", "string", "transaction_id:String", "string"), 
     ("user_id", "string", "user_id:String", "string"), ("product_id", "string", "product_id:String", "string"), 
     ("product_name", "string", "product_name:String", "string"), ("purchased_date", "string", "purchased_date:String","string"),("review", "string", "review:String","string")], transformation_ctx = "applymapping1")
 
 # 3. create product vertices
-
 productDF = SelectFields.apply(frame = applymapping1, paths = ["product_id:String","product_name:String"], transformation_ctx = "productDF")
 productDF = GlueGremlinCsvTransforms.create_prefixed_columns(productDF, [('~id', 'product_id:String','product')])
 productDF.toDF().foreachPartition(gremlin_client.upsert_vertices('Product', batch_size=100))
 
 # 4. create user to product edges
-
 userToProductMapping = SelectFields.apply(frame = applymapping1, paths = ["user_id:String","product_id:String","purchased_date:String"], transformation_ctx = "userToProductMapping")
 userToProductMapping = GlueGremlinCsvTransforms.create_prefixed_columns(userToProductMapping, [('~from', 'user_id:String','user'),('~to', 'product_id:String','product')])
 userToProductMapping = GlueGremlinCsvTransforms.create_edge_id_column(userToProductMapping, '~from', '~to')
