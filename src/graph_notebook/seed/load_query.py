@@ -103,11 +103,8 @@ def download_and_extract_archive_from_s3(bucket_name, filepath):
 # returns a list of queries which correspond to a given query language and name
 def get_queries(model, name, location):
     if location == 'samples':
-        bucketname = 'aws-neptune-notebook'  # replace with your bucket name
-        filename_parent = 'queries/' + normalize_model_name(model)
-        filename_base = name + '.zip'
-        filename = filename_parent + '/' + filename_base
-        path_to_data_sets = download_and_extract_archive_from_s3(bucketname, filename)
+        d = os.path.dirname(os.path.realpath(__file__))
+        path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
     else:
         # handle custom files here
         if name.startswith('s3://'):
@@ -123,7 +120,7 @@ def get_queries(model, name, location):
             if new_query:
                 queries.append(new_query)
         queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexicographical order.
-        if location == 'samples' or name.startswith('s3://'):
+        if name.startswith('s3://'):
             # if S3 data was downloaded, delete the temp folder.
             rmtree(path_to_data_sets, ignore_errors=True)
     else:  # path_to_data_sets is a file
