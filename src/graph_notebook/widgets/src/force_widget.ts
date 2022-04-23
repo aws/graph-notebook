@@ -28,10 +28,11 @@ import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 import feather from "feather-icons";
 import $ from "jquery";
-import "jqueryui";
+import "jquery-ui/ui/widgets/draggable";
+import "jquery-ui/ui/widgets/resizable";
 
 // Import the CSS
-import "./css/widget.css";
+import "../css/widget.css";
 import DraggableOptions = JQueryUI.DraggableOptions;
 import ResizableOptions = JQueryUI.ResizableOptions;
 
@@ -797,12 +798,19 @@ export class ForceView extends DOMWidgetView {
       }
     });
 
-    this.vis?.setOptions({ physics: false });
+    // check if physics have been manually disabled/enabled, set flag to indicate that this setting shouldn't be changed
+    let re_enable_physics = false;
+    if (this.visOptions.physics.enabled == true) {
+      this.vis?.setOptions({ physics: false });
+      re_enable_physics = true;
+    }
     this.nodeDataset.update(nodeUpdate);
     this.edgeDataset.update(edgeUpdate);
 
-    this.vis?.setOptions({ physics: true });
-    this.vis?.stopSimulation();
+    if (re_enable_physics) {
+      this.vis?.setOptions({ physics: true });
+      this.vis?.stopSimulation();
+    }
     this.nodeIDSearchMatches = Object.keys(nodeIDs);
     this.edgeIDSearchMatches = Object.keys(edgeIDs);
   }
