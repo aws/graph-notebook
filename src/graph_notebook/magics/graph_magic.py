@@ -201,9 +201,11 @@ class Graph(Magics):
 
         self.client = builder.build()
 
+    @magic_variables
     @line_cell_magic
+    @needs_local_scope
     @display_exceptions
-    def graph_notebook_config(self, line='', cell=''):
+    def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data)
@@ -322,14 +324,17 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
-            explain = res.content.decode('utf-8')
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            explain = explain_bytes.decode('utf-8')
             store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
                 titles.append('Explain')
-                explain_bytes = explain.encode('ascii')
+                explain_bytes = explain.encode('ascii', 'ignore')
                 base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                first_tab_html = sparql_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = sparql_explain_template.render(table=explain,
+                                                                link=f"data:text/html;base64,{base64_str}")
         else:
             query_type = get_query_type(cell)
             headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
@@ -538,14 +543,18 @@ class Graph(Magics):
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            # Replace strikethrough character bytes, can't be encoded to ASCII
+            explain_bytes = res.content.replace(b'\xcc', b'-')
+            explain_bytes = explain_bytes.replace(b'\xb6', b'')
+            query_res = explain_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='explain', results=query_res, res=res)
                 titles.append('Explain')
                 if 'Neptune Gremlin Explain' in query_res:
-                    explain_bytes = query_res.encode('ascii')
+                    explain_bytes = query_res.encode('ascii', 'ignore')
                     base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No explain found')
         elif mode == QueryMode.PROFILE:
@@ -563,14 +572,17 @@ class Graph(Magics):
                             "profile.indexOps": args.profile_indexOps}
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
-            query_res = res.content.decode('utf-8')
+            profile_bytes = res.content.replace(b'\xcc', b'-')
+            profile_bytes = profile_bytes.replace(b'\xb6', b'')
+            query_res = profile_bytes.decode('utf-8')
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='profile', results=query_res, res=res)
                 titles.append('Profile')
                 if 'Neptune Gremlin Profile' in query_res:
-                    explain_bytes = query_res.encode('ascii')
+                    explain_bytes = query_res.encode('ascii', 'ignore')
                     base64_str = base64.b64encode(explain_bytes).decode('ascii')
-                    first_tab_html = gremlin_explain_profile_template.render(content=query_res, link=f"data:text/html;base64,{base64_str}")
+                    first_tab_html = gremlin_explain_profile_template.render(content=query_res,
+                                                                             link=f"data:text/html;base64,{base64_str}")
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
@@ -655,7 +667,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.gremlin_status(args.queryId)
+            status_res = self.client.gremlin_status(query_id=args.queryId, include_waiting=args.includeWaiting)
             status_res.raise_for_status()
             res = status_res.json()
         else:
@@ -696,14 +708,20 @@ class Graph(Magics):
         self.handle_opencypher_status(line, local_ns)
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def status(self, line):
+    def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
         status_res = self.client.status()
         status_res.raise_for_status()
         try:
             res = status_res.json()
             logger.info(f'got the json format response {res}')
+            store_to_ns(args.store_to, res, local_ns)
             return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
@@ -712,6 +730,7 @@ class Graph(Magics):
                 print()
                 print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
                 print()
+            store_to_ns(args.store_to, status_res.text, local_ns)
             return status_res
 
     @line_magic
@@ -2160,16 +2179,20 @@ class Graph(Magics):
 
     def handle_opencypher_status(self, line, local_ns):
         """
-        This is refactored xinto its own handler method so that we can invoke is from
+        This is refactored into its own handler method so that we can invoke it from
         %opencypher_status or from %oc_status
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
                             help='The ID of a running OpenCypher query. '
                                  'Only displays the status of the specified query.')
-        parser.add_argument('-c', '--cancelQuery', action='store_true',
-                            help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
+        parser.add_argument('-c', '--cancelQuery', action='store_true', default=False,
+                            help='Tells the status command to cancel a query. This parameter does not take a value.')
+        parser.add_argument('-w', '--includeWaiting', action='store_true', default=False,
+                            help='When set to true and other parameters are not present, causes status information '
+                                 'for waiting queries to be returned as well as for running queries. '
+                                 'This parameter does not take a value.')
+        parser.add_argument('-s', '--silent', action='store_true', default=False,
                             help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
                                  ' If silent is not present or silent=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
@@ -2177,7 +2200,10 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            res = self.client.opencypher_status(args.queryId)
+            if args.includeWaiting and not args.queryId:
+                res = self.client.opencypher_status(include_waiting=args.includeWaiting)
+            else:
+                res = self.client.opencypher_status(query_id=args.queryId)
             res.raise_for_status()
         else:
             if args.queryId == '':

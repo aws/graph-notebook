@@ -37,6 +37,6 @@ const plugin: IPlugin<Application<Widget>, void> = {
   requires: [IJupyterWidgetRegistry],
   activate: activateWidgetExtension,
   autoStart: true,
-};
+} as unknown as IPlugin<Application<Widget>, void>;
 
 export default plugin;
