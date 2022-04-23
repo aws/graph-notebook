@@ -18,10 +18,10 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
         gremlin_network = GremlinNetwork()
         gremlin_network.add_results(results)
         sea_code = '22'
-        aus_code = '3'
-        edge_id = '4406'
+        jnu_code = '1102'
+        edge_id = '7527'
         expected_label = 'route'
-        actual_label = gremlin_network.graph[sea_code][aus_code][edge_id]['label']
+        actual_label = gremlin_network.graph[sea_code][jnu_code][edge_id]['label']
         self.assertEqual(expected_label, actual_label)
 
     @pytest.mark.gremlin
@@ -30,7 +30,7 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
         results = self.client.gremlin_query(airports_path_query)
         gremlin_network = GremlinNetwork()
         gremlin_network.add_results(results)
-        edge_id = '4406'
+        edge_id = '7473'
         expected_label = 'route'
         actual_label = gremlin_network.graph.nodes.get(edge_id)['label']
         self.assertEqual(expected_label, actual_label)
@@ -47,8 +47,8 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
         self.assertIsNotNone(gremlin_network.graph.nodes.get('22'))
         self.assertIsNotNone(gremlin_network.graph.nodes.get('18'))
         self.assertIsNotNone(gremlin_network.graph.nodes.get('359'))
-        self.assertTrue(gremlin_network.graph.has_edge('22', '18', '4420'))
-        self.assertTrue(gremlin_network.graph.has_edge('18', '359', '7126'))
+        self.assertTrue(gremlin_network.graph.has_edge('22', '18', '4480'))
+        self.assertTrue(gremlin_network.graph.has_edge('18', '359', '7208'))
 
     @pytest.mark.gremlin
     def test_add_paths_with_bad_pattern(self):
@@ -71,7 +71,7 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
 
         gremlin_network = GremlinNetwork()
         gremlin_network.add_results(results)
-        self.assertEqual('route', gremlin_network.graph.edges[('ANC', 'BLI', '5276')]['label'])
+        self.assertEqual('route', gremlin_network.graph.edges[('ANC', 'BLI', '5339')]['label'])
 
     @pytest.mark.gremlin
     def test_valuemap_without_ids(self):
@@ -99,7 +99,7 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
         results = self.client.gremlin_query(query)
         gremlin_network = GremlinNetwork()
         gremlin_network.add_results(results)
-        edge = gremlin_network.graph.edges[('22', '151', '7389')]
+        edge = gremlin_network.graph.edges[('22', '151', '7474')]
         self.assertTrue('arrows' not in edge)
 
     @pytest.mark.gremlin
@@ -108,5 +108,5 @@ class TestGremlinNetwork(DataDrivenGremlinTest):
         results = self.client.gremlin_query(query)
         gremlin_network = GremlinNetwork()
         gremlin_network.add_results(results)
-        edge = gremlin_network.graph.edges[('3670', '22', '53637')]
+        edge = gremlin_network.graph.edges[('3728', '22', '54424')]
         self.assertTrue('arrows' not in edge)
