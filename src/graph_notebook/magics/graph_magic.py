@@ -14,6 +14,7 @@ import os
 import uuid
 from ipyfilechooser import FileChooser
 from enum import Enum
+from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
