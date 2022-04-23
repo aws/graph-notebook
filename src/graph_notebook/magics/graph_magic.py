@@ -1757,9 +1757,18 @@ class Graph(Magics):
                 fullfile_query = False
             else:
                 if seed_file_location_text.value:
-                    if location_option_dropdown.value == 'S3' and not seed_file_location_text.value.startswith('s3://'):
+                    stall_with_warning = False
+                    if location_option_dropdown.value == 'S3' and not (seed_file_location_text.value.startswith('s3://')
+                                                                       and len(seed_file_location_text.value) > 7):
                         seed_file_location_text_validation_label = widgets.HTML(
                             '<p style="color:red;">S3 source URI must start with s3://</p>')
+                        stall_with_warning = True
+                    elif location_option_dropdown.value == 'Local' \
+                            and not seed_file_location_text.value.startswith('/'):
+                        seed_file_location_text_validation_label = widgets.HTML(
+                            '<p style="color:red;">Local source URI must be a valid file path</p>')
+                        stall_with_warning = True
+                    if stall_with_warning:
                         seed_file_location_text_validation_label.style = DescriptionStyle(color='red')
                         seed_file_location_text_hbox.children += (seed_file_location_text_validation_label,)
                         return
@@ -1780,9 +1789,14 @@ class Graph(Magics):
             with output:
                 print(f'Loading data set {data_set} for {loading_msg_model}')
             queries = get_queries(model, data_set, source_dropdown.value)
-            if len(queries) < 1:
+            if queries:
+                if len(queries) < 1:
+                    with output:
+                        print('Did not find any queries for the given dataset')
+                    return
+            else:
                 with output:
-                    print('Did not find any queries for the given dataset')
+                    print('Query retrieval from files terminated with errors.')
                 return
 
             load_index = 1  # start at 1 to have a non-empty progress bar

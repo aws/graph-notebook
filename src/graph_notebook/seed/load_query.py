@@ -35,7 +35,7 @@ def file_to_query(file, path_to_data_sets):
             }
             return query
     except Exception:
-        print(f"Unable to read queries from file: {file}")
+        print(f"Unable to read queries from file [{file}] under local directory [{path_to_data_sets}]")
         return None
 
 
@@ -114,7 +114,7 @@ def get_queries(model, name, location):
             path_to_data_sets = name
     queries = []
 
-    if os.path.isdir(path_to_data_sets):  # path_to_data_sets is a directory
+    if os.path.isdir(path_to_data_sets):  # path_to_data_sets is an existing directory
         for file in os.listdir(path_to_data_sets):
             new_query = file_to_query(file, path_to_data_sets)
             if new_query:
@@ -123,7 +123,7 @@ def get_queries(model, name, location):
         if name.startswith('s3://'):
             # if S3 data was downloaded, delete the temp folder.
             rmtree(path_to_data_sets, ignore_errors=True)
-    else:  # path_to_data_sets is a file
+    elif os.path.isfile(path_to_data_sets):  # path_to_data_sets is an existing file
         file = os.path.basename(path_to_data_sets)
         folder = os.path.dirname(path_to_data_sets)
         new_query = file_to_query(file, folder)
@@ -131,6 +131,8 @@ def get_queries(model, name, location):
             queries.append(new_query)
         if name.startswith('s3://'):
             os.unlink(path_to_data_sets)
+    else:
+        return None
 
     return queries
 
