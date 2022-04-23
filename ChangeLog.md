@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Support using %seed with local file path ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
 - Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
 - Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
 - Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
