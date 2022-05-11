@@ -218,11 +218,74 @@ class TestSPARQLNetwork(unittest.TestCase):
         self.assertEqual('http://...', edge['label'])
         self.assertEqual('http://kelvinlawrence.net/air-routes/objectProperty/route', edge['title'])
 
-    def test_sparql_network_group(self):
+    def test_sparql_network_group_default(self):
         sparql_network = SPARQLNetwork()
-        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+        data = get_sparql_result('004_soccer_teams.json')
         sparql_network.add_results(data)
-        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('ontology:Team', node['group'])
+
+    def test_sparql_network_group_default_no_type(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/365')
+        self.assertEqual('DEFAULT_GROUP', node['group'])
+
+    def test_sparql_network_group_default_no_properties(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/85')
+        self.assertEqual('DEFAULT_GROUP', node['group'])
+
+    def test_sparql_network_group_nested_properties_string(self):
+        sparql_network = SPARQLNetwork(group_by_property='P.ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['group'])
+
+    def test_sparql_network_group_nested_properties_string_invalid_prop(self):
+        sparql_network = SPARQLNetwork(group_by_property='P.ontology:wins')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('ontology:Team', node['group'])
+
+    def test_sparql_network_group_nested_properties_string_invalid_format(self):
+        sparql_network = SPARQLNetwork(group_by_property='ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('ontology:Team', node['group'])
+
+    def test_sparql_network_group_nested_properties_string_no_properties(self):
+        sparql_network = SPARQLNetwork(group_by_property='P.destinations')
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/85')
+        self.assertEqual('DEFAULT_GROUP', node['group'])
+
+    def test_sparql_network_group_nested_properties_string_use_binding(self):
+        sparql_network = SPARQLNetwork(group_by_property='type')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('uri', node['group'])
+
+    def test_sparql_network_group_nested_properties_string_shared_property(self):
+        sparql_network = SPARQLNetwork(group_by_property='P.rdf:type')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('ontology:Team', node['group'])
+
+    def test_sparql_network_group_nested_properties_string_use_binding_shared_property(self):
+        sparql_network = SPARQLNetwork(group_by_property='type')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
         self.assertEqual('uri', node['group'])
 
     def test_sparql_network_group_string(self):
@@ -237,7 +300,7 @@ class TestSPARQLNetwork(unittest.TestCase):
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('uri', node['group'])
+        self.assertEqual('class:Airport', node['group'])
 
     def test_sparql_network_group_by_raw_string(self):
         sparql_network = SPARQLNetwork(group_by_raw='__RAW_RESULT__')
@@ -247,32 +310,70 @@ class TestSPARQLNetwork(unittest.TestCase):
         self.assertEqual("{'type': 'uri', 'value': 'http://kelvinlawrence.net/air-routes/resource/24'}", node['group'])
 
     def test_sparql_network_group_map(self):
-        sparql_network = SPARQLNetwork(group_by_property='{"uri":"value"}')
+        sparql_network = SPARQLNetwork(group_by_property='{"class:Airport":"type"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['group'])
+        self.assertEqual("uri", node['group'])
 
     def test_sparql_network_group_map_invalid_key(self):
         sparql_network = SPARQLNetwork(group_by_property='{"foo":"value"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('uri', node['group'])
+        self.assertEqual('class:Airport', node['group'])
 
     def test_sparql_network_group_map_invalid_value(self):
         sparql_network = SPARQLNetwork(group_by_property='{"uri":"bar"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('uri', node['group'])
+        self.assertEqual('class:Airport', node['group'])
 
     def test_sparql_network_group_map_invalid_json(self):
         sparql_network = SPARQLNetwork(group_by_property='{"uri":bar"')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('uri', node['group'])
+        self.assertEqual('class:Airport', node['group'])
+
+    def test_sparql_network_group_nested_properties_map(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"ontology:Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['group'])
+
+    def test_sparql_network_group_nested_properties_map_invalid_key_format(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("ontology:Team", node['group'])
+
+    def test_sparql_network_group_nested_properties_map_invalid_value_format(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"ontology:Team":"ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("ontology:Team", node['group'])
+
+    def test_sparql_network_group_nested_properties_map_use_binding(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"ontology:Team":"type"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("uri", node['group'])
+
+    def test_sparql_network_group_nested_properties_map_multiple(self):
+        sparql_network = SPARQLNetwork(group_by_property='{"ontology:Team":"type", '
+                                                         '"ontology:Stadium": "P.ontology:opened"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node1 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        node2 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Vitality_Stadium')
+        self.assertEqual("uri", node1['group'])
+        self.assertEqual("1910", node2['group'])
 
     def test_sparql_network_group_by_raw_json(self):
         sparql_network = SPARQLNetwork(group_by_raw='{"uri":"__RAW_RESULT__"}')
@@ -302,6 +403,13 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('DEFAULT_GROUP', node['group'])
 
+    def test_sparql_network_node_label_default(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcast...', node['label'])
+
     def test_sparql_network_node_label_string(self):
         sparql_network = SPARQLNetwork(label_max_length=100, display_property='value')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
@@ -316,22 +424,57 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['label'])
 
+    def test_sparql_network_node_label_nested_properties_string(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='P.ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['label'])
+
+    def test_sparql_network_node_label_nested_properties_string_invalid_prop(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='P.ontology:wins')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcastle United', node['label'])
+
+    def test_sparql_network_node_label_nested_properties_string_invalid_format(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcastle United', node['label'])
+
+    def test_sparql_network_node_label_nested_properties_string_no_properties(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='P.destinations')
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/85')
+        self.assertEqual('resource:85', node['label'])
+
+    def test_sparql_network_node_label_nested_properties_string_use_binding(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='type')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('uri', node['label'])
+
     def test_sparql_network_node_label_map(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"uri":"value"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"class:Airport":"value"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('http://kelvinlawrence.net/air-routes/resource/24', node['label'])
 
     def test_sparql_network_node_label_map_invalid_key(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"foo":"value"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"Airport":"value"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['label'])
 
     def test_sparql_network_node_label_map_invalid_value(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"uri":"foo"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"class:Airport":"foo"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
@@ -344,12 +487,51 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['label'])
 
-    def test_sparql_network_node_tooltip_default(self):
-        sparql_network = SPARQLNetwork()
-        data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
+    def test_sparql_network_node_label_nested_properties_map(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"ontology:Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
         sparql_network.add_results(data)
-        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
-        self.assertEqual('resource:24', node['title'])
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['label'])
+
+    def test_sparql_network_node_label_nested_properties_map_invalid_key_format(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("Newcastle United", node['label'])
+
+    def test_sparql_network_node_label_nested_properties_map_invalid_value_format(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"ontology:Team":"ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("Newcastle United", node['label'])
+
+    def test_sparql_network_node_label_nested_properties_map_use_binding(self):
+        sparql_network = SPARQLNetwork(label_max_length=100, display_property='{"ontology:Team":"type"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("uri", node['label'])
+
+    def test_sparql_network_node_label_nested_properties_map_multiple(self):
+        sparql_network = SPARQLNetwork(label_max_length=100,
+                                       display_property='{"ontology:Team":"type", '
+                                                        '"ontology:Stadium": "P.ontology:opened"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node1 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        node2 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Vitality_Stadium')
+        self.assertEqual("uri", node1['label'])
+        self.assertEqual("1910", node2['label'])
+
+    def test_sparql_network_node_tooltip_default(self):
+        sparql_network = SPARQLNetwork(label_max_length=100)
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcastle United', node['label'])
 
     def test_sparql_network_node_tooltip_string(self):
         sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='type')
@@ -365,33 +547,106 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['title'])
 
+    def test_sparql_network_node_tooltip_nested_properties_string(self):
+        sparql_network = SPARQLNetwork(tooltip_property='P.ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_string_invalid_prop(self):
+        sparql_network = SPARQLNetwork(tooltip_property='P.ontology:wins')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcastle United', node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_string_invalid_format(self):
+        sparql_network = SPARQLNetwork(tooltip_property='ontology:founded')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('Newcastle United', node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_string_no_properties(self):
+        sparql_network = SPARQLNetwork(tooltip_property='P.destinations')
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/85')
+        self.assertEqual('resource:85', node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_string_use_binding(self):
+        sparql_network = SPARQLNetwork(tooltip_property='type')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual('uri', node['title'])
+
     def test_sparql_network_node_tooltip_map(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri":"type"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"class:Airport":"type"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('uri', node['title'])
 
     def test_sparql_network_node_tooltip_map_invalid_key(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"foo":"type"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"Airport":"type"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['title'])
 
     def test_sparql_network_node_tooltip_map_invalid_value(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri":"bar"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"class:Airport":"bar"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['title'])
 
     def test_sparql_network_node_tooltip_map_invalid_json(self):
-        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"uri"type"}')
+        sparql_network = SPARQLNetwork(label_max_length=100, tooltip_property='{"class:Airport"type"}')
         data = get_sparql_result('008_duplicate_s_and_p_bindings.json')
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/24')
         self.assertEqual('resource:24', node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_map(self):
+        sparql_network = SPARQLNetwork(tooltip_property='{"ontology:Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("1892", node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_map_invalid_key_format(self):
+        sparql_network = SPARQLNetwork(tooltip_property='{"Team":"P.ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("Newcastle United", node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_map_invalid_value_format(self):
+        sparql_network = SPARQLNetwork(tooltip_property='{"ontology:Team":"ontology:founded"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("Newcastle United", node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_map_use_binding(self):
+        sparql_network = SPARQLNetwork(tooltip_property='{"ontology:Team":"type"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        self.assertEqual("uri", node['title'])
+
+    def test_sparql_network_node_tooltip_nested_properties_map_multiple(self):
+        sparql_network = SPARQLNetwork(tooltip_property='{"ontology:Team":"type", '
+                                                        '"ontology:Stadium": "P.ontology:opened"}')
+        data = get_sparql_result('004_soccer_teams.json')
+        sparql_network.add_results(data)
+        node1 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
+        node2 = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Vitality_Stadium')
+        self.assertEqual("uri", node1['title'])
+        self.assertEqual("1910", node2['title'])
 
     def test_sparql_network_node_different_label_and_tooltip(self):
         sparql_network = SPARQLNetwork(label_max_length=100, display_property='value', tooltip_property='type')
