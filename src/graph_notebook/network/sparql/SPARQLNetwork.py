@@ -3,7 +3,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
+import re
 from networkx import MultiDiGraph
 from rdflib.namespace import RDF, RDFS, OWL, XSD, SKOS, DOAP, FOAF, DC, DCTERMS, VOID
 
@@ -116,11 +116,42 @@ class SPARQLNetwork(EventfulNetwork):
 
         label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
         data['label'] = label
-        if not data.get('title'):
+        if 'title' not in data:
             data['title'] = title
         return data
 
-    def get_property_value(self, binding: dict, custom_property):
+    def get_node_property_value(self, binding: dict, custom_property, data: dict = None):
+        if data is None:
+            data = {}
+            node_type = None
+        else:
+            node_type = self.get_node_class(data)
+        if isinstance(custom_property, dict):
+            if node_type:
+                try:
+                    if node_type in custom_property:
+                        property_for_type = custom_property[node_type]
+                        if property_for_type[:2] == "P." and 'properties' in data:
+                            prop_value = self.retrieve_object_property_value(property_for_type[2:], data['properties'])
+                        else:
+                            prop_value = binding[property_for_type]
+                    else:
+                        prop_value = None
+                except KeyError:
+                    prop_value = None
+            else:
+                prop_value = None
+        elif custom_property[:2] == "P." and 'properties' in data:
+            prop_value = self.retrieve_object_property_value(custom_property[2:], data['properties'])
+        elif custom_property in binding:
+            prop_value = binding[custom_property]
+        else:
+            prop_value = None
+
+        return prop_value
+
+    def get_edge_property_value(self, binding: dict, custom_property):
+        # use binding["type"] as class identifier, as RDF does not support literal edge properties.
         if isinstance(custom_property, dict):
             try:
                 if str(binding["type"]) in custom_property:
@@ -136,6 +167,27 @@ class SPARQLNetwork(EventfulNetwork):
 
         return label
 
+    def retrieve_object_property_value(self, obj_property, data_properties):
+        if obj_property in data_properties:
+            prop_value = str(data_properties[obj_property])
+        else:
+            prop_value = None
+        return prop_value
+
+    def get_node_class(self, data: dict = None):
+        # use rdf:type (or similar type property) as class identifier.
+        try:
+            data_props = data["properties"]
+            type_regex = re.compile('.*:type$')
+            node_type = None
+            for prop, value in data_props.items():
+                if type_regex.match(prop):
+                    node_type = value
+                    break
+        except KeyError:
+            node_type = None
+        return node_type
+
     def parse_node(self, node_id: str, node_binding: dict = None, data: dict = None):
         """
         overriding parent add_node class to automatically parse the uri for a node
@@ -144,49 +196,58 @@ class SPARQLNetwork(EventfulNetwork):
         :param node_binding: the subject or object binding, in dict form
         :param data: dict to set node initial node properties
         """
-
         if data is None:
             data = {}
-        label = ''
-        title = ''
         if self.display_property:
-            label = self.get_property_value(node_binding, self.display_property)
+            label = self.get_node_property_value(node_binding, self.display_property, data=data)
             if label:
-                title_new, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
-                title = title_new
+                title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
+                data['label'] = label
+                data['title'] = title
         if self.tooltip_property and self.tooltip_property != self.display_property:
-            tooltip_raw = self.get_property_value(node_binding, self.tooltip_property)
+            tooltip_raw = self.get_node_property_value(node_binding, self.tooltip_property, data=data)
             if tooltip_raw:
                 title, label_plc = self.strip_and_truncate_label_and_title(tooltip_raw)
                 data['title'] = title
-        # TODO: Check back on whether we want to overwrite existing labels
-        if not data.get('label'):
-            if label:
-                data['label'] = label
-                if not data.get('title'):
-                    data['title'] = title
-            else:
-                data = self.generate_node_label_title(node_id=node_id, data=data)
+        if 'label' not in data:
+            data = self.generate_node_label_title(node_id=node_id, data=data)
         if self.ignore_groups or not node_binding:
             data['group'] = DEFAULT_GRP
         elif str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
             data['group'] = str(node_binding)
         else:
+            data['group'] = None
+            node_type = self.get_node_class(data)
             if isinstance(self.group_by_property, dict):
-                try:
-                    if str(node_binding["type"]) in self.group_by_property:
-                        if self.group_by_property[node_binding["type"]] == DEFAULT_RAW_GRP_KEY:
-                            data['group'] = str(node_binding)
+                # if rdf:type or similar node class identifier does not exist on the node, set group to the default.
+                if node_type:
+                    try:
+                        if node_type in self.group_by_property:
+                            group_by_for_type = self.group_by_property[node_type]
+                            if group_by_for_type == DEFAULT_RAW_GRP_KEY:
+                                data['group'] = str(node_binding)
+                            elif group_by_for_type[:2] == "P." and 'properties' in data:
+                                data['group'] = self.retrieve_object_property_value(group_by_for_type[2:],
+                                                                                    data['properties'])
+                            else:
+                                data['group'] = node_binding[group_by_for_type]
                         else:
-                            data['group'] = node_binding[self.group_by_property[node_binding["type"]]]
-                    else:
-                        data['group'] = node_binding["type"]
-                except KeyError:
-                    data['group'] = node_binding["type"]
+                            data['group'] = node_type
+                    except KeyError:
+                        data['group'] = node_type
+                else:
+                    data['group'] = DEFAULT_GRP
+            elif self.group_by_property[:2] == "P." and 'properties' in data:
+                data['group'] = self.retrieve_object_property_value(self.group_by_property[2:],
+                                                                    data['properties'])
             elif self.group_by_property in node_binding:
                 data['group'] = node_binding[self.group_by_property]
-            else:
-                data['group'] = node_binding["type"]
+
+            if not data['group']:
+                if node_type:
+                    data['group'] = node_type
+                else:
+                    data['group'] = DEFAULT_GRP
 
         self.add_node(node_id=node_id, data=data)
 
@@ -358,6 +419,7 @@ class SPARQLNetwork(EventfulNetwork):
                     obj_value = self.extract_value(obj['value'])
                     obj_entry = f'{obj_prefix}:{obj_value}'
 
+                # default label/tooltip set here. May be overwritten by custom properties.
                 if pred['value'] == RDFS_LABEL:
                     title = obj_entry
                     label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
@@ -407,7 +469,7 @@ class SPARQLNetwork(EventfulNetwork):
 
             pred = b[predicate_binding]
 
-            edge_label = self.get_property_value(pred, self.edge_display_property)
+            edge_label = self.get_edge_property_value(pred, self.edge_display_property)
 
             if not edge_label:
                 if pred['type'] == 'uri':
@@ -423,7 +485,7 @@ class SPARQLNetwork(EventfulNetwork):
                                 node_id=b[object_binding]['value'])
             edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_label, self.edge_label_max_length)
             if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
-                tooltip_raw = self.get_property_value(pred, self.edge_tooltip_property)
+                tooltip_raw = self.get_edge_property_value(pred, self.edge_tooltip_property)
                 if tooltip_raw:
                     edge_title, label_plc = self.strip_and_truncate_label_and_title(tooltip_raw)
             data = {'title': edge_title}
