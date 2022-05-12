@@ -7,10 +7,17 @@ import threading
 import logging
 import time
 import requests
+from os import cpu_count
 
+from graph_notebook.neptune.client import Client
 from test.integration.DataDrivenOpenCypherTest import DataDrivenOpenCypherTest
 
 logger = logging.getLogger('TestOpenCypherStatusWithoutIam')
+
+
+def long_running_opencypher_query(c: Client, query: str):
+    res = c.opencypher_http(query)
+    return res
 
 
 class TestOpenCypherStatusWithoutIam(DataDrivenOpenCypherTest):
@@ -136,6 +143,36 @@ class TestOpenCypherStatusWithoutIam(DataDrivenOpenCypherTest):
         assert 'c' in query_res['result']['head']['vars']
         assert 'd' in query_res['result']['head']['vars']
         assert [] == query_res['result']['results']['bindings']
+
+    def test_do_opencypher_status_include_waiting(self):
+        query = '''MATCH(a)-->(b)-->(c)-->(d)-->(e)
+                    RETURN a,b,c,d,e'''
+
+        num_threads = cpu_count() * 4
+        threads = []
+        for x in range(0, num_threads):
+            thread = threading.Thread(target=long_running_opencypher_query, args=(self.client, query))
+            thread.start()
+            threads.append(thread)
+
+        time.sleep(5)
+
+        res = self.client.opencypher_status(include_waiting=True)
+        assert res.status_code == 200
+        status_res = res.json()
+
+        self.assertEqual(type(status_res), dict)
+        self.assertTrue('acceptedQueryCount' in status_res)
+        self.assertTrue('runningQueryCount' in status_res)
+        self.assertTrue('queries' in status_res)
+        self.assertEqual(status_res['acceptedQueryCount'], len(status_res['queries']))
+
+        for q in status_res['queries']:
+            if q['queryString'] == query:
+                self.client.opencypher_cancel(q['queryId'])
+
+        for t in threads:
+            t.join()
 
     def test_opencypher_bolt_query_with_cancellation(self):
         pass

@@ -3,10 +3,15 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
 - Identity Graph - ETL notebook [Link to PR](https://github.com/aws/graph-notebook/pull/288)
     - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
     - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
+- Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
+- Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
+- Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
+- Added `--store-to` option to %status ([Link to PR](https://github.com/aws/graph-notebook/pull/278))
+- Fixed graph search overriding physics setting ([Link to PR](https://github.com/aws/graph-notebook/pull/282))
+- Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
 
 ## Release 3.3.0 (March 28, 2022)
 - Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
