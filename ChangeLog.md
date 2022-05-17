@@ -3,8 +3,15 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
+- Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
+- Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
+- Added `--store-to` option to %status ([Link to PR](https://github.com/aws/graph-notebook/pull/278))
 - Fixed handling of empty nodes returned from openCypher `DELETE` queries ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
 - Fixed rendering of openCypher widgets for empty result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+- Fixed graph search overriding physics setting ([Link to PR](https://github.com/aws/graph-notebook/pull/282))
+- Fixed browser-specific bug in results pagination options menu ([Link to PR](https://github.com/aws/graph-notebook/pull/290))
+- Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
 
 ## Release 3.3.0 (March 28, 2022)
 - Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))

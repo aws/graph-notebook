@@ -144,7 +144,19 @@ pip install "jupyterlab>=3"
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
 
 # start jupyterlab
-jupyter lab ~/notebook/destination/dir
+python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
+```
+
+#### Loading magic extensions in JupyterLab
+
+When attempting to run a line/cell magic on a new notebook in JupyterLab, you may encounter an error like:
+```
+UsageError: Cell magic `%%graph_notebook_config` not found.
+```
+
+To fix this, manually reload the magic extensions by running:
+```
+%load_ext graph_notebook.magics
 ```
 
 ## Connecting to a graph database

@@ -273,8 +273,11 @@ class Client(object):
         driver.close()
         return data
 
-    def opencypher_status(self, query_id: str = ''):
-        return self._query_status('openCypher', query_id=query_id)
+    def opencypher_status(self, query_id: str = '', include_waiting: bool = False):
+        kwargs = {}
+        if include_waiting:
+            kwargs['includeWaiting'] = True
+        return self._query_status('openCypher', query_id=query_id, **kwargs)
 
     def opencypher_cancel(self, query_id, silent: bool = False):
         if type(query_id) is not str or query_id == '':
