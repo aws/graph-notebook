@@ -2,6 +2,10 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
+## Upcoming
+- Fixed handling of empty nodes returned from openCypher `DELETE` queries ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+- Fixed rendering of openCypher widgets for empty result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+
 ## Release 3.3.0 (March 28, 2022)
 - Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
 - Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
