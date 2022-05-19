@@ -1741,8 +1741,8 @@ class Graph(Magics):
             tab = widgets.Tab()
             titles = []
             children = []
-            force_graph_output = None
-            explain_html = ""
+            first_tab_output = widgets.Output(layout=oc_layout)
+            children.append(first_tab_output)
 
         if args.mode == 'explain':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
@@ -1754,9 +1754,10 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
                                                                    query_time=query_time)
+                titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
                 base64_str = base64.b64encode(explain_bytes).decode('utf-8')
-                explain_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1766,6 +1767,15 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                    query_time=query_time)
+                first_tab_html = ""
+                rows_and_columns = opencypher_get_rows_and_columns(res, False)
+                if rows_and_columns:
+                    titles.append('Console')
+                    table_id = f"table-{str(uuid.uuid4())[:8]}"
+                    visible_results = results_per_page_check(args.results_per_page)
+                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -1783,9 +1793,12 @@ class Graph(Magics):
                             = args.stop_physics
                         self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                         force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                        titles.append('Graph')
+                        children.append(force_graph_output)
                 except (TypeError, ValueError) as network_creation_error:
                     logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
                     logger.debug(f'Error: {network_creation_error}')
+
         elif args.mode == 'bolt':
             query_start = time.time() * 1000
             res = self.client.opencyper_bolt(cell)
@@ -1793,41 +1806,19 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
                                                                    query_time=query_time)
-            # Need to eventually add code to parse and display a network for the bolt format here
+                first_tab_html = ""
+                rows_and_columns = opencypher_get_rows_and_columns(res, True)
+                if rows_and_columns:
+                    titles.append('Console')
+                    table_id = f"table-{str(uuid.uuid4())[:8]}"
+                    visible_results = results_per_page_check(args.results_per_page)
+                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
+                # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
-            rows_and_columns = None
-            if args.mode != "explain":
-                rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
-
-            display(tab)
-            first_tab_output = widgets.Output(layout=oc_layout)
-            # Assign an empty value so we can always display to table output.
-            table_html = ""
-
-            # Display Console Tab
-            # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([first_tab_output], layout=oc_layout)
-            children.append(hbox)
-            if rows_and_columns is not None:
-                titles.append('Console')
-                table_id = f"table-{str(uuid.uuid4())[:8]}"
-                visible_results = results_per_page_check(args.results_per_page)
-                table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                  rows=rows_and_columns['rows'], guid=table_id,
-                                                                  amount=visible_results)
-
-            # Display Graph Tab (if exists)
-            if explain_html != "":
-                titles.append('Explain')
-                with first_tab_output:
-                    display(HTML(explain_html))
-            else:
-                # Display Graph Tab (if exists)
-                if force_graph_output:
-                    titles.append('Graph')
-                    children.append(force_graph_output)
-
+            if args.mode != 'explain':
                 # Display JSON tab
                 json_output = widgets.Output(layout=oc_layout)
                 with json_output:
@@ -1840,16 +1831,21 @@ class Graph(Magics):
             titles.append('Query Metadata')
             children.append(metadata_output)
 
-            tab.children = children
+            if first_tab_html == "":
+                tab.children = children[1:]  # the first tab is empty, remove it and proceed
+            else:
+                tab.children = children
+
             for i in range(len(titles)):
                 tab.set_title(i, titles[i])
-
-            if table_html != "":
-                with first_tab_output:
-                    display(HTML(table_html))
+            display(tab)
 
             with metadata_output:
                 display(HTML(oc_metadata.to_html()))
+
+            if first_tab_html != "":
+                with first_tab_output:
+                    display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, res, local_ns)
 
