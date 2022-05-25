@@ -47,7 +47,10 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-01-Introduction-to-Object-Classification-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-02-Introduction-to-Object-Regression-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-03-Introduction-to-Link-Prediction-SPARQL.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/00-Identifying-Fraud-Rings-Using-Social-Network-Analytics.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/01-Identifying-1st-Person-Synthetic-Identity-Fraud-Using-Graph-Similarity.ipynb',            
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/02-Logistics-Analysis-using-a-Transportation-Network.ipynb']
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
