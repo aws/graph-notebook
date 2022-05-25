@@ -665,7 +665,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.gremlin_status(args.queryId)
+            status_res = self.client.gremlin_status(query_id=args.queryId, include_waiting=args.includeWaiting)
             status_res.raise_for_status()
             res = status_res.json()
         else:
@@ -706,14 +706,20 @@ class Graph(Magics):
         self.handle_opencypher_status(line, local_ns)
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def status(self, line):
+    def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
         status_res = self.client.status()
         status_res.raise_for_status()
         try:
             res = status_res.json()
             logger.info(f'got the json format response {res}')
+            store_to_ns(args.store_to, res, local_ns)
             return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
@@ -722,6 +728,7 @@ class Graph(Magics):
                 print()
                 print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
                 print()
+            store_to_ns(args.store_to, status_res.text, local_ns)
             return status_res
 
     @line_magic
@@ -1734,8 +1741,8 @@ class Graph(Magics):
             tab = widgets.Tab()
             titles = []
             children = []
-            force_graph_output = None
-            explain_html = ""
+            first_tab_output = widgets.Output(layout=oc_layout)
+            children.append(first_tab_output)
 
         if args.mode == 'explain':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
@@ -1747,9 +1754,10 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
                                                                    query_time=query_time)
+                titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
                 base64_str = base64.b64encode(explain_bytes).decode('utf-8')
-                explain_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1759,6 +1767,15 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                    query_time=query_time)
+                first_tab_html = ""
+                rows_and_columns = opencypher_get_rows_and_columns(res, False)
+                if rows_and_columns:
+                    titles.append('Console')
+                    table_id = f"table-{str(uuid.uuid4())[:8]}"
+                    visible_results = results_per_page_check(args.results_per_page)
+                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -1776,9 +1793,12 @@ class Graph(Magics):
                             = args.stop_physics
                         self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
                         force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                        titles.append('Graph')
+                        children.append(force_graph_output)
                 except (TypeError, ValueError) as network_creation_error:
                     logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
                     logger.debug(f'Error: {network_creation_error}')
+
         elif args.mode == 'bolt':
             query_start = time.time() * 1000
             res = self.client.opencyper_bolt(cell)
@@ -1786,41 +1806,19 @@ class Graph(Magics):
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
                                                                    query_time=query_time)
-            # Need to eventually add code to parse and display a network for the bolt format here
+                first_tab_html = ""
+                rows_and_columns = opencypher_get_rows_and_columns(res, True)
+                if rows_and_columns:
+                    titles.append('Console')
+                    table_id = f"table-{str(uuid.uuid4())[:8]}"
+                    visible_results = results_per_page_check(args.results_per_page)
+                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
+                                                                      rows=rows_and_columns['rows'], guid=table_id,
+                                                                      amount=visible_results)
+                # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
-            rows_and_columns = None
-            if args.mode != "explain":
-                rows_and_columns = opencypher_get_rows_and_columns(res, True if args.mode == 'bolt' else False)
-
-            display(tab)
-            first_tab_output = widgets.Output(layout=oc_layout)
-            # Assign an empty value so we can always display to table output.
-            table_html = ""
-
-            # Display Console Tab
-            # some issues with displaying a datatable when not wrapped in an hbox and displayed last
-            hbox = widgets.HBox([first_tab_output], layout=oc_layout)
-            children.append(hbox)
-            if rows_and_columns is not None:
-                titles.append('Console')
-                table_id = f"table-{str(uuid.uuid4())[:8]}"
-                visible_results = results_per_page_check(args.results_per_page)
-                table_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                  rows=rows_and_columns['rows'], guid=table_id,
-                                                                  amount=visible_results)
-
-            # Display Graph Tab (if exists)
-            if explain_html != "":
-                titles.append('Explain')
-                with first_tab_output:
-                    display(HTML(explain_html))
-            else:
-                # Display Graph Tab (if exists)
-                if force_graph_output:
-                    titles.append('Graph')
-                    children.append(force_graph_output)
-
+            if args.mode != 'explain':
                 # Display JSON tab
                 json_output = widgets.Output(layout=oc_layout)
                 with json_output:
@@ -1833,31 +1831,40 @@ class Graph(Magics):
             titles.append('Query Metadata')
             children.append(metadata_output)
 
-            tab.children = children
+            if first_tab_html == "":
+                tab.children = children[1:]  # the first tab is empty, remove it and proceed
+            else:
+                tab.children = children
+
             for i in range(len(titles)):
                 tab.set_title(i, titles[i])
-
-            if table_html != "":
-                with first_tab_output:
-                    display(HTML(table_html))
+            display(tab)
 
             with metadata_output:
                 display(HTML(oc_metadata.to_html()))
+
+            if first_tab_html != "":
+                with first_tab_output:
+                    display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, res, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):
         """
-        This is refactored xinto its own handler method so that we can invoke is from
+        This is refactored into its own handler method so that we can invoke it from
         %opencypher_status or from %oc_status
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
                             help='The ID of a running OpenCypher query. '
                                  'Only displays the status of the specified query.')
-        parser.add_argument('-c', '--cancelQuery', action='store_true',
-                            help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
+        parser.add_argument('-c', '--cancelQuery', action='store_true', default=False,
+                            help='Tells the status command to cancel a query. This parameter does not take a value.')
+        parser.add_argument('-w', '--includeWaiting', action='store_true', default=False,
+                            help='When set to true and other parameters are not present, causes status information '
+                                 'for waiting queries to be returned as well as for running queries. '
+                                 'This parameter does not take a value.')
+        parser.add_argument('-s', '--silent', action='store_true', default=False,
                             help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
                                  ' If silent is not present or silent=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
@@ -1865,7 +1872,10 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            res = self.client.opencypher_status(args.queryId)
+            if args.includeWaiting and not args.queryId:
+                res = self.client.opencypher_status(include_waiting=args.includeWaiting)
+            else:
+                res = self.client.opencypher_status(query_id=args.queryId)
             res.raise_for_status()
         else:
             if args.queryId == '':

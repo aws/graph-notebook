@@ -202,6 +202,33 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('22')
         self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
+    def test_default_groups_empty_label(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [],
+                        "~properties": {
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+        gn = OCNetwork(group_by_property="code", ignore_groups=True)
+        gn.add_results(res)
+        node = gn.graph.nodes.get('22')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
     def test_group_with_groupby(self):
         path = {
             "results": [
@@ -1064,7 +1091,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'ANC')
         self.assertEqual(node2['group'], 'United States')
 
-    def test_set_add_non_graphable_results_list(self):
+    def test_add_non_graphable_results_list(self):
         res = {
             'results': [
                 {
@@ -1082,6 +1109,60 @@ class TestOpenCypherNetwork(unittest.TestCase):
         edges_list = list(gn.graph.edges)
         self.assertEqual(nodes_list, [])
         self.assertEqual(edges_list, [])
+
+    def test_add_empty_node_in_dict(self):
+        res = {
+            "results": [
+                {
+                    "d": {
+                        "~id": "6a6e5a7c-41ab-46e1-a8d1-397cc3e55294",
+                        "~entityType": "node",
+                        "~labels": [],
+                        "~properties": {}
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork()
+        try:
+            gn.add_results(res)
+        except IndexError:
+            self.fail()
+        nodes_list = list(gn.graph.nodes)
+        self.assertEqual(nodes_list, ["6a6e5a7c-41ab-46e1-a8d1-397cc3e55294"])
+
+        node = gn.graph.nodes.get("6a6e5a7c-41ab-46e1-a8d1-397cc3e55294")
+        self.assertEqual(node['label'], "6a6e5a7...")
+        self.assertEqual(node['title'], "6a6e5a7c-41ab-46e1-a8d1-397cc3e55294")
+
+    def test_add_empty_node_in_list(self):
+        res = {
+            "results": [
+                {
+                    "p": [
+                        {
+                            '~id': "6a6e5a7c-41ab-46e1-a8d1-397cc3e55294",
+                            '~entityType': "node",
+                            "~labels": [],
+                            "~properties": {}
+                        }
+                    ]
+                }
+            ]
+        }
+
+        gn = OCNetwork()
+        try:
+            gn.add_results(res)
+        except IndexError:
+            self.fail()
+        nodes_list = list(gn.graph.nodes)
+        self.assertEqual(nodes_list, ["6a6e5a7c-41ab-46e1-a8d1-397cc3e55294"])
+
+        node = gn.graph.nodes.get("6a6e5a7c-41ab-46e1-a8d1-397cc3e55294")
+        self.assertEqual(node['label'], "6a6e5a7...")
+        self.assertEqual(node['title'], "6a6e5a7c-41ab-46e1-a8d1-397cc3e55294")
 
     def test_do_not_set_vertex_label_or_vertex_tooltip(self):
         res = {
