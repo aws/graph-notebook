@@ -20,6 +20,20 @@ class TestGremlin(IntegrationTest):
         self.assertEqual(type(results), list)
 
     @pytest.mark.gremlin
+    def test_do_gremlin_query_with_content_limit_exceeded(self):
+        query = 'g.V().limit(1)'
+        transport_args = {'max_content_length': 1}
+        with self.assertRaises(RuntimeError):
+            self.client.gremlin_query(query, transport_args=transport_args)
+
+    @pytest.mark.gremlin
+    def test_do_gremlin_query_with_content_limit_not_exceeded(self):
+        query = 'g.V().limit(1)'
+        transport_args = {'max_content_length': 10240}
+        results = self.client.gremlin_query(query, transport_args=transport_args)
+        self.assertEqual(type(results), list)
+
+    @pytest.mark.gremlin
     @pytest.mark.neptune
     def test_do_gremlin_explain(self):
         query = 'g.V().limit(1)'
