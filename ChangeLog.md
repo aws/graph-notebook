@@ -3,11 +3,11 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Identity Graph - ETL notebook [Link to PR](https://github.com/aws/graph-notebook/pull/288)
+- Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
     - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
     - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
 - Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
-- Added three notebooks to show data science workflows with Amazon Neptune
+- Added three notebooks to show data science workflows with Amazon Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/302))
 - Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
 - Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
 - Added `--store-to` option to %status ([Link to PR](https://github.com/aws/graph-notebook/pull/278))
