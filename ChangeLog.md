@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.4.0 (June 7, 2022)
 - Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
     - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
     - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
