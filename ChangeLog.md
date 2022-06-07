@@ -15,6 +15,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed rendering of openCypher widgets for empty result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
 - Fixed graph search overriding physics setting ([Link to PR](https://github.com/aws/graph-notebook/pull/282))
 - Fixed browser-specific bug in results pagination options menu ([Link to PR](https://github.com/aws/graph-notebook/pull/290))
+- Fixed invalid queries in Gremlin sample notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/308))
 - Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
 
 ## Release 3.3.0 (March 28, 2022)
