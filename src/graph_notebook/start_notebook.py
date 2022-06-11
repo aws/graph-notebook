@@ -12,6 +12,7 @@ NBCONFIG_DIR_TREE = HOME_PATH + '/.jupyter/nbconfig'
 CFG_FILE_NAME = 'notebook.json'
 NOTEBOOK_CFG_PATH = NBCONFIG_DIR_TREE + '/' + CFG_FILE_NAME
 
+
 def patch_cm_cypher_config():
     cypher_cfg = {
         "cm_config": {
