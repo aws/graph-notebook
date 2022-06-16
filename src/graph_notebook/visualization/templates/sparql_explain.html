@@ -1,28 +1,48 @@
-<div>
     {% block style %}
     <style>
-        table {
-            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        .sparql_explain {
+            overflow: hidden;
+        }
+
+        .sparql_explain form {
+            margin-bottom: 5px;
+        }
+
+        .sparql_explain form a {
+            float: right;
+        }
+
+        .sparql_explain table {
+            font-family: "Courier New", Courier, monospace !important;
             border-collapse: collapse;
             width: 100%;
+            display: block;
+            table-layout: auto;
+            margin: 0 auto;
+            overflow-x: scroll;
         }
 
-        table td, table th {
+        .sparql_explain table td, .sparql_explain table th {
             border: 1px solid #ddd;
             padding: 8px;
+            text-align: center;
         }
 
-        table tr:nth-child(even){background-color: #f2f2f2;}
+        .sparql_explain table tr:nth-child(even){background-color: white;}
 
-        table tr:hover {background-color: #ddd;}
+        .sparql_explain table tr:hover {background-color: #ddd;}
 
-        table th {
+        .sparql_explain table th {
             padding-top: 12px;
             padding-bottom: 12px;
             text-align: left;
         }
     </style>
     {% endblock %}
+<div class="sparql_explain">
+    <form method="get" action="file.doc">
+        <a download="explain.html" href={{link}}>Download</a>
+    </form>
 
     {{ table }}
 </div>

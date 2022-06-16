@@ -14,7 +14,7 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
         self.client = self.client_builder.with_iam(get_session()).build()
 
     @pytest.mark.jupyter
-    @pytest.mark.gremlin
+    @pytest.mark.opencypher
     def test_gremlin_query(self):
         query = '''MATCH(a)-->(b)
                     RETURN b

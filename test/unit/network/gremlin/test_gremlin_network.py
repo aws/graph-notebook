@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import unittest
+from decimal import Decimal
 from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
@@ -710,6 +711,48 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node['label'], 'SEA')
         self.assertEqual(node['title'], 'SEA')
 
+    def test_add_vertex_with_Decimal_type_property(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA',
+            'lon': Decimal('-21.940599441500001631766281207092106342315673828125'),
+            'lat': Decimal('64.129997253400006229639984667301177978515625')
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        final_lon_value = node['properties']['lon']
+        final_lat_value = node['properties']['lat']
+        self.assertEqual(final_lon_value, -21.9405994415)
+        self.assertEqual(final_lat_value, 64.1299972534)
+        self.assertIsInstance(final_lon_value, float)
+        self.assertIsInstance(final_lat_value, float)
+
+    def test_add_vertex_with_Decimal_type_property_in_list(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': ['Airport'],
+            'runways': ['4'],
+            'code': ['SEA'],
+            'lon': [Decimal('-21.940599441500001631766281207092106342315673828125')],
+            'lat': [Decimal('64.129997253400006229639984667301177978515625')]
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        final_lon_value = node['properties']['lon'][0]
+        final_lat_value = node['properties']['lat'][0]
+        self.assertEqual(final_lon_value, -21.9405994415)
+        self.assertEqual(final_lat_value, 64.1299972534)
+        self.assertIsInstance(final_lon_value, float)
+        self.assertIsInstance(final_lat_value, float)
+
     def test_add_explicit_type_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
         vertex2 = Vertex(id='2')
@@ -1402,6 +1445,22 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(edge['1']['label'], 'v[2]')
         self.assertEqual(edge['1']['title'], 'v[2]')
 
+    def test_add_edge_with_decimal_property(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+
+        edge1 = {T.id: '1', T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]',
+                 'dist': Decimal('917.09438902349805490380928798847027304002305757893')}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        edge_dist = edge['1']['properties']['dist']
+        self.assertEqual(edge_dist, 917.094389023498)
+        self.assertIsInstance(edge_dist, float)
+
     def test_add_path_with_integer(self):
         path = Path([], ['ANC', 3030, 'DFW'])
         gn = GremlinNetwork()
@@ -1448,6 +1507,22 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'Seattle-Tacoma International Airport')
         self.assertEqual(node2['group'], 'Austria')
 
+    def test_group_with_groupby_raw_string(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+
+        gn = GremlinNetwork(group_by_property='__RAW_RESULT__')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
+
     def test_group_with_groupby_properties_json_single_label(self):
         vertex1 = {
             T.id: '1234',
@@ -1486,6 +1561,21 @@ class TestGremlinNetwork(unittest.TestCase):
         node2 = gn.graph.nodes.get(vertex2[T.id])
         self.assertEqual(node1['group'], 'SEA')
         self.assertEqual(node2['group'], 'Europe')
+
+    def test_group_with_groupby_raw_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_property='{"airport":"__RAW_RESULT__"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
 
     def test_group_with_groupby_invalid_json_single_label(self):
         vertex1 = {
@@ -1743,6 +1833,61 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('graph_notebook-ed8fddedf251d3d5745dccfd53edf51d')
         self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
+    def test_group_with_groupby_depth_default(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport'
+        }
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '__DEPTH--1__')
+
+    def test_group_with_groupby_depth_string(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport'
+        }
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_vertex(vertex, path_index=2)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '__DEPTH-2__')
+
+    def test_group_with_groupby_depth_json(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport'
+        }
+
+        gn = GremlinNetwork(group_by_property='{"airport":"TRAVERSAL_DEPTH"}')
+        gn.add_vertex(vertex, path_index=2)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '__DEPTH-2__')
+
+    def test_group_with_groupby_depth_explicit_command(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport'
+        }
+
+        gn = GremlinNetwork(group_by_depth=True)
+        gn.add_vertex(vertex, path_index=2)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '__DEPTH-2__')
+
+    def test_group_with_groupby_depth_explicit_command_overwrite_gbp(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport'
+        }
+
+        gn = GremlinNetwork(group_by_depth=True, group_by_property=T.label)
+        gn.add_vertex(vertex, path_index=2)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], '__DEPTH-2__')
+
     def test_add_path_with_edge_property_string(self):
         vertex1 = Vertex(id='1')
         vertex2 = Vertex(id='2')
@@ -1777,13 +1922,13 @@ class TestGremlinNetwork(unittest.TestCase):
 
     def test_add_path_with_groupby(self):
         path = Path([], [{'country': ['US'], 'code': ['SEA'], 'longest': [11901], 'city': ['Seattle'],
-                          T.label: 'airport', 'lon': [-122.30899810791], 'type': ['airport'], 'elev': [432],
+                          T.label: 'airport', 'lon': ['-122.30899810791'], 'type': ['airport'], 'elev': [432],
                           T.id: '22', 'icao': ['KSEA'], 'runways': [3], 'region': ['US-WA'],
-                          'lat': [47.4490013122559], 'desc': ['Seattle-Tacoma']},
+                          'lat': ['47.4490013122559'], 'desc': ['Seattle-Tacoma']},
                          {'country': ['US'], 'code': ['ATL'], 'longest': [12390], 'city': ['Atlanta'],
-                          T.label: 'airport', 'lon': [-84.4281005859375], 'type': ['airport'], 'elev': [1026],
+                          T.label: 'airport', 'lon': ['-84.4281005859375'], 'type': ['airport'], 'elev': [1026],
                           T.id: '1', 'icao': ['KATL'], 'runways': [5], 'region': ['US-GA'],
-                          'lat': [33.6366996765137], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
+                          'lat': ['33.6366996765137'], 'desc': ['Hartsfield - Jackson Atlanta International Airport']}])
         gn = GremlinNetwork(group_by_property="code")
         gn.add_results([path])
         node = gn.graph.nodes.get('1')
@@ -1950,6 +2095,36 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '1')
 
+    def test_group_by_raw_explicit(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_raw=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
+
+    def test_group_by_raw_explicit_overrule_gbp(self):
+        vertex = {
+            T.id: '1234',
+            T.label: 'airport',
+            'type': 'Airport',
+            'runways': '4',
+            'code': 'SEA'
+        }
+
+        expected = "{<T.id: 1>: '1234', <T.label: 4>: 'airport', 'type': 'Airport', 'runways': '4', 'code': 'SEA'}"
+        gn = GremlinNetwork(group_by_raw=True, group_by_property='{"airport":"code"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(vertex[T.id])
+        self.assertEqual(node['group'], expected)
+
     def test_add_elementmap_edge(self):
         edge_map = {
             T.id: '5298',
@@ -1974,13 +2149,29 @@ class TestGremlinNetwork(unittest.TestCase):
         }
 
         gn = GremlinNetwork()
-        gn.insert_elementmap(edge_map)
+        gn.insert_elementmap(edge_map, index=1)
         edge_data = gn.graph.get_edge_data('2', '1112')
         inv_data = gn.graph.nodes.get('1112')
         outv_data = gn.graph.nodes.get('2')
         self.assertEqual(edge_data, edge_expected)
         self.assertEqual(inv_data['properties'], edge_map[Direction.IN])
         self.assertEqual(outv_data['properties'], edge_map[Direction.OUT])
+
+    def test_add_elementmap_edge_groupby_depth(self):
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.insert_elementmap(edge_map, index=1)
+        inv_data = gn.graph.nodes.get('1112')
+        outv_data = gn.graph.nodes.get('2')
+        self.assertEqual(outv_data['group'], "__DEPTH-0__")
+        self.assertEqual(inv_data['group'], "__DEPTH-2__")
 
     def test_add_elementmap_vertex(self):
         vertex = {
@@ -2049,9 +2240,9 @@ class TestGremlinNetwork(unittest.TestCase):
         }
 
         gn = GremlinNetwork()
-        gn.insert_elementmap(in_vertex)
-        gn.insert_elementmap(out_vertex)
-        gn.insert_elementmap(edge_map)
+        gn.insert_elementmap(in_vertex, index=2)
+        gn.insert_elementmap(out_vertex, index=0)
+        gn.insert_elementmap(edge_map, index=1)
         outv_data = gn.graph.nodes.get('2')
         inv_data = gn.graph.nodes.get('1112')
         self.assertEqual(outv_data['properties'], out_vertex)
@@ -2085,11 +2276,11 @@ class TestGremlinNetwork(unittest.TestCase):
         }
 
         gn = GremlinNetwork()
-        gn.insert_elementmap(edge_map)
+        gn.insert_elementmap(edge_map, index=1)
         outv_data_orig = gn.graph.nodes.get('2')
         self.assertEqual(outv_data_orig['properties'], edge_map[Direction.OUT])
 
-        gn.insert_elementmap(vertex)
+        gn.insert_elementmap(vertex, index=0)
         outv_data_final = gn.graph.nodes.get('2')
         self.assertEqual(outv_data_final['properties'], vertex)
 
@@ -2159,6 +2350,50 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(outv_data['properties'], out_vertex)
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data, edge_expected)
+
+    def test_add_results_as_list_of_elementmaps_groupby_depth(self):
+        edge_0 = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        edge_1 = {
+            T.id: '5299',
+            T.label: 'route',
+            Direction.IN: {T.id: '2222', T.label: 'airport'},
+            Direction.OUT: {T.id: '1112', T.label: 'airport'},
+            'dist': 1000
+        }
+
+        vertex_0 = {
+            T.id: '2',
+            T.label: 'airport',
+        }
+
+        vertex_1 = {
+            T.id: '1112',
+            T.label: 'airport',
+        }
+
+        vertex_2 = {
+            T.id: '2222',
+            T.label: 'airport',
+        }
+
+        results = [vertex_0, edge_0, vertex_1, edge_1, vertex_2]
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_results(results)
+        v0_data = gn.graph.nodes.get('2')
+        v1_data = gn.graph.nodes.get('1112')
+        v2_data = gn.graph.nodes.get('2222')
+
+        self.assertEqual(v0_data['group'], '__DEPTH-0__')
+        self.assertEqual(v1_data['group'], '__DEPTH-2__')
+        self.assertEqual(v2_data['group'], '__DEPTH-4__')
 
     def test_add_results_as_list_of_non_elementmap_dicts(self):
 
@@ -2232,6 +2467,49 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data['5298'], edge_expected)
 
+    def test_add_results_as_path_containing_elementmaps_groupby_depth(self):
+        edge_0 = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: '1112', T.label: 'airport'},
+            Direction.OUT: {T.id: '2', T.label: 'airport'},
+            'dist': 763
+        }
+
+        edge_1 = {
+            T.id: '5299',
+            T.label: 'route',
+            Direction.IN: {T.id: '2222', T.label: 'airport'},
+            Direction.OUT: {T.id: '1112', T.label: 'airport'},
+            'dist': 1000
+        }
+
+        vertex_0 = {
+            T.id: '2',
+            T.label: 'airport',
+        }
+
+        vertex_1 = {
+            T.id: '1112',
+            T.label: 'airport',
+        }
+
+        vertex_2 = {
+            T.id: '2222',
+            T.label: 'airport',
+        }
+
+        path = Path([], [vertex_0, edge_0, vertex_1, edge_1, vertex_2])
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_results([path])
+        v0_data = gn.graph.nodes.get('2')
+        v1_data = gn.graph.nodes.get('1112')
+        v2_data = gn.graph.nodes.get('2222')
+
+        self.assertEqual(v0_data['group'], '__DEPTH-0__')
+        self.assertEqual(v1_data['group'], '__DEPTH-2__')
+        self.assertEqual(v2_data['group'], '__DEPTH-4__')
+
     def test_add_results_as_path_containing_valuemaps(self):
 
         out_vertex = {
@@ -2288,6 +2566,33 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(outv_data['properties'], out_vertex)
         self.assertEqual(inv_data['properties'], in_vertex)
         self.assertEqual(edge_data_value, edge_value_expected)
+
+    def test_add_results_as_path_containing_valuemaps_groupby_depth(self):
+
+        vertex_0 = {
+            T.id: '44',
+            T.label: 'airport',
+        }
+
+        vertex_1 = {
+            T.id: '8',
+            T.label: 'airport',
+        }
+
+        vertex_2 = {
+            T.id: '178',
+            T.label: 'airport',
+        }
+
+        path = Path([], [vertex_0, vertex_1, vertex_2])
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_results([path])
+        v0_data = gn.graph.nodes.get('44')
+        v1_data = gn.graph.nodes.get('8')
+        v2_data = gn.graph.nodes.get('178')
+        self.assertEqual(v0_data['group'], '__DEPTH-0__')
+        self.assertEqual(v1_data['group'], '__DEPTH-1__')
+        self.assertEqual(v2_data['group'], '__DEPTH-2__')
 
     def test_add_results_as_path_containing_projected_values(self):
 
@@ -2445,6 +2750,33 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_results_with_pattern([path], pattern)
         edge_data = gn.graph.get_edge_data('13', '63')
         self.assertIn(6512, edge_data)
+
+    def test_add_path_with_pattern_groupby_depth(self):
+        vertex_0 = {
+            T.id: '44',
+            T.label: 'airport',
+        }
+
+        vertex_1 = {
+            T.id: '8',
+            T.label: 'airport',
+        }
+
+        vertex_2 = {
+            T.id: '178',
+            T.label: 'airport',
+        }
+
+        path = Path([], [vertex_0, 0, vertex_1, 1, vertex_2])
+        pattern = [PathPattern.V, PathPattern.OUT_E, PathPattern.IN_V, PathPattern.OUT_E, PathPattern.IN_V]
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_results_with_pattern([path], pattern)
+        v0_data = gn.graph.nodes.get('44')
+        v1_data = gn.graph.nodes.get('8')
+        v2_data = gn.graph.nodes.get('178')
+        self.assertEqual(v0_data['group'], '__DEPTH-0__')
+        self.assertEqual(v1_data['group'], '__DEPTH-2__')
+        self.assertEqual(v2_data['group'], '__DEPTH-4__')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,46 @@
+    <style>
+        .oc_explain {
+            overflow: hidden;
+        }
+
+        .oc_explain form {
+            margin-bottom: 5px;
+        }
+
+        .oc_explain form a {
+            float: right;
+        }
+
+        .oc_explain table {
+            font-family: "Courier New", Courier, monospace !important;
+            border-collapse: collapse;
+            width: 100%;
+            display: block;
+            table-layout: auto;
+            margin: 0 auto;
+            overflow-x: scroll;
+        }
+
+        .oc_explain table td, .oc_explain table th {
+            border: 1px solid #ddd;
+            padding: 8px;
+            word-wrap: break-word;
+            text-align: center;
+        }
+
+        .oc_explain table tr:nth-child(even){background-color: white;}
+
+        .oc_explain table tr:hover {background-color: #ddd;}
+
+        .oc_explain table th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+        }
+    </style>
+<div class="oc_explain">
+    <form method="get" action="file.doc">
+        <a download="explain.html" href={{link}}>Download</a>
+    </form>
+    {{ table }}
+</div>

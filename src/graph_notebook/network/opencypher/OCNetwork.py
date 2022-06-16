@@ -3,10 +3,9 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 import logging
 
-from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP
+from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
 
 logging.basicConfig()
@@ -35,12 +34,15 @@ class OCNetwork(EventfulNetwork):
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=LABEL_KEY,
                  display_property=LABEL_KEY, edge_display_property=EDGE_TYPE_KEY,
                  tooltip_property=None, edge_tooltip_property=None,
-                 ignore_groups=False):
+                 ignore_groups=False, 
+                 group_by_depth=False, group_by_raw=False):
         if graph is None:
             graph = MultiDiGraph()
+        if group_by_depth:
+            group_by_property = DEPTH_GRP_KEY
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
-                         ignore_groups)
+                         ignore_groups, group_by_raw)
 
     def get_node_property_value(self, node: dict, props: dict, title, custom_property):
         try:
@@ -119,20 +121,29 @@ class OCNetwork(EventfulNetwork):
 
         # generate placeholder tooltip from label; if not present, amalgamate node property values instead
         if LABEL_KEY in node.keys():
-            title_plc = node[LABEL_KEY][0]
+            if len(node[LABEL_KEY]) > 0:
+                title_plc = node[LABEL_KEY][0]
+                create_title_placeholder = False
+            else:
+                create_title_placeholder = True
         else:
+            create_title_placeholder = True
+
+        if create_title_placeholder:
             title_plc = ""
             for key in node:
                 title_plc += str(node[key])
 
         if not isinstance(self.group_by_property, dict):  # Handle string format group_by
             try:
-                if self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
+                if self.group_by_property == DEPTH_GRP_KEY:
+                    group = depth_group
+                elif self.group_by_property == DEFAULT_RAW_GRP_KEY:
+                    group = str(node)
+                elif self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
                     group = node[LABEL_KEY][0]
                 elif self.group_by_property in [ID_KEY, 'id']:
                     group = node[ID_KEY]
-                elif self.group_by_property == "TRAVERSAL_DEPTH":
-                    group = depth_group
                 elif self.group_by_property in node[PROPERTIES_KEY]:
                     group = node[PROPERTIES_KEY][self.group_by_property]
                 else:
@@ -143,12 +154,14 @@ class OCNetwork(EventfulNetwork):
             try:
                 if str(node[LABEL_KEY][0]) in self.group_by_property and len(node[LABEL_KEY]) > 0:
                     key = node[LABEL_KEY][0]
-                    if self.group_by_property[key] in [LABEL_KEY, 'labels']:
+                    if self.group_by_property[key] == DEPTH_GRP_KEY:
+                        group = depth_group
+                    elif self.group_by_property[key] == DEFAULT_RAW_GRP_KEY:
+                        group = str(node)
+                    elif self.group_by_property[key] in [LABEL_KEY, 'labels']:
                         group = node[LABEL_KEY][0]
                     elif self.group_by_property[key] in [ID_KEY, 'id']:
                         group = node[ID_KEY]
-                    elif self.group_by_property[key] == "TRAVERSAL_DEPTH":
-                        group = depth_group
                     else:
                         group = node[PROPERTIES_KEY][self.group_by_property[key]]
                 else:
@@ -158,6 +171,8 @@ class OCNetwork(EventfulNetwork):
 
         props = self.flatten(node)
         label = self.get_node_property_value(node, props, title_plc, self.display_property)
+        if not label:
+            label = node[ID_KEY]
         title, label = self.strip_and_truncate_label_and_title(label, self.label_max_length)
         if self.tooltip_property and self.tooltip_property != self.display_property:
             title, label_plc = self.strip_and_truncate_label_and_title(
