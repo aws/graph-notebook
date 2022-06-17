@@ -8,7 +8,7 @@ import json
 import os
 from enum import Enum
 
-from graph_notebook.neptune.client import SPARQL_ACTION
+from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
 
@@ -64,14 +64,17 @@ class GremlinSection(object):
 
 class Configuration(object):
     def __init__(self, host: str, port: int,
-                 auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT,
-                 load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1',
-                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
+                 auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
+                 load_from_s3_arn='', ssl: bool = True, aws_region: str = DEFAULT_REGION,
+                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
+                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
         self.host = host
         self.port = port
         self.ssl = ssl
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
-        if "amazonaws.com" in self.host:
+        if "amazonaws.com" in self.host or "amazonaws.com" in self.proxy_host:
             self.is_neptune_config = True
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
@@ -86,6 +89,8 @@ class Configuration(object):
             return {
                 'host': self.host,
                 'port': self.port,
+                'proxy_host': self.proxy_host,
+                'proxy_port': self.proxy_port,
                 'auth_mode': self.auth_mode.value,
                 'load_from_s3_arn': self.load_from_s3_arn,
                 'ssl': self.ssl,
@@ -97,6 +102,8 @@ class Configuration(object):
             return {
                 'host': self.host,
                 'port': self.port,
+                'proxy_host': self.proxy_host,
+                'proxy_port': self.proxy_port,
                 'ssl': self.ssl,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict()
@@ -111,14 +118,14 @@ class Configuration(object):
 
 
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
-                    aws_region: str = 'us-east-1'):
+                    aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region)
+    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host=proxy_host, proxy_port=proxy_port)
     return c
 
 
 def generate_default_config():
-    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, '', 'us-east-1')
+    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, '', DEFAULT_REGION)
     return c
 
 
@@ -137,7 +144,9 @@ if __name__ == "__main__":
     parser.add_argument("--config_destination", help="location to put generated config",
                         default=DEFAULT_CONFIG_LOCATION)
     parser.add_argument("--load_from_s3_arn", help="arn of role to use for bulk loader", default='')
-    parser.add_argument("--aws_region", help="aws region your ml cluster is in.", default='us-east-1')
+    parser.add_argument("--aws_region", help="aws region your ml cluster is in.", default=DEFAULT_REGION)
+    parser.add_argument("--proxy_host", help="the proxy host url to route a connection through", default='')
+    parser.add_argument("--proxy_port", help="the proxy port to use when creating proxy connection", default="8182")
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
