@@ -61,7 +61,7 @@ loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig()
 root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
@@ -211,9 +211,6 @@ class Graph(Magics):
             config = get_config_from_dict(data)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
-            print('set notebook config to:')
-            print('set notebook config to:')
-            print('set notebook config to:')
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'reset':
