@@ -118,9 +118,9 @@ class Configuration(object):
 
 
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
-                    aws_region: str = DEFAULT_REGION):
+                    aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region)
+    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host=proxy_host, proxy_port=proxy_port)
     return c
 
 
