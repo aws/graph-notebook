@@ -8,7 +8,7 @@ import logging
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
 
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 DEFAULT_LABEL_MAX_LENGTH = 10

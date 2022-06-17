@@ -94,8 +94,8 @@ class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
                  sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
-        self.host = host
-        self.port = port
+        self.target_host = host
+        self.target_port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
@@ -110,16 +110,27 @@ class Client(object):
 
         self._http_session = None
 
+    @property
+    def host(self):
+        if self.proxy_host != '':
+            return self.proxy_host
+        return self.target_host
+
+    @property
+    def port(self):
+        if self.proxy_host != '':
+            return self.proxy_port
+        return self.target_port
+
+    def is_neptune_domain(self):
+        return "neptune.amazonaws.com" in self.target_host
+
     def get_uri_with_port(self, use_websocket=False, use_proxy=False):
         protocol = self._http_protocol
-        host = self.host
-        port = self.port
         if use_websocket is True:
             protocol = self._ws_protocol
-        if use_proxy is True:
-            host = self.proxy_host
-            port = self.proxy_port
-        uri = f'{protocol}://{host}:{port}'
+
+        uri = f'{protocol}://{self.host}:{self.port}'
         return uri
 
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
@@ -151,7 +162,7 @@ class Client(object):
             sparql_path = f'/{path}'
         elif self.sparql_path != '':
             sparql_path = f'/{self.sparql_path}'
-        elif "amazonaws.com" in self.host:
+        elif self.is_neptune_domain():
             sparql_path = f'/{SPARQL_ACTION}'
         else:
             sparql_path = ''
@@ -195,12 +206,9 @@ class Client(object):
     def get_gremlin_connection(self) -> client.Client:
         nest_asyncio.apply()
 
-        uri = f'{self.get_uri_with_port()}/gremlin'
-        request = self._prepare_request('GET', uri)
-
         ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
-
-        traversal_source = 'g' if "neptune.amazonaws.com" in self.host else self.gremlin_traversal_source
+        request = self._prepare_request('GET', ws_url)
+        traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
         return client.Client(ws_url, traversal_source, headers=dict(request.headers))
 
     def gremlin_query(self, query, bindings=None):
@@ -644,23 +652,14 @@ class Client(object):
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
         if self.proxy_host != '':
-            url, headers = self._prepare_proxy_request(url, headers)
+            headers = {} if headers is None else headers
+            headers["Host"] = self.target_host
         request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
         if self._session is not None:
             aws_request = self._get_aws_request(method=method, url=url, data=data, params=params, headers=headers,
                                                 service=service)
             request.headers = dict(aws_request.headers)
-
         return request.prepare()
-
-    def _prepare_proxy_request(self, destination_url, headers={}):
-        parsed_url = urlparse(destination_url)
-        # Change host and port for the request without changing path or protocol
-        parsed_url = parsed_url._replace(netloc=f"{self.proxy_host}:{self.proxy_port}")
-        proxy_url = urlunparse(parsed_url[:])
-        # Set host header to the Database endpoint.
-        headers["Host"] = self.host
-        return proxy_url, headers
 
     def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)

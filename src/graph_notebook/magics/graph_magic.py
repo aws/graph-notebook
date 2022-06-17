@@ -61,17 +61,17 @@ loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
 
-GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                             for example: %gremlin_status --cancelQuery --queryId my-query-id'''
-SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
-OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
 
@@ -186,6 +186,8 @@ class Graph(Magics):
                 .with_port(config.port) \
                 .with_region(config.aws_region) \
                 .with_tls(config.ssl) \
+                .with_proxy_host(config.proxy_host) \
+                .with_proxy_port(config.proxy_port) \
                 .with_sparql_path(config.sparql.path)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
@@ -210,6 +212,9 @@ class Graph(Magics):
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
+            print('set notebook config to:')
+            print('set notebook config to:')
+            print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'reset':
             self.graph_notebook_config = get_config(self.config_location)
@@ -227,7 +232,7 @@ class Graph(Magics):
             print(json.dumps(config_dict, indent=2))
 
         return self.graph_notebook_config
-    
+
 
     @line_magic
     def stream_viewer(self,line):
@@ -239,13 +244,13 @@ class Graph(Magics):
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
         args = parser.parse_args(line.split())
-        
+
         language = args.language
         limit = args.limit
         uri = self.client.get_uri_with_port()
         viewer = StreamViewer(self.client,uri,language,limit=limit)
         viewer.show()
-        
+
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':
@@ -369,7 +374,7 @@ class Graph(Magics):
                                        ignore_groups=args.ignore_groups,
                                        expand_all=args.expand_all,
                                        group_by_raw=args.group_by_raw)
-                    
+
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)

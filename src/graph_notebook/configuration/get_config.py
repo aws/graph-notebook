@@ -13,6 +13,7 @@ def get_config_from_dict(data: dict) -> Configuration:
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
     gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection('')
     if "amazonaws.com" in data['host']:
+        print(data)
         if gremlin_section.to_dict()['traversal_source'] != 'g':
             print('Ignoring custom traversal source, Amazon Neptune does not support this functionality.\n')
         config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
