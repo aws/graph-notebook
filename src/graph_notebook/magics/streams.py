@@ -214,7 +214,7 @@ class StreamViewer:
 
                 html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
                 html += '''<td style="border: 1px solid black; vertical-align: top;">{}</td>
-                <td style="border: 1px solid black; vertical-align: top;">{}</td>
+                <td style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
                 <td style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
                 <td style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
                     record['eventId']['opNum'], 
