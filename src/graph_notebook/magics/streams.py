@@ -2,6 +2,7 @@ import re
 import json
 import ipywidgets as widgets
 import queue
+from datetime import datetime
 from IPython.display import display, HTML
 from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,\
                                           STREAM_EXCEPTION_NOT_ENABLED, STREAM_PG, STREAM_RDF, STREAM_ENDPOINTS,\
@@ -189,6 +190,7 @@ class StreamViewer:
                 timestamp = None
                 if STREAM_COMMIT_TIMESTAMP in record:
                     timestamp = record[STREAM_COMMIT_TIMESTAMP]
+                    utc_text = datetime.utcfromtimestamp(timestamp/1000)
 
                 data = json.dumps(record['data']).replace('&', '&amp;').replace('<', '&lt;')
                 
@@ -198,7 +200,7 @@ class StreamViewer:
                     html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}'.format(commit_num)
                     if timestamp != None:
                         html += '&nbsp;&nbsp;&nbsp;Timestamp = {}'.format(timestamp)
-
+                        html += '&nbsp;&nbsp;&nbsp;{} UTC'.format(utc_text)
                     html += '</td>'
                     html += '</tr><tr style="border: 1px solid black;">'     
                 
