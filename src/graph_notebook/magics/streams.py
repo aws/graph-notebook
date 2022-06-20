@@ -200,7 +200,7 @@ class StreamViewer:
                     html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}'.format(commit_num)
                     if timestamp != None:
                         html += '&nbsp;&nbsp;&nbsp;Timestamp = {}'.format(timestamp)
-                        html += '&nbsp;&nbsp;&nbsp;{} UTC'.format(utc_text)
+                        html += '&nbsp;&nbsp;&nbsp;( {} UTC )'.format(utc_text)
                     html += '</td>'
                     html += '</tr><tr style="border: 1px solid black;">'     
                 
