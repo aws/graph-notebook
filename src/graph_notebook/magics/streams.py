@@ -4,7 +4,8 @@ import ipywidgets as widgets
 import queue
 from IPython.display import display, HTML
 from graph_notebook.neptune.client import STREAM_AT, STREAM_AFTER, STREAM_TRIM, STREAM_EXCEPTION_NOT_FOUND,\
-                                          STREAM_EXCEPTION_NOT_ENABLED, STREAM_PG, STREAM_RDF, STREAM_ENDPOINTS
+                                          STREAM_EXCEPTION_NOT_ENABLED, STREAM_PG, STREAM_RDF, STREAM_ENDPOINTS,\
+                                          STREAM_COMMIT_TIMESTAMP
 
 
 class EventId:
@@ -185,13 +186,20 @@ class StreamViewer:
          
             for record in records:
                 current_commit_num = record['eventId']['commitNum']
-                
+                timestamp = None
+                if STREAM_COMMIT_TIMESTAMP in record:
+                    timestamp = record[STREAM_COMMIT_TIMESTAMP]
+
                 data = json.dumps(record['data']).replace('&', '&amp;').replace('<', '&lt;')
                 
                 if commit_num is None or current_commit_num != commit_num:
                     commit_num = current_commit_num
                     html += '<tr title="The commit number for this transaction" style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
-                    html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}</td>'.format(commit_num)
+                    html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="3">{}'.format(commit_num)
+                    if timestamp != None:
+                        html += '&nbsp;&nbsp;&nbsp;Timestamp = {}'.format(timestamp)
+
+                    html += '</td>'
                     html += '</tr><tr style="border: 1px solid black;">'     
                 
                 html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
