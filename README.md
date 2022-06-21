@@ -231,26 +231,33 @@ A list of all locations checked for Amazon Web Services credentials can also be 
 A pre-release distribution can be built from the graph-notebook repository via the following steps:
 
 ```
-# Clone the repository and navigate to it
+# 1) Clone the repository and navigate into the clone directory
 git clone https://github.com/aws/graph-notebook.git
 cd graph-notebook
 
-# Create a new virtual environment
+# 2) Create a new virtual environment
+
+# 2a) Option 1 - pyenv
 pyenv install 3.9.7  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
 pyenv virtualenv 3.9.7 build-graph-notebook
 pyenv local build-graph-notebook
 
-# Install build dependencies
+# 2b) Option 2 - venv
+rm -rf /tmp/venv
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+
+# 3) Install build dependencies
 pip install --upgrade pip setuptools wheel twine
 pip install jupyterlab>=3
 
-# Build the distribution
+# 4) Build the distribution
 python3 setup.py bdist_wheel
 ```
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.2.0-py3-none-any.whl`
+`./dist/graph_notebook-3.4.1-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -261,7 +268,7 @@ pip install graph-notebook
 with
 
 ```
-pip install ./dist/graph_notebook-3.2.0-py3-none-any.whl
+pip install ./dist/graph_notebook-3.4.1-py3-none-any.whl
 ```
 
 
