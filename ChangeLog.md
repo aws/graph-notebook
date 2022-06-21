@@ -3,6 +3,34 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
+  if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
+- Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
+
+
+## Release 3.4.1 (June 7, 2022)
+- Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
+    - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
+    - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
+- Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
+- Added three notebooks to show data science workflows with Amazon Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/302))
+- Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
+- Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
+- Added `--store-to` option to %status ([Link to PR](https://github.com/aws/graph-notebook/pull/278))
+- Fixed handling of empty nodes returned from openCypher `DELETE` queries ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+- Fixed rendering of openCypher widgets for empty result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+- Fixed graph search overriding physics setting ([Link to PR](https://github.com/aws/graph-notebook/pull/282))
+- Fixed browser-specific bug in results pagination options menu ([Link to PR](https://github.com/aws/graph-notebook/pull/290))
+- Fixed invalid queries in Gremlin sample notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/308))
+- Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
+
+## Release 3.3.0 (March 28, 2022)
+- Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
+- Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
+- Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
+- Fixed integration tests to address updated air routes data and other changes ([Link to PR](https://github.com/aws/graph-notebook/pull/270))
+- Bumped jinja2 from 2.10.1 to 3.0.3 ([Link to PR](https://github.com/aws/graph-notebook/pull/283))
+- Added documentation for JupyterLab installation ([Link to PR](https://github.com/aws/graph-notebook/pull/284))
 
 ## Release 3.2.0 (February 25, 2022)
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
