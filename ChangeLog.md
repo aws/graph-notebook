@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
+  if available. Also added additional hover (help) text to the stream viewer.
 
 ## Release 3.4.1 (June 7, 2022)
 - Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
