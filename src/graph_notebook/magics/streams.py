@@ -178,9 +178,9 @@ class StreamViewer:
             html = '''<html><body><table style="border: 1px solid black">'''
             
             html += '''<tr>
-                       <th style="text-align: center" >Tx/Op#</th>
-                       <th style="text-align: center">Operation</th>
-                       <th style="text-align: center">LastOp</th>
+                       <th style="text-align: center" title="The transaction or op number within a transaction">Tx/Op#</th>
+                       <th style="text-align: center" title="The type of operation such as ADD or REMOVE">Operation</th>
+                       <th style="text-align: center" title="Indicates if this is the final Op of a transaction. This feature requires a Neptune engine version of 1.1.1.0 or higher.">LastOp</th>
                        <th style="text-align: center;">Data</th>
                        </tr>'''
                 
@@ -199,8 +199,8 @@ class StreamViewer:
                 
                 if commit_num is None or current_commit_num != commit_num:
                     commit_num = current_commit_num
-                    html += '<tr title="The commit number for this transaction" style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
-                    html += '<td style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="4">{}'.format(commit_num)
+                    html += '<tr style="border: 1px solid black; background-color: gainsboro ; font-weight: bold;">'
+                    html += '<td title="The commit number for this transaction" style="border: 1px solid black; vertical-align: top; text-align: left;" colspan="4">{}'.format(commit_num)
                     if timestamp != None:
                         html += '&nbsp;&nbsp;&nbsp;Timestamp = {}'.format(timestamp)
                         html += '&nbsp;&nbsp;&nbsp;( {} UTC )'.format(utc_text)
@@ -212,11 +212,11 @@ class StreamViewer:
                 if lastop:
                     lastop_text = 'Y'
 
-                html += '<tr  title="The operation number within this transaction" style="border: 1px solid black; background-color: white;">'
-                html += '''<td style="border: 1px solid black; vertical-align: top;">{}</td>
-                <td style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
-                <td style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
-                <td style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
+                html += '<tr  style="border: 1px solid black; background-color: white;">'
+                html += '''<td  title="The operation number within this transaction" style="border: 1px solid black; vertical-align: top;">{}</td>
+                <td  title="The operation performed"style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
+                <td  title="A Y indicates the final Op for a transaction. Earlier Neptune versions do not support this option." style="border: 1px solid black; vertical-align: top;text-align: center;">{}</td>
+                <td  title="Details of the change made by this operation" style="border: 1px solid black; vertical-align: top; text-align: left;">{}</td></tr>'''.format(
                     record['eventId']['opNum'], 
                     record['op'],
                     lastop_text,
