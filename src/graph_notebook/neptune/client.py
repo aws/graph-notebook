@@ -78,6 +78,8 @@ STREAM_AT = 'AT_SEQUENCE_NUMBER'
 STREAM_AFTER = 'AFTER_SEQUENCE_NUMBER'
 STREAM_TRIM = 'TRIM_HORIZON'
 STREAM_LATEST = 'LATEST'
+STREAM_COMMIT_TIMESTAMP = 'commitTimestamp'
+STREAM_IS_LASTOP = 'isLastOp'
 STREAM_EXCEPTION_NOT_FOUND = 'StreamRecordsNotFoundException'
 STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
@@ -203,7 +205,7 @@ class Client(object):
             raise ValueError('query_id must be a non-empty string')
         return self._query_status('sparql', query_id=query_id, silent=silent, cancelQuery=True)
 
-    def get_gremlin_connection(self) -> client.Client:
+    def get_gremlin_connection(self, transport_kwargs) -> client.Client:
         nest_asyncio.apply()
 
         ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
@@ -211,8 +213,10 @@ class Client(object):
         traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
         return client.Client(ws_url, traversal_source, headers=dict(request.headers))
 
-    def gremlin_query(self, query, bindings=None):
-        c = self.get_gremlin_connection()
+    def gremlin_query(self, query, transport_args=None, bindings=None):
+        if transport_args is None:
+            transport_args = {}
+        c = self.get_gremlin_connection(transport_args)
         try:
             result = c.submit(query, bindings)
             future_results = result.all()

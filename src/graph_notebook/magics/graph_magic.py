@@ -522,6 +522,9 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('-mcl', '--max-content-length', type=int, default=10*1024*1024,
+                            help="Specifies maximum size (in bytes) of results that can be returned to the "
+                                 "GremlinPython client. Default is 10MB")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
@@ -539,6 +542,8 @@ class Graph(Magics):
 
             first_tab_output = widgets.Output(layout=gremlin_layout)
             children.append(first_tab_output)
+
+        transport_args = {'max_content_length': args.max_content_length}
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell)
@@ -587,7 +592,7 @@ class Graph(Magics):
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            query_res = self.client.gremlin_query(cell)
+            query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
