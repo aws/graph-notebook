@@ -17,7 +17,7 @@ setuptools~=40.6.2
 nbconvert<6
 jedi<0.18.0
 markupsafe<2.1.0
-itables>=0.4.0
+itables>=1.0.0
 pandas
 
 # requirements for testing

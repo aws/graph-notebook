@@ -13,7 +13,6 @@ import time
 import datetime
 import os
 import uuid
-import requests
 from enum import Enum
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
@@ -173,38 +172,6 @@ def generate_pagination_vars(visible_results: int):
         pagination_menu[0] = "All"
 
     return visible_results_fixed, pagination_options, pagination_menu
-
-
-def itables_cdns_check():
-    try:
-        # 1: Check if stylesheet CDN is reachable
-        stylesheet_uv = requests.head("https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css").status_code != 200
-        if stylesheet_uv:
-            return False
-
-        # TODO: Find a better way to check all these CDNs, or remove this once itables releases offline mode
-        #  (https://github.com/mwouts/itables/pull/74)
-        #  Executing 5 requests is extremely slow. For now, using a single request to check basic internet connectivity.
-
-        '''
-        # 2: Check JQuery/Datatables.net require.js import for Jupyter Classic Notebook
-        # From https://github.com/mwouts/itables/blob/main/itables/require_config.js
-        nb_jquery_uv = requests.head('https://code.jquery.com/jquery-3.5.1.min.js').status_code != 200
-        nb_datatables_uv = requests.head('https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js').status_code != 200
-        if nb_jquery_uv or nb_datatables_uv:
-            return False
-
-        # 3: Check JQuery/Datatables.net ESM import for JupyterLab
-        # From https://github.com/mwouts/itables/blob/main/itables/datatables_template.html
-        lab_jquery_uv = requests.head("https://esm.sh/jquery@3.5.0").status_code != 200
-        lab_datatables_uv = requests.head("https://esm.sh/datatables.net@1.11.3?deps=jquery@3.5.0").status_code != 200
-        if lab_jquery_uv or lab_datatables_uv:
-            return False
-        '''
-    except (requests.ConnectionError, requests.Timeout) as e:
-        return False
-
-    return True
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -449,20 +416,12 @@ class Graph(Magics):
 
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
-                        if itables_cdns_check():
-                            results_df = pd.DataFrame(rows_and_columns['rows'])
-                            results_df.insert(0, "#", range(1, len(results_df) + 1))
-                            for col_index, col_name in enumerate(rows_and_columns['columns']):
-                                results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                                  axis='columns',
-                                                  inplace=True)
-                        else:
-                            table_id = f"table-{str(uuid.uuid4())[:8]}"
-                            visible_results = results_per_page_check(args.results_per_page)
-                            first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                          rows=rows_and_columns['rows'],
-                                                                          guid=table_id,
-                                                                          amount=visible_results)
+                        results_df = pd.DataFrame(rows_and_columns['rows'])
+                        results_df.insert(0, "#", range(1, len(results_df) + 1))
+                        for col_index, col_name in enumerate(rows_and_columns['columns']):
+                            results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                              axis='columns',
+                                              inplace=True)
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -719,21 +678,15 @@ class Graph(Magics):
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
-                if itables_cdns_check():
-                    results_df = pd.DataFrame(query_res)
-                    if not results_df.empty:
-                        if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
-                                isinstance(query_res[0], list):
-                            query_res = [[result] for result in query_res]
-                            results_df = pd.DataFrame(query_res)
-                    results_df.insert(0, "#", range(1, len(results_df) + 1))
-                    if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
-                        results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
-                else:
-                    table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                    visible_results = results_per_page_check(args.results_per_page)
-                    first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
-                                                                   amount=visible_results)
+                results_df = pd.DataFrame(query_res)
+                if not results_df.empty:
+                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
+                            isinstance(query_res[0], list):
+                        query_res = [[result] for result in query_res]
+                        results_df = pd.DataFrame(query_res)
+                results_df.insert(0, "#", range(1, len(results_df) + 1))
+                if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
+                    results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -750,23 +703,20 @@ class Graph(Magics):
 
             with first_tab_output:
                 if mode == QueryMode.DEFAULT:
-                    if results_df is not None:  # Itables formatting
-                        visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
-                            args.results_per_page)
-                        show(results_df,
-                             scrollY=gremlin_scrollY,
-                             columnDefs=[
-                                 {"width": "5%", "targets": 0},
-                                 {"minWidth": "95%", "targets": 1},
-                                 {"className": "nowrap dt-left", "targets": "_all"}
-                             ],
-                             paging=gremlin_paging,
-                             scrollCollapse=gremlin_scrollCollapse,
-                             lengthMenu=[final_pagination_options, final_pagination_menu],
-                             pageLength=visible_results
-                             )
-                    else:  # Default template formatting
-                        display(HTML(first_tab_html))
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=gremlin_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"minWidth": "95%", "targets": 1},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=gremlin_paging,
+                         scrollCollapse=gremlin_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
 
@@ -1904,19 +1854,12 @@ class Graph(Magics):
 
                 if rows_and_columns:
                     titles.append('Console')
-                    if itables_cdns_check():
-                        results_df = pd.DataFrame(rows_and_columns['rows'])
-                        results_df.insert(0, "#", range(1, len(results_df) + 1))
-                        for col_index, col_name in enumerate(rows_and_columns['columns']):
-                            results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                              axis='columns',
-                                              inplace=True)
-                    else:
-                        table_id = f"table-{str(uuid.uuid4())[:8]}"
-                        visible_results = results_per_page_check(args.results_per_page)
-                        first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                          rows=rows_and_columns['rows'], guid=table_id,
-                                                                          amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -1951,19 +1894,12 @@ class Graph(Magics):
                 rows_and_columns = opencypher_get_rows_and_columns(res, True)
                 if rows_and_columns:
                     titles.append('Console')
-                    if itables_cdns_check():
-                        results_df = pd.DataFrame(rows_and_columns['rows'])
-                        results_df.insert(0, "#", range(1, len(results_df) + 1))
-                        for col_index, col_name in enumerate(rows_and_columns['columns']):
-                            results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                              axis='columns',
-                                              inplace=True)
-                    else:
-                        table_id = f"table-{str(uuid.uuid4())[:8]}"
-                        visible_results = results_per_page_check(args.results_per_page)
-                        first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                          rows=rows_and_columns['rows'], guid=table_id,
-                                                                          amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
