@@ -300,11 +300,12 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
-        parser.add_argument('-m', '--media-type', type=str, default='application/sparql-results+json',
-                            help='Response format for SELECT/ASK/CONSTRUCT/DESCRIBE queries. See '
+        parser.add_argument('-m', '--media-type', type=str, default='',
+                            help='Response format for SELECT/CONSTRUCT/DESCRIBE queries. See '
                                  'https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html '
-                                 'for valid RDF media types supported by Neptune for each query type. Default is '
-                                 'application/sparql-results+json.')
+                                 'for valid RDF media types supported by Neptune for each query type. Default for '
+                                 'Neptune and SELECT queries is application/sparql-results+json, otherwise no format '
+                                 'will be specified in the request.')
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes.')
         parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
@@ -369,23 +370,30 @@ class Graph(Magics):
 
             result_type = str(args.media_type).lower()
 
-            if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                headers = {}
-            # TODO: check if we also want to handle ASK queries separately for Neptune
-            # elif query_type == 'ASK' and "neptune.amazonaws.com" in self.graph_notebook_config.host:
-            #    headers = {} if result_type not in NEPTUNE_RDF_ASK_FORMATS else {'Accept': result_type}
-            else:
+            headers = {}
+
+            if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
                 # Different graph DB services support different sets of results formats, some possibly custom, for each
                 # query type. We will only verify if media types are valid for Neptune
                 # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
                 # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
                 if "neptune.amazonaws.com" in self.graph_notebook_config.host:
-                    if query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS:
+                    if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
+                            or (query_type in ['CONSTRUCT', 'DESCRIBE']
+                                and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
+                            or result_type == '':
                         result_type = MEDIA_TYPE_SPARQL_JSON
-                    elif query_type in ['CONSTRUCT', 'DESCRIBE'] \
-                            and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS:
+                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+                elif result_type == '':
+                    if query_type == 'SELECT':
                         result_type = MEDIA_TYPE_SPARQL_JSON
-                headers = {'Accept': result_type}
+                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+                else:
+                    headers = {'Accept': result_type}
+
+            # TODO: check if we also want to handle ASK queries separately for Neptune
+            # elif query_type == 'ASK' and "neptune.amazonaws.com" in self.graph_notebook_config.host:
+            #    headers = {} if result_type not in NEPTUNE_RDF_ASK_FORMATS else {'Accept': result_type}
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
 
