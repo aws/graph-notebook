@@ -17,6 +17,7 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_tls(config.ssl) \
         .with_sparql_path(config.sparql.path) \
         .with_gremlin_traversal_source(config.gremlin.traversal_source) \
+        .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth) \
         .with_iam(get_session()) \
         .build()
 
@@ -25,5 +26,8 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.region == config.aws_region
     assert client.sparql_path == config.sparql.path
     assert client.gremlin_traversal_source == config.gremlin.traversal_source
+    assert client.neo4j_username == config.neo4j.username
+    assert client.neo4j_password == config.neo4j.password
+    assert client.neo4j_auth == config.neo4j.auth
     assert client.ssl is config.ssl
     return client

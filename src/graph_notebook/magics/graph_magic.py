@@ -195,7 +195,8 @@ class Graph(Magics):
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
                 .with_sparql_path(config.sparql.path) \
-                .with_gremlin_traversal_source(config.gremlin.traversal_source)
+                .with_gremlin_traversal_source(config.gremlin.traversal_source) \
+                .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth)
 
         self.client = builder.build()
 

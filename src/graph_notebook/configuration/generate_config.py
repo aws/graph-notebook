@@ -62,11 +62,36 @@ class GremlinSection(object):
         return self.__dict__
 
 
+class Neo4JSection(object):
+    """
+    Used for Neo4J-specific settings in a notebook's configuration
+    """
+
+    def __init__(self, username: str = '', password: str = '', auth: bool = True):
+        """
+        :param username: login user for the Neo4J endpoint
+        :param password: login password for the Neo4J endpoint
+        """
+
+        if username == '':
+            username = 'neo4j'
+        if password == '':
+            password = 'password'
+
+        self.username = username
+        self.password = password
+        self.auth = False if auth in [False, 'False', 'false', 'FALSE'] else True
+
+    def to_dict(self):
+        return self.__dict__
+
+
 class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT,
                  load_from_s3_arn='', ssl: bool = True, aws_region: str = 'us-east-1',
-                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
+                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
+                 neo4j_section: Neo4JSection = None):
         self.host = host
         self.port = port
         self.ssl = ssl
@@ -77,9 +102,11 @@ class Configuration(object):
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
             self.gremlin = GremlinSection()
+            self.neo4j = Neo4JSection()
         else:
             self.is_neptune_config = False
             self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
+            self.neo4j = neo4j_section if neo4j_section is not None else Neo4JSection()
 
     def to_dict(self) -> dict:
         if self.is_neptune_config:
@@ -91,7 +118,8 @@ class Configuration(object):
                 'ssl': self.ssl,
                 'aws_region': self.aws_region,
                 'sparql': self.sparql.to_dict(),
-                'gremlin': self.gremlin.to_dict()
+                'gremlin': self.gremlin.to_dict(),
+                'neo4j': self.neo4j.to_dict()
             }
         else:
             return {
@@ -99,7 +127,8 @@ class Configuration(object):
                 'port': self.port,
                 'ssl': self.ssl,
                 'sparql': self.sparql.to_dict(),
-                'gremlin': self.gremlin.to_dict()
+                'gremlin': self.gremlin.to_dict(),
+                'neo4j': self.neo4j.to_dict()
             }
 
     def write_to_file(self, file_path=DEFAULT_CONFIG_LOCATION):
