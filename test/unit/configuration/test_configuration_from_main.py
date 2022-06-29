@@ -86,10 +86,14 @@ class TestGenerateConfigurationMain(unittest.TestCase):
                                f'--host "{source_config.host}" --port "{source_config.port}" '
                                f'--auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" '
                                f'--load_from_s3_arn "{source_config.load_from_s3_arn}" '
+                               f'--proxy_host "{source_config.proxy_host}" '
+                               f'--proxy_port "{source_config.proxy_port}" '
                                f'--config_destination="{self.test_file_path}" ')
         else:
             result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                                f'--host "{source_config.host}" --port "{source_config.port}" '
+                               f'--proxy_host "{source_config.proxy_host}" '
+                               f'--proxy_port "{source_config.proxy_port}" '
                                f'--ssl "{source_config.ssl}" --config_destination="{self.test_file_path}" ')
         self.assertEqual(result, 0)
         config = get_config(self.test_file_path)
