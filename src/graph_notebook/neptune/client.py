@@ -110,14 +110,6 @@ class Client(object):
         self._auth = auth
         self._session = session
 
-        print(f"Username param in client init: {neo4j_username}")
-        print(f"Password param in client init: {neo4j_password}")
-        print(f"Auth param in client init: {neo4j_auth}")
-
-        print(f"Username after client init: {self.neo4j_username}")
-        print(f"Password after client init: {self.neo4j_password}")
-        print(f"Auth after client init: {self.neo4j_auth}")
-
         self._http_protocol = 'https' if self.ssl else 'http'
         self._ws_protocol = 'wss' if self.ssl else 'ws'
 
@@ -271,15 +263,6 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/'
 
-        '''
-        if 'content-type' not in headers:
-            headers['content-type'] = 'application/x-www-form-urlencoded'
-
-        data = {
-            'query': query
-        }
-        '''
-
         if "neptune.amazonaws.com" in self.host:
             if 'content-type' not in headers:
                 headers['content-type'] = 'application/x-www-form-urlencoded'
@@ -291,10 +274,10 @@ class Client(object):
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
         else:
-            # url += 'db/data/transaction/commit'
             url += 'db/neo4j/tx/commit'
-            headers['content-type'] = 'application/json;charset=UTF-8'
-            headers['Accept'] = 'application/json'
+            headers['content-type'] = 'application/json'
+            headers['Accept'] = 'application/vnd.neo4j.jolt+json-seq'
+
             data_dict = {
                 "statements": [
                     {
@@ -305,13 +288,8 @@ class Client(object):
             data = json.dumps(data_dict)
             if self.neo4j_auth:
                 user_and_pass = self.neo4j_username + ":" + self.neo4j_password
-                print(user_and_pass)
                 user_and_pass_base64 = b64encode(user_and_pass.encode())
-                print(user_and_pass_base64)
                 headers['authorization'] = user_and_pass_base64
-
-        print(headers)
-        print(url)
 
         req = self._prepare_request('POST', url, data=data, headers=headers)
         res = self._http_session.send(req)
@@ -345,15 +323,9 @@ class Client(object):
     def get_opencypher_driver(self):  # , user: str = 'neo4j', password: str = 'password'):
         url = f'bolt://{self.host}:{self.port}'
 
-        print(url)
-
-        #user = "neo4j"
-        #password = "punishments-surrender-conductors"
-
         if "neptune.amazonaws.com" in self.host:
             user = 'neo4j'
             if self._session:
-                # print("Has session: {self._session}")
                 method = 'POST'
                 headers = {
                     'HttpMethod': method,
@@ -374,7 +346,6 @@ class Client(object):
             else:
                 auth_final = None
 
-        print(f"Auth in driver: {auth_final}")
         driver = GraphDatabase.driver(url, auth=auth_final, encrypted=self.ssl)
         return driver
 
