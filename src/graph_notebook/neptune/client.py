@@ -211,7 +211,7 @@ class Client(object):
         ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
         request = self._prepare_request('GET', ws_url)
         traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
-        return client.Client(ws_url, traversal_source, headers=dict(request.headers))
+        return client.Client(ws_url, traversal_source, headers=dict(request.headers), **transport_kwargs)
 
     def gremlin_query(self, query, transport_args=None, bindings=None):
         if transport_args is None:
