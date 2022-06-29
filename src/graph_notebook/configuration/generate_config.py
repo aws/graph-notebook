@@ -66,8 +66,8 @@ class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
                  load_from_s3_arn='', ssl: bool = True, aws_region: str = DEFAULT_REGION,
-                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
-                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
+                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
+                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
         self.host = host
         self.port = port
         self.ssl = ssl
@@ -120,7 +120,7 @@ class Configuration(object):
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
                     aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host=proxy_host, proxy_port=proxy_port)
+    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host, proxy_port)
     return c
 
 
@@ -132,7 +132,7 @@ def generate_default_config():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", help="the host url to form a connection with", required=True)
-    parser.add_argument("--port", help="the port to use when creating a connection", default="8182")
+    parser.add_argument("--port", help="the port to use when creating a connection", default=8182)
     parser.add_argument("--auth_mode", default=AuthModeEnum.DEFAULT.value,
                         help="type of authentication the cluster being connected to is using. Can be DEFAULT or IAM")
     parser.add_argument("--ssl",
@@ -146,13 +146,12 @@ if __name__ == "__main__":
     parser.add_argument("--load_from_s3_arn", help="arn of role to use for bulk loader", default='')
     parser.add_argument("--aws_region", help="aws region your ml cluster is in.", default=DEFAULT_REGION)
     parser.add_argument("--proxy_host", help="the proxy host url to route a connection through", default='')
-    parser.add_argument("--proxy_port", help="the proxy port to use when creating proxy connection", default="8182")
+    parser.add_argument("--proxy_port", help="the proxy port to use when creating proxy connection", default=8182)
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
     config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl,
-                             args.load_from_s3_arn, args.aws_region, proxy_host=args.proxy_host,
-                             proxy_port=args.proxy_port)
+                             args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port))
     config.write_to_file(args.config_destination)
 
     exit(0)
