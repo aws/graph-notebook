@@ -151,7 +151,8 @@ if __name__ == "__main__":
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
     config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl,
-                             args.load_from_s3_arn, args.aws_region)
+                             args.load_from_s3_arn, args.aws_region, proxy_host=args.proxy_host,
+                             proxy_port=args.proxy_port)
     config.write_to_file(args.config_destination)
 
     exit(0)
