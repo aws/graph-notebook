@@ -18,10 +18,10 @@ def get_config_from_dict(data: dict) -> Configuration:
         config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
                                ssl=data['ssl'], load_from_s3_arn=data['load_from_s3_arn'],
                                aws_region=data['aws_region'], sparql_section=sparql_section,
-                               gremlin_section=gremlin_section)
+                               gremlin_section=gremlin_section, proxy_host=data['proxy_host'], proxy_port=data['proxy_port'])
     else:
         config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], sparql_section=sparql_section,
-                               gremlin_section=gremlin_section)
+                               gremlin_section=gremlin_section, proxy_host=data['proxy_host'], proxy_port=data['proxy_port'])
     return config
 
 

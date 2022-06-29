@@ -6,6 +6,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
   if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
 - Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
+- Added `proxy_host` and `proxy_port` options to the `%%graph_notebook_config` options. ([Link to PR](https://github.com/aws/graph-notebook/pull/310))
+  - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/). 
 
 
 ## Release 3.4.1 (June 7, 2022)
