@@ -260,6 +260,52 @@ These variables must follow a specific naming convention, as listed in the [Boto
 
 A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 
+## Building From Source
+
+A pre-release distribution can be built from the graph-notebook repository via the following steps:
+
+```
+# 1) Clone the repository and navigate into the clone directory
+git clone https://github.com/aws/graph-notebook.git
+cd graph-notebook
+
+# 2) Create a new virtual environment
+
+# 2a) Option 1 - pyenv
+pyenv install 3.9.7  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.9.7 build-graph-notebook
+pyenv local build-graph-notebook
+
+# 2b) Option 2 - venv
+rm -rf /tmp/venv
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+
+# 3) Install build dependencies
+pip install --upgrade pip setuptools wheel twine
+pip install jupyterlab>=3
+
+# 4) Build the distribution
+python3 setup.py bdist_wheel
+```
+
+You should now be able to find the built distribution at
+
+`./dist/graph_notebook-3.4.1-py3-none-any.whl`
+
+And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
+
+```
+pip install graph-notebook
+```
+
+with
+
+```
+pip install ./dist/graph_notebook-3.4.1-py3-none-any.whl
+```
+
+
 ## Contributing Guidelines
 
 See [CONTRIBUTING](https://github.com/aws/graph-notebook/blob/main/CONTRIBUTING.md) for more information.
