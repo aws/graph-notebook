@@ -12,16 +12,20 @@ from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION
 def get_config_from_dict(data: dict) -> Configuration:
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
     gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection('')
+    proxy_host = str(data['proxy_host']) if 'proxy_host' in data else ''
+    proxy_port = int(data['proxy_port']) if 'proxy_port' in data else 8182
     if "amazonaws.com" in data['host']:
         if gremlin_section.to_dict()['traversal_source'] != 'g':
             print('Ignoring custom traversal source, Amazon Neptune does not support this functionality.\n')
         config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
                                ssl=data['ssl'], load_from_s3_arn=data['load_from_s3_arn'],
                                aws_region=data['aws_region'], sparql_section=sparql_section,
-                               gremlin_section=gremlin_section)
+                               gremlin_section=gremlin_section, proxy_host=proxy_host,
+                               proxy_port=proxy_port)
     else:
         config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], sparql_section=sparql_section,
-                               gremlin_section=gremlin_section)
+                               gremlin_section=gremlin_section, proxy_host=proxy_host,
+                               proxy_port=proxy_port)
     return config
 
 
