@@ -435,7 +435,7 @@ class Graph(Magics):
             except HTTPError:
                 # Catching all 400 response errors here to try and fix possible invalid media type for db in headers.
                 # Retry query once with RDF spec default media type.
-                result_type = MEDIA_TYPE_SPARQL_JSON if query_type == 'SELECT' else MEDIA_TYPE_NQUADS
+                result_type = MEDIA_TYPE_SPARQL_JSON if query_type == 'SELECT' else MEDIA_TYPE_NTRIPLES
                 query_res = self.client.sparql(cell, path=path, headers={'Accept': result_type})
                 query_res.raise_for_status()
 
