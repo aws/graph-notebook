@@ -412,8 +412,11 @@ class Graph(Magics):
                             or (query_type in ['CONSTRUCT', 'DESCRIBE']
                                 and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
                             or result_type == '':
+                        if result_type != '':
+                            print(f"Invalid media type: [{result_type}] specified for Neptune {query_type} query. "
+                                  f"Defaulting to: [application/sparql-results+json].")
                         result_type = MEDIA_TYPE_SPARQL_JSON
-                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+                    headers = {'Accept': result_type}
                 elif result_type == '':
                     if query_type == 'SELECT':
                         result_type = MEDIA_TYPE_SPARQL_JSON
