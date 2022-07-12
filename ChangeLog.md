@@ -5,7 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
 
-## Release 3.5.0 (July 12, 2022)
+## Release 3.5.1 (July 12, 2022)
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
   if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
 - Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
