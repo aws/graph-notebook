@@ -421,9 +421,12 @@ class Graph(Magics):
                         results_df = pd.DataFrame(rows_and_columns['rows'])
                         results_df.insert(0, "#", range(1, len(results_df) + 1))
                         for col_index, col_name in enumerate(rows_and_columns['columns']):
-                            results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                              axis='columns',
-                                              inplace=True)
+                            try:
+                                results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                  axis='columns',
+                                                  inplace=True)
+                            except IndexError:
+                                results_df.insert(col_index+1, col_name, [])
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
