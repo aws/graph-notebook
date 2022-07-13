@@ -6,7 +6,7 @@ Default password is `admin`.
 
 ## Example Runs
 ```sh
-docker run --network="host"  -p 8888:8888 ogoodness/graph-notebook
+docker run --network="host"  -p 8888:8888 -t graph-notebook
 
 # Sharing directories
 docker run --network="host"  -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
@@ -17,7 +17,7 @@ docker run -p 8888:8888 \
  -e AWS_SECRET_ACCESS_KEY \ 
  -e AWS_SESSION_TOKEN \ 
  -e AWS_REGION="us-east-1" \
- ogoodness/graph-notebook
+ graph-notebook
 ```
 
 Example Notebooks are placed in the `Example Notebooks` sub-directory
@@ -67,7 +67,7 @@ Within the Jupyter Notebook you must configure the Notebook settings to account 
 | GRAPH_NOTEBOOK_AUTH_MODE   | What type of auth should be used for connection to the Graph DB        |
 | GRAPH_NOTEBOOK_HOST   | Host Graph Notebook will attempt to connect to for queries         |
 | GRAPH_NOTEBOOK_PORT   | Port graph notebook will use to attempt connection to port        |
-| NEPTUNE_LOAD_FROM_S3_ROLE_ARN   | Text        |
+| NEPTUNE_LOAD_FROM_S3_ROLE_ARN   | Role Arn used for Data loads from S3        |
 | AWS_REGION   | Region Neptune instance is located in AWS        |
 | NOTEBOOK_PORT   | Port Jupyter Lab is listening on. (8888)        |
 | LAB_PORT   | Port Jupyter Lab is listening on. (8889)        |
