@@ -3,7 +3,6 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
 
 ## Release 3.5.1 (July 12, 2022)
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
@@ -13,6 +12,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
   - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/). 
 - Fixed results table formatting in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/297))
 - Fixed several typos in the Neptune ML 00 notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/319))
+- Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
 
 ## Release 3.4.1 (June 7, 2022)
 - Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
