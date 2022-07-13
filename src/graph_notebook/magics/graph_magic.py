@@ -18,6 +18,9 @@ from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
+import pandas as pd
+import itables.options as opt
+from itables import show
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -60,6 +63,10 @@ error_template = retrieve_template("error.html")
 loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
 UNRESTRICTED_LAYOUT = widgets.Layout()
+
+DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
+DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
+opt.order = []
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -151,6 +158,20 @@ def results_per_page_check(results_per_page):
         return 1000
     else:
         return int(results_per_page)
+
+
+def generate_pagination_vars(visible_results: int):
+    pagination_options = DEFAULT_PAGINATION_OPTIONS.copy()
+    pagination_menu = DEFAULT_PAGINATION_MENU.copy()
+    visible_results_fixed = results_per_page_check(visible_results)
+
+    if visible_results_fixed not in pagination_options:
+        pagination_options.append(visible_results_fixed)
+        pagination_options.sort()
+        pagination_menu = pagination_options.copy()
+        pagination_menu[0] = "All"
+
+    return visible_results_fixed, pagination_options, pagination_menu
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -308,8 +329,14 @@ class Graph(Magics):
 
         if args.no_scroll:
             sparql_layout = UNRESTRICTED_LAYOUT
+            sparql_scrollY = True
+            sparql_scrollCollapse = False
+            sparql_paging = False
         else:
             sparql_layout = DEFAULT_LAYOUT
+            sparql_scrollY = "475px"
+            sparql_scrollCollapse = True
+            sparql_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -321,6 +348,7 @@ class Graph(Magics):
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
+        results_df = None
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
@@ -390,11 +418,15 @@ class Graph(Magics):
 
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
-                        table_id = f"table-{str(uuid.uuid4())[:8]}"
-                        visible_results = results_per_page_check(args.results_per_page)
-                        first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                        results_df = pd.DataFrame(rows_and_columns['rows'])
+                        results_df.insert(0, "#", range(1, len(results_df) + 1))
+                        for col_index, col_name in enumerate(rows_and_columns['columns']):
+                            try:
+                                results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                  axis='columns',
+                                                  inplace=True)
+                            except IndexError:
+                                results_df.insert(col_index+1, col_name, [])
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -423,7 +455,7 @@ class Graph(Magics):
             children.append(metadata_output)
             titles.append('Query Metadata')
 
-            if first_tab_html == "":
+            if first_tab_html == "" and results_df is None:
                 tab.children = children[1:]  # the first tab is empty, remove it and proceed
             else:
                 tab.children = children
@@ -436,7 +468,22 @@ class Graph(Magics):
             with metadata_output:
                 display(HTML(sparql_metadata.to_html()))
 
-            if first_tab_html != "":
+            if results_df is not None:
+                with first_tab_output:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=sparql_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=sparql_paging,
+                         scrollCollapse=sparql_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+            elif first_tab_html != "":
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
@@ -529,11 +576,18 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+        results_df = None
 
         if args.no_scroll:
             gremlin_layout = UNRESTRICTED_LAYOUT
+            gremlin_scrollY = True
+            gremlin_scrollCollapse = False
+            gremlin_paging = False
         else:
             gremlin_layout = DEFAULT_LAYOUT
+            gremlin_scrollY = "475px"
+            gremlin_scrollCollapse = True
+            gremlin_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -632,10 +686,17 @@ class Graph(Magics):
                     logger.debug(
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-                table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                visible_results = results_per_page_check(args.results_per_page)
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
-                                                               amount=visible_results)
+                # Check if we can access the CDNs required by itables library.
+                # If not, then render our own HTML template.
+                results_df = pd.DataFrame(query_res)
+                if not results_df.empty:
+                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
+                            isinstance(query_res[0], list):
+                        query_res = [[result] for result in query_res]
+                        results_df = pd.DataFrame(query_res)
+                results_df.insert(0, "#", range(1, len(results_df) + 1))
+                if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
+                    results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -651,7 +712,23 @@ class Graph(Magics):
                 display(HTML(gremlin_metadata.to_html()))
 
             with first_tab_output:
-                display(HTML(first_tab_html))
+                if mode == QueryMode.DEFAULT:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=gremlin_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"minWidth": "95%", "targets": 1},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=gremlin_paging,
+                         scrollCollapse=gremlin_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+                else:  # Explain/Profile
+                    display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
@@ -1738,11 +1815,18 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+        results_df = None
 
         if args.no_scroll:
             oc_layout = UNRESTRICTED_LAYOUT
+            oc_scrollY = True
+            oc_scrollCollapse = False
+            oc_paging = False
         else:
             oc_layout = DEFAULT_LAYOUT
+            oc_scrollY = "475px"
+            oc_scrollCollapse = True
+            oc_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -1764,7 +1848,8 @@ class Graph(Magics):
                 titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
                 base64_str = base64.b64encode(explain_bytes).decode('utf-8')
-                first_tab_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = opencypher_explain_template.render(table=explain,
+                                                                    link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1776,13 +1861,15 @@ class Graph(Magics):
                                                                    query_time=query_time)
                 first_tab_html = ""
                 rows_and_columns = opencypher_get_rows_and_columns(res, False)
+
                 if rows_and_columns:
                     titles.append('Console')
-                    table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    visible_results = results_per_page_check(args.results_per_page)
-                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -1817,11 +1904,12 @@ class Graph(Magics):
                 rows_and_columns = opencypher_get_rows_and_columns(res, True)
                 if rows_and_columns:
                     titles.append('Console')
-                    table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    visible_results = results_per_page_check(args.results_per_page)
-                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
@@ -1838,7 +1926,7 @@ class Graph(Magics):
             titles.append('Query Metadata')
             children.append(metadata_output)
 
-            if first_tab_html == "":
+            if first_tab_html == "" and results_df is None:
                 tab.children = children[1:]  # the first tab is empty, remove it and proceed
             else:
                 tab.children = children
@@ -1850,7 +1938,22 @@ class Graph(Magics):
             with metadata_output:
                 display(HTML(oc_metadata.to_html()))
 
-            if first_tab_html != "":
+            if results_df is not None:
+                with first_tab_output:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=oc_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=oc_paging,
+                         scrollCollapse=oc_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+            elif first_tab_html != "":
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
