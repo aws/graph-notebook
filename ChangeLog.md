@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM.
 
 ## Release 3.5.1 (July 12, 2022)
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,

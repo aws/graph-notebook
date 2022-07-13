@@ -1,6 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 source /tmp/venv/bin/activate
 cd "${WORKING_DIR}"
 if [[ ${GRAPH_NOTEBOOK_SSL} -eq "" ]]; then
