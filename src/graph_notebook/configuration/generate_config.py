@@ -8,7 +8,9 @@ import json
 import os
 from enum import Enum
 
-from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, NEPTUNE_CONFIG_HOST_IDENTIFIERS
+from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, \
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
+
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
 
@@ -75,11 +77,9 @@ class Configuration(object):
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
-        is_neptune_host = False
-        for host_snippet in neptune_hosts:
-            if host_snippet in self.host or host_snippet in self.proxy_host:
-                is_neptune_host = True
-                break
+
+        is_neptune_host = is_allowed_neptune_host(hostname=self.host, host_allowlist=neptune_hosts) \
+            or is_allowed_neptune_host(hostname=self.proxy_host, host_allowlist=neptune_hosts)
         if is_neptune_host:
             self.is_neptune_config = True
             self.auth_mode = auth_mode

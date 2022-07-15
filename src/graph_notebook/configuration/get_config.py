@@ -7,7 +7,7 @@ import json
 
 from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION, Configuration, AuthModeEnum, \
     SparqlSection, GremlinSection
-from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS
+from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 
 
 def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS) -> Configuration:
@@ -16,11 +16,9 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
     gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection('')
     proxy_host = str(data['proxy_host']) if 'proxy_host' in data else ''
     proxy_port = int(data['proxy_port']) if 'proxy_port' in data else 8182
-    is_neptune_host = False
-    for host_snippet in neptune_hosts:
-        if host_snippet in data["host"]:
-            is_neptune_host = True
-            break
+
+    is_neptune_host = is_allowed_neptune_host(hostname=data["host"], host_allowlist=neptune_hosts)
+
     if is_neptune_host:
         if gremlin_section.to_dict()['traversal_source'] != 'g':
             print('Ignoring custom traversal source, Amazon Neptune does not support this functionality.\n')

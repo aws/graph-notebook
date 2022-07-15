@@ -40,7 +40,7 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -205,11 +205,7 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        is_neptune_host = False
-        for host_snippet in self.neptune_cfg_allowlist:
-            if host_snippet in config.host:
-                is_neptune_host = True
-                break
+        is_neptune_host = is_allowed_neptune_host(hostname=config.host, host_allowlist=self.neptune_cfg_allowlist)
 
         if is_neptune_host:
             builder = ClientBuilder() \

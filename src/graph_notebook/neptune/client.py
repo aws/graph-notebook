@@ -95,6 +95,13 @@ STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
 
 
+def is_allowed_neptune_host(hostname: str, host_allowlist: list):
+    for host_snippet in host_allowlist:
+        if host_snippet in hostname:
+            return True
+    return False
+
+
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
                  sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None,
@@ -130,10 +137,7 @@ class Client(object):
         return self.target_port
 
     def is_neptune_domain(self):
-        for host_snippet in self.neptune_hosts:
-            if host_snippet in self.target_host:
-                return True
-        return False
+        return is_allowed_neptune_host(hostname=self.target_host, host_allowlist=self.neptune_hosts)
 
     def get_uri_with_port(self, use_websocket=False, use_proxy=False):
         protocol = self._http_protocol
