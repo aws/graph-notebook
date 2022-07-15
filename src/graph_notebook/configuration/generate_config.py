@@ -8,7 +8,7 @@ import json
 import os
 from enum import Enum
 
-from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION
+from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, NEPTUNE_CONFIG_HOST_IDENTIFIERS
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
 
@@ -67,14 +67,20 @@ class Configuration(object):
                  auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
                  load_from_s3_arn='', ssl: bool = True, aws_region: str = DEFAULT_REGION,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
-                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None):
+                 sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
+                 neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
         self.host = host
         self.port = port
         self.ssl = ssl
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
-        if "amazonaws.com" in self.host or "amazonaws.com" in self.proxy_host:
+        is_neptune_host = False
+        for host_snippet in neptune_hosts:
+            if host_snippet in self.host or host_snippet in self.proxy_host:
+                is_neptune_host = True
+                break
+        if is_neptune_host:
             self.is_neptune_config = True
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
@@ -118,9 +124,11 @@ class Configuration(object):
 
 
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
-                    aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
+                    aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
+                    neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host, proxy_port)
+    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host, proxy_port,
+                      neptune_hosts=neptune_hosts)
     return c
 
 
@@ -147,11 +155,14 @@ if __name__ == "__main__":
     parser.add_argument("--aws_region", help="aws region your ml cluster is in.", default=DEFAULT_REGION)
     parser.add_argument("--proxy_host", help="the proxy host url to route a connection through", default='')
     parser.add_argument("--proxy_port", help="the proxy port to use when creating proxy connection", default=8182)
+    parser.add_argument("--neptune_hosts", help="list of host snippets to use for identifying neptune endpoints",
+                        default=DEFAULT_CONFIG_LOCATION)
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
     config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl,
-                             args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port))
+                             args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port),
+                             neptune_hosts=args.neptune_hosts)
     config.write_to_file(args.config_destination)
 
     exit(0)

@@ -18,6 +18,7 @@ from gremlin_python.driver import client
 from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase
 import nest_asyncio
+# from graph_notebook.magics.graph_magic import NEPTUNE_CONFIG_HOST_IDENTIFIERS
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
@@ -91,11 +92,14 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
+NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
+
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
                  sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None,
-                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT):
+                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
+                 neptune_hosts: list = None):
         self.target_host = host
         self.target_port = port
         self.ssl = ssl
@@ -106,6 +110,7 @@ class Client(object):
         self._session = session
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
+        self.neptune_hosts = NEPTUNE_CONFIG_HOST_IDENTIFIERS if neptune_hosts is None else neptune_hosts
 
         self._http_protocol = 'https' if self.ssl else 'http'
         self._ws_protocol = 'wss' if self.ssl else 'ws'
@@ -125,7 +130,10 @@ class Client(object):
         return self.target_port
 
     def is_neptune_domain(self):
-        return "neptune.amazonaws.com" in self.target_host
+        for host_snippet in self.neptune_hosts:
+            if host_snippet in self.target_host:
+                return True
+        return False
 
     def get_uri_with_port(self, use_websocket=False, use_proxy=False):
         protocol = self._http_protocol
@@ -741,6 +749,10 @@ class ClientBuilder(object):
 
     def with_proxy_port(self, proxy_port: int):
         self.args['proxy_port'] = proxy_port
+        return ClientBuilder(self.args)
+
+    def with_custom_neptune_hosts(self, neptune_hosts: list):
+        self.args['neptune_hosts'] = neptune_hosts
         return ClientBuilder(self.args)
 
     def build(self) -> Client:
