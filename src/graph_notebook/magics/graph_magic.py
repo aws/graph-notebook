@@ -272,13 +272,13 @@ class Graph(Magics):
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':
-            print('please specify a host.')
+            print(f'current host: {self.graph_notebook_config.host}')
             return
 
         # TODO: we should attempt to make a status call to this host before we set the config to this value.
         self.graph_notebook_config.host = line
         self._generate_client_from_config(self.graph_notebook_config)
-        print(f'set host to {line}')
+        print(f'set host to {self.graph_notebook_config.host}')
 
     @magic_variables
     @cell_magic

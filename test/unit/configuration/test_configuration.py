@@ -16,6 +16,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         cls.generic_host = 'blah'
         cls.neptune_host_reg = 'instance.cluster.us-west-2.neptune.amazonaws.com'
         cls.neptune_host_cn = 'instance.cluster.neptune.cn-north-1.amazonaws.com.cn'
+        cls.neptune_host_with_whitespace = '\t\v\n\r\v instance.cluster.us-west-2.neptune.amazonaws.com '
         cls.port = 8182
         cls.test_file_path = f'{os.path.abspath(os.path.curdir)}/test_configuration_file.json'
 
@@ -126,3 +127,26 @@ class TestGenerateConfiguration(unittest.TestCase):
         c.write_to_file(self.test_file_path)
         config_from_file = get_config(self.test_file_path)
         self.assertEqual(config.to_dict(), config_from_file.to_dict())
+
+    def test_configuration_neptune_host_with_whitespace(self):
+        config = Configuration(self.neptune_host_with_whitespace, self.port)
+        self.assertEqual(config.host, self.neptune_host_reg)
+        self.assertEqual(config._host, self.neptune_host_reg)
+
+    def test_configuration_neptune_host_with_whitespace_using_setter(self):
+        config = Configuration("localhost", self.port)
+        config.host = self.neptune_host_with_whitespace
+        self.assertEqual(config.host, self.neptune_host_reg)
+        self.assertEqual(config._host, self.neptune_host_reg)
+
+    def test_configuration_neptune_proxy_host_with_whitespace(self):
+        config = Configuration("localhost", self.port, proxy_host=self.neptune_host_with_whitespace)
+        self.assertEqual(config.proxy_host, self.neptune_host_reg)
+        self.assertEqual(config._proxy_host, self.neptune_host_reg)
+
+    def test_configuration_neptune_proxy_host_with_whitespace_using_setter(self):
+        config = Configuration("localhost", self.port)
+        config.proxy_host = self.neptune_host_with_whitespace
+        self.assertEqual(config.proxy_host, self.neptune_host_reg)
+        self.assertEqual(config._proxy_host, self.neptune_host_reg)
+
