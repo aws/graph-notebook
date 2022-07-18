@@ -194,4 +194,3 @@ class TestGenerateConfiguration(unittest.TestCase):
         config.proxy_host = self.neptune_host_with_whitespace
         self.assertEqual(config.proxy_host, self.neptune_host_reg)
         self.assertEqual(config._proxy_host, self.neptune_host_reg)
-
