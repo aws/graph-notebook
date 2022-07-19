@@ -13,7 +13,9 @@ import time
 import datetime
 import os
 import uuid
+import ast
 from enum import Enum
+from copy import copy
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
@@ -37,7 +39,8 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -67,6 +70,7 @@ UNRESTRICTED_LAYOUT = widgets.Layout()
 DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
 DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
 opt.order = []
+opt.maxBytes = 0
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -182,11 +186,12 @@ class Graph(Magics):
         # You must call the parent constructor
         super(Graph, self).__init__(shell)
 
+        self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
             self.client: Client = None
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
         except FileNotFoundError:
             print('Could not find a valid configuration. '
                   'Do not forget to validate your settings using %graph_notebook_config.')
@@ -201,7 +206,9 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if "amazonaws.com" in config.host:
+        is_neptune_host = is_allowed_neptune_host(hostname=config.host, host_allowlist=self.neptune_cfg_allowlist)
+
+        if is_neptune_host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
@@ -212,6 +219,8 @@ class Graph(Magics):
                 .with_sparql_path(config.sparql.path)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
+            if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
+                builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -229,13 +238,13 @@ class Graph(Magics):
     def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
         if cell != '':
             data = json.loads(cell)
-            config = get_config_from_dict(data)
+            config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'reset':
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'silent':
@@ -251,6 +260,46 @@ class Graph(Magics):
 
         return self.graph_notebook_config
 
+    @line_cell_magic
+    def neptune_config_allowlist(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='add',
+                            help='mode (default=add) [add|remove|overwrite|reset]')
+        args = parser.parse_args(line.split())
+
+        try:
+            cell_new = ast.literal_eval(cell)
+            input_type = 'list'
+        except:
+            cell_new = cell
+            input_type = 'string'
+
+        allowlist_modified = True
+        if args.mode == 'reset':
+            self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        elif cell != '':
+            if args.mode == 'add':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.append(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) | set(cell_new))
+            elif args.mode == 'remove':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.remove(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) - set(cell_new))
+            elif args.mode == 'overwrite':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist = [cell_new.strip()]
+                else:
+                    self.neptune_cfg_allowlist = cell_new
+        else:
+            allowlist_modified = False
+
+        if allowlist_modified:
+            print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
+        else:
+            print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
 
     @line_magic
     def stream_viewer(self,line):
@@ -655,6 +704,7 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
                 titles.append('Console')
+
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -693,10 +743,11 @@ class Graph(Magics):
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
                 if not results_df.empty:
-                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
-                            isinstance(query_res[0], list):
-                        query_res = [[result] for result in query_res]
-                        results_df = pd.DataFrame(query_res)
+                    query_res = [[result] for result in query_res]
+                    query_res.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
+                    results_df = pd.DataFrame(query_res)
+                    results_df.drop(results_df.index[-1], inplace=True)
+                    query_res.pop()
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)

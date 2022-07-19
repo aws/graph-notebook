@@ -1098,7 +1098,7 @@ export class ForceView extends DOMWidgetView {
         this.detailsPanel.style.top =
           (detailsTop / 650) * window.innerHeight + "px";
         this.expandBtn.innerHTML = feather.icons["minimize-2"].toSvg();
-        this.expandBtn.title = "Minimize";
+        this.expandBtn.title = "Exit Fullscreen";
       } else {
         this.detailsPanel.style.left =
           (detailsLeft / window.innerWidth) * 650 + "px";
@@ -1111,7 +1111,7 @@ export class ForceView extends DOMWidgetView {
         console.log(newTop);
 
         this.expandBtn.innerHTML = feather.icons["maximize-2"].toSvg();
-        this.expandBtn.title = "Exit Fullscreen";
+        this.expandBtn.title = "Fullscreen";
         document.removeEventListener("fullscreenchange", fullscreenchange);
       }
       this.expandBtn.classList.toggle("active");
