@@ -84,7 +84,9 @@ setup(
         'ipykernel==5.3.4',
         'nbconvert==5.6.1',
         'jedi<0.18.0',
-        'markupsafe<2.1.0'
+        'markupsafe<2.1.0',
+        'itables>=1.0.0',
+        'pandas'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',

@@ -13,11 +13,16 @@ import time
 import datetime
 import os
 import uuid
+import ast
 from enum import Enum
+from copy import copy
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
+import pandas as pd
+import itables.options as opt
+from itables import show
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -34,7 +39,8 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -61,17 +67,22 @@ loading_wheel_html = loading_wheel_template.render()
 DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
+DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
+DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
+opt.order = []
+opt.maxBytes = 0
+
 logging.basicConfig()
 root_logger = logging.getLogger()
 logger = logging.getLogger("graph_magic")
 
 DEFAULT_MAX_RESULTS = 1000
 
-GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+GREMLIN_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                             for example: %gremlin_status --cancelQuery --queryId my-query-id'''
-SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
-OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery, 
+OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
 
@@ -153,6 +164,20 @@ def results_per_page_check(results_per_page):
         return int(results_per_page)
 
 
+def generate_pagination_vars(visible_results: int):
+    pagination_options = DEFAULT_PAGINATION_OPTIONS.copy()
+    pagination_menu = DEFAULT_PAGINATION_MENU.copy()
+    visible_results_fixed = results_per_page_check(visible_results)
+
+    if visible_results_fixed not in pagination_options:
+        pagination_options.append(visible_results_fixed)
+        pagination_options.sort()
+        pagination_menu = pagination_options.copy()
+        pagination_menu[0] = "All"
+
+    return visible_results_fixed, pagination_options, pagination_menu
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -161,11 +186,12 @@ class Graph(Magics):
         # You must call the parent constructor
         super(Graph, self).__init__(shell)
 
+        self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
             self.client: Client = None
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
         except FileNotFoundError:
             print('Could not find a valid configuration. '
                   'Do not forget to validate your settings using %graph_notebook_config.')
@@ -180,15 +206,21 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if "amazonaws.com" in config.host:
+        is_neptune_host = is_allowed_neptune_host(hostname=config.host, host_allowlist=self.neptune_cfg_allowlist)
+
+        if is_neptune_host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_region(config.aws_region) \
                 .with_tls(config.ssl) \
+                .with_proxy_host(config.proxy_host) \
+                .with_proxy_port(config.proxy_port) \
                 .with_sparql_path(config.sparql.path)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
+            if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
+                builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -207,13 +239,13 @@ class Graph(Magics):
     def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
         if cell != '':
             data = json.loads(cell)
-            config = get_config_from_dict(data)
+            config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'reset':
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'silent':
@@ -228,7 +260,47 @@ class Graph(Magics):
             print(json.dumps(config_dict, indent=2))
 
         return self.graph_notebook_config
-    
+
+    @line_cell_magic
+    def neptune_config_allowlist(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='add',
+                            help='mode (default=add) [add|remove|overwrite|reset]')
+        args = parser.parse_args(line.split())
+
+        try:
+            cell_new = ast.literal_eval(cell)
+            input_type = 'list'
+        except:
+            cell_new = cell
+            input_type = 'string'
+
+        allowlist_modified = True
+        if args.mode == 'reset':
+            self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        elif cell != '':
+            if args.mode == 'add':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.append(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) | set(cell_new))
+            elif args.mode == 'remove':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.remove(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) - set(cell_new))
+            elif args.mode == 'overwrite':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist = [cell_new.strip()]
+                else:
+                    self.neptune_cfg_allowlist = cell_new
+        else:
+            allowlist_modified = False
+
+        if allowlist_modified:
+            print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
+        else:
+            print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
 
     @line_magic
     def stream_viewer(self,line):
@@ -240,13 +312,13 @@ class Graph(Magics):
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
         args = parser.parse_args(line.split())
-        
+
         language = args.language
         limit = args.limit
         uri = self.client.get_uri_with_port()
         viewer = StreamViewer(self.client,uri,language,limit=limit)
         viewer.show()
-        
+
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':
@@ -307,8 +379,14 @@ class Graph(Magics):
 
         if args.no_scroll:
             sparql_layout = UNRESTRICTED_LAYOUT
+            sparql_scrollY = True
+            sparql_scrollCollapse = False
+            sparql_paging = False
         else:
             sparql_layout = DEFAULT_LAYOUT
+            sparql_scrollY = "475px"
+            sparql_scrollCollapse = True
+            sparql_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -320,6 +398,7 @@ class Graph(Magics):
 
         path = args.path if args.path != '' else self.graph_notebook_config.sparql.path
         logger.debug(f'using mode={mode}')
+        results_df = None
         if mode == QueryMode.EXPLAIN:
             res = self.client.sparql_explain(cell, args.explain_type, args.explain_format, path=path)
             res.raise_for_status()
@@ -370,7 +449,7 @@ class Graph(Magics):
                                        ignore_groups=args.ignore_groups,
                                        expand_all=args.expand_all,
                                        group_by_raw=args.group_by_raw)
-                    
+
                     sn.extract_prefix_declarations_from_query(cell)
                     try:
                         sn.add_results(results)
@@ -389,11 +468,15 @@ class Graph(Magics):
 
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
-                        table_id = f"table-{str(uuid.uuid4())[:8]}"
-                        visible_results = results_per_page_check(args.results_per_page)
-                        first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                        results_df = pd.DataFrame(rows_and_columns['rows'])
+                        results_df.insert(0, "#", range(1, len(results_df) + 1))
+                        for col_index, col_name in enumerate(rows_and_columns['columns']):
+                            try:
+                                results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                  axis='columns',
+                                                  inplace=True)
+                            except IndexError:
+                                results_df.insert(col_index+1, col_name, [])
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -422,7 +505,7 @@ class Graph(Magics):
             children.append(metadata_output)
             titles.append('Query Metadata')
 
-            if first_tab_html == "":
+            if first_tab_html == "" and results_df is None:
                 tab.children = children[1:]  # the first tab is empty, remove it and proceed
             else:
                 tab.children = children
@@ -435,7 +518,22 @@ class Graph(Magics):
             with metadata_output:
                 display(HTML(sparql_metadata.to_html()))
 
-            if first_tab_html != "":
+            if results_df is not None:
+                with first_tab_output:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=sparql_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=sparql_paging,
+                         scrollCollapse=sparql_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+            elif first_tab_html != "":
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
@@ -528,11 +626,18 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+        results_df = None
 
         if args.no_scroll:
             gremlin_layout = UNRESTRICTED_LAYOUT
+            gremlin_scrollY = True
+            gremlin_scrollCollapse = False
+            gremlin_paging = False
         else:
             gremlin_layout = DEFAULT_LAYOUT
+            gremlin_scrollY = "475px"
+            gremlin_scrollCollapse = True
+            gremlin_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -597,6 +702,7 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
                 titles.append('Console')
+
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -631,10 +737,18 @@ class Graph(Magics):
                     logger.debug(
                         f'unable to create gremlin network from result. Skipping from result set: {value_error}')
 
-                table_id = f"table-{str(uuid.uuid4()).replace('-', '')[:8]}"
-                visible_results = results_per_page_check(args.results_per_page)
-                first_tab_html = gremlin_table_template.render(guid=table_id, results=query_res,
-                                                               amount=visible_results)
+                # Check if we can access the CDNs required by itables library.
+                # If not, then render our own HTML template.
+                results_df = pd.DataFrame(query_res)
+                if not results_df.empty:
+                    query_res = [[result] for result in query_res]
+                    query_res.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
+                    results_df = pd.DataFrame(query_res)
+                    results_df.drop(results_df.index[-1], inplace=True)
+                    query_res.pop()
+                results_df.insert(0, "#", range(1, len(results_df) + 1))
+                if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
+                    results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -650,7 +764,23 @@ class Graph(Magics):
                 display(HTML(gremlin_metadata.to_html()))
 
             with first_tab_output:
-                display(HTML(first_tab_html))
+                if mode == QueryMode.DEFAULT:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=gremlin_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"minWidth": "95%", "targets": 1},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=gremlin_paging,
+                         scrollCollapse=gremlin_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+                else:  # Explain/Profile
+                    display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
 
@@ -1738,11 +1868,18 @@ class Graph(Magics):
         logger.debug(args)
         res = None
         res_format = None
+        results_df = None
 
         if args.no_scroll:
             oc_layout = UNRESTRICTED_LAYOUT
+            oc_scrollY = True
+            oc_scrollCollapse = False
+            oc_paging = False
         else:
             oc_layout = DEFAULT_LAYOUT
+            oc_scrollY = "475px"
+            oc_scrollCollapse = True
+            oc_paging = True
 
         if not args.silent:
             tab = widgets.Tab()
@@ -1765,7 +1902,8 @@ class Graph(Magics):
                 titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
                 base64_str = base64.b64encode(explain_bytes).decode('utf-8')
-                first_tab_html = opencypher_explain_template.render(table=explain, link=f"data:text/html;base64,{base64_str}")
+                first_tab_html = opencypher_explain_template.render(table=explain,
+                                                                    link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell)
@@ -1792,11 +1930,12 @@ class Graph(Magics):
                 rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
-                    table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    visible_results = results_per_page_check(args.results_per_page)
-                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -1832,11 +1971,12 @@ class Graph(Magics):
                 rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
-                    table_id = f"table-{str(uuid.uuid4())[:8]}"
-                    visible_results = results_per_page_check(args.results_per_page)
-                    first_tab_html = opencypher_table_template.render(columns=rows_and_columns['columns'],
-                                                                      rows=rows_and_columns['rows'], guid=table_id,
-                                                                      amount=visible_results)
+                    results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+                    for col_index, col_name in enumerate(rows_and_columns['columns']):
+                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                          axis='columns',
+                                          inplace=True)
                 # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
@@ -1853,7 +1993,7 @@ class Graph(Magics):
             titles.append('Query Metadata')
             children.append(metadata_output)
 
-            if first_tab_html == "":
+            if first_tab_html == "" and results_df is None:
                 tab.children = children[1:]  # the first tab is empty, remove it and proceed
             else:
                 tab.children = children
@@ -1865,7 +2005,22 @@ class Graph(Magics):
             with metadata_output:
                 display(HTML(oc_metadata.to_html()))
 
-            if first_tab_html != "":
+            if results_df is not None:
+                with first_tab_output:
+                    visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
+                        args.results_per_page)
+                    show(results_df,
+                         scrollY=oc_scrollY,
+                         columnDefs=[
+                             {"width": "5%", "targets": 0},
+                             {"className": "nowrap dt-left", "targets": "_all"}
+                         ],
+                         paging=oc_paging,
+                         scrollCollapse=oc_scrollCollapse,
+                         lengthMenu=[final_pagination_options, final_pagination_menu],
+                         pageLength=visible_results
+                         )
+            elif first_tab_html != "":
                 with first_tab_output:
                     display(HTML(first_tab_html))
 

@@ -16,8 +16,10 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         cls.generic_host = 'blah'
         cls.neptune_host_reg = 'instance.cluster.us-west-2.neptune.amazonaws.com'
         cls.neptune_host_cn = 'instance.cluster.neptune.cn-north-1.amazonaws.com.cn'
+        cls.neptune_host_custom = 'localhost'
         cls.port = 8182
         cls.test_file_path = f'{os.path.abspath(os.path.curdir)}/test_generate_from_main.json'
+        cls.custom_hosts_list = ['localhost']
         cls.python_cmd = os.environ.get('PYTHON_CMD', 'python3')  # environment variable to let ToD hosts specify
         # where the python command is that is being used for testing.
 
@@ -68,6 +70,16 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         config = get_config(self.test_file_path)
         self.assertEqual(expected_config.to_dict(), config.to_dict())
 
+    def test_generate_configuration_main_empty_args_custom(self):
+        expected_config = Configuration(self.neptune_host_custom, self.port, neptune_hosts=self.custom_hosts_list)
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" '
+                           f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" '
+                           f'--neptune_hosts {self.custom_hosts_list}')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path, neptune_hosts=self.custom_hosts_list)
+        self.assertEqual(expected_config.to_dict(), config.to_dict())
+
     def test_generate_configuration_main_empty_args_generic(self):
         expected_config = Configuration(self.generic_host, self.port)
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
@@ -86,10 +98,14 @@ class TestGenerateConfigurationMain(unittest.TestCase):
                                f'--host "{source_config.host}" --port "{source_config.port}" '
                                f'--auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" '
                                f'--load_from_s3_arn "{source_config.load_from_s3_arn}" '
+                               f'--proxy_host "{source_config.proxy_host}" '
+                               f'--proxy_port "{source_config.proxy_port}" '
                                f'--config_destination="{self.test_file_path}" ')
         else:
             result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                                f'--host "{source_config.host}" --port "{source_config.port}" '
+                               f'--proxy_host "{source_config.proxy_host}" '
+                               f'--proxy_port "{source_config.proxy_port}" '
                                f'--ssl "{source_config.ssl}" --config_destination="{self.test_file_path}" ')
         self.assertEqual(result, 0)
         config = get_config(self.test_file_path)
