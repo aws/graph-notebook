@@ -652,35 +652,7 @@ class Graph(Magics):
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
-                #table_tab_output = widgets.Output(layout=gremlin_layout)
-                #children.append(table_tab_output)
                 titles.append('Console')
-                #titles.append('Table')
-
-                '''
-                query_res.append({'__DUMMY_KEY__': ['DUMMY_VALUE']})
-                print(query_res)
-                raw_results_df = pd.DataFrame(query_res)
-                raw_results_df.insert(0, "#", range(1, len(raw_results_df) + 1))
-                raw_results_df.rename({raw_results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
-                raw_results_df.drop(raw_results_df.index[-1], inplace=True)
-                query_res.pop()
-                print(query_res)
-                '''
-
-                '''
-                formatted_results_df = pd.DataFrame(query_res)
-                if not formatted_results_df.empty:
-                    if (isinstance(query_res[0], dict) and len(formatted_results_df.columns) > len(query_res[0])) or \
-                            isinstance(query_res[0], list):
-                        query_res = [[result] for result in query_res]
-                        formatted_results_df = pd.DataFrame(query_res)
-                formatted_results_df.insert(0, "#", range(1, len(formatted_results_df) + 1))
-
-                if len(formatted_results_df.columns) == 2 and int(formatted_results_df.columns[1]) == 0:
-                    formatted_results_df.rename({formatted_results_df.columns[1]: 'Result'}, axis='columns',
-                                                inplace=True)
-                '''
 
                 try:
                     logger.debug(f'groupby: {args.group_by}')
