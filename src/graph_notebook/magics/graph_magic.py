@@ -67,6 +67,7 @@ UNRESTRICTED_LAYOUT = widgets.Layout()
 DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
 DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
 opt.order = []
+opt.maxBytes = 0
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -651,7 +652,36 @@ class Graph(Magics):
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
+                #table_tab_output = widgets.Output(layout=gremlin_layout)
+                #children.append(table_tab_output)
                 titles.append('Console')
+                #titles.append('Table')
+
+                '''
+                query_res.append({'__DUMMY_KEY__': ['DUMMY_VALUE']})
+                print(query_res)
+                raw_results_df = pd.DataFrame(query_res)
+                raw_results_df.insert(0, "#", range(1, len(raw_results_df) + 1))
+                raw_results_df.rename({raw_results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
+                raw_results_df.drop(raw_results_df.index[-1], inplace=True)
+                query_res.pop()
+                print(query_res)
+                '''
+
+                '''
+                formatted_results_df = pd.DataFrame(query_res)
+                if not formatted_results_df.empty:
+                    if (isinstance(query_res[0], dict) and len(formatted_results_df.columns) > len(query_res[0])) or \
+                            isinstance(query_res[0], list):
+                        query_res = [[result] for result in query_res]
+                        formatted_results_df = pd.DataFrame(query_res)
+                formatted_results_df.insert(0, "#", range(1, len(formatted_results_df) + 1))
+
+                if len(formatted_results_df.columns) == 2 and int(formatted_results_df.columns[1]) == 0:
+                    formatted_results_df.rename({formatted_results_df.columns[1]: 'Result'}, axis='columns',
+                                                inplace=True)
+                '''
+
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -690,10 +720,11 @@ class Graph(Magics):
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
                 if not results_df.empty:
-                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
-                            isinstance(query_res[0], list):
-                        query_res = [[result] for result in query_res]
-                        results_df = pd.DataFrame(query_res)
+                    query_res = [[result] for result in query_res]
+                    query_res.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
+                    results_df = pd.DataFrame(query_res)
+                    results_df.drop(results_df.index[-1], inplace=True)
+                    query_res.pop()
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
