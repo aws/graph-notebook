@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Reverted Gremlin console tab to single results column ([Link to PR](https://github.com/aws/graph-notebook/pull/330))
 - Bumped jquery-ui from 1.13.1 to 1.13.2 (([Link to PR](https://github.com/aws/graph-notebook/pull/328))
+- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM.
 
 ## Release 3.5.1 (July 12, 2022)
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
