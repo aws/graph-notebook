@@ -1,10 +1,10 @@
 source /tmp/venv/bin/activate
 cd "${WORKING_DIR}"
-if [[ ${GRAPH_NOTEBOOK_SSL} -eq "" ]]; then
+if [ ${GRAPH_NOTEBOOK_SSL} = "" ]; then
     GRAPH_NOTEBOOK_SSL="True"
 fi
 
-if [[ ${PROVIDE_EXAMPLES} -eq 1 ]]; then
+if [ ${PROVIDE_EXAMPLES} -eq 1 ]; then
     python3 -m graph_notebook.notebooks.install --destination "${EXAMPLE_NOTEBOOK_DIR}"
 fi
 
