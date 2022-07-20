@@ -15,7 +15,7 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
-    def test_gremlin_query(self):
+    def test_opencypher_query(self):
         query = '''MATCH(a)-->(b)
                     RETURN b
                     LIMIT 1'''
@@ -28,5 +28,23 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
         res = self.ip.user_ns[store_to_var]
 
         # TODO: how can we get a look at the objects which were displayed?
-        assert len(res['results']['bindings']) == 1
-        assert 'b' in res['results']['bindings'][0]
+        assert len(res['results']) == 1
+        assert 'b' in res['results'][0]
+
+    @pytest.mark.jupyter
+    def test_load_opencypher_config(self):
+        config = '''{
+                  "host": "localhost",
+                  "port": 8182,
+                  "auth_mode": "DEFAULT",
+                  "load_from_s3_arn": "",
+                  "ssl": true,
+                  "aws_region": "us-west-2",
+                  "neo4j": {
+                    "username": "neo4j",
+                    "password": "password",
+                    "auth": true
+                  }
+                }'''
+
+        self.ip.run_cell_magic('graph_notebook_config', '', config)

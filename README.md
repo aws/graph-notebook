@@ -24,6 +24,7 @@ Instructions for connecting to the following graph databases:
 |[Gremlin Server](#gremlin-server)|     property graph      |       Gremlin       |
 |    [Blazegraph](#blazegraph)    |            RDF          |       SPARQL        |
 |[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin or SPARQL  |
+|         [Neo4J](#neo4j)         |     property graph      |       Cypher        |
 
 We encourage others to contribute configurations they find useful. There is an [`additional-databases`](https://github.com/aws/graph-notebook/blob/main/additional-databases) folder where more information can be found.
 
@@ -264,6 +265,28 @@ Additionally, you should have the following Amazon Web Services credentials avai
 These variables must follow a specific naming convention, as listed in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables)
 
 A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+
+### Neo4J
+
+Change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, `ssl`, and `neo4j` authentication. For a local Neo4j Desktop database, if querying via Bolt protocol, you can use the following command:
+
+```
+%%graph_notebook_config
+{
+  "host": "localhost",
+  "port": 7687,
+  "ssl": false,
+  "neo4j": {
+    "username": "neo4j",
+    "password": "password",
+    "auth": true
+  }
+}
+```
+
+Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint. Likewise, do not specify the `bolt` option if you are querying the HTTP endpoint(`"port": 7687`).
+
+To setup a new local Neo4J Desktop database for use with the graph notebook, check out the [Neo$J Desktop User Interface Guide](https://neo4j.com/developer/neo4j-desktop/).
 
 ## Building From Source
 

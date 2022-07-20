@@ -20,7 +20,7 @@ class DataDrivenOpenCypherTest(IntegrationTest):
         res = self.client.opencypher_http(query)
         res.raise_for_status()
         js = res.json()
-        if len(js['results']['bindings']) > 0:
+        if len(js['results']) > 0:
             return
         airport_queries = get_queries('opencypher', 'epl')
         for q in airport_queries:
