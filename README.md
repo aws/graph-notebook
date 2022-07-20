@@ -284,7 +284,7 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
 }
 ```
 
-Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint. Likewise, do not specify the `bolt` option if you are querying the HTTP endpoint(`"port": 7687`).
+Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint. Likewise, do not specify the `bolt` option if you are querying the HTTP endpoint(`"port": 7474`).
 
 To setup a new local Neo4J Desktop database for use with the graph notebook, check out the [Neo$J Desktop User Interface Guide](https://neo4j.com/developer/neo4j-desktop/).
 
