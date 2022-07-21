@@ -73,5 +73,6 @@ RUN mkdir -p "${WORKING_DIR}" && \
 
 ADD "docker/Example-Remote-Server-Setup.ipynb" "${NOTEBOOK_DIR}/Example-Remote-Server-Setup.ipynb"
 ADD ./docker/service.sh /usr/bin/service.sh
+RUN chmod +x /usr/bin/service.sh
 
 ENTRYPOINT [ "bash","-c","service.sh" ]
