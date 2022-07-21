@@ -71,10 +71,10 @@ class Configuration(object):
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
                  neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
-        self.host = host
+        self._host = host.strip()
         self.port = port
         self.ssl = ssl
-        self.proxy_host = proxy_host
+        self._proxy_host = proxy_host.strip()
         self.proxy_port = proxy_port
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
 
@@ -89,6 +89,22 @@ class Configuration(object):
         else:
             self.is_neptune_config = False
             self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, value: str):
+        self._host = value.strip()
+
+    @property
+    def proxy_host(self):
+        return self._proxy_host
+
+    @proxy_host.setter
+    def proxy_host(self, value: str):
+        self._proxy_host = value.strip()
 
     def to_dict(self) -> dict:
         if self.is_neptune_config:
