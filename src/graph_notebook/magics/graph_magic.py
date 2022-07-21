@@ -545,10 +545,11 @@ class Graph(Magics):
                             help='The ID of a running SPARQL query. Only displays the status of the specified query.')
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 'If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true',
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response code '
+                                 'is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -558,15 +559,17 @@ class Graph(Magics):
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(SPARQL_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(SPARQL_CANCEL_HINT_MSG)
                 return
             else:
-                cancel_res = self.client.sparql_cancel(args.queryId, args.silent)
+                cancel_res = self.client.sparql_cancel(args.queryId, args.silent_cancel)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
 
         store_to_ns(args.store_to, res, local_ns)
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
 
     @magic_variables
     @cell_magic
@@ -796,6 +799,7 @@ class Graph(Magics):
                             help='(Optional) Normally, only running queries are included in the response. '
                                  'When the includeWaiting parameter is specified, '
                                  'the status of all waiting queries is also returned.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -805,13 +809,15 @@ class Graph(Magics):
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(GREMLIN_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(GREMLIN_CANCEL_HINT_MSG)
                 return
             else:
                 cancel_res = self.client.gremlin_cancel(args.queryId)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
 
     @magic_variables
@@ -846,6 +852,7 @@ class Graph(Magics):
     def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -855,16 +862,19 @@ class Graph(Magics):
             res = status_res.json()
             logger.info(f'got the json format response {res}')
             store_to_ns(args.store_to, res, local_ns)
-            return res
+            if not args.silent:
+                return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
-            if "blazegraph&trade; by SYSTAP" in status_res.text:
-                print("For more information on the status of your Blazegraph cluster, please visit: ")
-                print()
-                print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
-                print()
             store_to_ns(args.store_to, status_res.text, local_ns)
-            return status_res
+            if not args.silent:
+                if "blazegraph&trade; by SYSTAP" in status_res.text:
+                    print("For more information on the status of your Blazegraph cluster, please visit: ")
+                    print()
+                    print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}'
+                          f'/blazegraph/#status')
+                    print()
+                return status_res
 
     @line_magic
     @display_exceptions
@@ -1522,6 +1532,7 @@ class Graph(Magics):
     @needs_local_scope
     def load_ids(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
@@ -1537,8 +1548,9 @@ class Graph(Magics):
         if not labels:
             labels = [widgets.Label(value="No load IDs found.")]
 
-        vbox = widgets.VBox(labels)
-        display(vbox)
+        if not args.silent:
+            vbox = widgets.VBox(labels)
+            display(vbox)
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -1578,16 +1590,18 @@ class Graph(Magics):
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         cancel_res = self.client.cancel_load(args.load_id)
         cancel_res.raise_for_status()
         res = cancel_res.json()
-        if res:
-            print('Cancelled successfully.')
-        else:
-            print('Something went wrong cancelling bulk load job.')
+        if not args.silent:
+            if res:
+                print('Cancelled successfully.')
+            else:
+                print('Something went wrong cancelling bulk load job.')
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -2025,10 +2039,11 @@ class Graph(Magics):
                             help='When set to true and other parameters are not present, causes status information '
                                  'for waiting queries to be returned as well as for running queries. '
                                  'This parameter does not take a value.')
-        parser.add_argument('-s', '--silent', action='store_true', default=False,
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 ' If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true', default=False,
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response '
+                                 'code is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -2040,11 +2055,13 @@ class Graph(Magics):
             res.raise_for_status()
         else:
             if args.queryId == '':
-                print(OPENCYPHER_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(OPENCYPHER_CANCEL_HINT_MSG)
                 return
             else:
-                res = self.client.opencypher_cancel(args.queryId, args.silent)
+                res = self.client.opencypher_cancel(args.queryId, args.silent_cancel)
                 res.raise_for_status()
         js = res.json()
         store_to_ns(args.store_to, js, local_ns)
-        print(json.dumps(js, indent=2))
+        if not args.silent:
+            print(json.dumps(js, indent=2))
