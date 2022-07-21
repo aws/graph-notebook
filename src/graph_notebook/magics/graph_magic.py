@@ -553,7 +553,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.sparql_cancel(args.queryId)
+            status_res = self.client.sparql_status(query_id=args.queryId)
             status_res.raise_for_status()
             res = status_res.json()
         else:
