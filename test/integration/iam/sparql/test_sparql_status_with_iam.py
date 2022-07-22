@@ -34,6 +34,16 @@ class TestSparqlStatusWithIam(DataDrivenSparqlTest):
 
     @pytest.mark.iam
     @pytest.mark.neptune
+    def test_do_sparql_status_empty(self):
+        query_id = ""
+        status_response_fields = [b"acceptedQueryCount", b"runningQueryCount", b"queries"]
+        status_res = self.client.sparql_status(query_id)
+        assert status_res.status_code == 200
+        for field in status_response_fields:
+            assert field in status_res.content
+
+    @pytest.mark.iam
+    @pytest.mark.neptune
     def test_do_sparql_cancel_nonexistent(self):
         query_id = "invalid-guid"
         cancel_res = self.client.sparql_cancel(query_id)

@@ -70,6 +70,19 @@ class TestGraphMagicSparql(GraphNotebookIntegrationTest):
         self.assertTrue(sparql_res.startswith('<!DOCTYPE html>'))
         self.assertTrue('</table>' in sparql_res)
 
+    @pytest.mark.skip(reason="Line magics don't use user_ns; fix this when we figure out where store-to is being saved")
+    @pytest.mark.jupyter
+    @pytest.mark.sparql
+    @pytest.mark.neptune
+    def test_sparql_status(self):
+        store_to_var = 'sparql_status_res'
+        status_response_fields = ["acceptedQueryCount", "runningQueryCount", "queries"]
+        self.ip.run_line_magic('sparql_status', f'--store-to {store_to_var}')
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        sparql_status_res = self.ip.user_ns[store_to_var]
+        for field in status_response_fields:
+            assert field in sparql_status_res
+
     @pytest.mark.jupyter
     def test_load_sparql_config(self):
         config = '''{
