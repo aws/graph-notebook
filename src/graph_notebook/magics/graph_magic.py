@@ -478,6 +478,8 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         results_df = pd.DataFrame(rows_and_columns['rows'])
+                        results_df = results_df.astype(str)
+                        results_df = results_df.applymap(lambda x: replace_html_chars(x))
                         results_df.insert(0, "#", range(1, len(results_df) + 1))
                         for col_index, col_name in enumerate(rows_and_columns['columns']):
                             try:
