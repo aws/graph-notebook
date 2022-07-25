@@ -13,7 +13,9 @@ import time
 import datetime
 import os
 import uuid
+import ast
 from enum import Enum
+from copy import copy
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
@@ -37,7 +39,8 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -67,6 +70,7 @@ UNRESTRICTED_LAYOUT = widgets.Layout()
 DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
 DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
 opt.order = []
+opt.maxBytes = 0
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -182,11 +186,12 @@ class Graph(Magics):
         # You must call the parent constructor
         super(Graph, self).__init__(shell)
 
+        self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
             self.client: Client = None
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
         except FileNotFoundError:
             print('Could not find a valid configuration. '
                   'Do not forget to validate your settings using %graph_notebook_config.')
@@ -201,7 +206,9 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if "amazonaws.com" in config.host:
+        is_neptune_host = is_allowed_neptune_host(hostname=config.host, host_allowlist=self.neptune_cfg_allowlist)
+
+        if is_neptune_host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
@@ -212,6 +219,8 @@ class Graph(Magics):
                 .with_sparql_path(config.sparql.path)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
+            if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
+                builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -229,13 +238,13 @@ class Graph(Magics):
     def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
         if cell != '':
             data = json.loads(cell)
-            config = get_config_from_dict(data)
+            config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'reset':
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
         elif line == 'silent':
@@ -251,6 +260,46 @@ class Graph(Magics):
 
         return self.graph_notebook_config
 
+    @line_cell_magic
+    def neptune_config_allowlist(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='add',
+                            help='mode (default=add) [add|remove|overwrite|reset]')
+        args = parser.parse_args(line.split())
+
+        try:
+            cell_new = ast.literal_eval(cell)
+            input_type = 'list'
+        except:
+            cell_new = cell
+            input_type = 'string'
+
+        allowlist_modified = True
+        if args.mode == 'reset':
+            self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        elif cell != '':
+            if args.mode == 'add':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.append(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) | set(cell_new))
+            elif args.mode == 'remove':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.remove(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) - set(cell_new))
+            elif args.mode == 'overwrite':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist = [cell_new.strip()]
+                else:
+                    self.neptune_cfg_allowlist = cell_new
+        else:
+            allowlist_modified = False
+
+        if allowlist_modified:
+            print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
+        else:
+            print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
 
     @line_magic
     def stream_viewer(self,line):
@@ -272,13 +321,13 @@ class Graph(Magics):
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':
-            print('please specify a host.')
+            print(f'current host: {self.graph_notebook_config.host}')
             return
 
         # TODO: we should attempt to make a status call to this host before we set the config to this value.
         self.graph_notebook_config.host = line
         self._generate_client_from_config(self.graph_notebook_config)
-        print(f'set host to {line}')
+        print(f'set host to {self.graph_notebook_config.host}')
 
     @magic_variables
     @cell_magic
@@ -421,9 +470,12 @@ class Graph(Magics):
                         results_df = pd.DataFrame(rows_and_columns['rows'])
                         results_df.insert(0, "#", range(1, len(results_df) + 1))
                         for col_index, col_name in enumerate(rows_and_columns['columns']):
-                            results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                              axis='columns',
-                                              inplace=True)
+                            try:
+                                results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                  axis='columns',
+                                                  inplace=True)
+                            except IndexError:
+                                results_df.insert(col_index+1, col_name, [])
 
                     # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                     # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -493,28 +545,31 @@ class Graph(Magics):
                             help='The ID of a running SPARQL query. Only displays the status of the specified query.')
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 'If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true',
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response code '
+                                 'is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.sparql_cancel(args.queryId)
+            status_res = self.client.sparql_status(query_id=args.queryId)
             status_res.raise_for_status()
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(SPARQL_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(SPARQL_CANCEL_HINT_MSG)
                 return
             else:
-                cancel_res = self.client.sparql_cancel(args.queryId, args.silent)
+                cancel_res = self.client.sparql_cancel(args.queryId, args.silent_cancel)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
 
         store_to_ns(args.store_to, res, local_ns)
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
 
     @magic_variables
     @cell_magic
@@ -649,6 +704,7 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
                 titles.append('Console')
+
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -687,10 +743,10 @@ class Graph(Magics):
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
                 if not results_df.empty:
-                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
-                            isinstance(query_res[0], list):
-                        query_res = [[result] for result in query_res]
-                        results_df = pd.DataFrame(query_res)
+                    query_res_reformat = [[result] for result in query_res]
+                    query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
+                    results_df = pd.DataFrame(query_res_reformat)
+                    results_df.drop(results_df.index[-1], inplace=True)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
@@ -742,6 +798,7 @@ class Graph(Magics):
                             help='(Optional) Normally, only running queries are included in the response. '
                                  'When the includeWaiting parameter is specified, '
                                  'the status of all waiting queries is also returned.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -751,13 +808,15 @@ class Graph(Magics):
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(GREMLIN_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(GREMLIN_CANCEL_HINT_MSG)
                 return
             else:
                 cancel_res = self.client.gremlin_cancel(args.queryId)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
 
     @magic_variables
@@ -792,6 +851,7 @@ class Graph(Magics):
     def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -801,16 +861,19 @@ class Graph(Magics):
             res = status_res.json()
             logger.info(f'got the json format response {res}')
             store_to_ns(args.store_to, res, local_ns)
-            return res
+            if not args.silent:
+                return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
-            if "blazegraph&trade; by SYSTAP" in status_res.text:
-                print("For more information on the status of your Blazegraph cluster, please visit: ")
-                print()
-                print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
-                print()
             store_to_ns(args.store_to, status_res.text, local_ns)
-            return status_res
+            if not args.silent:
+                if "blazegraph&trade; by SYSTAP" in status_res.text:
+                    print("For more information on the status of your Blazegraph cluster, please visit: ")
+                    print()
+                    print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}'
+                          f'/blazegraph/#status')
+                    print()
+                return status_res
 
     @line_magic
     @display_exceptions
@@ -1468,6 +1531,7 @@ class Graph(Magics):
     @needs_local_scope
     def load_ids(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
@@ -1483,8 +1547,9 @@ class Graph(Magics):
         if not labels:
             labels = [widgets.Label(value="No load IDs found.")]
 
-        vbox = widgets.VBox(labels)
-        display(vbox)
+        if not args.silent:
+            vbox = widgets.VBox(labels)
+            display(vbox)
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -1524,16 +1589,18 @@ class Graph(Magics):
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
         cancel_res = self.client.cancel_load(args.load_id)
         cancel_res.raise_for_status()
         res = cancel_res.json()
-        if res:
-            print('Cancelled successfully.')
-        else:
-            print('Something went wrong cancelling bulk load job.')
+        if not args.silent:
+            if res:
+                print('Cancelled successfully.')
+            else:
+                print('Something went wrong cancelling bulk load job.')
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -1971,10 +2038,11 @@ class Graph(Magics):
                             help='When set to true and other parameters are not present, causes status information '
                                  'for waiting queries to be returned as well as for running queries. '
                                  'This parameter does not take a value.')
-        parser.add_argument('-s', '--silent', action='store_true', default=False,
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 ' If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true', default=False,
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response '
+                                 'code is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -1986,11 +2054,13 @@ class Graph(Magics):
             res.raise_for_status()
         else:
             if args.queryId == '':
-                print(OPENCYPHER_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(OPENCYPHER_CANCEL_HINT_MSG)
                 return
             else:
-                res = self.client.opencypher_cancel(args.queryId, args.silent)
+                res = self.client.opencypher_cancel(args.queryId, args.silent_cancel)
                 res.raise_for_status()
         js = res.json()
         store_to_ns(args.store_to, js, local_ns)
-        print(json.dumps(js, indent=2))
+        if not args.silent:
+            print(json.dumps(js, indent=2))

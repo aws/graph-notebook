@@ -3,12 +3,25 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
+  - Fix `service.sh` conditional checks, SSL parameter can now be changed. Fix permissions error on `service.sh` experienced by some users. ([Link to PR](https://github.com/aws/graph-notebook/pull/335))
+- Added `%%neptune_config_allowlist` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/327))
+- Added check to remove whitespace in `%graph_notebook_config` host fields ([Link to PR](https://github.com/aws/graph-notebook/pull/329))
+- Added silent output option to additional magics ([Link to PR](https://github.com/aws/graph-notebook/pull/326))
+- Fixed %sparql_status magic to return query status without query ID ([Link to PR](https://github.com/aws/graph-notebook/pull/337))
+- Fixed incorrect Gremlin query --store-to output ([Link to PR](https://github.com/aws/graph-notebook/pull/334))
+- Reverted Gremlin console tab to single results column ([Link to PR](https://github.com/aws/graph-notebook/pull/330))
+- Bumped jquery-ui from 1.13.1 to 1.13.2 (([Link to PR](https://github.com/aws/graph-notebook/pull/328))
+
+## Release 3.5.1 (July 12, 2022)
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
   if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
 - Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
 - Added `proxy_host` and `proxy_port` options to the `%%graph_notebook_config` options. ([Link to PR](https://github.com/aws/graph-notebook/pull/310))
   - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/). 
 - Fixed results table formatting in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/297))
+- Fixed several typos in the Neptune ML 00 notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/319))
+- Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
 
 ## Release 3.4.1 (June 7, 2022)
 - Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))

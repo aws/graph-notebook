@@ -14,7 +14,7 @@ A fraud graph connects the entities participating in retail and financial transa
 
 The examples in this notebook show how we can identify fraud rings (first-party fraud) and instances of identity theft (third-party fraud) in a credit card dataset.
 
-## [Knowledge Graph](./02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application.ipynb)
+## [Knowledge Graph](./02-Knowledge-Graphs/Building-a-Knowledge-Graph-Application-Gremlin.ipynb)
 
 Modern knowledge graphs are the result of connections of data from multiple different sources. These sources can either be multiple different databases, different data silos, or data extracted from within entities stored in one or more of these options. Knowledge graphs come in many different forms but the unifying aspect of them is that they organize data using the entities and connections (known as semantics) familiar to a particular domain. It represents these semantics as definitions of concepts, their properties, relations between them, and the expected logical constraints. Logic built into such a model allows us to infer understanding and connections about the information contained within the model.
 
