@@ -178,6 +178,16 @@ def generate_pagination_vars(visible_results: int):
     return visible_results_fixed, pagination_options, pagination_menu
 
 
+def replace_html_chars(result):
+    html_char_map = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}
+    fixed_result = str(result)
+
+    for k, v in iter(html_char_map.items()):
+        fixed_result = fixed_result.replace(k, v)
+
+    return fixed_result
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -468,6 +478,8 @@ class Graph(Magics):
                     rows_and_columns = sparql_get_rows_and_columns(results)
                     if rows_and_columns is not None:
                         results_df = pd.DataFrame(rows_and_columns['rows'])
+                        results_df = results_df.astype(str)
+                        results_df = results_df.applymap(lambda x: replace_html_chars(x))
                         results_df.insert(0, "#", range(1, len(results_df) + 1))
                         for col_index, col_name in enumerate(rows_and_columns['columns']):
                             try:
@@ -743,13 +755,19 @@ class Graph(Magics):
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
                 if not results_df.empty:
-                    query_res_reformat = [[result] for result in query_res]
+                    query_res_reformat = []
+                    for result in query_res:
+                        fixed_result = replace_html_chars(result)
+                        query_res_reformat.append([fixed_result])
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
                     results_df.drop(results_df.index[-1], inplace=True)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
+                results_df.set_index('#', inplace=True)
+                results_df.columns.name = results_df.index.name
+                results_df.index.name = None
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -1929,6 +1947,8 @@ class Graph(Magics):
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df = results_df.astype(str)
+                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
                     for col_index, col_name in enumerate(rows_and_columns['columns']):
                         results_df.rename({results_df.columns[col_index + 1]: col_name},
@@ -1969,6 +1989,8 @@ class Graph(Magics):
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df = results_df.astype(str)
+                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
                     for col_index, col_name in enumerate(rows_and_columns['columns']):
                         results_df.rename({results_df.columns[col_index + 1]: col_name},
