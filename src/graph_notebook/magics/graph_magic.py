@@ -765,6 +765,9 @@ class Graph(Magics):
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
+                results_df.set_index('#', inplace=True)
+                results_df.columns.name = results_df.index.name
+                results_df.index.name = None
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
