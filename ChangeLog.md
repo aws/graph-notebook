@@ -13,6 +13,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed %sparql_status magic to return query status without query ID ([Link to PR](https://github.com/aws/graph-notebook/pull/337))
 - Fixed incorrect Gremlin query --store-to output ([Link to PR](https://github.com/aws/graph-notebook/pull/334))
 - Fixed certain characters not displaying correctly in results table ([Link to PR](https://github.com/aws/graph-notebook/pull/341))
+- Fixed extra index column displaying in Gremlin results table on older Pandas versions ([Link to PR](https://github.com/aws/graph-notebook/pull/343))
 - Reverted Gremlin console tab to single results column ([Link to PR](https://github.com/aws/graph-notebook/pull/330))
 - Bumped jquery-ui from 1.13.1 to 1.13.2 (([Link to PR](https://github.com/aws/graph-notebook/pull/328))
 
