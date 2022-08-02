@@ -44,6 +44,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-03-Introduction-to-Link-Prediction-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-04-Introduction-to-Edge-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-05-Introduction-to-Edge-Regression-Gremlin.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-06-Text-Encoding-Tutorial.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-00-Getting-Started-with-Neptune-ML-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-01-Introduction-to-Object-Classification-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-02-Introduction-to-Object-Regression-SPARQL.ipynb',
