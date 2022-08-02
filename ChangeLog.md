@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
   - Path: 06-Language-Tutorials > 01-SPARQL > 01-SPARQL-Basics
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
+  - Path: 04-Machine-Learning > Neptune-ML-06-Text-Encoding-Tutorial
 
 ## Release 3.5.3 (July 25, 2022)
 - Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
