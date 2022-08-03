@@ -2,13 +2,10 @@
 Thank you for your interest in contributing to the graph-notebook project! Whether it's a bug report, new feature, new notebook, correction, or additional
 documentation, we greatly value feedback and contributions from our community.
 
-Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
-information to effectively respond to your bug report or contribution.
-
 Before reporting a bug/feature request, or creating a pull request, please ensure that:
 
-1. Please check existing open or recently closed issues to make sure someone else hasn't reported the issue already. For pull requests, check open and recently merged pull requests.
-2. Ensure you are working against the latest source on the `main` branch.
+1. You have checked there aren't already open or recently closed issues/pull requests for your request.
+2. You are working against the latest source on the `main` branch.
 3. You open an issue to discuss any significant work - we would hate for your time to be wasted.
 
 ## Security Issue Notifications
