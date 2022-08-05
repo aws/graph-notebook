@@ -103,7 +103,6 @@ Begin by installing `graph-notebook` and its prerequisites, then follow the rema
 ```
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
-pip install markupsafe==2.0.1
 
 # install the package
 pip install graph-notebook
@@ -112,11 +111,7 @@ pip install graph-notebook
 ### Jupyter Classic Notebook
 
 ```
-# install and enable the visualization widget
-
-# ONLY RUN THIS LINE IF USING graph-notebook<=3.2.0
-jupyter nbextension install --py --sys-prefix graph_notebook.widgets
-
+# Enable the visualization widget
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 # copy static html resources
@@ -296,7 +291,7 @@ python3 setup.py bdist_wheel
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.4.1-py3-none-any.whl`
+`./dist/graph_notebook-3.5.3-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -307,7 +302,7 @@ pip install graph-notebook
 with
 
 ```
-pip install ./dist/graph_notebook-3.4.1-py3-none-any.whl
+pip install ./dist/graph_notebook-3.5.3-py3-none-any.whl
 ```
 
 
