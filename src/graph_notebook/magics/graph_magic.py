@@ -246,6 +246,12 @@ class Graph(Magics):
     @needs_local_scope
     @display_exceptions
     def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='show',
+                            help='mode (default=show) [show|reset|silent]')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
         if cell != '':
             data = json.loads(cell)
             config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
@@ -253,20 +259,23 @@ class Graph(Magics):
             self._generate_client_from_config(config)
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        elif line == 'reset':
+        elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        elif line == 'silent':
+        elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
             of python Configuration object
             """
             config_dict = self.graph_notebook_config.to_dict()
+            store_to_ns(args.store_to, json.dumps(config_dict, indent=2), local_ns)
             return print(json.dumps(config_dict, indent=2))
         else:
             config_dict = self.graph_notebook_config.to_dict()
             print(json.dumps(config_dict, indent=2))
+
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=2), local_ns)
 
         return self.graph_notebook_config
 
