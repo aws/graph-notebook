@@ -1578,6 +1578,7 @@ class Graph(Magics):
     def load_status(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         parser.add_argument('--details', action='store_true', default=False)
         parser.add_argument('--errors', action='store_true', default=False)
@@ -1596,7 +1597,8 @@ class Graph(Magics):
         load_status_res = self.client.load_status(args.load_id, **payload)
         load_status_res.raise_for_status()
         res = load_status_res.json()
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
