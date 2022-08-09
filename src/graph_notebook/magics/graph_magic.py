@@ -22,7 +22,7 @@ from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 import ipywidgets as widgets
 import pandas as pd
 import itables.options as opt
-from itables import show
+from itables import show, JavascriptFunction
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -64,13 +64,27 @@ loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
 
 loading_wheel_html = loading_wheel_template.render()
-DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
+DEFAULT_LAYOUT = widgets.Layout(max_height='600px', max_width='940px', overflow='scroll')
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
 DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
 DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
 opt.order = []
 opt.maxBytes = 0
+opt.classes = ["display", "hover", "nowrap"]
+index_col_js = """
+            function (td, cellData, rowData, row, col) {
+                $(td).css('font-weight', 'bold');
+                $(td).css('font-size', '12px');
+            }
+            """
+cell_style_js = """
+            function (td, cellData, rowData, row, col) {
+                $(td).css('font-family', 'monospace');
+                $(td).css('font-size', '12px');
+            }
+            """
+
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -543,10 +557,13 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     show(results_df,
+                         scrollX=True,
                          scrollY=sparql_scrollY,
                          columnDefs=[
                              {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"}
+                             {"className": "nowrap dt-left", "targets": "_all"},
+                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
                          ],
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
@@ -774,6 +791,8 @@ class Graph(Magics):
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
+                else:
+                    results_df.insert(1, "Result", [])
                 results_df.set_index('#', inplace=True)
                 results_df.columns.name = results_df.index.name
                 results_df.index.name = None
@@ -796,16 +815,19 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     show(results_df,
+                         scrollX=True,
                          scrollY=gremlin_scrollY,
                          columnDefs=[
                              {"width": "5%", "targets": 0},
                              {"minWidth": "95%", "targets": 1},
-                             {"className": "nowrap dt-left", "targets": "_all"}
+                             {"className": "nowrap dt-left", "targets": "_all"},
+                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
                          ],
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -2040,10 +2062,13 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     show(results_df,
+                         scrollX=True,
                          scrollY=oc_scrollY,
                          columnDefs=[
                              {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"}
+                             {"className": "nowrap dt-left", "targets": "_all"},
+                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
                          ],
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
