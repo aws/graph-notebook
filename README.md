@@ -89,7 +89,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.6.13-3.9.7
+* [Python](https://www.python.org/downloads/) 3.7.0-3.9.7
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 

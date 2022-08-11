@@ -8,6 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Neptune-ML-06-Text-Encoding-Tutorial
 - Added `--store-to` option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/347))
+- Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
 
 ## Release 3.5.3 (July 25, 2022)

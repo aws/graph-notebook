@@ -12,9 +12,8 @@ ipython>=7.16.1,<7.17.0
 ipykernel==5.3.4
 neo4j==4.2.1
 rdflib~=5.0.0
-traitlets~=4.3.3
 setuptools~=40.6.2
-nbconvert<6
+nbconvert>=6.3.0
 jedi<0.18.0
 markupsafe<2.1.0
 itables>=1.0.0
