@@ -16,6 +16,7 @@ import uuid
 import ast
 from enum import Enum
 from copy import copy
+from sys import maxsize
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
@@ -1580,6 +1581,11 @@ class Graph(Magics):
     @needs_local_scope
     def load_ids(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--details', action='store_true', default=False,
+                            help="Display status details for each load job. Most recent jobs are listed first.")
+        parser.add_argument('--limit', type=int, default=maxsize,
+                            help='If --details is True, only return the x most recent load job statuses. '
+                                 'Defaults to sys.maxsize.')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
@@ -1591,12 +1597,61 @@ class Graph(Magics):
         if 'payload' in res and 'loadIds' in res['payload']:
             ids = res['payload']['loadIds']
 
-        labels = [widgets.Label(value=label_id) for label_id in ids]
-
-        if not labels:
+        if not ids:
             labels = [widgets.Label(value="No load IDs found.")]
+        else:
+            if args.details:
+                res = {}
+                res_table = []
+                for index, label_id in enumerate(ids):
+                    load_status_res = self.client.load_status(label_id)
+                    load_status_res.raise_for_status()
+                    this_res = load_status_res.json()
 
-        if not args.silent:
+                    res[label_id] = this_res
+
+                    res_row = {}
+                    res_row["loadId"] = label_id
+                    res_row["status"] = this_res["payload"]["overallStatus"]["status"]
+                    res_row.update(this_res["payload"]["overallStatus"])
+                    res_row["feedCount"] = this_res["payload"]["feedCount"][0]
+                    res_table.append(res_row)
+                    if index + 1 == args.limit:
+                        break
+                if not args.silent:
+                    tab = widgets.Tab()
+                    table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    tab.children = [table_output, raw_output]
+                    tab.set_title(0, 'Table')
+                    tab.set_title(1, 'Raw')
+                    display(tab)
+
+                    results_df = pd.DataFrame(res_table)
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+
+                    with table_output:
+                        show(results_df,
+                             scrollX=True,
+                             scrollY="475px",
+                             columnDefs=[
+                                 {"width": "5%", "targets": 0},
+                                 {"className": "nowrap dt-left", "targets": "_all"},
+                                 {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                                 {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                             ],
+                             paging=True,
+                             scrollCollapse=True,
+                             lengthMenu=[DEFAULT_PAGINATION_OPTIONS, DEFAULT_PAGINATION_MENU],
+                             pageLength=10,
+                             )
+
+                    with raw_output:
+                        print(json.dumps(res, indent=2))
+            else:
+                labels = [widgets.Label(value=label_id) for label_id in ids]
+
+        if not args.details and not args.silent:
             vbox = widgets.VBox(labels)
             display(vbox)
 
