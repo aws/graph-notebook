@@ -29,7 +29,7 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
                                ssl=data['ssl'], load_from_s3_arn=data['load_from_s3_arn'],
                                aws_region=data['aws_region'], sparql_section=sparql_section,
                                gremlin_section=gremlin_section, neo4j_section=neo4j_section,
-                               neptune_hosts=neptune_hosts)
+                               proxy_host=proxy_host, proxy_port=proxy_port, neptune_hosts=neptune_hosts)
     else:
         config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], sparql_section=sparql_section,
                                gremlin_section=gremlin_section, neo4j_section=neo4j_section, proxy_host=proxy_host,
