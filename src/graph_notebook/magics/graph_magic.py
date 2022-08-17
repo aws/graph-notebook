@@ -22,7 +22,7 @@ from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 import ipywidgets as widgets
 import pandas as pd
 import itables.options as opt
-from itables import show, JavascriptFunction
+from itables import init_notebook_mode, show, JavascriptFunction, to_html_datatable
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -814,25 +814,36 @@ class Graph(Magics):
                 if mode == QueryMode.DEFAULT:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
-                    show(results_df,
-                         scrollX=True,
-                         scrollY=gremlin_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"minWidth": "95%", "targets": 1},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
-                         ],
-                         paging=gremlin_paging,
-                         scrollCollapse=gremlin_scrollCollapse,
-                         lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results,
-                         )
+                    table_id = f"table-{str(uuid.uuid4())[:8]}"
+                    datatable_html = to_html_datatable(
+                        df=results_df,
+                        tableId=table_id,
+                        scrollX=True,
+                        scrollY=gremlin_scrollY,
+                        columnDefs=[
+                            {"width": "5%", "targets": 0},
+                            {"minWidth": "95%", "targets": 1},
+                            {"className": "nowrap dt-left", "targets": "_all"},
+                            {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                            {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                        ],
+                        paging=gremlin_paging,
+                        scrollCollapse=gremlin_scrollCollapse,
+                        lengthMenu=[final_pagination_options, final_pagination_menu],
+                        pageLength=visible_results,
+                        )
+                    datatable_html = datatable_html.replace("https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css",
+                                           "/static/jquery.dataTables.min.css")
+                    datatable_html = datatable_html.replace("https://code.jquery.com/jquery-3.6.0.min.js",
+                                           "/static/jquery-3.6.0.min.js")
+                    datatable_html = datatable_html.replace("https://cdn.datatables.net/1.12.1/js/jquery.dataTables.mjs",
+                                           "/static/jquery.dataTables.js")
+                    display(HTML(datatable_html))
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
 
         store_to_ns(args.store_to, query_res, local_ns)
+        # store_to_ns(args.store_to, datatable_html, local_ns)
 
     @line_magic
     @needs_local_scope

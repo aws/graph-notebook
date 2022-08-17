@@ -85,7 +85,7 @@ setup(
         'nbconvert>=6.3.0',
         'jedi<0.18.0',
         'markupsafe<2.1.0',
-        'itables>=1.0.0',
+        'itables==1.2.0',
         'pandas'
     ],
     package_data={

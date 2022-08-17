@@ -9,8 +9,9 @@ from shutil import copy2
 from os.path import join as pjoin
 
 files = [
-    'datatables.css',
-    'datatables.js'
+    'jquery.dataTables.min.css',
+    'jquery-3.6.0.min.js',
+    'jquery.dataTables.js'
 ]
 
 
