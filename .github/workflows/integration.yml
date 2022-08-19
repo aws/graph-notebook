@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - integ-wf-test
-      - main
   pull_request:
     branches:
       - main
