@@ -3,7 +3,7 @@ name: Integration Tests
 on:
   push:
     branches:
-      - main
+      - integ-wf-test
   pull_request:
     branches:
       - main
