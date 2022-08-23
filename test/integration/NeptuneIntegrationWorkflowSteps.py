@@ -155,6 +155,7 @@ def get_stack_details_to_run(stack: dict, region: str = 'us-east-1', timeout_min
             continue
 
         load_balancer = load_balancers['LoadBalancers'][0]
+        logging.info(f"Load balancer: {load_balancer}")
         ec2_client = boto3.client('ec2', region_name=region)
         network_interfaces = ec2_client.describe_network_interfaces(Filters=[
             {
@@ -162,6 +163,7 @@ def get_stack_details_to_run(stack: dict, region: str = 'us-east-1', timeout_min
                 'Values': [f'ELB *{load_balancer["LoadBalancerName"]}*']
             }
         ])
+        logging.info(f"Network interfaces: {network_interfaces}")
 
         if 'NetworkInterfaces' not in network_interfaces or len(network_interfaces['NetworkInterfaces']) < 1:
             logging.info(
@@ -184,8 +186,9 @@ def get_stack_details_to_run(stack: dict, region: str = 'us-east-1', timeout_min
                 requests.get(url, verify=False, timeout=5)  # an exception is thrown if the host cannot be reached.
                 success = True
                 break
-            except Exception:
+            except Exception as e:
                 logging.info(f'{url} could not be reached')
+                logging.info(f'Exception logged: {e}')
 
         if not success:
             logging.info(f'no ip addresses working yet, waiting for {loop_wait_seconds} seconds and trying again..')
