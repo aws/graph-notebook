@@ -84,7 +84,7 @@ jobs:
       - name: Give user /etc/hosts permission
         run: |
           sudo chmod 777 /etc/hosts
-      #- name: Generate test configuration
+      # - name: Generate test configuration
       #  run: |
       #    python test/integration/NeptuneIntegrationWorkflowSteps.py generate-config \
       #      --cfn-stack-name ${{ needs.generate-stack-name.outputs.stack-name }} \
