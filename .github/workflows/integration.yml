@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - integ-wf-delete-stack
   pull_request:
     branches:
       - main
@@ -104,6 +105,11 @@ jobs:
           GRAPH_NOTEBOK_CONFIG: /tmp/graph_notebook_config_integration_test.json
         run: |
           pytest test/integration/iam
+  delete-stack:
+    runs-on: ubuntu-latest
+    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}.
+    needs: [create-stack]
+    steps:
       - name: Cleanup
         run: |
           python test/integration/NeptuneIntegrationWorkflowSteps.py \
