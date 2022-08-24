@@ -107,8 +107,8 @@ jobs:
           pytest test/integration/iam
   delete-stack:
     runs-on: ubuntu-latest
-    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}.
-    needs: [create-stack]
+    if: ${{ always() && contains(join(needs.create-stack.result, ','), 'success') }}.
+    needs: [create-stack, run-tests]
     steps:
       - name: Cleanup
         run: |
