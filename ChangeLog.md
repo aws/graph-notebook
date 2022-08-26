@@ -8,6 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 02-Job-Recommendation-Text-Encoding.ipynb
 - Added `--store-to` option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/347))
+- Added `--all-in-queue` option to `%cancel_load` ([Link to PR](https://github.com/aws/graph-notebook/pull/355))
 - Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
 - Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
