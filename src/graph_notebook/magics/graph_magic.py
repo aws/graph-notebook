@@ -203,6 +203,16 @@ def replace_html_chars(result):
     return fixed_result
 
 
+def get_load_ids(neptune_client):
+    load_status = neptune_client.load_status()
+    load_status.raise_for_status()
+    res = load_status.json()
+    ids = []
+    if 'payload' in res and 'loadIds' in res['payload']:
+        ids = res['payload']['loadIds']
+    return ids, res
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -1590,12 +1600,7 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
-        load_status = self.client.load_status()
-        load_status.raise_for_status()
-        res = load_status.json()
-        ids = []
-        if 'payload' in res and 'loadIds' in res['payload']:
-            ids = res['payload']['loadIds']
+        ids, res = get_load_ids(self.client)
 
         if not ids:
             labels = [widgets.Label(value="No load IDs found.")]
@@ -1694,22 +1699,50 @@ class Graph(Magics):
     @needs_local_scope
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('load_id', nargs="?", default='', help='loader id to check status for')
+        parser.add_argument('--all-in-queue', action='store_true', default=False,
+                            help="Cancel all load jobs with LOAD_IN_QUEUE status.")
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
-        cancel_res = self.client.cancel_load(args.load_id)
-        cancel_res.raise_for_status()
-        res = cancel_res.json()
-        if not args.silent:
+        loads_to_cancel = []
+        raw_res = {}
+        print_res = {}
+
+        if args.load_id:
+            loads_to_cancel.append(args.load_id)
+        elif args.all_in_queue:
+            all_job_ids = get_load_ids(self.client)[0]
+            for job_id in all_job_ids:
+                load_status_res = self.client.load_status(job_id)
+                load_status_res.raise_for_status()
+                this_res = load_status_res.json()
+                if this_res["payload"]["overallStatus"]["status"] == "LOAD_IN_QUEUE":
+                    loads_to_cancel.append(job_id)
+        else:
+            print("Please specify either a single load_id or --all-in-queue.")
+            return
+
+        for load_id in loads_to_cancel:
+            cancel_res = self.client.cancel_load(load_id)
+            cancel_res.raise_for_status()
+            res = cancel_res.json()
             if res:
-                print('Cancelled successfully.')
+                raw_res[load_id] = res
+                print_res[load_id] = 'Cancelled successfully.'
             else:
-                print('Something went wrong cancelling bulk load job.')
+                raw_res[load_id] = 'Something went wrong cancelling bulk load job.'
+                print_res[load_id] = 'Something went wrong cancelling bulk load job.'
+
+        if not args.silent:
+            if print_res:
+                print(json.dumps(print_res, indent=2))
+            else:
+                print("No cancellable load jobs were found.")
 
         if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+            local_ns[args.store_to] = raw_res
 
     @line_magic
     @display_exceptions
