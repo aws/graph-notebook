@@ -1619,7 +1619,10 @@ class Graph(Magics):
                     res_row["loadId"] = label_id
                     res_row["status"] = this_res["payload"]["overallStatus"]["status"]
                     res_row.update(this_res["payload"]["overallStatus"])
-                    res_row["feedCount"] = this_res["payload"]["feedCount"][0]
+                    if "feedCount" in this_res["payload"]:
+                        res_row["feedCount"] = this_res["payload"]["feedCount"][0]
+                    else:
+                        res_row["feedCount"] = "N/A"
                     res_table.append(res_row)
                     if index + 1 == args.limit:
                         break
