@@ -6,7 +6,7 @@ echo "export GRAPH_NOTEBOOK_AUTH_MODE=DEFAULT" >> ~/.bashrc  # set to IAM instea
 echo "export GRAPH_NOTEBOOK_HOST=CHANGE-ME" >> ~/.bashrc
 echo "export GRAPH_NOTEBOOK_PORT=8182" >> ~/.bashrc
 echo "export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=" >> ~/.bashrc
-echo "export AWS_REGION=us-west-2" >> ~/.bashrc  # modify region if needed
+echo "export AWS_REGION=cn-northwest-1" >> ~/.bashrc  # modify region if needed
 
 VERSION=""
 for i in "$@"
@@ -28,14 +28,14 @@ python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
 
-pip install "jupyter-console<=6.4.0"
-pip install "jupyter-client<=6.1.12"
-pip install awswrangler
+pip install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com "jupyter-console<=6.4.0"
+pip install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com "jupyter-client<=6.1.12"
+pip install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com "awswrangler"
 
 if [[ ${VERSION} == "" ]]; then
-  pip install --upgrade graph-notebook
+  pip install --upgrade -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com graph-notebook
 else
-   pip install --upgrade graph-notebook==${VERSION}
+  pip install --upgrade -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com graph-notebook==${VERSION}
 fi
 
 echo "installing nbextensions..."
