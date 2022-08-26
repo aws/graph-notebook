@@ -12,6 +12,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
 - Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
+- Added new SageMaker installation script for China regions ([Link to PR](https://github.com/aws/graph-notebook/pull/361))
 
 ## Release 3.5.3 (July 25, 2022)
 - Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
