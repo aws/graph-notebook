@@ -12,6 +12,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `--all-in-queue` option to `%cancel_load` ([Link to PR](https://github.com/aws/graph-notebook/pull/355))
 - Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
+- Disabled automatic collapsing of large explain results ([Link to PR](https://github.com/aws/graph-notebook/pull/363))
 - Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
 - Added new SageMaker installation script for China regions ([Link to PR](https://github.com/aws/graph-notebook/pull/361))
 
