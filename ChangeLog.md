@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.6.0 (September 15, 2022)
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
   - Path: 06-Language-Tutorials > 01-SPARQL > 01-SPARQL-Basics
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
