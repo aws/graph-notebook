@@ -13,6 +13,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added loader status details options to `%load_ids` ([Link to PR](https://github.com/aws/graph-notebook/pull/354))
 - Added `--all-in-queue` option to `%cancel_load` ([Link to PR](https://github.com/aws/graph-notebook/pull/355))
 - Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
+- Added support for literal property values in Sparql visualization options ([Link to PR]https://github.com/aws/graph-notebook/pull/296)
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
 - Disabled automatic collapsing of large explain results ([Link to PR](https://github.com/aws/graph-notebook/pull/363))
 - Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
