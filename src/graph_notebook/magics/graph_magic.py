@@ -791,7 +791,9 @@ class Graph(Magics):
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
-                if not results_df.empty:
+                # Checking for created indices instead of the df itself here, as df.empty will still return True when
+                # only empty maps/lists are present in the data.
+                if not results_df.index.empty:
                     query_res_reformat = []
                     for result in query_res:
                         fixed_result = replace_html_chars(result)
