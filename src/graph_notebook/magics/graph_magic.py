@@ -945,9 +945,13 @@ class Graph(Magics):
         parser.add_argument('-g', '--generate-token', action='store_true', help='generate token for database reset')
         parser.add_argument('-t', '--token', default='', help='perform database reset with given token')
         parser.add_argument('-y', '--yes', action='store_true', help='skip the prompt and perform database reset')
+        parser.add_argument('-m', '--max-status-retries', type=int, default=10,
+                            help='Specifies how many times we should attempt to check if the database reset has '
+                                 'completed, in intervals of 5 seconds. Default is 10')
         args = parser.parse_args(line.split())
         generate_token = args.generate_token
         skip_prompt = args.yes
+        max_status_retries = args.max_status_retries if args.max_status_retries > 0 else 1
         if generate_token is False and args.token == '':
             if skip_prompt:
                 initiate_res = self.client.initiate_reset()
@@ -1011,7 +1015,7 @@ class Graph(Magics):
                         logger.error(result)
                     return
 
-                retry = 10
+                retry = max_status_retries
                 poll_interval = 5
                 interval_output = widgets.Output()
                 job_status_output = widgets.Output()
@@ -1020,6 +1024,7 @@ class Graph(Magics):
                 display(vbox)
 
                 last_poll_time = time.time()
+                interval_check_response = {}
                 while retry > 0:
                     time_elapsed = int(time.time() - last_poll_time)
                     time_remaining = poll_interval - time_elapsed
@@ -1053,11 +1058,14 @@ class Graph(Magics):
                             print(f'checking status in {time_remaining} seconds')
                     time.sleep(1)
                 with output:
+                    job_status_output.clear_output()
+                    interval_output.close()
+                    total_status_wait = max_status_retries*poll_interval
                     print(result)
-                    if interval_check_response["status"] != 'healthy':
-                        print("Could not retrieve the status of the reset operation within the allotted time. "
-                              "If the database is not healthy after 1 min, please try the operation again or "
-                              "reboot the cluster.")
+                    if interval_check_response.get("status") != 'healthy':
+                        print(f"Could not retrieve the status of the reset operation within the allotted time of "
+                              f"{total_status_wait} seconds. If the database is not in healthy status after at least 1 "
+                              f"minute, please try the operation again or reboot the cluster.")
 
             def on_button_cancel_clicked(b):
                 text_hbox.close()
