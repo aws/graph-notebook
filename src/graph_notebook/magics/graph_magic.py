@@ -228,7 +228,8 @@ class Graph(Magics):
                 .with_tls(config.ssl) \
                 .with_sparql_path(config.sparql.path) \
                 .with_gremlin_traversal_source(config.gremlin.traversal_source) \
-                .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth)
+                .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth,
+                                  config.neo4j.database)
 
         self.client = builder.build()
 

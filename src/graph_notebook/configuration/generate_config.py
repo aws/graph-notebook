@@ -8,8 +8,8 @@ import json
 import os
 from enum import Enum
 
-from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
+from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, DEFAULT_NEO4J_USERNAME, \
+    DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -69,20 +69,23 @@ class Neo4JSection(object):
     Used for Neo4J-specific settings in a notebook's configuration
     """
 
-    def __init__(self, username: str = '', password: str = '', auth: bool = True):
+    def __init__(self, username: str = '', password: str = '', auth: bool = True, database: str = ''):
         """
         :param username: login user for the Neo4J endpoint
         :param password: login password for the Neo4J endpoint
         """
 
         if username == '':
-            username = 'neo4j'
+            username = DEFAULT_NEO4J_USERNAME
         if password == '':
-            password = 'password'
+            password = DEFAULT_NEO4J_PASSWORD
+        if database == '':
+            database = DEFAULT_NEO4J_DATABASE
 
         self.username = username
         self.password = password
         self.auth = False if auth in [False, 'False', 'false', 'FALSE'] else True
+        self.database = database
 
     def to_dict(self):
         return self.__dict__

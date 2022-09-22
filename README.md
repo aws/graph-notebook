@@ -268,7 +268,11 @@ A list of all locations checked for Amazon Web Services credentials can also be 
 
 ### Neo4J
 
-Change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, `ssl`, and `neo4j` authentication. For a local Neo4j Desktop database, if querying via Bolt protocol, you can use the following command:
+Change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, `ssl`, and `neo4j` authentication. 
+
+If your Neo4J instance supports [multiple databases](https://neo4j.com/developer/manage-multiple-databases/), you can specify a database name via the `database` field. Otherwise, leave the `database` field blank to query the default database.
+
+For a local Neo4j Desktop database, you can use the following command:
 
 ```
 %%graph_notebook_config
@@ -279,12 +283,13 @@ Change the configuration using `%%graph_notebook_config` and modify the fields f
   "neo4j": {
     "username": "neo4j",
     "password": "password",
-    "auth": true
+    "auth": true,
+    "database": ""
   }
 }
 ```
 
-Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint. Likewise, do not specify the `bolt` option if you are querying the HTTP endpoint(`"port": 7474`).
+Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint.
 
 To setup a new local Neo4J Desktop database for use with the graph notebook, check out the [Neo4J Desktop User Interface Guide](https://neo4j.com/developer/neo4j-desktop/).
 
