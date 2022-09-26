@@ -417,6 +417,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
@@ -567,15 +569,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    sparql_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                    ]
+                    if args.hide_index:
+                        sparql_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=sparql_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
-                         ],
+                         columnDefs=sparql_columndefs,
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
@@ -670,6 +677,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         parser.add_argument('-mcl', '--max-content-length', type=int, default=10*1024*1024,
                             help="Specifies maximum size (in bytes) of results that can be returned to the "
                                  "GremlinPython client. Default is 10MB")
@@ -801,6 +810,7 @@ class Graph(Magics):
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
                     results_df.drop(results_df.index[-1], inplace=True)
+                display(results_df)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
@@ -827,20 +837,25 @@ class Graph(Magics):
                 if mode == QueryMode.DEFAULT:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    gremlin_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"minWidth": "95%", "targets": 1},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"},
+                    ]
+                    if args.hide_index:
+                        gremlin_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=gremlin_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"minWidth": "95%", "targets": 1},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
-                         ],
+                         columnDefs=gremlin_columndefs,
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results,
+                         pageLength=visible_results
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -2028,6 +2043,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
@@ -2162,15 +2179,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    oc_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
+                    ]
+                    if args.hide_index:
+                        oc_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=oc_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
-                         ],
+                         columnDefs=oc_columndefs,
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
