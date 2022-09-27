@@ -94,6 +94,7 @@ STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
 
+false_str_variants = [False, 'False', 'false', 'FALSE']
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
@@ -103,13 +104,15 @@ def is_allowed_neptune_host(hostname: str, host_allowlist: list):
 
 
 class Client(object):
-    def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None,
+    def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, ssl_verify: bool = True,
+                 region: str = DEFAULT_REGION, sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g',
+                 auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  neptune_hosts: list = None):
         self.target_host = host
         self.target_port = port
         self.ssl = ssl
+        self.ssl_verify = ssl_verify
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
         self.region = region
@@ -183,7 +186,7 @@ class Client(object):
 
         uri = f'{self._http_protocol}://{self.host}:{self.port}{sparql_path}'
         req = self._prepare_request('POST', uri, data=data, headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def sparql(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
@@ -252,7 +255,7 @@ class Client(object):
         uri = f'{self.get_uri_with_port()}/gremlin'
         data = {'gremlin': query}
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def gremlin_status(self, query_id: str = '', include_waiting: bool = False):
@@ -279,7 +282,7 @@ class Client(object):
             for param, value in args.items():
                 data[param] = value
         req = self._prepare_request('POST', url, data=json.dumps(data))
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def opencypher_http(self, query: str, headers: dict = None, explain: str = None) -> requests.Response:
@@ -298,7 +301,7 @@ class Client(object):
             headers['Accept'] = "text/html"
 
         req = self._prepare_request('POST', url, data=data, headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def opencyper_bolt(self, query: str, **kwargs):
@@ -345,13 +348,13 @@ class Client(object):
         for k, v in kwargs.items():
             params[k] = v
         req = self._prepare_request('GET', url, params=params,data='')
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res.json()
 
     def status(self) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/status'
         req = self._prepare_request('GET', url, data='')
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def load(self, source: str, source_format: str, iam_role_arn: str = None, **kwargs) -> requests.Response:
@@ -375,7 +378,7 @@ class Client(object):
         url = f'{self._http_protocol}://{self.host}:{self.port}/loader'
         raw = json.dumps(payload)
         req = self._prepare_request('POST', url, data=raw, headers={'content-type': 'application/json'})
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def load_status(self, load_id: str = '', **kwargs) -> requests.Response:
@@ -388,14 +391,14 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/loader'
         req = self._prepare_request('GET', url, params=params)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def cancel_load(self, load_id: str) -> requests.Response:
         url = f'{self._http_protocol}://{self.host}:{self.port}/loader'
         params = {'loadId': load_id}
         req = self._prepare_request('DELETE', url, params=params)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def initiate_reset(self) -> requests.Response:
@@ -404,7 +407,7 @@ class Client(object):
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/system'
         req = self._prepare_request('POST', url, data=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def perform_reset(self, token: str) -> requests.Response:
@@ -414,7 +417,7 @@ class Client(object):
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/system'
         req = self._prepare_request('POST', url, data=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def dataprocessing_start(self, s3_input_uri: str, s3_output_uri: str, **kwargs) -> requests.Response:
@@ -428,7 +431,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/dataprocessing'
         req = self._prepare_request('POST', url, data=json.dumps(data), headers={'content-type': 'application/json'})
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def dataprocessing_job_status(self, job_id: str, neptune_iam_role_arn: str = '') -> requests.Response:
@@ -437,7 +440,7 @@ class Client(object):
         if neptune_iam_role_arn != '':
             data['neptuneIamRoleArn'] = neptune_iam_role_arn
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def dataprocessing_list(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
@@ -449,7 +452,7 @@ class Client(object):
         if neptune_iam_role_arn != '':
             data['neptuneIamRoleArn'] = neptune_iam_role_arn
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def dataprocessing_stop(self, job_id: str, clean=False, neptune_iam_role_arn: str = '') -> requests.Response:
@@ -461,7 +464,7 @@ class Client(object):
             data['neptuneIamRoleArn'] = neptune_iam_role_arn
 
         req = self._prepare_request('DELETE', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltraining_start(self, data_processing_job_id: str, train_model_s3_location: str,
@@ -483,7 +486,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltraining'
         req = self._prepare_request('POST', url, data=json.dumps(data), headers={'content-type': 'application/json'})
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltraining_list(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
@@ -496,14 +499,14 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltraining'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltraining_job_status(self, training_job_id: str, neptune_iam_role_arn: str = '') -> requests.Response:
         data = {} if neptune_iam_role_arn == '' else {'neptuneIamRoleArn': neptune_iam_role_arn}
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltraining/{training_job_id}'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltraining_stop(self, training_job_id: str, neptune_iam_role_arn: str = '',
@@ -517,7 +520,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltraining/{training_job_id}'
         req = self._prepare_request('DELETE', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltransform_create(self, output_s3_location: str, dataprocessing_job_id: str = '',
@@ -551,7 +554,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform'
         req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltransform_status(self, job_id: str, iam_role: str = '') -> requests.Response:
@@ -561,7 +564,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform/{job_id}'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltransform_list(self, iam_role: str = '', max_items: int = 10) -> requests.Response:
@@ -574,7 +577,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def modeltransform_stop(self, job_id: str, iam_role: str = '', clean: bool = False) -> requests.Response:
@@ -586,7 +589,7 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/modeltransform/{job_id}'
         req = self._prepare_request('DELETE', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def endpoints_create(self, model_training_job_id: str = '', model_transform_job_id: str = '',
@@ -606,21 +609,21 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/endpoints'
         req = self._prepare_request('POST', url, data=json.dumps(data), headers={'content-type': 'application/json'})
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def endpoints_status(self, endpoint_id: str, neptune_iam_role_arn: str = '') -> requests.Response:
         data = {} if neptune_iam_role_arn == '' else {'neptuneIamRoleArn': neptune_iam_role_arn}
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/endpoints/{endpoint_id}'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def endpoints_delete(self, endpoint_id: str, neptune_iam_role_arn: str = '') -> requests.Response:
         data = {} if neptune_iam_role_arn == '' else {'neptuneIamRoleArn': neptune_iam_role_arn}
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/endpoints/{endpoint_id}'
         req = self._prepare_request('DELETE', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def endpoints(self, max_items: int = 10, neptune_iam_role_arn: str = '') -> requests.Response:
@@ -632,21 +635,21 @@ class Client(object):
 
         url = f'{self._http_protocol}://{self.host}:{self.port}/ml/endpoints'
         req = self._prepare_request('GET', url, params=data)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def export(self, host: str, params: dict, ssl: bool = True) -> requests.Response:
         protocol = 'https' if ssl else 'http'
         url = f'{protocol}://{host}/{EXPORT_ACTION}'
         req = self._prepare_request('POST', url, data=json.dumps(params), service="execute-api")
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def export_status(self, host, job_id, ssl: bool = True) -> requests.Response:
         protocol = 'https' if ssl else 'http'
         url = f'{protocol}://{host}/{EXPORT_ACTION}/{job_id}'
         req = self._prepare_request('GET', url, service="execute-api")
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def _query_status(self, language: str, *, query_id: str = '', **kwargs) -> requests.Response:
@@ -661,8 +664,9 @@ class Client(object):
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/status'
+        requests.get()
         req = self._prepare_request('POST', url, data=data, headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
@@ -737,6 +741,10 @@ class ClientBuilder(object):
 
     def with_tls(self, tls: bool):
         self.args['ssl'] = tls
+        return ClientBuilder(self.args)
+
+    def with_ssl_verify(self, ssl_verify: bool):
+        self.args['ssl_verify'] = ssl_verify
         return ClientBuilder(self.args)
 
     def with_region(self, region: str):

@@ -15,6 +15,7 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_port(config.port) \
         .with_region(config.aws_region) \
         .with_tls(config.ssl) \
+        .with_ssl_verify(config.ssl_verify) \
         .with_proxy_host(config.proxy_host) \
         .with_proxy_port(config.proxy_port) \
         .with_sparql_path(config.sparql.path) \
@@ -30,4 +31,5 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.sparql_path == config.sparql.path
     assert client.gremlin_traversal_source == config.gremlin.traversal_source
     assert client.ssl is config.ssl
+    assert client.ssl_verify is config.ssl_verify
     return client

@@ -9,7 +9,7 @@ import os
 from enum import Enum
 
 from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -67,13 +67,14 @@ class GremlinSection(object):
 class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
-                 load_from_s3_arn='', ssl: bool = True, aws_region: str = DEFAULT_REGION,
+                 load_from_s3_arn='', ssl: bool = True, ssl_verify: bool = True, aws_region: str = DEFAULT_REGION,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
                  neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
         self._host = host.strip()
         self.port = port
         self.ssl = ssl
+        self.ssl_verify = ssl_verify
         self._proxy_host = proxy_host.strip()
         self.proxy_port = proxy_port
         self.sparql = sparql_section if sparql_section is not None else SparqlSection()
@@ -116,6 +117,7 @@ class Configuration(object):
                 'auth_mode': self.auth_mode.value,
                 'load_from_s3_arn': self.load_from_s3_arn,
                 'ssl': self.ssl,
+                'ssl_verify': self.ssl_verify,
                 'aws_region': self.aws_region,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict()
@@ -127,6 +129,7 @@ class Configuration(object):
                 'proxy_host': self.proxy_host,
                 'proxy_port': self.proxy_port,
                 'ssl': self.ssl,
+                'ssl_verify': self.ssl_verify,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict()
             }
@@ -139,17 +142,19 @@ class Configuration(object):
         return
 
 
-def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
+def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True,
+                    ssl_verify: bool = True, load_from_s3_arn='',
                     aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                     neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
-    use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host, proxy_port,
+    use_ssl = False if ssl in false_str_variants else True
+    verify_ssl = False if ssl_verify in false_str_variants else True
+    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, verify_ssl, aws_region, proxy_host, proxy_port,
                       neptune_hosts=neptune_hosts)
     return c
 
 
 def generate_default_config():
-    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, '', DEFAULT_REGION)
+    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, True, '', DEFAULT_REGION)
     return c
 
 
@@ -161,6 +166,9 @@ if __name__ == "__main__":
                         help="type of authentication the cluster being connected to is using. Can be DEFAULT or IAM")
     parser.add_argument("--ssl",
                         help="whether to make connections to the created endpoint with ssl or not [True|False]",
+                        default=True)
+    parser.add_argument("--ssl-verify",
+                        help="whether to verify the server's TLS certificate or not [True|False]",
                         default=True)
     # TODO: Remove this after we fix the LC script in S3.
     parser.add_argument("--iam_credentials_provider", default='ROLE',
@@ -176,7 +184,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
-    config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl,
+    config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl, args.ssl_verify,
                              args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port),
                              neptune_hosts=args.neptune_hosts)
     config.write_to_file(args.config_destination)

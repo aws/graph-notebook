@@ -228,6 +228,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "auth_mode": "DEFAULT",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
@@ -247,6 +248,7 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
   "auth_mode": "IAM",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
