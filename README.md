@@ -141,7 +141,7 @@ pip install "jupyterlab>=3"
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
 
 # start jupyterlab
-python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
+python -m graph_notebook.start_jupyterlab --jupyter-dir ~/notebook/destination/dir
 ```
 
 #### Loading magic extensions in JupyterLab
