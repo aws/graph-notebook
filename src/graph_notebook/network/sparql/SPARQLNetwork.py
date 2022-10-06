@@ -212,11 +212,11 @@ class SPARQLNetwork(EventfulNetwork):
         if 'label' not in data:
             data = self.generate_node_label_title(node_id=node_id, data=data)
         if self.ignore_groups or not node_binding:
-            data['group'] = DEFAULT_GRP
+            node_group = DEFAULT_GRP
         elif str(self.group_by_property) == DEFAULT_RAW_GRP_KEY:
-            data['group'] = str(node_binding)
+            node_group = str(node_binding)
         else:
-            data['group'] = None
+            node_group = None
             node_type = self.get_node_class(data)
             if isinstance(self.group_by_property, dict):
                 # if rdf:type or similar node class identifier does not exist on the node, set group to the default.
@@ -225,29 +225,30 @@ class SPARQLNetwork(EventfulNetwork):
                         if node_type in self.group_by_property:
                             group_by_for_type = self.group_by_property[node_type]
                             if group_by_for_type == DEFAULT_RAW_GRP_KEY:
-                                data['group'] = str(node_binding)
+                                node_group = str(node_binding)
                             elif group_by_for_type[:2] == "P." and 'properties' in data:
-                                data['group'] = self.retrieve_object_property_value(group_by_for_type[2:],
-                                                                                    data['properties'])
+                                node_group = self.retrieve_object_property_value(group_by_for_type[2:],
+                                                                                 data['properties'])
                             else:
-                                data['group'] = node_binding[group_by_for_type]
+                                node_group = node_binding[group_by_for_type]
                         else:
-                            data['group'] = node_type
+                            node_group = node_type
                     except KeyError:
-                        data['group'] = node_type
+                        node_group = node_type
                 else:
-                    data['group'] = DEFAULT_GRP
+                    node_group = DEFAULT_GRP
             elif self.group_by_property[:2] == "P." and 'properties' in data:
-                data['group'] = self.retrieve_object_property_value(self.group_by_property[2:],
-                                                                    data['properties'])
+                node_group = self.retrieve_object_property_value(self.group_by_property[2:],
+                                                                 data['properties'])
             elif self.group_by_property in node_binding:
-                data['group'] = node_binding[self.group_by_property]
+                node_group = node_binding[self.group_by_property]
 
-            if not data['group']:
+            if not node_group:
                 if node_type:
-                    data['group'] = node_type
+                    node_group = node_type
                 else:
-                    data['group'] = DEFAULT_GRP
+                    node_group = DEFAULT_GRP
+        data['group'] = str(node_group)
 
         self.add_node(node_id=node_id, data=data)
 
