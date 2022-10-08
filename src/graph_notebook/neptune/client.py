@@ -94,6 +94,9 @@ STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
 
+STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+STATISTICS_RDF = ["sparql"]
+STATISTICS_PG = ["propertygraph", "pg"]
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
@@ -662,6 +665,25 @@ class Client(object):
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/status'
         req = self._prepare_request('POST', url, data=data, headers=headers)
+        res = self._http_session.send(req)
+        return res
+
+    def statistics(self, language: str, mode: str = '') -> requests.Response:
+        headers = {
+            'Accept': 'application/json'
+        }
+        if language in STATISTICS_PG:
+            language = "propertygraph"
+        url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
+        if mode in ['', 'status']:
+            req = self._prepare_request('GET', url, headers=headers)
+        elif mode == 'delete':
+            req = self._prepare_request('DELETE', url, headers=headers)
+        else:
+            data = {}
+            if mode not in ['', 'status']:  # no mode = status request
+                data['mode'] = mode
+            req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
 

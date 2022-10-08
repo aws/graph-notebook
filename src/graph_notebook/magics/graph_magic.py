@@ -41,7 +41,7 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_PG, STATISTICS_RDF, STATISTICS_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -361,6 +361,31 @@ class Graph(Magics):
         uri = self.client.get_uri_with_port()
         viewer = StreamViewer(self.client,uri,language,limit=limit)
         viewer.show()
+
+    @line_magic
+    def statistics(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: [propertygraph, pg, sparql]. '
+                                 f'Default: propertygraph.',
+                            choices=["propertygraph", "pg", "sparql"])
+        parser.add_argument('-m', '--mode', type=str, default='status',
+                            help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
+                                 f'Default: status',
+                            choices=STATISTICS_MODES)
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+
+        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res.raise_for_status()
+        res = statistics_res.json()
+        if not args.silent:
+            print(json.dumps(res, indent=2))
+
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = res
 
     @line_magic
     def graph_notebook_host(self, line):
