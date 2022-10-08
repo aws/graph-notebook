@@ -810,7 +810,6 @@ class Graph(Magics):
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
                     results_df.drop(results_df.index[-1], inplace=True)
-                display(results_df)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
