@@ -680,9 +680,7 @@ class Client(object):
         elif mode == 'delete':
             req = self._prepare_request('DELETE', url, headers=headers)
         else:
-            data = {}
-            if mode not in ['', 'status']:  # no mode = status request
-                data['mode'] = mode
+            data = {'mode': mode}
             req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
