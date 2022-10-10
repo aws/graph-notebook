@@ -95,8 +95,7 @@ STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
 
 STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
-STATISTICS_RDF = ["sparql"]
-STATISTICS_PG = ["propertygraph", "pg"]
+STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "sparql"]
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
@@ -672,7 +671,7 @@ class Client(object):
         headers = {
             'Accept': 'application/json'
         }
-        if language in STATISTICS_PG:
+        if language == 'pg':
             language = "propertygraph"
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
         if mode in ['', 'status']:
