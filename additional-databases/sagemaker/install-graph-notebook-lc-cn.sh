@@ -6,7 +6,7 @@ echo "export GRAPH_NOTEBOOK_AUTH_MODE=DEFAULT" >> ~/.bashrc  # set to IAM instea
 echo "export GRAPH_NOTEBOOK_HOST=CHANGE-ME" >> ~/.bashrc
 echo "export GRAPH_NOTEBOOK_PORT=8182" >> ~/.bashrc
 echo "export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=" >> ~/.bashrc
-echo "export AWS_REGION=us-west-2" >> ~/.bashrc  # modify region if needed
+echo "export AWS_REGION=cn-northwest-1" >> ~/.bashrc  # modify region if needed
 
 VERSION=""
 for i in "$@"
@@ -28,14 +28,14 @@ python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
 
-pip install "jupyter-console<=6.4.0"
-pip install "jupyter-client<=6.1.12"
-pip install awswrangler
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "jupyter-console<=6.4.0"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "jupyter-client<=6.1.12"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "awswrangler"
 
 if [[ ${VERSION} == "" ]]; then
-  pip install --upgrade graph-notebook
+  pip install --upgrade -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn graph-notebook
 else
-   pip install --upgrade graph-notebook==${VERSION}
+  pip install --upgrade -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn graph-notebook==${VERSION}
 fi
 
 echo "installing nbextensions..."

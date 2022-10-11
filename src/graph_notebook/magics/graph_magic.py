@@ -13,14 +13,17 @@ import time
 import datetime
 import os
 import uuid
+import ast
 from enum import Enum
+from copy import copy
+from sys import maxsize
 from json import JSONDecodeError
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
 import pandas as pd
 import itables.options as opt
-from itables import show
+from itables import show, JavascriptFunction
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -37,7 +40,8 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -61,12 +65,27 @@ loading_wheel_template = retrieve_template("loading_wheel.html")
 error_template = retrieve_template("error.html")
 
 loading_wheel_html = loading_wheel_template.render()
-DEFAULT_LAYOUT = widgets.Layout(max_height='600px', overflow='scroll', width='100%')
+DEFAULT_LAYOUT = widgets.Layout(max_height='600px', max_width='940px', overflow='scroll')
 UNRESTRICTED_LAYOUT = widgets.Layout()
 
 DEFAULT_PAGINATION_OPTIONS = [10, 25, 50, 100, -1]
 DEFAULT_PAGINATION_MENU = [10, 25, 50, 100, "All"]
 opt.order = []
+opt.maxBytes = 0
+opt.classes = ["display", "hover", "nowrap"]
+index_col_js = """
+            function (td, cellData, rowData, row, col) {
+                $(td).css('font-weight', 'bold');
+                $(td).css('font-size', '12px');
+            }
+            """
+cell_style_js = """
+            function (td, cellData, rowData, row, col) {
+                $(td).css('font-family', 'monospace');
+                $(td).css('font-size', '12px');
+            }
+            """
+
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -200,6 +219,26 @@ def generate_pagination_vars(visible_results: int):
     return visible_results_fixed, pagination_options, pagination_menu
 
 
+def replace_html_chars(result):
+    html_char_map = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}
+    fixed_result = str(result)
+
+    for k, v in iter(html_char_map.items()):
+        fixed_result = fixed_result.replace(k, v)
+
+    return fixed_result
+
+
+def get_load_ids(neptune_client):
+    load_status = neptune_client.load_status()
+    load_status.raise_for_status()
+    res = load_status.json()
+    ids = []
+    if 'payload' in res and 'loadIds' in res['payload']:
+        ids = res['payload']['loadIds']
+    return ids, res
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -208,11 +247,12 @@ class Graph(Magics):
         # You must call the parent constructor
         super(Graph, self).__init__(shell)
 
+        self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
             self.client: Client = None
-            self.graph_notebook_config = get_config(self.config_location)
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
         except FileNotFoundError:
             print('Could not find a valid configuration. '
                   'Do not forget to validate your settings using %graph_notebook_config.')
@@ -227,7 +267,9 @@ class Graph(Magics):
         if self.client:
             self.client.close()
 
-        if "amazonaws.com" in config.host:
+        is_neptune_host = is_allowed_neptune_host(hostname=config.host, host_allowlist=self.neptune_cfg_allowlist)
+
+        if is_neptune_host:
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
@@ -238,6 +280,8 @@ class Graph(Magics):
                 .with_sparql_path(config.sparql.path)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
+            if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
+                builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -253,30 +297,79 @@ class Graph(Magics):
     @needs_local_scope
     @display_exceptions
     def graph_notebook_config(self, line='', cell='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='show',
+                            help='mode (default=show) [show|reset|silent]')
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
         if cell != '':
             data = json.loads(cell)
-            config = get_config_from_dict(data)
+            config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        elif line == 'reset':
-            self.graph_notebook_config = get_config(self.config_location)
+        elif args.mode == 'reset':
+            self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
             print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
-        elif line == 'silent':
+        elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
             of python Configuration object
             """
             config_dict = self.graph_notebook_config.to_dict()
+            store_to_ns(args.store_to, json.dumps(config_dict, indent=2), local_ns)
             return print(json.dumps(config_dict, indent=2))
         else:
             config_dict = self.graph_notebook_config.to_dict()
             print(json.dumps(config_dict, indent=2))
 
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=2), local_ns)
+
         return self.graph_notebook_config
 
+    @line_cell_magic
+    def neptune_config_allowlist(self, line='', cell=''):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('mode', nargs='?', default='add',
+                            help='mode (default=add) [add|remove|overwrite|reset]')
+        args = parser.parse_args(line.split())
+
+        try:
+            cell_new = ast.literal_eval(cell)
+            input_type = 'list'
+        except:
+            cell_new = cell
+            input_type = 'string'
+
+        allowlist_modified = True
+        if args.mode == 'reset':
+            self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        elif cell != '':
+            if args.mode == 'add':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.append(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) | set(cell_new))
+            elif args.mode == 'remove':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist.remove(cell_new.strip())
+                else:
+                    self.neptune_cfg_allowlist = list(set(self.neptune_cfg_allowlist) - set(cell_new))
+            elif args.mode == 'overwrite':
+                if input_type == 'string':
+                    self.neptune_cfg_allowlist = [cell_new.strip()]
+                else:
+                    self.neptune_cfg_allowlist = cell_new
+        else:
+            allowlist_modified = False
+
+        if allowlist_modified:
+            print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
+        else:
+            print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
 
     @line_magic
     def stream_viewer(self,line):
@@ -298,13 +391,13 @@ class Graph(Magics):
     @line_magic
     def graph_notebook_host(self, line):
         if line == '':
-            print('please specify a host.')
+            print(f'current host: {self.graph_notebook_config.host}')
             return
 
         # TODO: we should attempt to make a status call to this host before we set the config to this value.
         self.graph_notebook_config.host = line
         self._generate_client_from_config(self.graph_notebook_config)
-        print(f'set host to {line}')
+        print(f'set host to {self.graph_notebook_config.host}')
 
     @magic_variables
     @cell_magic
@@ -356,6 +449,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
@@ -542,12 +637,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    sparql_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                    ]
+                    if args.hide_index:
+                        sparql_columndefs[1]["visible"] = False
                     show(results_df,
+                         scrollX=True,
                          scrollY=sparql_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"}
-                         ],
+                         columnDefs=sparql_columndefs,
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
@@ -566,28 +669,31 @@ class Graph(Magics):
                             help='The ID of a running SPARQL query. Only displays the status of the specified query.')
         parser.add_argument('-c', '--cancelQuery', action='store_true',
                             help='Tells the status command to cancel a query. This parameter does not take a value')
-        parser.add_argument('-s', '--silent', action='store_true',
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 'If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true',
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response code '
+                                 'is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
         if not args.cancelQuery:
-            status_res = self.client.sparql_cancel(args.queryId)
+            status_res = self.client.sparql_status(query_id=args.queryId)
             status_res.raise_for_status()
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(SPARQL_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(SPARQL_CANCEL_HINT_MSG)
                 return
             else:
-                cancel_res = self.client.sparql_cancel(args.queryId, args.silent)
+                cancel_res = self.client.sparql_cancel(args.queryId, args.silent_cancel)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
 
         store_to_ns(args.store_to, res, local_ns)
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
 
     @magic_variables
     @cell_magic
@@ -639,6 +745,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         parser.add_argument('-mcl', '--max-content-length', type=int, default=10*1024*1024,
                             help="Specifies maximum size (in bytes) of results that can be returned to the "
                                  "GremlinPython client. Default is 10MB")
@@ -722,6 +830,7 @@ class Graph(Magics):
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
                 titles.append('Console')
+
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -759,14 +868,24 @@ class Graph(Magics):
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
                 results_df = pd.DataFrame(query_res)
-                if not results_df.empty:
-                    if (isinstance(query_res[0], dict) and len(results_df.columns) > len(query_res[0])) or \
-                            isinstance(query_res[0], list):
-                        query_res = [[result] for result in query_res]
-                        results_df = pd.DataFrame(query_res)
+                # Checking for created indices instead of the df itself here, as df.empty will still return True when
+                # only empty maps/lists are present in the data.
+                if not results_df.index.empty:
+                    query_res_reformat = []
+                    for result in query_res:
+                        fixed_result = replace_html_chars(result)
+                        query_res_reformat.append([fixed_result])
+                    query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
+                    results_df = pd.DataFrame(query_res_reformat)
+                    results_df.drop(results_df.index[-1], inplace=True)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
                     results_df.rename({results_df.columns[1]: 'Result'}, axis='columns', inplace=True)
+                else:
+                    results_df.insert(1, "Result", [])
+                results_df.set_index('#', inplace=True)
+                results_df.columns.name = results_df.index.name
+                results_df.index.name = None
 
         if not args.silent:
             metadata_output = widgets.Output(layout=gremlin_layout)
@@ -785,13 +904,21 @@ class Graph(Magics):
                 if mode == QueryMode.DEFAULT:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    gremlin_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"minWidth": "95%", "targets": 1},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"},
+                    ]
+                    if args.hide_index:
+                        gremlin_columndefs[1]["visible"] = False
                     show(results_df,
+                         scrollX=True,
                          scrollY=gremlin_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"minWidth": "95%", "targets": 1},
-                             {"className": "nowrap dt-left", "targets": "_all"}
-                         ],
+                         columnDefs=gremlin_columndefs,
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
@@ -815,6 +942,7 @@ class Graph(Magics):
                             help='(Optional) Normally, only running queries are included in the response. '
                                  'When the includeWaiting parameter is specified, '
                                  'the status of all waiting queries is also returned.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -824,13 +952,15 @@ class Graph(Magics):
             res = status_res.json()
         else:
             if args.queryId == '':
-                print(GREMLIN_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(GREMLIN_CANCEL_HINT_MSG)
                 return
             else:
                 cancel_res = self.client.gremlin_cancel(args.queryId)
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
         store_to_ns(args.store_to, res, local_ns)
 
     @magic_variables
@@ -865,6 +995,7 @@ class Graph(Magics):
     def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -874,16 +1005,19 @@ class Graph(Magics):
             res = status_res.json()
             logger.info(f'got the json format response {res}')
             store_to_ns(args.store_to, res, local_ns)
-            return res
+            if not args.silent:
+                return res
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
-            if "blazegraph&trade; by SYSTAP" in status_res.text:
-                print("For more information on the status of your Blazegraph cluster, please visit: ")
-                print()
-                print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}/blazegraph/#status')
-                print()
             store_to_ns(args.store_to, status_res.text, local_ns)
-            return status_res
+            if not args.silent:
+                if "blazegraph&trade; by SYSTAP" in status_res.text:
+                    print("For more information on the status of your Blazegraph cluster, please visit: ")
+                    print()
+                    print(f'http://{self.graph_notebook_config.host}:{self.graph_notebook_config.port}'
+                          f'/blazegraph/#status')
+                    print()
+                return status_res
 
     @line_magic
     @display_exceptions
@@ -893,9 +1027,13 @@ class Graph(Magics):
         parser.add_argument('-g', '--generate-token', action='store_true', help='generate token for database reset')
         parser.add_argument('-t', '--token', default='', help='perform database reset with given token')
         parser.add_argument('-y', '--yes', action='store_true', help='skip the prompt and perform database reset')
+        parser.add_argument('-m', '--max-status-retries', type=int, default=10,
+                            help='Specifies how many times we should attempt to check if the database reset has '
+                                 'completed, in intervals of 5 seconds. Default is 10')
         args = parser.parse_args(line.split())
         generate_token = args.generate_token
         skip_prompt = args.yes
+        max_status_retries = args.max_status_retries if args.max_status_retries > 0 else 1
         if generate_token is False and args.token == '':
             if skip_prompt:
                 initiate_res = self.client.initiate_reset()
@@ -959,7 +1097,7 @@ class Graph(Magics):
                         logger.error(result)
                     return
 
-                retry = 10
+                retry = max_status_retries
                 poll_interval = 5
                 interval_output = widgets.Output()
                 job_status_output = widgets.Output()
@@ -968,6 +1106,7 @@ class Graph(Magics):
                 display(vbox)
 
                 last_poll_time = time.time()
+                interval_check_response = {}
                 while retry > 0:
                     time_elapsed = int(time.time() - last_poll_time)
                     time_remaining = poll_interval - time_elapsed
@@ -1001,11 +1140,14 @@ class Graph(Magics):
                             print(f'checking status in {time_remaining} seconds')
                     time.sleep(1)
                 with output:
+                    job_status_output.clear_output()
+                    interval_output.close()
+                    total_status_wait = max_status_retries*poll_interval
                     print(result)
-                    if interval_check_response["status"] != 'healthy':
-                        print("Could not retrieve the status of the reset operation within the allotted time. "
-                              "If the database is not healthy after 1 min, please try the operation again or "
-                              "reboot the cluster.")
+                    if interval_check_response.get("status") != 'healthy':
+                        print(f"Could not retrieve the status of the reset operation within the allotted time of "
+                              f"{total_status_wait} seconds. If the database is not in healthy status after at least 1 "
+                              f"minute, please try the operation again or reboot the cluster.")
 
             def on_button_cancel_clicked(b):
                 text_hbox.close()
@@ -1541,23 +1683,77 @@ class Graph(Magics):
     @needs_local_scope
     def load_ids(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--details', action='store_true', default=False,
+                            help="Display status details for each load job. Most recent jobs are listed first.")
+        parser.add_argument('--limit', type=int, default=maxsize,
+                            help='If --details is True, only return the x most recent load job statuses. '
+                                 'Defaults to sys.maxsize.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
-        load_status = self.client.load_status()
-        load_status.raise_for_status()
-        res = load_status.json()
-        ids = []
-        if 'payload' in res and 'loadIds' in res['payload']:
-            ids = res['payload']['loadIds']
+        ids, res = get_load_ids(self.client)
 
-        labels = [widgets.Label(value=label_id) for label_id in ids]
-
-        if not labels:
+        if not ids:
             labels = [widgets.Label(value="No load IDs found.")]
+        else:
+            if args.details:
+                res = {}
+                res_table = []
+                for index, label_id in enumerate(ids):
+                    load_status_res = self.client.load_status(label_id)
+                    load_status_res.raise_for_status()
+                    this_res = load_status_res.json()
 
-        vbox = widgets.VBox(labels)
-        display(vbox)
+                    res[label_id] = this_res
+
+                    res_row = {}
+                    res_row["loadId"] = label_id
+                    res_row["status"] = this_res["payload"]["overallStatus"]["status"]
+                    res_row.update(this_res["payload"]["overallStatus"])
+                    if "feedCount" in this_res["payload"]:
+                        res_row["feedCount"] = this_res["payload"]["feedCount"]
+                    else:
+                        res_row["feedCount"] = "N/A"
+                    res_table.append(res_row)
+                    if index + 1 == args.limit:
+                        break
+                if not args.silent:
+                    tab = widgets.Tab()
+                    table_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    raw_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    tab.children = [table_output, raw_output]
+                    tab.set_title(0, 'Table')
+                    tab.set_title(1, 'Raw')
+                    display(tab)
+
+                    results_df = pd.DataFrame(res_table)
+                    results_df.insert(0, "#", range(1, len(results_df) + 1))
+
+                    with table_output:
+                        show(results_df,
+                             scrollX=True,
+                             scrollY="475px",
+                             columnDefs=[
+                                 {"width": "5%", "targets": 0},
+                                 {"className": "nowrap dt-left", "targets": "_all"},
+                                 {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                                 {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                             ],
+                             paging=True,
+                             scrollCollapse=True,
+                             lengthMenu=[DEFAULT_PAGINATION_OPTIONS, DEFAULT_PAGINATION_MENU],
+                             pageLength=10,
+                             )
+
+                    with raw_output:
+                        print(json.dumps(res, indent=2))
+            else:
+                labels = [widgets.Label(value=label_id) for label_id in ids]
+
+        if not args.details and not args.silent:
+            vbox = widgets.VBox(labels)
+            display(vbox)
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -1568,6 +1764,7 @@ class Graph(Magics):
     def load_status(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         parser.add_argument('--details', action='store_true', default=False)
         parser.add_argument('--errors', action='store_true', default=False)
@@ -1586,7 +1783,8 @@ class Graph(Magics):
         load_status_res = self.client.load_status(args.load_id, **payload)
         load_status_res.raise_for_status()
         res = load_status_res.json()
-        print(json.dumps(res, indent=2))
+        if not args.silent:
+            print(json.dumps(res, indent=2))
 
         if args.store_to != '' and local_ns is not None:
             local_ns[args.store_to] = res
@@ -1596,20 +1794,50 @@ class Graph(Magics):
     @needs_local_scope
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('load_id', default='', help='loader id to check status for')
+        parser.add_argument('load_id', nargs="?", default='', help='loader id to check status for')
+        parser.add_argument('--all-in-queue', action='store_true', default=False,
+                            help="Cancel all load jobs with LOAD_IN_QUEUE status.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
 
-        cancel_res = self.client.cancel_load(args.load_id)
-        cancel_res.raise_for_status()
-        res = cancel_res.json()
-        if res:
-            print('Cancelled successfully.')
+        loads_to_cancel = []
+        raw_res = {}
+        print_res = {}
+
+        if args.load_id:
+            loads_to_cancel.append(args.load_id)
+        elif args.all_in_queue:
+            all_job_ids = get_load_ids(self.client)[0]
+            for job_id in all_job_ids:
+                load_status_res = self.client.load_status(job_id)
+                load_status_res.raise_for_status()
+                this_res = load_status_res.json()
+                if this_res["payload"]["overallStatus"]["status"] == "LOAD_IN_QUEUE":
+                    loads_to_cancel.append(job_id)
         else:
-            print('Something went wrong cancelling bulk load job.')
+            print("Please specify either a single load_id or --all-in-queue.")
+            return
+
+        for load_id in loads_to_cancel:
+            cancel_res = self.client.cancel_load(load_id)
+            cancel_res.raise_for_status()
+            res = cancel_res.json()
+            if res:
+                raw_res[load_id] = res
+                print_res[load_id] = 'Cancelled successfully.'
+            else:
+                raw_res[load_id] = 'Something went wrong cancelling bulk load job.'
+                print_res[load_id] = 'Something went wrong cancelling bulk load job.'
+
+        if not args.silent:
+            if print_res:
+                print(json.dumps(print_res, indent=2))
+            else:
+                print("No cancellable load jobs were found.")
 
         if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+            local_ns[args.store_to] = raw_res
 
     @line_magic
     @display_exceptions
@@ -1882,6 +2110,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
@@ -1935,6 +2165,8 @@ class Graph(Magics):
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df = results_df.astype(str)
+                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
                     for col_index, col_name in enumerate(rows_and_columns['columns']):
                         results_df.rename({results_df.columns[col_index + 1]: col_name},
@@ -1975,6 +2207,8 @@ class Graph(Magics):
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
+                    results_df = results_df.astype(str)
+                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
                     for col_index, col_name in enumerate(rows_and_columns['columns']):
                         results_df.rename({results_df.columns[col_index + 1]: col_name},
@@ -2012,12 +2246,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    oc_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
+                    ]
+                    if args.hide_index:
+                        oc_columndefs[1]["visible"] = False
                     show(results_df,
+                         scrollX=True,
                          scrollY=oc_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"}
-                         ],
+                         columnDefs=oc_columndefs,
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
@@ -2044,10 +2286,11 @@ class Graph(Magics):
                             help='When set to true and other parameters are not present, causes status information '
                                  'for waiting queries to be returned as well as for running queries. '
                                  'This parameter does not take a value.')
-        parser.add_argument('-s', '--silent', action='store_true', default=False,
-                            help='If silent=true then the running query is cancelled and the HTTP response code is 200.'
-                                 ' If silent is not present or silent=false, '
+        parser.add_argument('-s', '--silent-cancel', action='store_true', default=False,
+                            help='If silent_cancel=true then the running query is cancelled and the HTTP response '
+                                 'code is 200. If silent_cancel is not present or silent_cancel=false, '
                                  'the query is cancelled with an HTTP 500 status code.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
@@ -2059,11 +2302,13 @@ class Graph(Magics):
             res.raise_for_status()
         else:
             if args.queryId == '':
-                print(OPENCYPHER_CANCEL_HINT_MSG)
+                if not args.silent:
+                    print(OPENCYPHER_CANCEL_HINT_MSG)
                 return
             else:
-                res = self.client.opencypher_cancel(args.queryId, args.silent)
+                res = self.client.opencypher_cancel(args.queryId, args.silent_cancel)
                 res.raise_for_status()
         js = res.json()
         store_to_ns(args.store_to, js, local_ns)
-        print(json.dumps(js, indent=2))
+        if not args.silent:
+            print(json.dumps(js, indent=2))

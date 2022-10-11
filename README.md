@@ -58,6 +58,8 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%load_status` - Get the status of a provided `load_id`. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
 
+`%cancel_load` - Cancels a bulk load job. You can either provide a single `load_id`, or specify `--all-in-queue` to cancel all queued (and not actively running) jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-cancel.html)
+
 `%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
 [Documentation](https://aws.amazon.com/neptune/machine-learning/)
 
@@ -89,7 +91,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.6.13-3.9.7
+* [Python](https://www.python.org/downloads/) 3.7.0-3.9.7
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
@@ -103,7 +105,6 @@ Begin by installing `graph-notebook` and its prerequisites, then follow the rema
 ```
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
-pip install markupsafe==2.0.1
 
 # install the package
 pip install graph-notebook
@@ -112,11 +113,7 @@ pip install graph-notebook
 ### Jupyter Classic Notebook
 
 ```
-# install and enable the visualization widget
-
-# ONLY RUN THIS LINE IF USING graph-notebook<=3.2.0
-jupyter nbextension install --py --sys-prefix graph_notebook.widgets
-
+# Enable the visualization widget
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 # copy static html resources
@@ -144,7 +141,7 @@ pip install "jupyterlab>=3"
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
 
 # start jupyterlab
-python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
+python -m graph_notebook.start_jupyterlab --jupyter-dir ~/notebook/destination/dir
 ```
 
 #### Loading magic extensions in JupyterLab
@@ -296,7 +293,7 @@ python3 setup.py bdist_wheel
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.4.1-py3-none-any.whl`
+`./dist/graph_notebook-3.5.3-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -307,7 +304,7 @@ pip install graph-notebook
 with
 
 ```
-pip install ./dist/graph_notebook-3.4.1-py3-none-any.whl
+pip install ./dist/graph_notebook-3.5.3-py3-none-any.whl
 ```
 
 
