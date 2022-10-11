@@ -7,6 +7,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
 - Fixed Sparql visualizations occasionally failing with VisJS group assignment error ([Link to PR](https://github.com/aws/graph-notebook/pull/375))
 - Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
+- Added result media type selection for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/313))
 
 ## Release 3.6.0 (September 15, 2022)
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
