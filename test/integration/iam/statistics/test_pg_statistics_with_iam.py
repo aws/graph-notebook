@@ -78,4 +78,3 @@ class TestPropertyGraphStatisticsWithIAM(IntegrationTest):
         assert res.status_code == 200
         statistics_status = res.json()
         self.assertEqual(statistics_status, expected)
-
