@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
 - Fix `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
 - Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
+- Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
 
 ## Release 3.6.0 (September 15, 2022)
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
