@@ -3,6 +3,7 @@
 - [Fraud Graph](#Fraud-Graph)
 - [Knowledge Graph](#Knowledge-Graph)
 - [Identity Graph](#Identity-Graph)
+- [Security Graph](#Security-Graph)
 - [Neptune ML - People Analytics](#Neptune-ML-People-Analytics)
 
 
@@ -27,6 +28,12 @@ The examples in this notebook show how we can use our blog knowledge graph to de
 An identity graph provides a single unified view of customers and prospects by linking multiple identifiers such as cookies, device identifiers, IP addresses, email IDs, and internal enterprise IDs to a known person or anonymous profile using privacy-compliant methods. Typically, identity graphs are part of a larger identity resolution architecture. Identity resolution is the process of matching human identity across a set of devices used by the same person or a household of persons for the purposes of building a representative identity, or known attributes, for targeted advertising.
 
 The examples in this notebook shows a sample identity graph solution using an open dataset as well as data visualizations that allow one to better understand the structure of an identity graph.
+
+## [Security Graph](./03-Security-Graphs/01-Building-a-Security-Graph-Application-with-Gremlin.ipynb)
+
+A security graph connects resources within a network: entities such as policies, roles and resources. By relating these entities together we improve our chances to detect, prevent, and remediate security risk that violate compliance and enable better enforcement of security requirements. With Amazon Neptune we can connect entities together in such a way that we can query it whenever new resources are created in the system. Using queries that find patterns in our data that we know to be indicative of security risks, we can evaluate the scope and impact of these risks, and thereby determine whether constellations of data in the security graph represent a real or potential security issue.
+
+The examples in this notebook shows a sample security graph solution using an open dataset as well as data visualizations that allow one to better understand the structure of a security graph.
 
 ## [People Analytics using Machine Learning](../04-Machine-Learning/Sample-Applications/01-People-Analytics)
 

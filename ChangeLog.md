@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
+  - Path: 03-Sample-Applications > 04-Security-Graphs
 - Update sample notebooks with parallel, same-direction edges example ([Link to PR](https://github.com/aws/graph-notebook/pull/366))
 - Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
 - Fixed `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
