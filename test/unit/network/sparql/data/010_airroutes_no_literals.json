@@ -77,6 +77,34 @@
           "type": "uri",
           "value": "http://kelvinlawrence.net/air-routes/objectProperty/route"
         }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/400"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://www.example.com/example/ontology/airport"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        }
+      },
+      {
+        "s": {
+          "type": "uri",
+          "value": "http://kelvinlawrence.net/air-routes/resource/400"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://www.example.com/example/ontology/regional"
+        },
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        }
       }
     ]
   }

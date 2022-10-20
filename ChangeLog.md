@@ -3,10 +3,19 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
-- Fix `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
-- Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
+
+## Release 3.6.2 (October 18, 2022)
+- New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
+  - Path: 03-Sample-Applications > 04-Security-Graphs
+- Update sample notebooks with parallel, same-direction edges example ([Link to PR](https://github.com/aws/graph-notebook/pull/366))
+- Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
+- Fixed `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
+- Fixed Sparql visualizations occasionally failing with VisJS group assignment error ([Link to PR](https://github.com/aws/graph-notebook/pull/375))
+- Fixed `start jupyterlab` command in README ([Link to PR](https://github.com/aws/graph-notebook/pull/376))
+- Fixed interface rendering issue in classic notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/378))
+- Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
+- Added result media type selection for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/313))
 
 ## Release 3.6.0 (September 15, 2022)
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))

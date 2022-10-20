@@ -232,6 +232,13 @@ class TestSPARQLNetwork(unittest.TestCase):
         node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/365')
         self.assertEqual('DEFAULT_GROUP', node['group'])
 
+    def test_sparql_network_group_default_multiple_types(self):
+        sparql_network = SPARQLNetwork()
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/400')
+        self.assertEqual("['ontology:airport', 'ontology:regional']", node['group'])
+
     def test_sparql_network_group_default_no_properties(self):
         sparql_network = SPARQLNetwork()
         data = get_sparql_result('010_airroutes_no_literals.json')
@@ -245,6 +252,13 @@ class TestSPARQLNetwork(unittest.TestCase):
         sparql_network.add_results(data)
         node = sparql_network.graph.nodes.get('http://www.example.com/soccer/resource#Newcastle_United')
         self.assertEqual("1892", node['group'])
+
+    def test_sparql_network_group_nested_properties_string_multiproperty(self):
+        sparql_network = SPARQLNetwork(group_by_property='P.rdf:type')
+        data = get_sparql_result('010_airroutes_no_literals.json')
+        sparql_network.add_results(data)
+        node = sparql_network.graph.nodes.get('http://kelvinlawrence.net/air-routes/resource/400')
+        self.assertEqual("['ontology:airport', 'ontology:regional']", node['group'])
 
     def test_sparql_network_group_nested_properties_string_invalid_prop(self):
         sparql_network = SPARQLNetwork(group_by_property='P.ontology:wins')
