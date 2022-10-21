@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Generate Stack Name
         id: generate-stack-name
-        run: echo "::set-output name=stack-name::$(echo graph-notebook-$RANDOM)"
+        run: echo "stack-name=$(echo graph-notebook-$RANDOM)" >> $GITHUB_OUTPUT
         shell: bash
   create-stack:
     runs-on: ubuntu-latest
