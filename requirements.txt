@@ -23,3 +23,4 @@ pandas
 botocore~=1.18.18
 boto3~=1.15.15
 pytest==6.2.2
+parameterized==0.8.1

@@ -6,18 +6,22 @@ import pytest
 from botocore.session import get_session
 
 from test.integration import IntegrationTest
+from parameterized import parameterized
+
+lang_list = ["pg", "sparql"]
 
 
-class TestSparqlStatisticsWithIAM(IntegrationTest):
+class TestStatisticsWithIAM(IntegrationTest):
     def setUp(self) -> None:
         super().setUp()
         self.client = self.client_builder.with_iam(get_session()).build()
 
     @pytest.mark.neptune
     @pytest.mark.iam
-    def test_sparql_statistics_status(self):
+    @parameterized.expand(lang_list)
+    def test_statistics_status(self, lang):
         expected_payload_fields = ['autoCompute', 'active', 'statisticsId']
-        res = self.client.statistics('sparql')
+        res = self.client.statistics(lang)
         assert res.status_code == 200
         statistics_status = res.json()
         self.assertEqual(statistics_status['status'], '200 OK')
@@ -27,38 +31,41 @@ class TestSparqlStatisticsWithIAM(IntegrationTest):
 
     @pytest.mark.neptune
     @pytest.mark.iam
-    def test_sparql_statistics_disable_autocompute(self):
+    @parameterized.expand(lang_list)
+    def test_statistics_disable_autocompute(self, lang):
         expected = {
             "status": "200 OK"
         }
-        disable_res = self.client.statistics('sparql', 'disableAutoCompute')
+        disable_res = self.client.statistics(lang, 'disableAutoCompute')
         assert disable_res.status_code == 200
         disable_status = disable_res.json()
         self.assertEqual(disable_status, expected)
 
-        status_res = self.client.statistics('sparql')
+        status_res = self.client.statistics(lang)
         statistics_status = status_res.json()
         self.assertEqual(statistics_status['payload']['autoCompute'], False)
 
     @pytest.mark.neptune
     @pytest.mark.iam
-    def test_sparql_statistics_enable_autocompute(self):
+    @parameterized.expand(lang_list)
+    def test_statistics_enable_autocompute(self, lang):
         expected = {
             "status": "200 OK"
         }
-        enable_res = self.client.statistics('sparql', 'enableAutoCompute')
+        enable_res = self.client.statistics(lang, 'enableAutoCompute')
         assert enable_res.status_code == 200
         enable_status = enable_res.json()
         self.assertEqual(enable_status, expected)
 
-        status_res = self.client.statistics('sparql')
+        status_res = self.client.statistics(lang)
         statistics_status = status_res.json()
         self.assertEqual(statistics_status['payload']['autoCompute'], True)
 
     @pytest.mark.neptune
     @pytest.mark.iam
-    def test_sparql_statistics_refresh(self):
-        res = self.client.statistics('sparql')
+    @parameterized.expand(lang_list)
+    def test_statistics_refresh(self, lang):
+        res = self.client.statistics(lang)
         assert res.status_code == 200
         statistics_status = res.json()
         self.assertEqual(statistics_status['status'], '200 OK')
@@ -66,7 +73,8 @@ class TestSparqlStatisticsWithIAM(IntegrationTest):
 
     @pytest.mark.neptune
     @pytest.mark.iam
-    def test_sparql_statistics_delete(self):
+    @parameterized.expand(lang_list)
+    def test_statistics_delete(self, lang):
         expected = {
             "status": "200 OK",
             "payload": {
@@ -74,7 +82,7 @@ class TestSparqlStatisticsWithIAM(IntegrationTest):
                 "statisticsId": -1
             }
         }
-        res = self.client.statistics('sparql', 'delete')
+        res = self.client.statistics(lang, 'delete')
         assert res.status_code == 200
         statistics_status = res.json()
         self.assertEqual(statistics_status, expected)
