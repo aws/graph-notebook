@@ -73,8 +73,8 @@ class GremlinSection(object):
         elif serializer_lower in GRAPHBINARYV1_VARIANTS:
             message_serializer = 'graphbinaryv1'
         else:
-            print(f'Invalid Gremlin serializer specified, defaulting to graphbinaryv3. '
-                  f'Valid serializers: [graphsonv3, graphsonv3, graphbinaryv1].')
+            print(f'Invalid Gremlin serializer specified, defaulting to graphsonv3. '
+                  f'Valid serializers: [graphsonv3, graphsonv2, graphbinaryv1].')
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
 
 
