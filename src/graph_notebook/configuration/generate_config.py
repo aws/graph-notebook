@@ -171,8 +171,9 @@ if __name__ == "__main__":
     parser.add_argument("--aws_region", help="aws region your ml cluster is in.", default=DEFAULT_REGION)
     parser.add_argument("--proxy_host", help="the proxy host url to route a connection through", default='')
     parser.add_argument("--proxy_port", help="the proxy port to use when creating proxy connection", default=8182)
-    parser.add_argument("--neptune_hosts", help="list of host snippets to use for identifying neptune endpoints",
-                        default=DEFAULT_CONFIG_LOCATION)
+    parser.add_argument("--neptune_hosts", nargs="*",
+                        help="list of host snippets to use for identifying neptune endpoints",
+                        default=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
