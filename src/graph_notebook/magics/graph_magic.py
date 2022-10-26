@@ -525,38 +525,28 @@ class Graph(Magics):
 
             headers = {}
 
-            invalid_media_input = False
-            input_result_type = result_type
-            if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                # Different graph DB services support different sets of results formats, some possibly custom, for each
-                # query type. We will only verify if media types are valid for Neptune
-                # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
-                # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
-                if is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
-                    if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
-                            or (query_type in ['CONSTRUCT', 'DESCRIBE']
-                                and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
-                            or result_type == '':
-                        if result_type != '':
-                            invalid_media_input = True
-                        result_type = MEDIA_TYPE_SPARQL_JSON
-                    headers = {'Accept': result_type}
-                elif result_type == '':
-                    if query_type == 'SELECT':
-                        result_type = MEDIA_TYPE_SPARQL_JSON
-                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
-                else:
-                    headers = {'Accept': result_type}
-            elif query_type == 'ASK' and \
-                    is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
-                if result_type not in NEPTUNE_RDF_ASK_FORMATS:
+            # Different graph DB services support different sets of results formats, some possibly custom, for each
+            # query type. We will only verify if media types are valid for Neptune
+            # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
+            # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
+            if is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
+                if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
+                        or (query_type == 'ASK' and result_type not in NEPTUNE_RDF_ASK_FORMATS) \
+                        or (query_type in ['CONSTRUCT', 'DESCRIBE']
+                            and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
+                        or result_type == '':
                     if result_type != '':
-                        invalid_media_input = True
-                    result_type = MEDIA_TYPE_BOOLEAN
+                        # invalid_media_input = True
+                        print(f"Invalid media type: {result_type} specified for Neptune {query_type} query. "
+                              f"Defaulting to: {MEDIA_TYPE_SPARQL_JSON}.")
+                    result_type = MEDIA_TYPE_SPARQL_JSON
                 headers = {'Accept': result_type}
-            if invalid_media_input:
-                print(f"Invalid media type: {input_result_type} specified for Neptune {query_type} query. "
-                      f"Defaulting to: {result_type}.")
+            elif result_type == '':
+                if query_type == 'SELECT':
+                    result_type = MEDIA_TYPE_SPARQL_JSON
+                    headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+            else:
+                headers = {'Accept': result_type}
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
 
