@@ -99,6 +99,10 @@ GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
 GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
 GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1']
 
+STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
+
+
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
         if host_snippet in hostname:
@@ -684,6 +688,25 @@ class Client(object):
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/status'
         req = self._prepare_request('POST', url, data=data, headers=headers)
+        res = self._http_session.send(req)
+        return res
+
+    def statistics(self, language: str, mode: str = '') -> requests.Response:
+        headers = {
+            'Accept': 'application/json'
+        }
+        if language in ["pg", "gremlin"]:
+            language = "propertygraph"
+        elif language == "rdf":
+            language = "sparql"
+        url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
+        if mode in ['', 'status']:
+            req = self._prepare_request('GET', url, headers=headers)
+        elif mode == 'delete':
+            req = self._prepare_request('DELETE', url, headers=headers)
+        else:
+            data = {'mode': mode}
+            req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
 

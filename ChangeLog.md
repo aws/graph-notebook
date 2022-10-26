@@ -3,13 +3,34 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
+
+## Release 3.6.2 (October 18, 2022)
+- New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
+  - Path: 03-Sample-Applications > 04-Security-Graphs
+- Update sample notebooks with parallel, same-direction edges example ([Link to PR](https://github.com/aws/graph-notebook/pull/366))
+- Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
+- Fixed `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
+- Fixed Sparql visualizations occasionally failing with VisJS group assignment error ([Link to PR](https://github.com/aws/graph-notebook/pull/375))
+- Fixed `start jupyterlab` command in README ([Link to PR](https://github.com/aws/graph-notebook/pull/376))
+- Fixed interface rendering issue in classic notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/378))
+- Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
+- Added result media type selection for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/313))
+
+## Release 3.6.0 (September 15, 2022)
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
   - Path: 06-Language-Tutorials > 01-SPARQL > 01-SPARQL-Basics
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
-  - Path: 04-Machine-Learning > Neptune-ML-06-Text-Encoding-Tutorial
+  - Path: 04-Machine-Learning > Sample-Applications > 02-Job-Recommendation-Text-Encoding.ipynb
 - Added `--store-to` option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/347))
+- Added loader status details options to `%load_ids` ([Link to PR](https://github.com/aws/graph-notebook/pull/354))
+- Added `--all-in-queue` option to `%cancel_load` ([Link to PR](https://github.com/aws/graph-notebook/pull/355))
 - Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
+- Added support for literal property values in Sparql visualization options ([Link to PR](https://github.com/aws/graph-notebook/pull/296))
 - Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
+- Disabled automatic collapsing of large explain results ([Link to PR](https://github.com/aws/graph-notebook/pull/363))
+- Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
+- Added new SageMaker installation script for China regions ([Link to PR](https://github.com/aws/graph-notebook/pull/361))
 
 ## Release 3.5.3 (July 25, 2022)
 - Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))

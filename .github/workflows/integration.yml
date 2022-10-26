@@ -39,6 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pytest
+          pip install jupyterlab>=3
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
@@ -57,10 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-stack-name, create-stack]
     steps:
-      - name: Set up Python 3.6
+      - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -74,6 +75,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install jupyterlab>=3
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Install
         run: |
