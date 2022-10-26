@@ -36,7 +36,13 @@ Several of the steps below are optional but please read each step carefully and 
 {
   "host": "localhost",
   "port": 8182,
-  "ssl": false
+  "ssl": false,
+  "gremlin": {
+    "traversal_source": "g",
+    "username": "",
+    "password": "",
+    "message_serializer": "graphsonv3"
+  }
 }
 ```
 If the Gremlin Server you wish to connect to is remote,  replacing `localhost` with the IP address or DNS of the remote server should work. This assumes you have access to that server from your local machine.
