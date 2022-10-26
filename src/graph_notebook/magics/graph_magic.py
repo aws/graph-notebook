@@ -277,7 +277,8 @@ class Graph(Magics):
                 .with_tls(config.ssl) \
                 .with_proxy_host(config.proxy_host) \
                 .with_proxy_port(config.proxy_port) \
-                .with_sparql_path(config.sparql.path)
+                .with_sparql_path(config.sparql.path) \
+                .with_gremlin_serializer(config.gremlin.message_serializer)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
             if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
@@ -288,7 +289,9 @@ class Graph(Magics):
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
                 .with_sparql_path(config.sparql.path) \
-                .with_gremlin_traversal_source(config.gremlin.traversal_source)
+                .with_gremlin_traversal_source(config.gremlin.traversal_source) \
+                .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
+                .with_gremlin_serializer(config.gremlin.message_serializer)
 
         self.client = builder.build()
 
