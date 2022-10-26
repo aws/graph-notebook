@@ -525,19 +525,20 @@ class Graph(Magics):
 
             headers = {}
 
+            invalid_media_input = False
+            input_result_type = result_type
             if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
                 # Different graph DB services support different sets of results formats, some possibly custom, for each
                 # query type. We will only verify if media types are valid for Neptune
                 # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
                 # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
-                if "neptune.amazonaws.com" in self.graph_notebook_config.host:
+                if is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
                     if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
                             or (query_type in ['CONSTRUCT', 'DESCRIBE']
                                 and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
                             or result_type == '':
                         if result_type != '':
-                            print(f"Invalid media type: [{result_type}] specified for Neptune {query_type} query. "
-                                  f"Defaulting to: [application/sparql-results+json].")
+                            invalid_media_input = True
                         result_type = MEDIA_TYPE_SPARQL_JSON
                     headers = {'Accept': result_type}
                 elif result_type == '':
@@ -546,10 +547,16 @@ class Graph(Magics):
                         headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
                 else:
                     headers = {'Accept': result_type}
-
-            # TODO: check if we also want to handle ASK queries separately for Neptune
-            # elif query_type == 'ASK' and "neptune.amazonaws.com" in self.graph_notebook_config.host:
-            #    headers = {} if result_type not in NEPTUNE_RDF_ASK_FORMATS else {'Accept': result_type}
+            elif query_type == 'ASK' and \
+                    is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
+                if result_type not in NEPTUNE_RDF_ASK_FORMATS:
+                    if result_type != '':
+                        invalid_media_input = True
+                    result_type = MEDIA_TYPE_BOOLEAN
+                headers = {'Accept': result_type}
+            if invalid_media_input:
+                print(f"Invalid media type: {input_result_type} specified for Neptune {query_type} query. "
+                      f"Defaulting to: {result_type}.")
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
 
@@ -574,15 +581,15 @@ class Graph(Magics):
                 # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
                 first_tab_html = ""
                 query_type = get_query_type(cell)
-                if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                    # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
-                    if result_type != MEDIA_TYPE_SPARQL_JSON:
-                        raw_output = widgets.Output(layout=sparql_layout)
-                        with raw_output:
-                            print(results)
-                        children.append(raw_output)
-                        titles.append('Raw')
-                    else:
+                if result_type != MEDIA_TYPE_SPARQL_JSON:
+                    raw_output = widgets.Output(layout=sparql_layout)
+                    with raw_output:
+                        print(results)
+                    children.append(raw_output)
+                    titles.append('Raw')
+                else:
+                    if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
+                        # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
                         logger.debug('creating sparql network...')
 
                         titles.append('Table')
@@ -635,11 +642,11 @@ class Graph(Magics):
                             children.append(raw_output)
                             titles.append('Raw')
 
-                        json_output = widgets.Output(layout=sparql_layout)
-                        with json_output:
-                            print(json.dumps(results, indent=2))
-                        children.append(json_output)
-                        titles.append('JSON')
+                    json_output = widgets.Output(layout=sparql_layout)
+                    with json_output:
+                        print(json.dumps(results, indent=2))
+                    children.append(json_output)
+                    titles.append('JSON')
 
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
 
