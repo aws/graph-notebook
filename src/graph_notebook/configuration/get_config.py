@@ -17,7 +17,7 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
     else:
         ssl_verify = True
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
-    gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection('')
+    gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection()
     proxy_host = str(data['proxy_host']) if 'proxy_host' in data else ''
     proxy_port = int(data['proxy_port']) if 'proxy_port' in data else 8182
 

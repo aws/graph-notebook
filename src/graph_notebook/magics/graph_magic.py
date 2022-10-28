@@ -41,7 +41,7 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -116,6 +116,32 @@ DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGr
 DEFAULT_BASE_URI = "http://aws.amazon.com/neptune/default"
 RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 BASE_URI_FORMATS = [FORMAT_RDFXML, FORMAT_TURTLE]
+
+MEDIA_TYPE_SPARQL_JSON = "application/sparql-results+json"
+MEDIA_TYPE_SPARQL_XML = "application/sparql-results+xml"
+MEDIA_TYPE_BINARY_RESULTS_TABLE = "application/x-binary-rdf-results-table"
+MEDIA_TYPE_SPARQL_CSV = "text/csv"
+MEDIA_TYPE_SPARQL_TSV = "text/tab-separated-values"
+MEDIA_TYPE_BOOLEAN = "text/boolean"
+MEDIA_TYPE_NQUADS = "application/n-quads"
+MEDIA_TYPE_NQUADS_TEXT = "text/x-nquads"
+MEDIA_TYPE_RDF_XML = "application/rdf+xml"
+MEDIA_TYPE_JSON_LD = "application/ld+json"
+MEDIA_TYPE_NTRIPLES = "application/n-triples"
+MEDIA_TYPE_NTRIPLES_TEXT = "text/plain"
+MEDIA_TYPE_TURTLE = "text/turtle"
+MEDIA_TYPE_N3 = "text/n3"
+MEDIA_TYPE_TRIX = "application/trix"
+MEDIA_TYPE_TRIG = "application/trig"
+MEDIA_TYPE_RDF4J_BINARY = "application/x-binary-rdf"
+
+NEPTUNE_RDF_SELECT_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_SPARQL_XML, MEDIA_TYPE_BINARY_RESULTS_TABLE,
+                              MEDIA_TYPE_SPARQL_CSV, MEDIA_TYPE_SPARQL_TSV]
+NEPTUNE_RDF_ASK_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_SPARQL_XML, MEDIA_TYPE_BOOLEAN]
+NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_NQUADS, MEDIA_TYPE_NQUADS_TEXT,
+                                          MEDIA_TYPE_RDF_XML, MEDIA_TYPE_JSON_LD, MEDIA_TYPE_NTRIPLES,
+                                          MEDIA_TYPE_NTRIPLES_TEXT, MEDIA_TYPE_TURTLE, MEDIA_TYPE_N3, MEDIA_TYPE_TRIX,
+                                          MEDIA_TYPE_TRIG, MEDIA_TYPE_RDF4J_BINARY]
 
 class QueryMode(Enum):
     DEFAULT = 'query'
@@ -252,7 +278,8 @@ class Graph(Magics):
                 .with_ssl_verify(config.ssl_verify) \
                 .with_proxy_host(config.proxy_host) \
                 .with_proxy_port(config.proxy_port) \
-                .with_sparql_path(config.sparql.path)
+                .with_sparql_path(config.sparql.path) \
+                .with_gremlin_serializer(config.gremlin.message_serializer)
             if config.auth_mode == AuthModeEnum.IAM:
                 builder = builder.with_iam(get_session())
             if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
@@ -264,7 +291,9 @@ class Graph(Magics):
                 .with_tls(config.ssl) \
                 .with_ssl_verify(config.ssl_verify) \
                 .with_sparql_path(config.sparql.path) \
-                .with_gremlin_traversal_source(config.gremlin.traversal_source)
+                .with_gremlin_traversal_source(config.gremlin.traversal_source) \
+                .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
+                .with_gremlin_serializer(config.gremlin.message_serializer)
 
         self.client = builder.build()
 
@@ -365,6 +394,34 @@ class Graph(Magics):
         viewer.show()
 
     @line_magic
+    def statistics(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                                 f'Default: propertygraph.',
+                            choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('-m', '--mode', type=str, default='status',
+                            help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
+                                 f'Default: status')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+
+        if args.mode not in STATISTICS_MODES:
+            print(f'Invalid mode. Please specify one of: {STATISTICS_MODES}, or leave blank to retrieve status.')
+            return
+
+        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res.raise_for_status()
+        res = statistics_res.json()
+        if not args.silent:
+            print(json.dumps(res, indent=2))
+
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = res
+
+    @line_magic
     def graph_notebook_host(self, line):
         if line == '':
             print(f'current host: {self.graph_notebook_config.host}')
@@ -392,6 +449,12 @@ class Graph(Magics):
                             choices=['dynamic', 'static', 'details'])
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
+        parser.add_argument('-m', '--media-type', type=str, default='',
+                            help='Response format for SELECT/CONSTRUCT/DESCRIBE queries. See '
+                                 'https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html '
+                                 'for valid RDF media types supported by Neptune for each query type. Default for '
+                                 'Neptune and SELECT queries is application/sparql-results+json, otherwise no format '
+                                 'will be specified in the request.')
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes.')
         parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
@@ -419,6 +482,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
 
@@ -460,11 +525,48 @@ class Graph(Magics):
                                                                 link=f"data:text/html;base64,{base64_str}")
         else:
             query_type = get_query_type(cell)
-            headers = {} if query_type not in ['SELECT', 'CONSTRUCT', 'DESCRIBE'] else {
-                'Accept': 'application/sparql-results+json'}
+
+            result_type = str(args.media_type).lower()
+
+            headers = {}
+
+            if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
+                # Different graph DB services support different sets of results formats, some possibly custom, for each
+                # query type. We will only verify if media types are valid for Neptune
+                # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
+                # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
+                if "neptune.amazonaws.com" in self.graph_notebook_config.host:
+                    if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
+                            or (query_type in ['CONSTRUCT', 'DESCRIBE']
+                                and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
+                            or result_type == '':
+                        if result_type != '':
+                            print(f"Invalid media type: [{result_type}] specified for Neptune {query_type} query. "
+                                  f"Defaulting to: [application/sparql-results+json].")
+                        result_type = MEDIA_TYPE_SPARQL_JSON
+                    headers = {'Accept': result_type}
+                elif result_type == '':
+                    if query_type == 'SELECT':
+                        result_type = MEDIA_TYPE_SPARQL_JSON
+                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+                else:
+                    headers = {'Accept': result_type}
+
+            # TODO: check if we also want to handle ASK queries separately for Neptune
+            # elif query_type == 'ASK' and "neptune.amazonaws.com" in self.graph_notebook_config.host:
+            #    headers = {} if result_type not in NEPTUNE_RDF_ASK_FORMATS else {'Accept': result_type}
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
-            query_res.raise_for_status()
+
+            try:
+                query_res.raise_for_status()
+            except HTTPError:
+                # Catching all 400 response errors here to try and fix possible invalid media type for db in headers.
+                # Retry query once with RDF spec default media type.
+                result_type = MEDIA_TYPE_SPARQL_JSON if query_type == 'SELECT' else MEDIA_TYPE_NTRIPLES
+                query_res = self.client.sparql(cell, path=path, headers={'Accept': result_type})
+                query_res.raise_for_status()
+
             try:
                 results = query_res.json()
             except Exception:
@@ -478,74 +580,73 @@ class Graph(Magics):
                 first_tab_html = ""
                 query_type = get_query_type(cell)
                 if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                    logger.debug('creating sparql network...')
-
-                    titles.append('Table')
-                    sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
-                                                                       results=results, scd_query=True)
-
-                    sn = SPARQLNetwork(group_by_property=args.group_by,
-                                       display_property=args.display_property,
-                                       edge_display_property=args.edge_display_property,
-                                       tooltip_property=args.tooltip_property,
-                                       edge_tooltip_property=args.edge_tooltip_property,
-                                       label_max_length=args.label_max_length,
-                                       edge_label_max_length=args.edge_label_max_length,
-                                       ignore_groups=args.ignore_groups,
-                                       expand_all=args.expand_all,
-                                       group_by_raw=args.group_by_raw)
-
-                    sn.extract_prefix_declarations_from_query(cell)
-                    try:
-                        sn.add_results(results)
-                    except ValueError as value_error:
-                        logger.debug(value_error)
-
-                    logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
-                    if len(sn.graph.nodes) > 0:
-                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                            = args.stop_physics
-                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        f = Force(network=sn, options=self.graph_notebook_vis_options)
-                        titles.append('Graph')
-                        children.append(f)
-                        logger.debug('added sparql network to tabs')
-
-                    rows_and_columns = sparql_get_rows_and_columns(results)
-                    if rows_and_columns is not None:
-                        results_df = pd.DataFrame(rows_and_columns['rows'])
-                        results_df = results_df.astype(str)
-                        results_df = results_df.applymap(lambda x: replace_html_chars(x))
-                        results_df.insert(0, "#", range(1, len(results_df) + 1))
-                        for col_index, col_name in enumerate(rows_and_columns['columns']):
-                            try:
-                                results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                                  axis='columns',
-                                                  inplace=True)
-                            except IndexError:
-                                results_df.insert(col_index+1, col_name, [])
-
-                    # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
-                    # pattern of showing a tsv with each line being a result binding in addition to new ones.
-                    if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
-                        lines = []
-                        for b in results['results']['bindings']:
-                            lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                    # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
+                    if result_type != MEDIA_TYPE_SPARQL_JSON:
                         raw_output = widgets.Output(layout=sparql_layout)
                         with raw_output:
-                            html = sparql_construct_template.render(lines=lines)
-                            display(HTML(html))
+                            print(results)
                         children.append(raw_output)
                         titles.append('Raw')
-                else:
-                    sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res,
-                                                                       results=results)
+                    else:
+                        logger.debug('creating sparql network...')
 
-                json_output = widgets.Output(layout=sparql_layout)
-                with json_output:
-                    print(json.dumps(results, indent=2))
-                children.append(json_output)
-                titles.append('JSON')
+                        titles.append('Table')
+
+                        sn = SPARQLNetwork(group_by_property=args.group_by,
+                                           display_property=args.display_property,
+                                           edge_display_property=args.edge_display_property,
+                                           tooltip_property=args.tooltip_property,
+                                           edge_tooltip_property=args.edge_tooltip_property,
+                                           label_max_length=args.label_max_length,
+                                           edge_label_max_length=args.edge_label_max_length,
+                                           ignore_groups=args.ignore_groups,
+                                           expand_all=args.expand_all,
+                                           group_by_raw=args.group_by_raw)
+
+                        sn.extract_prefix_declarations_from_query(cell)
+                        try:
+                            sn.add_results(results)
+                        except ValueError as value_error:
+                            logger.debug(value_error)
+
+                        logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
+                        if len(sn.graph.nodes) > 0:
+                            self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                                = args.stop_physics
+                            self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                            f = Force(network=sn, options=self.graph_notebook_vis_options)
+                            titles.append('Graph')
+                            children.append(f)
+                            logger.debug('added sparql network to tabs')
+
+                        rows_and_columns = sparql_get_rows_and_columns(results)
+                        if rows_and_columns is not None:
+                            table_id = f"table-{str(uuid.uuid4())[:8]}"
+                            visible_results = results_per_page_check(args.results_per_page)
+                            first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
+                                                                          rows=rows_and_columns['rows'], guid=table_id,
+                                                                          amount=visible_results)
+
+                        # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
+                        # pattern of showing a tsv with each line being a result binding in addition to new ones.
+                        if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
+                            lines = []
+                            for b in results['results']['bindings']:
+                                lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                            raw_output = widgets.Output(layout=sparql_layout)
+                            with raw_output:
+                                html = sparql_construct_template.render(lines=lines)
+                                display(HTML(html))
+                            children.append(raw_output)
+                            titles.append('Raw')
+
+                        json_output = widgets.Output(layout=sparql_layout)
+                        with json_output:
+                            print(json.dumps(results, indent=2))
+                        children.append(json_output)
+                        titles.append('JSON')
+
+                sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=sparql_layout)
@@ -569,15 +670,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    sparql_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
+                    ]
+                    if args.hide_index:
+                        sparql_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=sparql_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
-                         ],
+                         columnDefs=sparql_columndefs,
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
@@ -672,6 +778,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         parser.add_argument('-mcl', '--max-content-length', type=int, default=10*1024*1024,
                             help="Specifies maximum size (in bytes) of results that can be returned to the "
                                  "GremlinPython client. Default is 10MB")
@@ -829,20 +937,25 @@ class Graph(Magics):
                 if mode == QueryMode.DEFAULT:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    gremlin_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"minWidth": "95%", "targets": 1},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"},
+                    ]
+                    if args.hide_index:
+                        gremlin_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=gremlin_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"minWidth": "95%", "targets": 1},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all"}
-                         ],
+                         columnDefs=gremlin_columndefs,
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results,
+                         pageLength=visible_results
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -2030,6 +2143,8 @@ class Graph(Magics):
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
                             help="Display the entire output without a scroll bar.")
+        parser.add_argument('--hide-index', action='store_true', default=False,
+                            help="Hide the index column numbers when displaying the results.")
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
@@ -2164,15 +2279,20 @@ class Graph(Magics):
                 with first_tab_output:
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
+                    oc_columndefs = [
+                        {"width": "5%", "targets": 0},
+                        {"visible": True, "targets": 0},
+                        {"searchable": False, "targets": 0},
+                        {"className": "nowrap dt-left", "targets": "_all"},
+                        {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
+                        {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
+                    ]
+                    if args.hide_index:
+                        oc_columndefs[1]["visible"] = False
                     show(results_df,
                          scrollX=True,
                          scrollY=oc_scrollY,
-                         columnDefs=[
-                             {"width": "5%", "targets": 0},
-                             {"className": "nowrap dt-left", "targets": "_all"},
-                             {"createdCell": JavascriptFunction(index_col_js), "targets": 0},
-                             {"createdCell": JavascriptFunction(cell_style_js), "targets": "_all", }
-                         ],
+                         columnDefs=oc_columndefs,
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],

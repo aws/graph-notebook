@@ -141,7 +141,7 @@ pip install "jupyterlab>=3"
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
 
 # start jupyterlab
-python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
+python -m graph_notebook.start_jupyterlab --jupyter-dir ~/notebook/destination/dir
 ```
 
 #### Loading magic extensions in JupyterLab
@@ -165,7 +165,7 @@ Alternatively, the magic extensions can be manually reloaded for a single notebo
 
 ### Gremlin Server
 
-In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`. Optionally, modify `traversal_source` if your graph traversal source name differs from the default value. For a local Gremlin server (HTTP or WebSockets), you can use the following command:
+In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`. Optionally, modify `traversal_source` if your graph traversal source name differs from the default value, `username` and `password` if required by the graph store, or `message_serializer` for a specific data transfer format. For a local Gremlin server (HTTP or WebSockets), you can use the following command:
 
 ```
 %%graph_notebook_config
@@ -174,7 +174,10 @@ In a new cell in the Jupyter notebook, change the configuration using `%%graph_n
   "port": 8182,
   "ssl": false,
   "gremlin": {
-    "traversal_source": "g"
+    "traversal_source": "g",
+    "username": "",
+    "password": "",
+    "message_serializer": "graphsonv3"
   }
 }
 ```
