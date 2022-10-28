@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
 - Updated [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/387))
+- Fixed `%seed` failing to load SPARQL EPL dataset ([Link to PR](https://github.com/aws/graph-notebook/pull/389))
 
 ## Release 3.6.2 (October 18, 2022)
 - New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
