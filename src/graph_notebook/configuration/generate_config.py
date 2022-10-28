@@ -246,7 +246,7 @@ if __name__ == "__main__":
                              args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port),
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,
-                                            args.gremlin_serializer),
+                                            args.gremlin_password, args.gremlin_serializer),
                              args.neptune_hosts)
     config.write_to_file(args.config_destination)
 
