@@ -198,10 +198,10 @@ class Configuration(object):
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True, load_from_s3_arn='',
                     aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                     sparql_section: SparqlSection = SparqlSection(), gremlin_section: GremlinSection = GremlinSection(),
-                    neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
+                    neo4j_section=Neo4JSection(), neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
     use_ssl = False if ssl in [False, 'False', 'false', 'FALSE'] else True
     c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, aws_region, proxy_host, proxy_port,
-                      sparql_section, gremlin_section, neptune_hosts)
+                      sparql_section, gremlin_section, neo4j_section, neptune_hosts)
     return c
 
 
@@ -237,6 +237,14 @@ if __name__ == "__main__":
     parser.add_argument("--gremlin_serializer",
                         help="the serializer to use as the encoding format when creating Gremlin connections",
                         default=DEFAULT_GREMLIN_SERIALIZER)
+    parser.add_argument("--neo4j_username", help="the username to use for Neo4J connections",
+                        default=DEFAULT_NEO4J_USERNAME)
+    parser.add_argument("--neo4j_password", help="the password to use for Neo4J connections",
+                        default=DEFAULT_NEO4J_PASSWORD)
+    parser.add_argument("--neo4j_auth", help="whether to use auth for Neo4J connections or not [True|False]",
+                        default=True)
+    parser.add_argument("--neo4j_database", help="the name of the database to use for Neo4J",
+                        default=DEFAULT_NEO4J_DATABASE)
     parser.add_argument("--neptune_hosts", help="list of host snippets to use for identifying neptune endpoints",
                         default=DEFAULT_CONFIG_LOCATION)
     args = parser.parse_args()
@@ -247,6 +255,8 @@ if __name__ == "__main__":
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,
                                             args.gremlin_password, args.gremlin_serializer),
+                             Neo4JSection(args.neo4j_username, args.neo4j_password,
+                                          args.neo4j_auth, args.neo4j_database),
                              args.neptune_hosts)
     config.write_to_file(args.config_destination)
 
