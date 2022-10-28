@@ -14,19 +14,20 @@ from boto3 import Session
 from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
-from gremlin_python.driver import client
+from gremlin_python.driver import client, serializer
 from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.exceptions import AuthError
 from base64 import b64encode
 import nest_asyncio
-# from graph_notebook.magics.graph_magic import NEPTUNE_CONFIG_HOST_IDENTIFIERS
 
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
 # import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
+DEFAULT_GREMLIN_SERIALIZER = 'graphsonv3'
+DEFAULT_GREMLIN_TRAVERSAL_SOURCE = 'g'
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
 DEFAULT_REGION = 'us-east-1'
@@ -100,6 +101,13 @@ STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
 
+GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
+GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
+GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1']
+
+STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
+
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
@@ -108,9 +116,21 @@ def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     return False
 
 
+def get_gremlin_serializer(serializer_str: str):
+    serializer_lower = serializer_str.lower()
+    if serializer_lower == 'graphbinaryv1':
+        return serializer.GraphBinarySerializersV1()
+    elif serializer_lower == 'graphsonv2':
+        return serializer.GraphSONSerializersV2d0()
+    else:
+        return serializer.GraphSONSerializersV3d0()
+
+
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g',
+                 sparql_path: str = '/sparql', gremlin_traversal_source: str = DEFAULT_GREMLIN_TRAVERSAL_SOURCE,
+                 gremlin_username: str = '', gremlin_password: str = '',
+                 gremlin_serializer: str = DEFAULT_GREMLIN_SERIALIZER,
                  neo4j_username: str = DEFAULT_NEO4J_USERNAME, neo4j_password: str = DEFAULT_NEO4J_PASSWORD,
                  neo4j_auth: bool = True, neo4j_database: str = DEFAULT_NEO4J_DATABASE,
                  auth=None, session: Session = None,
@@ -121,6 +141,9 @@ class Client(object):
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
+        self.gremlin_username = gremlin_username
+        self.gremlin_password = gremlin_password
+        self.gremlin_serializer = get_gremlin_serializer(gremlin_serializer)
         self.neo4j_username = neo4j_username
         self.neo4j_password = neo4j_password
         self.neo4j_auth = neo4j_auth
@@ -236,7 +259,9 @@ class Client(object):
         ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
         request = self._prepare_request('GET', ws_url)
         traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
-        return client.Client(ws_url, traversal_source, headers=dict(request.headers), **transport_kwargs)
+        return client.Client(ws_url, traversal_source, username=self.gremlin_username,
+                             password=self.gremlin_password, message_serializer=self.gremlin_serializer,
+                             headers=dict(request.headers), **transport_kwargs)
 
     def gremlin_query(self, query, transport_args=None, bindings=None):
         if transport_args is None:
@@ -712,6 +737,25 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
+    def statistics(self, language: str, mode: str = '') -> requests.Response:
+        headers = {
+            'Accept': 'application/json'
+        }
+        if language in ["pg", "gremlin"]:
+            language = "propertygraph"
+        elif language == "rdf":
+            language = "sparql"
+        url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
+        if mode in ['', 'status']:
+            req = self._prepare_request('GET', url, headers=headers)
+        elif mode == 'delete':
+            req = self._prepare_request('DELETE', url, headers=headers)
+        else:
+            data = {'mode': mode}
+            req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
+        res = self._http_session.send(req)
+        return res
+
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
         if self.proxy_host != '':
@@ -782,7 +826,16 @@ class ClientBuilder(object):
     def with_gremlin_traversal_source(self, traversal_source: str):
         self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
+        
+    def with_gremlin_login(self, username: str, password: str):
+        self.args['gremlin_username'] = username
+        self.args['gremlin_password'] = password
+        return ClientBuilder(self.args)
 
+    def with_gremlin_serializer(self, message_serializer: str):
+        self.args['gremlin_serializer'] = message_serializer
+        return ClientBuilder(self.args)
+    
     def with_neo4j_login(self, username: str, password: str, auth: bool, database: str):
         self.args['neo4j_username'] = username
         self.args['neo4j_password'] = password

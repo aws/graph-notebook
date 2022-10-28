@@ -14,7 +14,7 @@ from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_al
 def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS) -> Configuration:
 
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
-    gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection('')
+    gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection()
     neo4j_section = Neo4JSection(**data['neo4j']) if 'neo4j' in data else Neo4JSection('', '', True, '')
     proxy_host = str(data['proxy_host']) if 'proxy_host' in data else ''
     proxy_port = int(data['proxy_port']) if 'proxy_port' in data else 8182

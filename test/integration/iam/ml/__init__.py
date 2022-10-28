@@ -19,6 +19,8 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_proxy_port(config.proxy_port) \
         .with_sparql_path(config.sparql.path) \
         .with_gremlin_traversal_source(config.gremlin.traversal_source) \
+        .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
+        .with_gremlin_serializer(config.gremlin.message_serializer) \
         .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
         .with_iam(get_session()) \
         .build()
@@ -30,6 +32,9 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.proxy_port == config.proxy_port
     assert client.sparql_path == config.sparql.path
     assert client.gremlin_traversal_source == config.gremlin.traversal_source
+    assert client.gremlin_username == config.gremlin.username
+    assert client.gremlin_password == config.gremlin.password
+    assert client.gremlin_serializer == config.gremlin.message_serializer
     assert client.neo4j_username == config.neo4j.username
     assert client.neo4j_password == config.neo4j.password
     assert client.neo4j_auth == config.neo4j.auth
