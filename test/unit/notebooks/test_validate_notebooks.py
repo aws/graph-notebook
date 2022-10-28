@@ -33,10 +33,13 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Visualization/Grouping-and-Appearance-Customization-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/00-Sample-Applications-Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/01-Fraud-Graphs/01-Building-a-Fraud-Graph-Application.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/01-Building-a-Knowledge-Graph-Application-openCypher.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/Building-a-Knowledge-Graph-Application-Gremlin.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/02-Knowledge-Graphs/Building-a-Knowledge-Graph-Application-openCypher.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/01-Building-an-Identity-Graph-Application.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/02-Data-Modeling-for-Identity-Graphs.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL/03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/04-Security-Graphs/01-Building-a-Security-Graph-Application-with-Gremlin.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/04-Security-Graphs/01-Building-a-Security-Graph-Application-with-openCypher.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-00-Getting-Started-with-Neptune-ML-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-01-Introduction-to-Node-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-02-Introduction-to-Node-Regression-Gremlin.ipynb',
@@ -47,7 +50,12 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-01-Introduction-to-Object-Classification-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-02-Introduction-to-Object-Regression-SPARQL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-SPARQL/Neptune-ML-03-Introduction-to-Link-Prediction-SPARQL.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Sample-Applications/02-Job-Recommendation-Text-Encoding.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/00-Identifying-Fraud-Rings-Using-Social-Network-Analytics.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/01-Identifying-1st-Person-Synthetic-Identity-Fraud-Using-Graph-Similarity.ipynb',            
+            f'{NOTEBOOK_BASE_DIR}/05-Data-Science/02-Logistics-Analysis-using-a-Transportation-Network.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/01-SPARQL/01-SPARQL-Basics.ipynb']
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()

@@ -8,12 +8,13 @@ import logging
 import re
 
 import requests
+from urllib.parse import urlparse, urlunparse
 from SPARQLWrapper import SPARQLWrapper
 from boto3 import Session
 from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
-from gremlin_python.driver import client
+from gremlin_python.driver import client, serializer
 from gremlin_python.driver.protocol import GremlinServerError
 from neo4j import GraphDatabase
 import nest_asyncio
@@ -22,6 +23,8 @@ import nest_asyncio
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
 # import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
+DEFAULT_GREMLIN_SERIALIZER = 'graphsonv3'
+DEFAULT_GREMLIN_TRAVERSAL_SOURCE = 'g'
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
 DEFAULT_REGION = 'us-east-1'
@@ -77,6 +80,8 @@ STREAM_AT = 'AT_SEQUENCE_NUMBER'
 STREAM_AFTER = 'AFTER_SEQUENCE_NUMBER'
 STREAM_TRIM = 'TRIM_HORIZON'
 STREAM_LATEST = 'LATEST'
+STREAM_COMMIT_TIMESTAMP = 'commitTimestamp'
+STREAM_IS_LASTOP = 'isLastOp'
 STREAM_EXCEPTION_NOT_FOUND = 'StreamRecordsNotFoundException'
 STREAM_EXCEPTION_NOT_ENABLED = 'UnsupportedOperationException'
 
@@ -88,26 +93,82 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
+NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
+
+GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
+GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
+GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1']
+
+STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
+
+
+def is_allowed_neptune_host(hostname: str, host_allowlist: list):
+    for host_snippet in host_allowlist:
+        if host_snippet in hostname:
+            return True
+    return False
+
+
+def get_gremlin_serializer(serializer_str: str):
+    serializer_lower = serializer_str.lower()
+    if serializer_lower == 'graphbinaryv1':
+        return serializer.GraphBinarySerializersV1()
+    elif serializer_lower == 'graphsonv2':
+        return serializer.GraphSONSerializersV2d0()
+    else:
+        return serializer.GraphSONSerializersV3d0()
+
 
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, region: str = DEFAULT_REGION,
-                 sparql_path: str = '/sparql', gremlin_traversal_source: str = 'g', auth=None, session: Session = None):
-        self.host = host
-        self.port = port
+                 sparql_path: str = '/sparql', gremlin_traversal_source: str = DEFAULT_GREMLIN_TRAVERSAL_SOURCE,
+                 gremlin_username: str = '', gremlin_password: str = '',
+                 gremlin_serializer: str = DEFAULT_GREMLIN_SERIALIZER,
+                 auth=None, session: Session = None,
+                 proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
+                 neptune_hosts: list = None):
+        self.target_host = host
+        self.target_port = port
         self.ssl = ssl
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
+        self.gremlin_username = gremlin_username
+        self.gremlin_password = gremlin_password
+        self.gremlin_serializer = get_gremlin_serializer(gremlin_serializer)
         self.region = region
         self._auth = auth
         self._session = session
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+        self.neptune_hosts = NEPTUNE_CONFIG_HOST_IDENTIFIERS if neptune_hosts is None else neptune_hosts
 
         self._http_protocol = 'https' if self.ssl else 'http'
         self._ws_protocol = 'wss' if self.ssl else 'ws'
 
         self._http_session = None
 
-    def get_uri_with_port(self):
-        uri = f'{self._http_protocol}://{self.host}:{self.port}'
+    @property
+    def host(self):
+        if self.proxy_host != '':
+            return self.proxy_host
+        return self.target_host
+
+    @property
+    def port(self):
+        if self.proxy_host != '':
+            return self.proxy_port
+        return self.target_port
+
+    def is_neptune_domain(self):
+        return is_allowed_neptune_host(hostname=self.target_host, host_allowlist=self.neptune_hosts)
+
+    def get_uri_with_port(self, use_websocket=False, use_proxy=False):
+        protocol = self._http_protocol
+        if use_websocket is True:
+            protocol = self._ws_protocol
+
+        uri = f'{protocol}://{self.host}:{self.port}'
         return uri
 
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
@@ -139,7 +200,7 @@ class Client(object):
             sparql_path = f'/{path}'
         elif self.sparql_path != '':
             sparql_path = f'/{self.sparql_path}'
-        elif "amazonaws.com" in self.host:
+        elif self.is_neptune_domain():
             sparql_path = f'/{SPARQL_ACTION}'
         else:
             sparql_path = ''
@@ -180,19 +241,20 @@ class Client(object):
             raise ValueError('query_id must be a non-empty string')
         return self._query_status('sparql', query_id=query_id, silent=silent, cancelQuery=True)
 
-    def get_gremlin_connection(self) -> client.Client:
+    def get_gremlin_connection(self, transport_kwargs) -> client.Client:
         nest_asyncio.apply()
 
-        uri = f'{self._http_protocol}://{self.host}:{self.port}/gremlin'
-        request = self._prepare_request('GET', uri)
+        ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
+        request = self._prepare_request('GET', ws_url)
+        traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
+        return client.Client(ws_url, traversal_source, username=self.gremlin_username,
+                             password=self.gremlin_password, message_serializer=self.gremlin_serializer,
+                             headers=dict(request.headers), **transport_kwargs)
 
-        ws_url = f'{self._ws_protocol}://{self.host}:{self.port}/gremlin'
-
-        traversal_source = 'g' if "neptune.amazonaws.com" in self.host else self.gremlin_traversal_source
-        return client.Client(ws_url, traversal_source, headers=dict(request.headers))
-
-    def gremlin_query(self, query, bindings=None):
-        c = self.get_gremlin_connection()
+    def gremlin_query(self, query, transport_args=None, bindings=None):
+        if transport_args is None:
+            transport_args = {}
+        c = self.get_gremlin_connection(transport_args)
         try:
             result = c.submit(query, bindings)
             future_results = result.all()
@@ -213,7 +275,7 @@ class Client(object):
         if headers is None:
             headers = {}
 
-        uri = f'{self._http_protocol}://{self.host}:{self.port}/gremlin'
+        uri = f'{self.get_uri_with_port()}/gremlin'
         data = {'gremlin': query}
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
@@ -304,7 +366,7 @@ class Client(object):
         driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
         return driver
 
-    def stream(self, url, **kwargs) -> requests.Response: 
+    def stream(self, url, **kwargs) -> requests.Response:
         params = {}
         for k, v in kwargs.items():
             params[k] = v
@@ -629,14 +691,35 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
+    def statistics(self, language: str, mode: str = '') -> requests.Response:
+        headers = {
+            'Accept': 'application/json'
+        }
+        if language in ["pg", "gremlin"]:
+            language = "propertygraph"
+        elif language == "rdf":
+            language = "sparql"
+        url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
+        if mode in ['', 'status']:
+            req = self._prepare_request('GET', url, headers=headers)
+        elif mode == 'delete':
+            req = self._prepare_request('DELETE', url, headers=headers)
+        else:
+            data = {'mode': mode}
+            req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
+        res = self._http_session.send(req)
+        return res
+
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
         self._ensure_http_session()
+        if self.proxy_host != '':
+            headers = {} if headers is None else headers
+            headers["Host"] = self.target_host
         request = requests.Request(method=method, url=url, data=data, params=params, headers=headers, auth=self._auth)
         if self._session is not None:
             aws_request = self._get_aws_request(method=method, url=url, data=data, params=params, headers=headers,
                                                 service=service)
             request.headers = dict(aws_request.headers)
-
         return request.prepare()
 
     def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
@@ -697,6 +780,15 @@ class ClientBuilder(object):
         self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
 
+    def with_gremlin_login(self, username: str, password: str):
+        self.args['gremlin_username'] = username
+        self.args['gremlin_password'] = password
+        return ClientBuilder(self.args)
+
+    def with_gremlin_serializer(self, message_serializer: str):
+        self.args['gremlin_serializer'] = message_serializer
+        return ClientBuilder(self.args)
+
     def with_tls(self, tls: bool):
         self.args['ssl'] = tls
         return ClientBuilder(self.args)
@@ -707,6 +799,18 @@ class ClientBuilder(object):
 
     def with_iam(self, session: Session):
         self.args['session'] = session
+        return ClientBuilder(self.args)
+
+    def with_proxy_host(self, host: str):
+        self.args['proxy_host'] = host
+        return ClientBuilder(self.args)
+
+    def with_proxy_port(self, proxy_port: int):
+        self.args['proxy_port'] = proxy_port
+        return ClientBuilder(self.args)
+
+    def with_custom_neptune_hosts(self, neptune_hosts: list):
+        self.args['neptune_hosts'] = neptune_hosts
         return ClientBuilder(self.args)
 
     def build(self) -> Client:

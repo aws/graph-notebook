@@ -6,7 +6,7 @@ echo "export GRAPH_NOTEBOOK_AUTH_MODE=DEFAULT" >> ~/.bashrc  # set to IAM instea
 echo "export GRAPH_NOTEBOOK_HOST=CHANGE-ME" >> ~/.bashrc
 echo "export GRAPH_NOTEBOOK_PORT=8182" >> ~/.bashrc
 echo "export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=" >> ~/.bashrc
-echo "export AWS_REGION=us-west-2" >> ~/.bashrc
+echo "export AWS_REGION=us-west-2" >> ~/.bashrc  # modify region if needed
 
 VERSION=""
 for i in "$@"
@@ -28,7 +28,15 @@ python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
 
-pip install --upgrade graph-notebook
+pip install "jupyter-console<=6.4.0"
+pip install "jupyter-client<=6.1.12"
+pip install awswrangler
+
+if [[ ${VERSION} == "" ]]; then
+  pip install --upgrade graph-notebook
+else
+   pip install --upgrade graph-notebook==${VERSION}
+fi
 
 echo "installing nbextensions..."
 python -m graph_notebook.nbextensions.install
@@ -37,7 +45,9 @@ echo "installing static resources..."
 python -m graph_notebook.static_resources.install
 
 echo "enabling visualization..."
-jupyter nbextension install --py --sys-prefix graph_notebook.widgets
+if [[ ${VERSION//./} < 330 ]] && [[ ${VERSION} != "" ]]; then
+  jupyter nbextension install --py --sys-prefix graph_notebook.widgets
+fi
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 mkdir -p ~/SageMaker/Neptune
@@ -71,13 +81,14 @@ AWS_REGION:                 ${AWS_REGION}"
   --load_from_s3_arn "${LOAD_FROM_S3_ARN}" \
   --aws_region "${AWS_REGION}"
 
-if [[ ${VERSION//./} > 306 ]]; then
-  python -m graph_notebook.start_notebook --notebooks-dir ~/SageMaker/Neptune/*
+echo "Adding graph_notebook.magics to ipython config..."
+if [[ ${VERSION//./} > 341 ]] || [[ ${VERSION} == "" ]]; then
+  /home/ec2-user/anaconda3/envs/JupyterSystemEnv/bin/python -m graph_notebook.ipython_profile.configure_ipython_profile
 else
-  echo "Skipping launch with start_notebook.py, unsupported on v3.0.6 and lower."
+  echo "Skipping, unsupported on graph-notebook<=3.4.1"
 fi
 
-source /home/ec2-user/anaconda3/bin/deactivate
+conda /home/ec2-user/anaconda3/bin/deactivate
 echo "done."
 
 EOF

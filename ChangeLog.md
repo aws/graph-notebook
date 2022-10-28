@@ -4,11 +4,75 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Support using %seed with local file path ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+- Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
+- Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
+- Updated [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/387))
+- Fixed `%seed` failing to load SPARQL EPL dataset ([Link to PR](https://github.com/aws/graph-notebook/pull/389))
+
+## Release 3.6.2 (October 18, 2022)
+- New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
+  - Path: 03-Sample-Applications > 04-Security-Graphs
+- Update sample notebooks with parallel, same-direction edges example ([Link to PR](https://github.com/aws/graph-notebook/pull/366))
+- Fixed a Gremlin widgets error caused by empty individual results ([Link to PR](https://github.com/aws/graph-notebook/pull/367))
+- Fixed `%db_reset` timeout handling, made timeout limit configurable ([Link to PR](https://github.com/aws/graph-notebook/pull/369))
+- Fixed Sparql visualizations occasionally failing with VisJS group assignment error ([Link to PR](https://github.com/aws/graph-notebook/pull/375))
+- Fixed `start jupyterlab` command in README ([Link to PR](https://github.com/aws/graph-notebook/pull/376))
+- Fixed interface rendering issue in classic notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/378))
+- Added `--hide-index` option for query results ([Link to PR](https://github.com/aws/graph-notebook/pull/371))
+- Added result media type selection for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/313))
+
+## Release 3.6.0 (September 15, 2022)
+- New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
+  - Path: 06-Language-Tutorials > 01-SPARQL > 01-SPARQL-Basics
+- New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
+  - Path: 04-Machine-Learning > Sample-Applications > 02-Job-Recommendation-Text-Encoding.ipynb
+- Added `--store-to` option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/347))
+- Added loader status details options to `%load_ids` ([Link to PR](https://github.com/aws/graph-notebook/pull/354))
+- Added `--all-in-queue` option to `%cancel_load` ([Link to PR](https://github.com/aws/graph-notebook/pull/355))
+- Deprecated Python 3.6 support ([Link to PR](https://github.com/aws/graph-notebook/pull/353))
+- Added support for literal property values in Sparql visualization options ([Link to PR](https://github.com/aws/graph-notebook/pull/296))
+- Various results table improvements ([Link to PR](https://github.com/aws/graph-notebook/pull/349))
+- Disabled automatic collapsing of large explain results ([Link to PR](https://github.com/aws/graph-notebook/pull/363))
+- Fixed version-specific steps in SageMaker installation script ([Link to PR](https://github.com/aws/graph-notebook/pull/359))
+- Added new SageMaker installation script for China regions ([Link to PR](https://github.com/aws/graph-notebook/pull/361))
+
+## Release 3.5.3 (July 25, 2022)
+- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
+  - Fix `service.sh` conditional checks, SSL parameter can now be changed. Fix permissions error on `service.sh` experienced by some users. ([Link to PR](https://github.com/aws/graph-notebook/pull/335))
+- Added `%%neptune_config_allowlist` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/327))
+- Added check to remove whitespace in `%graph_notebook_config` host fields ([Link to PR](https://github.com/aws/graph-notebook/pull/329))
+- Added silent output option to additional magics ([Link to PR](https://github.com/aws/graph-notebook/pull/326))
+- Fixed %sparql_status magic to return query status without query ID ([Link to PR](https://github.com/aws/graph-notebook/pull/337))
+- Fixed incorrect Gremlin query --store-to output ([Link to PR](https://github.com/aws/graph-notebook/pull/334))
+- Fixed certain characters not displaying correctly in results table ([Link to PR](https://github.com/aws/graph-notebook/pull/341))
+- Fixed extra index column displaying in Gremlin results table on older Pandas versions ([Link to PR](https://github.com/aws/graph-notebook/pull/343))
+- Reverted Gremlin console tab to single results column ([Link to PR](https://github.com/aws/graph-notebook/pull/330))
+- Bumped jquery-ui from 1.13.1 to 1.13.2 (([Link to PR](https://github.com/aws/graph-notebook/pull/328))
+
+## Release 3.5.1 (July 12, 2022)
+- Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
+  if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
+- Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
+- Added `proxy_host` and `proxy_port` options to the `%%graph_notebook_config` options. ([Link to PR](https://github.com/aws/graph-notebook/pull/310))
+  - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/). 
+- Fixed results table formatting in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/297))
+- Fixed several typos in the Neptune ML 00 notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/319))
+- Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
+
+## Release 3.4.1 (June 7, 2022)
+- Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
+    - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
+    - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
 - Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
+- Added three notebooks to show data science workflows with Amazon Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/302))
 - Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
 - Added includeWaiting option to %oc_status, fix same for %gremlin_status ([Link to PR](https://github.com/aws/graph-notebook/pull/272))
 - Added `--store-to` option to %status ([Link to PR](https://github.com/aws/graph-notebook/pull/278))
+- Fixed handling of empty nodes returned from openCypher `DELETE` queries ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
+- Fixed rendering of openCypher widgets for empty result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/286))
 - Fixed graph search overriding physics setting ([Link to PR](https://github.com/aws/graph-notebook/pull/282))
+- Fixed browser-specific bug in results pagination options menu ([Link to PR](https://github.com/aws/graph-notebook/pull/290))
+- Fixed invalid queries in Gremlin sample notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/308))
 - Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
 
 ## Release 3.3.0 (March 28, 2022)
