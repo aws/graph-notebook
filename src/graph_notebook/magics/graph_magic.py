@@ -291,7 +291,9 @@ class Graph(Magics):
                 .with_sparql_path(config.sparql.path) \
                 .with_gremlin_traversal_source(config.gremlin.traversal_source) \
                 .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
-                .with_gremlin_serializer(config.gremlin.message_serializer)
+                .with_gremlin_serializer(config.gremlin.message_serializer) \
+                .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth,
+                                  config.neo4j.database)
 
         self.client = builder.build()
 
@@ -2142,6 +2144,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+        res_format = None
         results_df = None
 
         if args.no_scroll:
@@ -2170,7 +2173,8 @@ class Graph(Magics):
             res.raise_for_status()
             ##store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
-                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
+                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None,
+                                                                   results_type='explain', res=res,
                                                                    query_time=query_time)
                 titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
@@ -2182,13 +2186,25 @@ class Graph(Magics):
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
-            res = oc_http.json()
+
+            try:
+                res = oc_http.json()
+            except JSONDecodeError:
+                # handle JOLT format
+                res_list = oc_http.text.split()
+                print(res_list)
+                res = []
+                for result in res_list:
+                    result_map = json.loads(result)
+                    if "data" in result_map:
+                        res.append(result_map["data"])
+                res_format = "jolt"
+
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                                   query_time=query_time)
+                                                                   results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, False)
-
+                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
@@ -2223,14 +2239,15 @@ class Graph(Magics):
                     logger.debug(f'Error: {network_creation_error}')
 
         elif args.mode == 'bolt':
+            res_format = 'bolt'
             query_start = time.time() * 1000
             res = self.client.opencyper_bolt(cell)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
-                                                                   query_time=query_time)
+                                                                   results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, True)
+                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
