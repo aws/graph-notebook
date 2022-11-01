@@ -39,7 +39,8 @@ class TestOCMetadataClassFunctions(unittest.TestCase):
             }
         ]
 
-        oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=results, query_time=100.0)
+        oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=results, results_type='bolt',
+                                                           query_time=100.0)
         meta_dict = oc_metadata.to_dict()
 
         self.assertEqual(meta_dict["Query mode"], "bolt")

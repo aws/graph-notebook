@@ -292,7 +292,9 @@ class Graph(Magics):
                 .with_sparql_path(config.sparql.path) \
                 .with_gremlin_traversal_source(config.gremlin.traversal_source) \
                 .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
-                .with_gremlin_serializer(config.gremlin.message_serializer)
+                .with_gremlin_serializer(config.gremlin.message_serializer) \
+                .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth,
+                                  config.neo4j.database)
 
         self.client = builder.build()
 
@@ -529,31 +531,27 @@ class Graph(Magics):
 
             headers = {}
 
-            if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                # Different graph DB services support different sets of results formats, some possibly custom, for each
-                # query type. We will only verify if media types are valid for Neptune
-                # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
-                # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
-                if "neptune.amazonaws.com" in self.graph_notebook_config.host:
-                    if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
-                            or (query_type in ['CONSTRUCT', 'DESCRIBE']
-                                and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
-                            or result_type == '':
-                        if result_type != '':
-                            print(f"Invalid media type: [{result_type}] specified for Neptune {query_type} query. "
-                                  f"Defaulting to: [application/sparql-results+json].")
-                        result_type = MEDIA_TYPE_SPARQL_JSON
-                    headers = {'Accept': result_type}
-                elif result_type == '':
-                    if query_type == 'SELECT':
-                        result_type = MEDIA_TYPE_SPARQL_JSON
-                        headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
-                else:
-                    headers = {'Accept': result_type}
-
-            # TODO: check if we also want to handle ASK queries separately for Neptune
-            # elif query_type == 'ASK' and "neptune.amazonaws.com" in self.graph_notebook_config.host:
-            #    headers = {} if result_type not in NEPTUNE_RDF_ASK_FORMATS else {'Accept': result_type}
+            # Different graph DB services support different sets of results formats, some possibly custom, for each
+            # query type. We will only verify if media types are valid for Neptune
+            # (https://docs.aws.amazon.com/neptune/latest/userguide/sparql-media-type-support.html). For other
+            # databases, we will rely on the HTTP query response to tell if there is an issue with the format.
+            if is_allowed_neptune_host(self.graph_notebook_config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
+                if (query_type == 'SELECT' and result_type not in NEPTUNE_RDF_SELECT_FORMATS) \
+                        or (query_type == 'ASK' and result_type not in NEPTUNE_RDF_ASK_FORMATS) \
+                        or (query_type in ['CONSTRUCT', 'DESCRIBE']
+                            and result_type not in NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS) \
+                        or result_type == '':
+                    if result_type != '':
+                        print(f"Invalid media type: {result_type} specified for Neptune {query_type} query. "
+                              f"Defaulting to: {MEDIA_TYPE_SPARQL_JSON}.")
+                    result_type = MEDIA_TYPE_SPARQL_JSON
+                headers = {'Accept': result_type}
+            elif result_type == '':
+                if query_type == 'SELECT':
+                    result_type = MEDIA_TYPE_SPARQL_JSON
+                    headers = {'Accept': MEDIA_TYPE_SPARQL_JSON}
+            else:
+                headers = {'Accept': result_type}
 
             query_res = self.client.sparql(cell, path=path, headers=headers)
 
@@ -578,15 +576,15 @@ class Graph(Magics):
                 # Because of this, the table_output will only be displayed on the DOM if the query was of type SELECT.
                 first_tab_html = ""
                 query_type = get_query_type(cell)
-                if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                    # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
-                    if result_type != MEDIA_TYPE_SPARQL_JSON:
-                        raw_output = widgets.Output(layout=sparql_layout)
-                        with raw_output:
-                            print(results)
-                        children.append(raw_output)
-                        titles.append('Raw')
-                    else:
+                if result_type != MEDIA_TYPE_SPARQL_JSON:
+                    raw_output = widgets.Output(layout=sparql_layout)
+                    with raw_output:
+                        print(results)
+                    children.append(raw_output)
+                    titles.append('Raw')
+                else:
+                    if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
+                        # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
                         logger.debug('creating sparql network...')
 
                         titles.append('Table')
@@ -639,11 +637,11 @@ class Graph(Magics):
                             children.append(raw_output)
                             titles.append('Raw')
 
-                        json_output = widgets.Output(layout=sparql_layout)
-                        with json_output:
-                            print(json.dumps(results, indent=2))
-                        children.append(json_output)
-                        titles.append('JSON')
+                    json_output = widgets.Output(layout=sparql_layout)
+                    with json_output:
+                        print(json.dumps(results, indent=2))
+                    children.append(json_output)
+                    titles.append('JSON')
 
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
 
@@ -2161,6 +2159,7 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         logger.debug(args)
         res = None
+        res_format = None
         results_df = None
 
         if args.no_scroll:
@@ -2189,7 +2188,8 @@ class Graph(Magics):
             res.raise_for_status()
             ##store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
-                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None, res=res,
+                oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None,
+                                                                   results_type='explain', res=res,
                                                                    query_time=query_time)
                 titles.append('Explain')
                 explain_bytes = explain.encode('utf-8')
@@ -2201,13 +2201,25 @@ class Graph(Magics):
             oc_http = self.client.opencypher_http(cell)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
-            res = oc_http.json()
+
+            try:
+                res = oc_http.json()
+            except JSONDecodeError:
+                # handle JOLT format
+                res_list = oc_http.text.split()
+                print(res_list)
+                res = []
+                for result in res_list:
+                    result_map = json.loads(result)
+                    if "data" in result_map:
+                        res.append(result_map["data"])
+                res_format = "jolt"
+
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
-                                                                   query_time=query_time)
+                                                                   results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, False)
-
+                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])
@@ -2242,14 +2254,15 @@ class Graph(Magics):
                     logger.debug(f'Error: {network_creation_error}')
 
         elif args.mode == 'bolt':
+            res_format = 'bolt'
             query_start = time.time() * 1000
             res = self.client.opencyper_bolt(cell)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
-                                                                   query_time=query_time)
+                                                                   results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, True)
+                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
                 if rows_and_columns:
                     titles.append('Console')
                     results_df = pd.DataFrame(rows_and_columns['rows'])

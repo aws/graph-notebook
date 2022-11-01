@@ -16,8 +16,11 @@ from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client, serializer
 from gremlin_python.driver.protocol import GremlinServerError
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, DEFAULT_DATABASE
+from neo4j.exceptions import AuthError
+from base64 import b64encode
 import nest_asyncio
+
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
@@ -28,6 +31,9 @@ DEFAULT_GREMLIN_TRAVERSAL_SOURCE = 'g'
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
 DEFAULT_REGION = 'us-east-1'
+DEFAULT_NEO4J_USERNAME = 'neo4j'
+DEFAULT_NEO4J_PASSWORD = 'password'
+DEFAULT_NEO4J_DATABASE = DEFAULT_DATABASE
 
 NEPTUNE_SERVICE_NAME = 'neptune-db'
 logger = logging.getLogger('client')
@@ -125,6 +131,8 @@ class Client(object):
                  sparql_path: str = '/sparql', gremlin_traversal_source: str = DEFAULT_GREMLIN_TRAVERSAL_SOURCE,
                  gremlin_username: str = '', gremlin_password: str = '',
                  gremlin_serializer: str = DEFAULT_GREMLIN_SERIALIZER,
+                 neo4j_username: str = DEFAULT_NEO4J_USERNAME, neo4j_password: str = DEFAULT_NEO4J_PASSWORD,
+                 neo4j_auth: bool = True, neo4j_database: str = DEFAULT_NEO4J_DATABASE,
                  auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  neptune_hosts: list = None):
@@ -136,6 +144,10 @@ class Client(object):
         self.gremlin_username = gremlin_username
         self.gremlin_password = gremlin_password
         self.gremlin_serializer = get_gremlin_serializer(gremlin_serializer)
+        self.neo4j_username = neo4j_username
+        self.neo4j_password = neo4j_password
+        self.neo4j_auth = neo4j_auth
+        self.neo4j_database = neo4j_database
         self.region = region
         self._auth = auth
         self._session = session
@@ -312,16 +324,35 @@ class Client(object):
         if headers is None:
             headers = {}
 
-        if 'content-type' not in headers:
-            headers['content-type'] = 'application/x-www-form-urlencoded'
+        url = f'{self._http_protocol}://{self.host}:{self.port}/'
 
-        url = f'{self._http_protocol}://{self.host}:{self.port}/openCypher'
-        data = {
-            'query': query
-        }
-        if explain:
-            data['explain'] = explain
-            headers['Accept'] = "text/html"
+        if self.is_neptune_domain():
+            if 'content-type' not in headers:
+                headers['content-type'] = 'application/x-www-form-urlencoded'
+            url += 'openCypher'
+            data = {
+                'query': query
+            }
+            if explain:
+                data['explain'] = explain
+                headers['Accept'] = "text/html"
+        else:
+            url += 'db/neo4j/tx/commit'
+            headers['content-type'] = 'application/json'
+            headers['Accept'] = 'application/vnd.neo4j.jolt+json-seq'
+
+            data_dict = {
+                "statements": [
+                    {
+                        "statement": query
+                    }
+                ]
+            }
+            data = json.dumps(data_dict)
+            if self.neo4j_auth:
+                user_and_pass = self.neo4j_username + ":" + self.neo4j_password
+                user_and_pass_base64 = b64encode(user_and_pass.encode())
+                headers['authorization'] = user_and_pass_base64
 
         req = self._prepare_request('POST', url, data=data, headers=headers)
         res = self._http_session.send(req)
@@ -329,9 +360,14 @@ class Client(object):
 
     def opencyper_bolt(self, query: str, **kwargs):
         driver = self.get_opencypher_driver()
-        with driver.session() as session:
-            res = session.run(query, kwargs)
-            data = res.data()
+        with driver.session(database=self.neo4j_database) as session:
+            try:
+                res = session.run(query, kwargs)
+                data = res.data()
+            except AuthError:
+                print("Neo4J Bolt request failed with an authentication error. Please ensure that the 'neo4j' section "
+                      "of your %graph_notebook_config contains the correct credentials and auth setting.")
+                data = []
         driver.close()
         return data
 
@@ -347,23 +383,33 @@ class Client(object):
 
         return self._query_status('openCypher', query_id=query_id, cancelQuery=True, silent=silent)
 
-    def get_opencypher_driver(self, user: str = 'neo4j', password: str = 'password'):
+    def get_opencypher_driver(self):
         url = f'bolt://{self.host}:{self.port}'
 
-        if self._session:
-            method = 'POST'
-            headers = {
-                'HttpMethod': method,
-                'Host': url
-            }
-            aws_request = self._get_aws_request('POST', url)
-            for item in aws_request.headers.items():
-                headers[item[0]] = item[1]
+        if self.is_neptune_domain():
+            user = DEFAULT_NEO4J_USERNAME
+            if self._session:
+                method = 'POST'
+                headers = {
+                    'HttpMethod': method,
+                    'Host': url
+                }
+                aws_request = self._get_aws_request('POST', url)
+                for item in aws_request.headers.items():
+                    headers[item[0]] = item[1]
 
-            auth_str = json.dumps(headers)
-            password = auth_str
+                auth_str = json.dumps(headers)
+                password = auth_str
+            else:
+                password = DEFAULT_NEO4J_PASSWORD
+            auth_final = (user, password)
+        else:
+            if self.neo4j_auth:
+                auth_final = (self.neo4j_username, self.neo4j_password)
+            else:
+                auth_final = None
 
-        driver = GraphDatabase.driver(url, auth=(user, password), encrypted=self.ssl)
+        driver = GraphDatabase.driver(url, auth=auth_final, encrypted=self.ssl)
         return driver
 
     def stream(self, url, **kwargs) -> requests.Response:
@@ -720,6 +766,7 @@ class Client(object):
             aws_request = self._get_aws_request(method=method, url=url, data=data, params=params, headers=headers,
                                                 service=service)
             request.headers = dict(aws_request.headers)
+
         return request.prepare()
 
     def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
@@ -779,7 +826,7 @@ class ClientBuilder(object):
     def with_gremlin_traversal_source(self, traversal_source: str):
         self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
-
+        
     def with_gremlin_login(self, username: str, password: str):
         self.args['gremlin_username'] = username
         self.args['gremlin_password'] = password
@@ -787,6 +834,13 @@ class ClientBuilder(object):
 
     def with_gremlin_serializer(self, message_serializer: str):
         self.args['gremlin_serializer'] = message_serializer
+        return ClientBuilder(self.args)
+    
+    def with_neo4j_login(self, username: str, password: str, auth: bool, database: str):
+        self.args['neo4j_username'] = username
+        self.args['neo4j_password'] = password
+        self.args['neo4j_auth'] = auth
+        self.args['neo4j_database'] = database
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):
