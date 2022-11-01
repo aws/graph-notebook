@@ -17,32 +17,13 @@ class TestOpenCypherQueryWithIam(DataDrivenOpenCypherTest):
     @pytest.mark.opencypher
     def test_do_opencypher_query(self):
         expected_league_name = 'English Premier League'
-
-        '''
-        {
-          "head": {
-            "vars": [
-              "l.name"
-            ]
-          },
-          "results": {
-            "bindings": [
-              {
-                "l.name": {
-                  "type": "string",
-                  "value": "English Premier League"
-                }
-              }
-            ]
-          }
-        }'''
         query = 'MATCH (l:League) RETURN l.name'
         oc_res = self.client.opencypher_http(query)
         assert oc_res.status_code == 200
 
         res = oc_res.json()
         assert type(res) == dict
-        assert expected_league_name == res['results']['bindings'][0]['l.name']['value']
+        assert expected_league_name == res['results'][0]['l.name']
 
     @pytest.mark.opencypher
     @pytest.mark.bolt
