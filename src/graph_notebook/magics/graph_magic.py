@@ -1142,7 +1142,6 @@ class Graph(Magics):
                     time_elapsed = int(time.time() - last_poll_time)
                     time_remaining = poll_interval - time_elapsed
                     interval_output.clear_output()
-                    # job_status_output.clear_output()
                     if time_elapsed > poll_interval:
                         with interval_output:
                             print('checking status...')
