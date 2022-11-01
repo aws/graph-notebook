@@ -217,8 +217,9 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
                                                                query_time=query_time)
 
 
-def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
-    if query_type in ['bolt', 'explain']:
+def build_opencypher_metadata_from_query(query_type: str, results: any, results_type: str = None, res: Response = None,
+                                         query_time: float = None) -> Metadata:
+    if results_type in ['bolt', 'jolt', 'explain']:
         res_final = results
     else:
         res_final = results['results']
