@@ -17,6 +17,7 @@ import ast
 from enum import Enum
 from copy import copy
 from sys import maxsize
+from json import JSONDecodeError
 from collections import deque
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
