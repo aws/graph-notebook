@@ -1132,20 +1132,22 @@ class Graph(Magics):
                 job_status_output = widgets.Output()
                 status_hbox = widgets.HBox([interval_output])
                 vbox = widgets.VBox([status_hbox, job_status_output])
-                display(vbox)
+                with output:
+                    display(vbox)
 
                 last_poll_time = time.time()
                 interval_check_response = {}
+                new_interval = True
                 while retry > 0:
                     time_elapsed = int(time.time() - last_poll_time)
                     time_remaining = poll_interval - time_elapsed
                     interval_output.clear_output()
+                    # job_status_output.clear_output()
                     if time_elapsed > poll_interval:
                         with interval_output:
                             print('checking status...')
                         job_status_output.clear_output()
-                        with job_status_output:
-                            display_html(HTML(loading_wheel_html))
+                        new_interval = True
                         try:
                             retry -= 1
                             status_res = self.client.status()
@@ -1165,6 +1167,10 @@ class Graph(Magics):
                                 return
                         last_poll_time = time.time()
                     else:
+                        if new_interval:
+                            with job_status_output:
+                                display_html(HTML(loading_wheel_html))
+                            new_interval = False
                         with interval_output:
                             print(f'checking status in {time_remaining} seconds')
                     time.sleep(1)
