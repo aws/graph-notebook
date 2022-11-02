@@ -248,8 +248,6 @@ if __name__ == "__main__":
                         default=True)
     parser.add_argument("--neo4j_database", help="the name of the database to use for Neo4J",
                         default=DEFAULT_NEO4J_DATABASE)
-    parser.add_argument("--neptune_hosts", help="list of host snippets to use for identifying neptune endpoints",
-                        default=DEFAULT_CONFIG_LOCATION)
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
