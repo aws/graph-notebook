@@ -10,6 +10,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed results not being displayed for SPARQL ASK queries ([Link to PR](https://github.com/aws/graph-notebook/pull/385))
 - Fixed `%seed` failing to load SPARQL EPL dataset ([Link to PR](https://github.com/aws/graph-notebook/pull/389))
 - Fixed `%db_reset` status output not displaying in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/391)
+- Fixed `%%gremlin` throwing error for result sets with multiple datatypes [Link to PR](https://github.com/aws/graph-notebook/pull/388))
 - Fixed edge label creation in `02-Using-Gremlin-to-Access-the-Graph` ([Link to PR](https://github.com/aws/graph-notebook/pull/390))
 - Bumped typescript to 4.1.x in graph_notebook_widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/393))
 
