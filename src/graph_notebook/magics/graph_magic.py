@@ -18,6 +18,7 @@ from enum import Enum
 from copy import copy
 from sys import maxsize
 from json import JSONDecodeError
+from collections import deque
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
@@ -896,6 +897,18 @@ class Graph(Magics):
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
+
+                mixed_results = False
+                if query_res:
+                    # If the results set contains multiple datatypes, and the first result is a map, we need to insert a
+                    # temp non-map first element, or we will get an error when creating the Dataframe.
+                    if isinstance(query_res[0], dict) and len(query_res) > 1:
+                        if not all(isinstance(x, dict) for x in query_res[1:]):
+                            mixed_results = True
+                            query_res_deque = deque(query_res)
+                            query_res_deque.appendleft('x')
+                            query_res = list(query_res_deque)
+
                 results_df = pd.DataFrame(query_res)
                 # Checking for created indices instead of the df itself here, as df.empty will still return True when
                 # only empty maps/lists are present in the data.
@@ -906,6 +919,8 @@ class Graph(Magics):
                         query_res_reformat.append([fixed_result])
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
+                    if mixed_results:
+                        results_df = results_df[1:]
                     results_df.drop(results_df.index[-1], inplace=True)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
