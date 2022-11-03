@@ -22,6 +22,7 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_gremlin_traversal_source(config.gremlin.traversal_source) \
         .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
         .with_gremlin_serializer(config.gremlin.message_serializer) \
+        .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
         .with_iam(get_session()) \
         .build()
 
@@ -35,6 +36,10 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.gremlin_username == config.gremlin.username
     assert client.gremlin_password == config.gremlin.password
     assert client.gremlin_serializer == config.gremlin.message_serializer
+    assert client.neo4j_username == config.neo4j.username
+    assert client.neo4j_password == config.neo4j.password
+    assert client.neo4j_auth == config.neo4j.auth
+    assert client.neo4j_database == config.neo4j.database
     assert client.ssl is config.ssl
     assert client.ssl_verify is config.ssl_verify
     return client

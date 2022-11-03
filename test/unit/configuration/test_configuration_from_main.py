@@ -75,7 +75,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                            f'--host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" '
                            f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" '
-                           f'--neptune_hosts {self.custom_hosts_list}')
+                           f'--neptune_hosts {self.custom_hosts_list[0]}')
         self.assertEqual(0, result)
         config = get_config(self.test_file_path, neptune_hosts=self.custom_hosts_list)
         self.assertEqual(expected_config.to_dict(), config.to_dict())

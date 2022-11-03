@@ -15,18 +15,54 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
-    def test_gremlin_query(self):
+    def test_opencypher_query(self):
         query = '''MATCH(a)-->(b)
                     RETURN b
                     LIMIT 1'''
 
         store_to_var = 'res'
-        cell = f'''%%oc query --store-to {store_to_var}
+        cell = f'''%%oc --store-to {store_to_var}
         {query}'''
         self.ip.run_cell(cell)
         self.assertFalse('graph_notebook_error' in self.ip.user_ns)
         res = self.ip.user_ns[store_to_var]
 
         # TODO: how can we get a look at the objects which were displayed?
-        assert len(res['results']['bindings']) == 1
-        assert 'b' in res['results']['bindings'][0]
+        assert len(res['results']) == 1
+        assert 'b' in res['results'][0]
+
+    @pytest.mark.jupyter
+    @pytest.mark.opencypher
+    def test_opencypher_bolt(self):
+        query = '''MATCH(a)-->(b)
+                        RETURN b
+                        LIMIT 1'''
+
+        store_to_var = 'res'
+        cell = f'''%%oc bolt --store-to {store_to_var}
+            {query}'''
+        self.ip.run_cell(cell)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        res = self.ip.user_ns[store_to_var]
+
+        assert len(res) == 1
+        assert 'b' in res[0]
+
+    @pytest.mark.jupyter
+    def test_load_opencypher_config(self):
+        config = '''{
+                  "host": "localhost",
+                  "port": 8182,
+                  "auth_mode": "DEFAULT",
+                  "load_from_s3_arn": "",
+                  "ssl": true,
+                  "aws_region": "us-west-2",
+                  "neo4j": {
+                    "username": "neo4j",
+                    "password": "password",
+                    "auth": true,
+                    "database": ""
+                  }
+                }'''
+
+        self.ip.run_cell_magic('graph_notebook_config', '', config)
