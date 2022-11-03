@@ -99,7 +99,7 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
-NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["amazonaws.com"]
+NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws.com.cn"]
 
 GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
 GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
@@ -111,7 +111,7 @@ STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
-        if host_snippet in hostname:
+        if re.search(host_snippet, hostname):
             return True
     return False
 
