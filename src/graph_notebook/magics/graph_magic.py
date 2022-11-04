@@ -1258,7 +1258,6 @@ class Graph(Magics):
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
-        # region = self.graph_notebook_config.aws_region
         button = widgets.Button(description="Submit")
         output = widgets.Output()
         widget_width = '25%'
