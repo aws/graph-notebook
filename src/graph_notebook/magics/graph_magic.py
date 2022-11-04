@@ -1258,7 +1258,7 @@ class Graph(Magics):
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
-        region = self.graph_notebook_config.aws_region
+        # region = self.graph_notebook_config.aws_region
         button = widgets.Button(description="Submit")
         output = widgets.Output()
         widget_width = '25%'
@@ -1300,7 +1300,7 @@ class Graph(Magics):
                 base_uri_hbox_visibility = 'flex'
 
         region_box = widgets.Text(
-            value=region,
+            value=args.region,
             placeholder=args.region,
             disabled=False,
             layout=widgets.Layout(width=widget_width)
@@ -1603,7 +1603,7 @@ class Graph(Magics):
                     'parallelism': parallelism.value,
                     'updateSingleCardinalityProperties': update_single_cardinality.value,
                     'queueRequest': queue_request.value,
-                    'region': region,
+                    'region': region_box.value,
                     'parserConfiguration': {}
                 }
 
@@ -1621,14 +1621,6 @@ class Graph(Magics):
                     if base_uri.value and source_format.value.lower() in BASE_URI_FORMATS:
                         kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
-                if source.value.startswith("s3://"):
-                    load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
-                else:
-                    load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
-                load_res.raise_for_status()
-                load_result = load_res.json()
-                store_to_ns(args.store_to, load_result, local_ns)
-
                 source_hbox.close()
                 source_format_hbox.close()
                 region_hbox.close()
@@ -1645,12 +1637,37 @@ class Graph(Magics):
                 named_graph_uri_hbox.close()
                 base_uri_hbox.close()
                 button.close()
-                output.close()
+
+                load_submit_status_output = widgets.Output()
+                load_submit_hbox = widgets.HBox([load_submit_status_output])
+                with output:
+                    display(load_submit_hbox)
+                with load_submit_status_output:
+                    print("Load request submitted, waiting for response...")
+                    display_html(HTML(loading_wheel_html))
+                try:
+                    if source.value.startswith("s3://"):
+                        load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
+                    else:
+                        load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
+                except Exception as e:
+                    load_submit_status_output.clear_output()
+                    with output:
+                        print("Failed to submit load request.")
+                        logger.error(e)
+                    return
+                load_submit_status_output.clear_output()
+                try:
+                    load_res.raise_for_status()
+                except Exception as e:
+                    # Ignore failure to retrieve status, we handle missing status below.
+                    pass
+                load_result = load_res.json()
+                store_to_ns(args.store_to, load_result, local_ns)
 
                 if 'status' not in load_result or load_result['status'] != '200 OK':
                     with output:
                         print('Something went wrong.')
-                        print(load_result)
                         logger.error(load_result)
                     return
 
@@ -1661,7 +1678,8 @@ class Graph(Magics):
                     start_msg_hbox = widgets.HBox([start_msg_label])
                     polling_msg_hbox = widgets.HBox([polling_msg_label])
                     vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
-                    display(vbox)
+                    with output:
+                        display(vbox)
                 else:
                     poll_interval = 5
                     load_id_label = widgets.Label(f'Load ID: {load_result["payload"]["loadId"]}')
@@ -1670,9 +1688,11 @@ class Graph(Magics):
                     load_id_hbox = widgets.HBox([load_id_label])
                     status_hbox = widgets.HBox([interval_output])
                     vbox = widgets.VBox([load_id_hbox, status_hbox, job_status_output])
-                    display(vbox)
+                    with output:
+                        display(vbox)
 
                     last_poll_time = time.time()
+                    new_interval = True
                     while True:
                         time_elapsed = int(time.time() - last_poll_time)
                         time_remaining = poll_interval - time_elapsed
@@ -1683,6 +1703,7 @@ class Graph(Magics):
                             job_status_output.clear_output()
                             with job_status_output:
                                 display_html(HTML(loading_wheel_html))
+                            new_interval = True
                             try:
                                 load_status_res = self.client.load_status(load_result['payload']['loadId'])
                                 load_status_res.raise_for_status()
@@ -1694,9 +1715,11 @@ class Graph(Magics):
                                     return
                             job_status_output.clear_output()
                             with job_status_output:
-                                print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
+                                print(f'Overall Status: '
+                                      f'{interval_check_response["payload"]["overallStatus"]["status"]}')
                                 if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
-                                    execution_time = interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                    execution_time = \
+                                        interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
                                     if execution_time == 0:
                                         execution_time_statement = '<1 second'
                                     elif execution_time > 59:
@@ -1709,6 +1732,10 @@ class Graph(Magics):
                                     return
                             last_poll_time = time.time()
                         else:
+                            if new_interval:
+                                with job_status_output:
+                                    display_html(HTML(loading_wheel_html))
+                                new_interval = False
                             with interval_output:
                                 print(f'checking status in {time_remaining} seconds')
                         time.sleep(1)
