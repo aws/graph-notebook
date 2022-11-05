@@ -41,7 +41,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%%graph_notebook_vis_options` - Sets the executing notebook's [vis.js options](https://visjs.github.io/vis-network/docs/network/physics.html) to the JSON payload provided in the cell body.
 
-`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-line-magics-neptune_ml). [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
 
 **TIP** :point_right:  There is syntax highlighting for `%%sparql`, `%%gremlin` and `%%oc` cells to help you structure your queries more easily.
@@ -61,8 +61,8 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%cancel_load` - Cancels a bulk load job. You can either provide a single `load_id`, or specify `--all-in-queue` to cancel all queued (and not actively running) jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-cancel.html)
 
-`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
-[Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-neptune_ml). You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
+[Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
