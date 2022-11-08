@@ -276,6 +276,7 @@ class Graph(Magics):
                 .with_port(config.port) \
                 .with_region(config.aws_region) \
                 .with_tls(config.ssl) \
+                .with_ssl_verify(config.ssl_verify) \
                 .with_proxy_host(config.proxy_host) \
                 .with_proxy_port(config.proxy_port) \
                 .with_sparql_path(config.sparql.path) \
@@ -289,6 +290,7 @@ class Graph(Magics):
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
+                .with_ssl_verify(config.ssl_verify) \
                 .with_sparql_path(config.sparql.path) \
                 .with_gremlin_traversal_source(config.gremlin.traversal_source) \
                 .with_gremlin_login(config.gremlin.username, config.gremlin.password) \

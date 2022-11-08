@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
 - Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
+- Added option to disable TLS certificate verification in `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/372))
 - Improved `%load` status output, fixed region option ([Link to PR](https://github.com/aws/graph-notebook/pull/395))
 - Updated [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/387))
 - Fixed results not being displayed for SPARQL ASK queries ([Link to PR](https://github.com/aws/graph-notebook/pull/385))
