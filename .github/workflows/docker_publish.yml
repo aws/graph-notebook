@@ -1,0 +1,53 @@
+name: Build Docker image and publish to ECR
+
+on: [push]
+  #push:
+  #  branches:
+  #    - main
+
+jobs:
+  get-package-version:
+    runs-on: ubuntu-latest
+    outputs:
+      package-version: ${{ steps.get-package-version.outputs.package-version }}
+    steps:
+      - id: set-matrix
+        run: |
+          echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
+          echo '${{ fromJson(env.PACKAGE_JSON).version }}'
+        shell: bash
+
+  #JSON='$(cat ./src/graph_notebook/widgets/package.json)'
+  #echo "::set-output name=matrix::${JSON//'%'/'%25'}"
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_ECR }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ECR }}
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ECR }}
+          role-duration-seconds: 3600
+          role-session-name: NotebookImageUpdate
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REPOSITORY: ${{ secrets.ECR_REPO_NAME }}
+          IMAGE_TAG: latest # ${{fromJson(needs.get-package-version.outputs.package-version)}}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
