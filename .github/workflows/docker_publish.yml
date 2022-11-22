@@ -6,16 +6,16 @@ on: [push]
   #    - main
 
 jobs:
-  get-package-version:
-    runs-on: ubuntu-latest
-    outputs:
-      package-version: ${{ steps.get-package-version.outputs.package-version }}
-    steps:
-      - id: set-matrix
-        run: |
-          echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
-          echo '${{ fromJson(env.PACKAGE_JSON).version }}'
-        shell: bash
+  #get-package-version:
+  #  runs-on: ubuntu-latest
+  #  outputs:
+  #    package-version: ${{ steps.get-package-version.outputs.package-version }}
+  #  steps:
+  #    - id: set-matrix
+  #      run: |
+  #        echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
+  #        echo '${{ fromJson(env.PACKAGE_JSON).version }}'
+  #      shell: bash
 
   #JSON='$(cat ./src/graph_notebook/widgets/package.json)'
   #echo "::set-output name=matrix::${JSON//'%'/'%25'}"
