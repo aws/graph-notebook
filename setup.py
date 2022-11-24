@@ -69,7 +69,7 @@ setup(
         'gremlinpython>=3.5.1',
         'SPARQLWrapper==1.8.4',
         'requests',
-        'ipywidgets',
+        'ipywidgets<=7.7.1',
         'networkx==2.4',
         'Jinja2==3.0.3',
         'notebook>=6.1.5,<6.5.0',
