@@ -30,6 +30,8 @@ pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install
 
 pip install "jupyter-console<=6.4.0"
 pip install "jupyter-client<=6.1.12"
+pip install "ipywidgets<=7.7.1"
+pip install "notebook==6.4.12"
 pip install awswrangler
 
 if [[ ${VERSION} == "" ]]; then
