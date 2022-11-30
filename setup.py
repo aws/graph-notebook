@@ -73,6 +73,7 @@ setup(
         'networkx==2.4',
         'Jinja2==3.0.3',
         'notebook>=6.1.5,<6.5.0',
+        'nbclient<=0.7.0',
         'jupyter-contrib-nbextensions',
         'widgetsnbextension',
         'jupyter>=1.0.0',
