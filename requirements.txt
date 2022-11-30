@@ -4,6 +4,7 @@ Jinja2==3.0.3
 jupyter
 notebook>=6.1.5,<6.5.0
 ipywidgets<=7.7.1
+nbclient<=0.7.0
 jupyter-contrib-nbextensions
 widgetsnbextension
 gremlinpython>=3.5.1

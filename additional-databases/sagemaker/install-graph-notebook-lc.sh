@@ -32,6 +32,7 @@ pip install "jupyter-console<=6.4.0"
 pip install "jupyter-client<=6.1.12"
 pip install "ipywidgets<=7.7.1"
 pip install "notebook==6.4.12"
+pip install "nbclient<=0.7.0"
 pip install awswrangler
 
 if [[ ${VERSION} == "" ]]; then
