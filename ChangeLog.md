@@ -14,6 +14,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed `%db_reset` status output not displaying in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/391))
 - Fixed `%%gremlin` throwing error for result sets with multiple datatypes [Link to PR](https://github.com/aws/graph-notebook/pull/388))
 - Fixed edge label creation in `02-Using-Gremlin-to-Access-the-Graph` ([Link to PR](https://github.com/aws/graph-notebook/pull/390))
+- Fixed igraph command error in `02-Logistics-Analysis-using-a-Transportation-Network` ([Link to PR](https://github.com/aws/graph-notebook/pull/404))
 - Bumped typescript to 4.1.x in graph_notebook_widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/393))
 - Pinned `ipywidgets<=7.x` ([Link to PR](https://github.com/aws/graph-notebook/pull/398))
 - Pinned `nbclient<=0.7.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/402))
