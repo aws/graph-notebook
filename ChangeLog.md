@@ -4,7 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-## Release 3.7.0 (December 6, 2022)
+## Release 3.7.0 (December 7, 2022)
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
 - Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
@@ -18,7 +18,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed edge label creation in `02-Using-Gremlin-to-Access-the-Graph` ([Link to PR](https://github.com/aws/graph-notebook/pull/390))
 - Fixed igraph command error in `02-Logistics-Analysis-using-a-Transportation-Network` ([Link to PR](https://github.com/aws/graph-notebook/pull/404))
 - Bumped typescript to 4.1.x in graph_notebook_widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/393))
-- Pinned `ipywidgets<=7.x` ([Link to PR](https://github.com/aws/graph-notebook/pull/398))
+- Pinned `ipywidgets==7.7.2` and `jupyterlab_widgets<3` ([Link to PR](https://github.com/aws/graph-notebook/pull/407))
 - Pinned `nbclient<=0.7.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/402))
 
 ## Release 3.6.2 (October 18, 2022)
