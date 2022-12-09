@@ -30,6 +30,9 @@ pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install
 
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "jupyter-console<=6.4.0"
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "jupyter-client<=6.1.12"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "ipywidgets<=7.7.1"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "notebook==6.4.12"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "nbclient<=0.7.0"
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn "awswrangler"
 
 if [[ ${VERSION} == "" ]]; then
