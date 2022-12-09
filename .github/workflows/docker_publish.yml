@@ -29,6 +29,8 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr-public
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
 
       - name: Get package version
         uses: tyankatsu0105/read-package-version-actions@v1
@@ -39,8 +41,9 @@ jobs:
       - name: Build, tag, and push Docker image
         env:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
-          REPOSITORY: ${{ secrets.ECR_REPO_NAME }}
+          REGISTRY_ALIAS: amazon-neptune-test
+          REPOSITORY: graph-notebook
           IMAGE_TAG: ${{ steps.package-version.outputs.version }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
