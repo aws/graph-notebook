@@ -31,11 +31,11 @@ We encourage others to contribute configurations they find useful. There is an [
 ## Features
 
 #### Notebook cell 'magic' extensions in the IPython 3 kernel
-`%%sparql` - Executes a SPARQL query against your configured database endpoint.
+`%%sparql` - Executes a SPARQL query against your configured database endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-sparql)
 
-`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return.
+`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-gremlin)
 
-`%%opencypher` or `%%oc` Executes an openCypher query against your database.
+`%%opencypher` or `%%oc` Executes an openCypher query against your database. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-opencypher)
 
 `%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
 
@@ -43,15 +43,16 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-line-magics-neptune_ml). [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
+**TIP** :point_right: `%%sparql`, `%%gremlin`, and `%%oc` share a [suite of common arguments](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebook-magics-query-args) that be used to customize the appearance of rendered graphs. Example usage of these arguments can also be found in the sample notebooks under [02-Visualization](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/02-Visualization).
 
-**TIP** :point_right:  There is syntax highlighting for `%%sparql`, `%%gremlin` and `%%oc` cells to help you structure your queries more easily.
+**TIP** :point_right: There is syntax highlighting for language query magic cells to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
 `%gremlin_status` - Obtain the status of Gremlin queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/gremlin-api-status.html)
 
 `%sparql_status` - Obtain the status of SPARQL queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-api-status.html)
 
-`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries.
+`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-opencypher-status.html)
 
 `%load` - Generate a form to submit a bulk loader job. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html)
 
