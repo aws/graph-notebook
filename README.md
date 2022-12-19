@@ -163,6 +163,15 @@ Alternatively, the magic extensions can be manually reloaded for a single notebo
 %load_ext graph_notebook.magics
 ```
 
+## Upgrading an existing installation
+
+```
+# upgrade graph-notebook
+pip install graph-notebook --upgrade
+```
+
+After the above command completes, rerun the commands given at [Jupyter Classic Notebook](#jupyter-classic-notebook) or [JupyterLab 3.x](#jupyterlab-3x) based on which flavour is installed.
+
 ## Connecting to a graph database
 
 ### Gremlin Server
