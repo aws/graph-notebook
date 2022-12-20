@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Fixed failing endpoint creation step in [01-People-Analytics/People-Analytics-using-Neptune-ML](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb) ([Link to PR](https://github.com/aws/graph-notebook/pull/411))
 
 ## Release 3.7.0 (December 7, 2022)
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
