@@ -88,7 +88,8 @@ setup(
         'jedi<0.18.0',
         'markupsafe<2.1.0',
         'itables>=1.0.0',
-        'pandas'
+        'pandas',
+        'numpy<1.24.0'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',

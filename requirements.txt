@@ -20,6 +20,7 @@ jedi<0.18.0
 markupsafe<2.1.0
 itables>=1.0.0
 pandas
+numpy<1.24.0
 
 # requirements for testing
 botocore~=1.18.18
