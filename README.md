@@ -95,6 +95,7 @@ You will need:
 
 * [Python](https://www.python.org/downloads/) 3.7.0-3.9.7
 * [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
+* [NumPy](https://pypi.org/project/numpy) <=1.23.5
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
@@ -107,6 +108,7 @@ Begin by installing `graph-notebook` and its prerequisites, then follow the rema
 ```
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
+pip install numpy==1.23.5
 
 # install the package
 pip install graph-notebook
