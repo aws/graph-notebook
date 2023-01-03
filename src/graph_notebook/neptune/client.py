@@ -737,7 +737,6 @@ class Client(object):
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/status'
-        requests.get()
         req = self._prepare_request('POST', url, data=data, headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
