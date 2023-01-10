@@ -32,18 +32,12 @@ jobs:
         with:
           registry-type: public
 
-      - name: Get package version
-        uses: tyankatsu0105/read-package-version-actions@v1
-        with:
-          path: "./src/graph_notebook/widgets"
-        id: package-version
-
       - name: Build, tag, and push Docker image
         env:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: amazon-neptune-test
           REPOSITORY: graph-notebook
-          IMAGE_TAG: ${{ steps.package-version.outputs.version }}
+          IMAGE_TAG: latest
         run: |
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
