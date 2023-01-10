@@ -35,7 +35,7 @@ jobs:
       - name: Build, tag, and push Docker image
         env:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
-          REGISTRY_ALIAS: amazon-neptune-test
+          REGISTRY_ALIAS: neptune
           REPOSITORY: graph-notebook
           IMAGE_TAG: latest
         run: |
