@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
 
 ## Release 3.7.0 (December 7, 2022)
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
