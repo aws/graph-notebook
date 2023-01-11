@@ -16,34 +16,44 @@ from requests import HTTPError
 
 error_template = retrieve_template("error.html")
 
-check_if_dict_access_regex = re.compile(r'^[a-zA-Z0-9_]+((\[\'.*?\'\])|(\[\".*?\"\])|(\[.*?\]))+$')
-dict_name_regex = re.compile(r'^[^\[]*')
+check_if_access_regex = re.compile(r'^[a-zA-Z0-9_]+((\[\'.*?\'\])|(\[\".*?\"\])|(\[.*?\]))+$')
+var_name_regex = re.compile(r'^[^\[]*')
 
 
-def get_variable_injection_dict_and_indices(raw_var: str, keys_are_str: bool = True):
+def get_variable_injection_name_and_indices(raw_var: str, keys_are_str: bool = True):
     # get the name of the dict
-    dict_name = dict_name_regex.match(raw_var).group(0)
+    var_name = var_name_regex.match(raw_var).group(0)
     # get the rest of the string, containing all the nested keys
-    keys_raw = raw_var[len(dict_name):len(raw_var)]
-    # ensure that all the keys use single quotes before we str.split
-    if keys_are_str:
-        keys_raw = keys_raw.replace('"', "'")
-        keys_list = keys_raw[2:(len(keys_raw) - 2)].split("']['")
-    else:
+    keys_raw = raw_var[len(var_name):len(raw_var)]
+    # remove all quotes before we split to keys
+    keys_raw = keys_raw.replace('"', "").replace("'", "")
+    keys_list = keys_raw[1:(len(keys_raw) - 1)].split("][")
+
+    if not keys_are_str:
         keys_list = [int(x) for x in keys_raw[1:(len(keys_raw) - 1)].split("][")]
-    return dict_name, keys_list
+
+    return var_name, keys_list
 
 
 def get_variable_injection_value(raw_var: str, local_ns: dict):
     # check if var string is trying to access a dict
-    if re.match(check_if_dict_access_regex, raw_var):
-        dict_name, keys_list = get_variable_injection_dict_and_indices(raw_var)
+    if re.match(check_if_access_regex, raw_var):
+        var_name, keys_list = get_variable_injection_name_and_indices(raw_var)
         # outer try/except statement in use_magic_variable should catch case where dict_name isn't in local_ns
-        current_dict = local_ns[dict_name]
+        current_value = local_ns[var_name]
         # loop through the nested keys/values until we get the final value
         for key in keys_list:
-            current_dict = current_dict[key]
-        final_value = json.dumps(current_dict) if type(current_dict) is dict else str(current_dict)
+            if isinstance(current_value, dict):
+                current_value = current_value[key]
+            else:  # for list/tuple, try to convert to int first
+                try:
+                    index_key = int(key)
+                except ValueError:
+                    print("Error occurred during variable injection: Attempted to access tuple/list with str index. "
+                          "Please check your query.")
+                    return
+                current_value = current_value[index_key]
+        final_value = json.dumps(current_value) if type(current_value) is dict else str(current_value)
         return final_value
     else:
         final_value = local_ns[raw_var]
