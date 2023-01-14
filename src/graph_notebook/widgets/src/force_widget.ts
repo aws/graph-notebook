@@ -1089,10 +1089,43 @@ export class ForceView extends DOMWidgetView {
    */
   toggleExpand(): void {
     const elem = this.networkDiv;
+
+    const doc_fullScreenElement_multibrowser = document as Document & {
+      webkitFullscreenElement?: Element;
+      mozFullScreenElement?: Element;
+      msFullscreenElement?: Element;
+    }
+    const elem_requestFullscreen_multibrowser = document.documentElement as HTMLElement & {
+      mozRequestFullScreen(): Promise<void>;
+      webkitRequestFullscreen(): Promise<void>;
+      msRequestFullscreen(): Promise<void>;
+    };
+    const doc_exitFullscreen_multibrowser = document as Document & {
+      mozCancelFullScreen(): Promise<void>;
+      webkitExitFullscreen(): Promise<void>;
+      msExitFullscreen(): Promise<void>;
+    };
+
+    const fullScreenElement_multibrowser =
+      doc_fullScreenElement_multibrowser.fullscreenElement ||
+      doc_fullScreenElement_multibrowser.webkitFullscreenElement ||
+      doc_fullScreenElement_multibrowser.mozFullScreenElement ||
+      doc_fullScreenElement_multibrowser.msFullscreenElement;
+    const requestFullscreen_multibrowser =
+      elem_requestFullscreen_multibrowser.requestFullscreen ||
+      elem_requestFullscreen_multibrowser.mozRequestFullScreen ||
+      elem_requestFullscreen_multibrowser.webkitRequestFullscreen ||
+      elem_requestFullscreen_multibrowser.msRequestFullscreen;
+    const exitFullscreen_multibrowser =
+      doc_exitFullscreen_multibrowser.exitFullscreen ||
+      doc_exitFullscreen_multibrowser.webkitExitFullscreen ||
+      doc_exitFullscreen_multibrowser.msExitFullscreen ||
+      doc_exitFullscreen_multibrowser.mozCancelFullScreen;
+
     const fullscreenchange = (event) => {
       const detailsTop = parseInt(this.detailsPanel.style.top);
       const detailsLeft = parseInt(this.detailsPanel.style.left);
-      if (document.fullscreenElement) {
+      if (fullScreenElement_multibrowser) {
         this.detailsPanel.style.left =
           (detailsLeft / 650) * window.innerWidth + "px";
         this.detailsPanel.style.top =
@@ -1116,15 +1149,15 @@ export class ForceView extends DOMWidgetView {
       }
       this.expandBtn.classList.toggle("active");
     };
-    if (!document.fullscreenElement) {
-      if (elem.requestFullscreen) {
+    if (!fullScreenElement_multibrowser) {
+      if (requestFullscreen_multibrowser) {
         document.addEventListener("fullscreenchange", fullscreenchange);
-        elem.requestFullscreen();
+        requestFullscreen_multibrowser.call(elem);
         this.canvasDiv.style.height = "100%";
       }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
+      if (exitFullscreen_multibrowser) {
+        exitFullscreen_multibrowser.call(document);
         this.canvasDiv.style.height = "600px";
       }
     }
