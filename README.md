@@ -109,6 +109,7 @@ Begin by installing `graph-notebook` and its prerequisites, then follow the rema
 # pin specific versions of required dependencies
 pip install rdflib==5.0.0
 pip install numpy==1.23.5
+pip install itables==1.4.2
 
 # install the package
 pip install graph-notebook
