@@ -94,8 +94,6 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 You will need:
 
 * [Python](https://www.python.org/downloads/) 3.7.0-3.9.7
-* [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
-* [NumPy](https://pypi.org/project/numpy) <=1.23.5
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
@@ -106,11 +104,6 @@ You will need:
 Begin by installing `graph-notebook` and its prerequisites, then follow the remaining instructions for either Jupyter Classic Notebook or JupyterLab.
 
 ```
-# pin specific versions of required dependencies
-pip install rdflib==5.0.0
-pip install numpy==1.23.5
-pip install itables==1.4.2
-
 # install the package
 pip install graph-notebook
 ```
