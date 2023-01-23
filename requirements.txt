@@ -18,7 +18,7 @@ setuptools>=65.5.1,<=66.0.0
 nbconvert>=6.3.0,<=7.2.8
 jedi<0.18.0
 markupsafe<2.1.0
-itables>=1.0.0,<1.4.3
+itables>=1.0.0,<=1.4.5,!=1.4.3,!=1.4.4
 pandas<=1.5.3
 numpy<1.24.0
 
