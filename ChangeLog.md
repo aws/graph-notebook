@@ -4,7 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-## Release 3.7.1 (January 23, 2023)
+## Release 3.7.1 (January 25, 2023)
 - Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
 - Added support for list/tuple element access in cell variable injection ([Link to PR](https://github.com/aws/graph-notebook/pull/409))
 - Fixed failing endpoint creation step in [01-People-Analytics/People-Analytics-using-Neptune-ML](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb) ([Link to PR](https://github.com/aws/graph-notebook/pull/411))
