@@ -13,6 +13,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Excluded certain `itables` versions causing errors in query magics ([PR #1](https://github.com/aws/graph-notebook/pull/429)) ([PR #2](https://github.com/aws/graph-notebook/pull/429))
 - Pinned version ceiling for all dependencies ([Link to PR](https://github.com/aws/graph-notebook/pull/431))
 - Truncated metadata request/query time metrics ([Link to PR](https://github.com/aws/graph-notebook/pull/425))
+- Enabled unit test workflow runs for external pull requests ([Link to PR](https://github.com/aws/graph-notebook/pull/437))
 
 ## Release 3.7.0 (December 7, 2022)
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
