@@ -21,6 +21,8 @@ from neo4j.exceptions import AuthError
 from base64 import b64encode
 import nest_asyncio
 
+from graph_notebook.neptune.bolt_auth_token import NeptuneBoltAuthToken
+
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
@@ -391,22 +393,23 @@ class Client(object):
         url = f'bolt://{self.host}:{self.port}'
 
         if self.is_neptune_domain():
-            user = DEFAULT_NEO4J_USERNAME
             if self._session:
-                method = 'POST'
-                headers = {
-                    'HttpMethod': method,
-                    'Host': url
-                }
-                aws_request = self._get_aws_request('POST', url)
-                for item in aws_request.headers.items():
-                    headers[item[0]] = item[1]
+                # check engine version via status API to determine if we need the OC endpoint path
+                status_res = self.status()
+                status_res.raise_for_status()
+                status_res_json = status_res.json()
+                engine_version_raw = status_res_json["dbEngineVersion"]
+                engine_version = int(engine_version_raw.rsplit('.', 1)[0].replace('.', ''))
+                if engine_version >= 1200:
+                    url += "/opencypher"
 
-                auth_str = json.dumps(headers)
-                password = auth_str
+                credentials = self._session.get_credentials()
+                frozen_creds = credentials.get_frozen_credentials()
+                auth_final = NeptuneBoltAuthToken(frozen_creds, self.region, url)
             else:
+                user = 'username'
                 password = DEFAULT_NEO4J_PASSWORD
-            auth_final = (user, password)
+                auth_final = (user, password)
         else:
             if self.neo4j_auth:
                 auth_final = (self.neo4j_username, self.neo4j_password)

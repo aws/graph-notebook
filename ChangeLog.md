@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added support for list/tuple element access in cell variable injection ([Link to PR](https://github.com/aws/graph-notebook/pull/409))
 - Fixed failing endpoint creation step in [01-People-Analytics/People-Analytics-using-Neptune-ML](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb) ([Link to PR](https://github.com/aws/graph-notebook/pull/411))
 - Fixed browser-specific issues with fullscreen graph widget ([Link to PR](https://github.com/aws/graph-notebook/pull/427))
+- Fixed IAM authenticated Bolt queries failing on certain Neptune engine versions ([Link to PR](https://github.com/aws/graph-notebook/pull/438))
 - Pinned `numpy<1.24.0` to fix conflicts with `networkx` dependency during installation ([Link to PR](https://github.com/aws/graph-notebook/pull/416))
 - Excluded certain `itables` versions causing errors in query magics ([PR #1](https://github.com/aws/graph-notebook/pull/429)) ([PR #2](https://github.com/aws/graph-notebook/pull/429))
 - Pinned version ceiling for all dependencies ([Link to PR](https://github.com/aws/graph-notebook/pull/431))
