@@ -393,7 +393,7 @@ class Client(object):
         url = f'bolt://{self.host}:{self.port}'
 
         if self.is_neptune_domain():
-            if self._session:
+            if self._session and self.iam_enabled:
                 # check engine version via status API to determine if we need the OC endpoint path
                 status_res = self.status()
                 status_res.raise_for_status()
