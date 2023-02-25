@@ -2117,7 +2117,6 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"vertex":"bar"}')
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
-        print(gn.graph.nodes)
         self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
     def test_group_returnmisctype_default(self):
