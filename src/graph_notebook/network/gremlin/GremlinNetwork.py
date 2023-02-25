@@ -491,6 +491,9 @@ class GremlinNetwork(EventfulNetwork):
             if not tooltip_display_is_set and label_full:
                 title = label_full
 
+            if not group and not group_is_set:
+                group = DEFAULT_GRP
+
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
@@ -503,14 +506,13 @@ class GremlinNetwork(EventfulNetwork):
                     title += str(v[key])
             if label == '':
                 label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
             node_id = str(v)
             title = str(v)
             if self.group_by_property == DEPTH_GRP_KEY:
                 group = depth_group
-            if self.group_by_property == DEFAULT_RAW_GRP_KEY:
+            elif self.group_by_property == DEFAULT_RAW_GRP_KEY:
                 group = str(v)
             else:
                 group = DEFAULT_GRP
