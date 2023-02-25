@@ -87,7 +87,7 @@
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc",
-    "build:nbextension": "NODE_OPTIONS=--openssl-legacy-provider webpack",
+    "build:nbextension": "webpack",
     "clean": "npm run clean:lib && npm run clean:nbextension && npm run clean:labextension",
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf labextension",
