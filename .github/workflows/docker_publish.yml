@@ -35,8 +35,8 @@ jobs:
       - name: Get image tag
         id: get-image-tag
         run: |
-          if true ; then
-            if true; then
+          if ${{ github.event_name == 'workflow_dispatch' }} ; then
+            if ${{ inputs.image_tag == 'release'}}; then
               echo "image_tag=${{ steps.package-version.outputs.version }}" >> $GITHUB_OUTPUT
             else
               echo "image_tag=latest" >> $GITHUB_OUTPUT
