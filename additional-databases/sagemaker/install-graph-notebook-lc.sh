@@ -28,6 +28,7 @@ python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
 
+pip install "ipython==7.16.1"
 pip install "jupyter-console<=6.4.0"
 pip install "jupyter-client<=6.1.12"
 pip install "ipywidgets<=7.7.1"
