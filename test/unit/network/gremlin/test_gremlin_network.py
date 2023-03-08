@@ -1589,7 +1589,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"airport":{"code"}}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_with_groupby_invalid_json_multiple_labels(self):
         vertex1 = {
@@ -1613,8 +1613,8 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby(self):
         vertex = {
@@ -1628,7 +1628,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='foo')
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['group'], '')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby_properties_json_single_label(self):
         vertex1 = {
@@ -1642,7 +1642,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"airport":{"groupby":"foo"}}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby_properties_json_multiple_labels(self):
         vertex1 = {
@@ -1666,7 +1666,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
         self.assertEqual(node2['group'], 'Europe')
 
     def test_group_nonexistent_label_properties_json_single_label(self):
@@ -1681,7 +1681,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"air_port":{"groupby":"code"}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_label_properties_json_multiple_labels(self):
         vertex1 = {
@@ -1706,7 +1706,7 @@ class TestGremlinNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
         self.assertEqual(node1['group'], 'SEA')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
     def test_group_without_groupby(self):
         vertex = {
@@ -2094,6 +2094,62 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '1')
+
+    def test_group_returnvertex_groupby_missing_property(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property="foo")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnvertex_groupby_missing_property_key_json(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property='{"foo":"label"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnvertex_groupby_missing_property_value_json(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property='{"vertex":"bar"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_default(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_groupby_property(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_property="foo")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_groupby_raw(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_raw=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'a_vertex')
+
+    def test_group_returnmisctype_groupby_depth(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], '__DEPTH--1__')
 
     def test_group_by_raw_explicit(self):
         vertex = {
