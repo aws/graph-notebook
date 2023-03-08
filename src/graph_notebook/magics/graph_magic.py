@@ -810,6 +810,8 @@ class Graph(Magics):
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('--profile-misc-args', type=str, default='{}',
+                            help='Additional profile options, passed in as a map.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
@@ -881,6 +883,12 @@ class Graph(Magics):
                             "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
                             "profile.indexOps": args.profile_indexOps}
+            try:
+                profile_misc_args_dict = json.loads(args.profile_misc_args)
+                profile_args.update(profile_misc_args_dict)
+            except JSONDecodeError:
+                print('--profile-misc-args received invalid input, please check that you are passing in a valid '
+                      'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             profile_bytes = res.content.replace(b'\xcc', b'-')
