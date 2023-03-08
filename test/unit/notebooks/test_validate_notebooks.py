@@ -56,7 +56,12 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/05-Data-Science/00-Identifying-Fraud-Rings-Using-Social-Network-Analytics.ipynb',
             f'{NOTEBOOK_BASE_DIR}/05-Data-Science/01-Identifying-1st-Person-Synthetic-Identity-Fraud-Using-Graph-Similarity.ipynb',            
             f'{NOTEBOOK_BASE_DIR}/05-Data-Science/02-Logistics-Analysis-using-a-Transportation-Network.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/01-SPARQL/01-SPARQL-Basics.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/01-SPARQL/01-SPARQL-Basics.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/01-Basic-Read-Queries.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/02-Variable-Length-Paths.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/03-Ordering-Functions-Grouping.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/04-Creating-Updating-Delete-Queries.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/openCypher-Exercises-Answer-Key.ipynb']
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
