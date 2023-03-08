@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
+- Added support for Neptune Summary API ([Link to PR](https://github.com/aws/graph-notebook/pull/457))
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
 - Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
 
