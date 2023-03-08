@@ -7,6 +7,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
 - Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
+- Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
 
 ## Release 3.7.1 (January 25, 2023)
 - Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
