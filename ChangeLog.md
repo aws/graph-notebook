@@ -5,6 +5,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
+- New openCypher Language Tutorial notebooks
+  - Path: 06-Language-Tutorials > 02-openCypher
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
 - Added error messaging for incompatible host-specific `%%graph_notebok_config` parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/456))
 - Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
