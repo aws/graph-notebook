@@ -109,7 +109,8 @@ GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
 GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
 GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1']
 
-STATISTICS_MODES = ["status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
+SUMMARY_MODES = ["", "basic", "detailed"]
 STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
 
 
@@ -744,22 +745,30 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
-    def statistics(self, language: str, mode: str = '') -> requests.Response:
+    def statistics(self, language: str, summary: bool = False, mode: str = '') -> requests.Response:
         headers = {
             'Accept': 'application/json'
         }
-        if language in ["pg", "gremlin"]:
-            language = "propertygraph"
-        elif language == "rdf":
-            language = "sparql"
+        if language == "gremlin":
+            language = "pg"
+        elif language == "sparql":
+            language = "rdf"
+
         url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
-        if mode in ['', 'status']:
-            req = self._prepare_request('GET', url, headers=headers)
-        elif mode == 'delete':
-            req = self._prepare_request('DELETE', url, headers=headers)
+        data = {'mode': mode}
+
+        if summary:
+            summary_url = url + '/summary'
+            if not data['mode']:
+                data['mode'] = 'basic'
+            req = self._prepare_request('GET', summary_url, data=json.dumps(data), headers=headers)
         else:
-            data = {'mode': mode}
-            req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
+            if mode in ['', 'status']:
+                req = self._prepare_request('GET', url, headers=headers)
+            elif mode == 'delete':
+                req = self._prepare_request('DELETE', url, headers=headers)
+            else:
+                req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req)
         return res
 

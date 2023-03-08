@@ -36,7 +36,7 @@ class TestStatisticsWithIAM(IntegrationTest):
         expected = {
             "status": "200 OK"
         }
-        disable_res = self.client.statistics(lang, 'disableAutoCompute')
+        disable_res = self.client.statistics(lang, False, 'disableAutoCompute')
         assert disable_res.status_code == 200
         disable_status = disable_res.json()
         self.assertEqual(disable_status, expected)
@@ -52,7 +52,7 @@ class TestStatisticsWithIAM(IntegrationTest):
         expected = {
             "status": "200 OK"
         }
-        enable_res = self.client.statistics(lang, 'enableAutoCompute')
+        enable_res = self.client.statistics(lang, False, 'enableAutoCompute')
         assert enable_res.status_code == 200
         enable_status = enable_res.json()
         self.assertEqual(enable_status, expected)
@@ -82,7 +82,7 @@ class TestStatisticsWithIAM(IntegrationTest):
                 "statisticsId": -1
             }
         }
-        res = self.client.statistics(lang, 'delete')
+        res = self.client.statistics(lang, False, 'delete')
         assert res.status_code == 200
         statistics_status = res.json()
         self.assertEqual(statistics_status, expected)

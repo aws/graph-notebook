@@ -42,7 +42,8 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -403,26 +404,67 @@ class Graph(Magics):
                             help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
                                  f'Default: propertygraph.',
                             choices=STATISTICS_LANGUAGE_INPUTS)
-        parser.add_argument('-m', '--mode', type=str, default='status',
+        parser.add_argument('-m', '--mode', type=str, default='',
                             help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
-                                 f'Default: status')
+                                 f'Default: `basic` if `--summary` is specified, otherwise `status`.')
+        parser.add_argument('--summary', action='store_true', default=False, help="Retrieves the graph summary.")
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
 
         args = parser.parse_args(line.split())
+        mode = args.mode
 
-        if args.mode not in STATISTICS_MODES:
-            print(f'Invalid mode. Please specify one of: {STATISTICS_MODES}, or leave blank to retrieve status.')
-            return
+        if args.summary:
+            if mode not in SUMMARY_MODES:
+                print(f'Invalid summary mode. Please specify one of: {SUMMARY_MODES[1:]}, '
+                      f'or leave blank to retrieve basic summary view.')
+                return
+            else:
+                mode = 'basic'
+        else:
+            if args.mode not in STATISTICS_MODES:
+                print(f'Invalid statistics mode. Please specify one of: {STATISTICS_MODES[1:]}, '
+                      f'or leave blank to retrieve status.')
+                return
+            else:
+                mode = 'status'
 
-        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res = self.client.statistics(args.language, args.summary, mode)
         statistics_res.raise_for_status()
-        res = statistics_res.json()
+        statistics_res_json = statistics_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            print(json.dumps(statistics_res_json, indent=2))
 
         if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+            local_ns[args.store_to] = statistics_res_json
+
+    @line_magic
+    def summary(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                                 f'Default: propertygraph.',
+                            choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('--detailed', action='store_true', default=False,
+                            help="Toggles the display of structures fields on or off in the output. If not supplied, "
+                                 "we will default to the basic summary display mode.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+        if args.detailed:
+            mode = "detailed"
+        else:
+            mode = "basic"
+
+        summary_res = self.client.statistics(args.language, True, mode)
+        summary_res.raise_for_status()
+        summary_res_json = summary_res.json()
+        if not args.silent:
+            print(json.dumps(summary_res_json, indent=2))
+
+        if args.store_to != '' and local_ns is not None:
+            local_ns[args.store_to] = summary_res_json
 
     @line_magic
     def graph_notebook_host(self, line):
