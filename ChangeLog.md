@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.7.2 (March 9, 2023)
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
 - New openCypher Language Tutorial notebooks
