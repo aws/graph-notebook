@@ -414,20 +414,14 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = args.mode
 
-        if args.summary:
-            if mode not in SUMMARY_MODES:
-                print(f'Invalid summary mode. Please specify one of: {SUMMARY_MODES[1:]}, '
-                      f'or leave blank to retrieve basic summary view.')
-                return
-            else:
-                mode = 'basic'
-        else:
-            if args.mode not in STATISTICS_MODES:
-                print(f'Invalid statistics mode. Please specify one of: {STATISTICS_MODES[1:]}, '
-                      f'or leave blank to retrieve status.')
-                return
-            else:
-                mode = 'status'
+        if not mode:
+            mode = 'basic' if args.summary else 'status'
+        elif (args.summary and mode not in SUMMARY_MODES) or (not args.summary and mode not in STATISTICS_MODES):
+            err_endpoint_type, err_mode_list, err_default_mode = ("summary", SUMMARY_MODES[1:], "basic summary view") \
+                if args.summary else ("statistics", STATISTICS_MODES[1:], "status")
+            print(f'Invalid {err_endpoint_type} mode. Please specify one of: {err_mode_list}, '
+                  f'or leave blank to retrieve {err_default_mode}.')
+            return
 
         statistics_res = self.client.statistics(args.language, args.summary, mode)
         statistics_res.raise_for_status()

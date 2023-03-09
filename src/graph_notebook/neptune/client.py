@@ -111,7 +111,7 @@ GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializer
 
 STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
 SUMMARY_MODES = ["", "basic", "detailed"]
-STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "sparql", "rdf"]
+STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "oc", "opencypher", "sparql", "rdf"]
 
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
@@ -749,7 +749,7 @@ class Client(object):
         headers = {
             'Accept': 'application/json'
         }
-        if language == "gremlin":
+        if language in ["gremlin", "oc", "opencypher"]:
             language = "pg"
         elif language == "sparql":
             language = "rdf"
