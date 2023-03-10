@@ -241,6 +241,16 @@ def get_load_ids(neptune_client):
     return ids, res
 
 
+def process_statistics_400(is_summary: bool, response):
+    bad_request_res = json.loads(response.text)
+    print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
+          "greater in order to have DFE statistics enabled.")
+    if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+        print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
+              "and later.")
+    print(f"\nFull response: {bad_request_res}")
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -424,6 +434,12 @@ class Graph(Magics):
             return
 
         statistics_res = self.client.statistics(args.language, args.summary, mode)
+        if statistics_res.status_code == 400:
+            if args.summary:
+                process_statistics_400(True, statistics_res)
+            else:
+                process_statistics_400(False, statistics_res)
+            return
         statistics_res.raise_for_status()
         statistics_res_json = statistics_res.json()
         if not args.silent:
@@ -452,6 +468,9 @@ class Graph(Magics):
             mode = "basic"
 
         summary_res = self.client.statistics(args.language, True, mode)
+        if summary_res.status_code == 400:
+            process_statistics_400(True, summary_res)
+            return
         summary_res.raise_for_status()
         summary_res_json = summary_res.json()
         if not args.silent:
