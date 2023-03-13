@@ -243,11 +243,19 @@ def get_load_ids(neptune_client):
 
 def process_statistics_400(is_summary: bool, response):
     bad_request_res = json.loads(response.text)
-    print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
-          "greater in order to have DFE statistics enabled.")
-    if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
-        print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
-              "and later.")
+    res_code = bad_request_res['code']
+    if res_code == 'StatisticsNotAvailableException':
+        print("No statistics found. Please ensure that auto-generation of DFE statistics is enabled by running "
+              "'%statistics' and checking if 'autoCompute' if set to True. Alternately, you can manually "
+              "trigger statistics generation by running: '%statistics --mode refresh'.")
+    elif res_code == "BadRequestException":
+        print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
+              "greater in order to have DFE statistics enabled.")
+        if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+            print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
+                  "and later.")
+    else:
+        print("Query encountered 400 error, please see below.")
     print(f"\nFull response: {bad_request_res}")
 
 
