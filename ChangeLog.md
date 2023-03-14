@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Fix detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
 
 ## Release 3.7.2 (March 9, 2023)
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
