@@ -10,6 +10,7 @@ from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION
 from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
     DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE
 
+neptune_params = ['auth_mode', 'load_from_s3_arn', 'aws_region']
 
 def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS) -> Configuration:
 
@@ -39,6 +40,14 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
                                gremlin_section=gremlin_section, neo4j_section=neo4j_section,
                                proxy_host=proxy_host, proxy_port=proxy_port, neptune_hosts=neptune_hosts)
     else:
+        excluded_params = []
+        for p in neptune_params:
+            if p in data:
+                excluded_params.append(p)
+        if excluded_params:
+            print(f"The provided configuration contains the following parameters that are incompatible with the "
+                  f"specified host: {str(excluded_params)}. These parameters have not been saved.\n")
+
         config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], ssl_verify=ssl_verify,
                                sparql_section=sparql_section, gremlin_section=gremlin_section, neo4j_section=neo4j_section,
                                proxy_host=proxy_host, proxy_port=proxy_port)
