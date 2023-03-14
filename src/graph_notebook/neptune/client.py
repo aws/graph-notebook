@@ -759,9 +759,10 @@ class Client(object):
 
         if summary:
             summary_url = url + '/summary'
-            if not data['mode']:
-                data['mode'] = 'basic'
-            req = self._prepare_request('GET', summary_url, data=json.dumps(data), headers=headers)
+            if mode:
+                summary_mode_param = '?mode=' + mode
+                summary_url += summary_mode_param
+            req = self._prepare_request('GET', summary_url, headers=headers)
         else:
             if mode in ['', 'status']:
                 req = self._prepare_request('GET', url, headers=headers)
