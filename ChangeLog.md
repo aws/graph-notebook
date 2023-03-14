@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.7.3 (March 14, 2023)
 - Fixed detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
 - Added more helpful error messaging for `%statistics`/`%summary` ([Link to PR](https://github.com/aws/graph-notebook/pull/460))
 - Added Neptune Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/442))
