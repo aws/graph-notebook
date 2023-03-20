@@ -416,6 +416,8 @@ class Graph(Magics):
         viewer.show()
 
     @line_magic
+    @needs_local_scope
+    @display_exceptions
     def statistics(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
@@ -453,10 +455,11 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(statistics_res_json, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = statistics_res_json
+        store_to_ns(args.store_to, statistics_res_json, local_ns)
 
     @line_magic
+    @needs_local_scope
+    @display_exceptions
     def summary(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
@@ -484,8 +487,7 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(summary_res_json, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = summary_res_json
+        store_to_ns(args.store_to, summary_res_json, local_ns)
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -1903,8 +1905,7 @@ class Graph(Magics):
             vbox = widgets.VBox(labels)
             display(vbox)
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1934,8 +1935,7 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(res, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1984,8 +1984,7 @@ class Graph(Magics):
             else:
                 print("No cancellable load jobs were found.")
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = raw_res
+        store_to_ns(args.store_to, raw_res, local_ns)
 
     @line_magic
     @display_exceptions
