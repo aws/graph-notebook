@@ -42,7 +42,8 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -240,6 +241,24 @@ def get_load_ids(neptune_client):
     return ids, res
 
 
+def process_statistics_400(is_summary: bool, response):
+    bad_request_res = json.loads(response.text)
+    res_code = bad_request_res['code']
+    if res_code == 'StatisticsNotAvailableException':
+        print("No statistics found. Please ensure that auto-generation of DFE statistics is enabled by running "
+              "'%statistics' and checking if 'autoCompute' if set to True. Alternately, you can manually "
+              "trigger statistics generation by running: '%statistics --mode refresh'.")
+    elif res_code == "BadRequestException":
+        print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
+              "greater in order to have DFE statistics enabled.")
+        if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+            print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
+                  "and later.")
+    else:
+        print("Query encountered 400 error, please see below.")
+    print(f"\nFull response: {bad_request_res}")
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -397,32 +416,78 @@ class Graph(Magics):
         viewer.show()
 
     @line_magic
+    @needs_local_scope
+    @display_exceptions
     def statistics(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
                             help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
                                  f'Default: propertygraph.',
                             choices=STATISTICS_LANGUAGE_INPUTS)
-        parser.add_argument('-m', '--mode', type=str, default='status',
+        parser.add_argument('-m', '--mode', type=str, default='',
                             help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
-                                 f'Default: status')
+                                 f'Default: `basic` if `--summary` is specified, otherwise `status`.')
+        parser.add_argument('--summary', action='store_true', default=False, help="Retrieves the graph summary.")
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
 
         args = parser.parse_args(line.split())
+        mode = args.mode
 
-        if args.mode not in STATISTICS_MODES:
-            print(f'Invalid mode. Please specify one of: {STATISTICS_MODES}, or leave blank to retrieve status.')
+        if not mode:
+            mode = 'basic' if args.summary else 'status'
+        elif (args.summary and mode not in SUMMARY_MODES) or (not args.summary and mode not in STATISTICS_MODES):
+            err_endpoint_type, err_mode_list, err_default_mode = ("summary", SUMMARY_MODES[1:], "basic summary view") \
+                if args.summary else ("statistics", STATISTICS_MODES[1:], "status")
+            print(f'Invalid {err_endpoint_type} mode. Please specify one of: {err_mode_list}, '
+                  f'or leave blank to retrieve {err_default_mode}.')
             return
 
-        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res = self.client.statistics(args.language, args.summary, mode)
+        if statistics_res.status_code == 400:
+            if args.summary:
+                process_statistics_400(True, statistics_res)
+            else:
+                process_statistics_400(False, statistics_res)
+            return
         statistics_res.raise_for_status()
-        res = statistics_res.json()
+        statistics_res_json = statistics_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            print(json.dumps(statistics_res_json, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, statistics_res_json, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def summary(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                                 f'Default: propertygraph.',
+                            choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('--detailed', action='store_true', default=False,
+                            help="Toggles the display of structures fields on or off in the output. If not supplied, "
+                                 "we will default to the basic summary display mode.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+        if args.detailed:
+            mode = "detailed"
+        else:
+            mode = "basic"
+
+        summary_res = self.client.statistics(args.language, True, mode)
+        if summary_res.status_code == 400:
+            process_statistics_400(True, summary_res)
+            return
+        summary_res.raise_for_status()
+        summary_res_json = summary_res.json()
+        if not args.silent:
+            print(json.dumps(summary_res_json, indent=2))
+
+        store_to_ns(args.store_to, summary_res_json, local_ns)
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -768,6 +833,8 @@ class Graph(Magics):
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('--profile-misc-args', type=str, default='{}',
+                            help='Additional profile options, passed in as a map.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
@@ -839,6 +906,12 @@ class Graph(Magics):
                             "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
                             "profile.indexOps": args.profile_indexOps}
+            try:
+                profile_misc_args_dict = json.loads(args.profile_misc_args)
+                profile_args.update(profile_misc_args_dict)
+            except JSONDecodeError:
+                print('--profile-misc-args received invalid input, please check that you are passing in a valid '
+                      'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             profile_bytes = res.content.replace(b'\xcc', b'-')
@@ -1832,8 +1905,7 @@ class Graph(Magics):
             vbox = widgets.VBox(labels)
             display(vbox)
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1863,8 +1935,7 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(res, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1913,8 +1984,7 @@ class Graph(Magics):
             else:
                 print("No cancellable load jobs were found.")
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = raw_res
+        store_to_ns(args.store_to, raw_res, local_ns)
 
     @line_magic
     @display_exceptions
