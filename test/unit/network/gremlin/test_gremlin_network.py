@@ -235,7 +235,7 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertIsNotNone(node)
         self.assertEqual(node['properties'][T.id], v_id)
 
-    def test_add_vertex_with_uuid_id(self): # TODO: fix UUID id processing for dict type vertices
+    def test_add_vertex_with_uuid_id(self):
         v_id = uuid4()
         vertex = {
             T.id: v_id,
