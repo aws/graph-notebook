@@ -78,16 +78,21 @@ def get_id(element):
     extract id from a given element for use in the GremlinNetwork
     """
     if isinstance(element, Vertex):
-        return str(element.id)
+        element_id = str(element.id)
     elif isinstance(element, Edge):
-        return str(element.label)
+        element_id = str(element.label)
     elif isinstance(element, dict):
         if T.id in element:
-            return element[T.id]
+            element_id = element[T.id]
         else:
-            return generate_id_from_dict(element)
+            element_id = generate_id_from_dict(element)
     else:
-        return str(element)
+        element_id = str(element)
+
+    if isinstance(element_id, uuid.UUID):
+        element_id = str(element_id)
+
+    return element_id
 
 
 class GremlinNetwork(EventfulNetwork):
@@ -342,7 +347,10 @@ class GremlinNetwork(EventfulNetwork):
         depth_group = "__DEPTH-" + str(path_index) + "__"
         node_id = ''
         if type(v) is Vertex:
-            node_id = v.id
+            if isinstance(v.id, uuid.UUID):
+                node_id = str(v.id)
+            else:
+                node_id = v.id
             title = v.label
             label_full = ''
             tooltip_display_is_set = True
@@ -447,6 +455,8 @@ class GremlinNetwork(EventfulNetwork):
                     properties[k] = copy_val
                 elif isinstance(v[k], Decimal):
                     properties[k] = float(v[k])
+                elif isinstance(v[k], uuid.UUID):
+                    properties[k] = str(v[k])
                 else:
                     properties[k] = v[k]
 
@@ -529,7 +539,12 @@ class GremlinNetwork(EventfulNetwork):
 
         if type(edge) is Edge:
             from_id = from_id if from_id != '' else edge.outV.id
+            if isinstance(from_id, uuid.UUID):
+                from_id = str(from_id)
             to_id = to_id if to_id != '' else edge.inV.id
+            if isinstance(to_id, uuid.UUID):
+                to_id = str(to_id)
+            edge_id = str(edge.id) if isinstance(edge.id, uuid.UUID) else edge.id
             edge_label_full = ''
             using_custom_tooltip = False
             tooltip_display_is_set = True
@@ -537,7 +552,7 @@ class GremlinNetwork(EventfulNetwork):
             if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
                 using_custom_tooltip = True
                 tooltip_display_is_set = False
-            data['properties'] = {'id': edge.id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
+            data['properties'] = {'id': edge_id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
 
             edge_label = edge_title if len(edge_title) <= self.edge_label_max_length \
                 else edge_title[:self.edge_label_max_length - 3] + '...'
@@ -564,7 +579,7 @@ class GremlinNetwork(EventfulNetwork):
             self.get_explicit_edge_property_value(data, edge, self.edge_tooltip_property)
 
             data['title'] = edge_title
-            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge.id, label=edge_label, title=edge_title,
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title,
                           data=data)
         elif type(edge) is dict:
             properties = {}
@@ -592,6 +607,8 @@ class GremlinNetwork(EventfulNetwork):
                     properties[k] = get_id(edge[k])
                 elif isinstance(edge[k], Decimal):
                     properties[k] = float(edge[k])
+                elif isinstance(edge[k], uuid.UUID):
+                    properties[k] = str(edge[k])
                 else:
                     properties[k] = edge[k]
 
