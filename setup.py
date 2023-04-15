@@ -104,6 +104,6 @@ setup(
     ],
     keywords='jupyter neptune gremlin sparql',
     tests_require=[
-        'pytest'
+        'pytest==6.2.5'
     ]
 )

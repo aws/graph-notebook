@@ -26,5 +26,5 @@ nest_asyncio==1.5.6
 # requirements for testing
 botocore~=1.21.49
 boto3~=1.18.49
-pytest==6.2.2
+pytest==6.2.5
 parameterized==0.8.1
