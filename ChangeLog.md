@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
 - Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
+- Patched nbextensions loader timeouts for large notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/455))
 - Fixed Dockerfile builds breaking with AL2023 ([Link to PR](https://github.com/aws/graph-notebook/pull/466))
 - Fixed `--store-to` option for several magics ([Link to PR](https://github.com/aws/graph-notebook/pull/463))
 - Fixed broken documentation links in Neptune ML notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/467)) ([PR #2](https://github.com/aws/graph-notebook/pull/468))
@@ -24,6 +25,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
 - Added error messaging for incompatible host-specific `%%graph_notebok_config` parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/456))
 - Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
+- Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
 
 ## Release 3.7.1 (January 25, 2023)
 - Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
