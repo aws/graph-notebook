@@ -936,6 +936,7 @@ class Graph(Magics):
                                                                      query_time=query_time)
                 titles.append('Console')
 
+                gremlin_network = None
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -957,18 +958,24 @@ class Graph(Magics):
                     else:
                         pattern = parse_pattern_list_str(args.path_pattern)
                         gn.add_results_with_pattern(query_res, pattern)
+                    gremlin_network = gn
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
+                except ValueError as value_error:
+                    logger.debug(
+                        f'Unable to create graph network from result due to error: {value_error}. '
+                        f'Skipping from result set.')
+                if gremlin_network and len(gremlin_network.graph.nodes) > 0:
+                    try:
                         self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                             = args.stop_physics
                         self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        f = Force(network=gn, options=self.graph_notebook_vis_options)
+                        f = Force(network=gremlin_network, options=self.graph_notebook_vis_options)
                         titles.append('Graph')
                         children.append(f)
                         logger.debug('added gremlin network to tabs')
-                except ValueError as value_error:
-                    logger.debug(
-                        f'unable to create gremlin network from result. Skipping from result set: {value_error}')
+                    except Exception as force_error:
+                        logger.debug(
+                            f'Unable to render visualization from graph network due to error: {force_error}. Skipping.')
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
