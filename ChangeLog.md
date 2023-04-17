@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
 
 ## Release 3.8.0 (April 16, 2023)
 - Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))

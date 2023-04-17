@@ -80,16 +80,16 @@ setup(
         'jupyter==1.0.0',
         'botocore>=1.21.49,<=1.29.53',
         'boto3>=1.18.49,<=1.26.53',
-        'ipython==8.10.0',
+        'ipython>=7.16.1,<=8.10.0',
         'neo4j>=4.4.9,<5.0.0',
         'rdflib==5.0.0',
         'ipykernel==5.3.4',
         'nbconvert>=6.3.0,<=7.2.8',
         'jedi>=0.18.1,<=0.18.2',
         'itables>=1.0.0,<=1.5.2,!=1.4.3,!=1.4.4',
-        'pandas>=1.4.0,<=1.5.3',
+        'pandas>=1.3.5,<=1.5.3',
         'numpy<1.24.0',
-        'nest_asyncio==1.5.6'
+        'nest_asyncio>=1.5.5,<=1.5.6'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
