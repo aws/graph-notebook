@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.8.0 (April 16, 2023)
 - Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
 - Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
 - Patched nbextensions loader timeouts for large notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/455))
