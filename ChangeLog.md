@@ -3,9 +3,26 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
+- Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
+- Fixed Dockerfile builds breaking with AL2023 ([Link to PR](https://github.com/aws/graph-notebook/pull/466))
+- Fixed `--store-to` option for several magics ([Link to PR](https://github.com/aws/graph-notebook/pull/463))
+- Fixed broken documentation links in Neptune ML notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/467)) ([PR #2](https://github.com/aws/graph-notebook/pull/468))
+- Fixed Gremlin graph tab not rendering with UUID type IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/475))
+
+## Release 3.7.3 (March 14, 2023)
+- Fixed detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
+- Added more helpful error messaging for `%statistics`/`%summary` ([Link to PR](https://github.com/aws/graph-notebook/pull/460))
+- Added Neptune Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/442))
+
+## Release 3.7.2 (March 9, 2023)
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
+- New openCypher Language Tutorial notebooks
+  - Path: 06-Language-Tutorials > 02-openCypher
+- Added support for Neptune Summary API ([Link to PR](https://github.com/aws/graph-notebook/pull/457))
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
+- Added error messaging for incompatible host-specific `%%graph_notebok_config` parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/456))
 - Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
 - Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
 
