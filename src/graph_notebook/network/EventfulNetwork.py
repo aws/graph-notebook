@@ -3,7 +3,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from collections import defaultdict
+from collections import defaultdict, abc
 import collections
 import re
 import json
@@ -126,7 +126,7 @@ class EventfulNetwork(Network):
         items = []
         for k, v in d.items():
             new_key = parent_key + sep + k if parent_key else k
-            if isinstance(v, collections.MutableMapping):
+            if isinstance(v, collections.abc.MutableMapping):
                 items.extend(self.flatten(v).items())
             else:
                 items.append((new_key, v))
