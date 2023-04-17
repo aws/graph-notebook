@@ -93,7 +93,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.8.0-3.9.7
+* [Python](https://www.python.org/downloads/) 3.8.0-3.10.11
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
@@ -313,8 +313,8 @@ cd graph-notebook
 # 2) Create a new virtual environment
 
 # 2a) Option 1 - pyenv
-pyenv install 3.9.7  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
-pyenv virtualenv 3.9.7 build-graph-notebook
+pyenv install 3.10.11  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.10.11 build-graph-notebook
 pyenv local build-graph-notebook
 
 # 2b) Option 2 - venv
