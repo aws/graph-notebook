@@ -4,6 +4,7 @@
 - [Knowledge Graph](#Knowledge-Graph)
 - [Identity Graph](#Identity-Graph)
 - [Security Graph](#Security-Graph)
+- [Life Sciences](#Life-Sciences-Graph)
 - [Neptune ML - People Analytics](#Neptune-ML-People-Analytics)
 
 
@@ -34,6 +35,12 @@ The examples in this notebook shows a sample identity graph solution using an op
 A security graph connects resources within a network: entities such as policies, roles and resources. By relating these entities together we improve our chances to detect, prevent, and remediate security risk that violate compliance and enable better enforcement of security requirements. With Amazon Neptune we can connect entities together in such a way that we can query it whenever new resources are created in the system. Using queries that find patterns in our data that we know to be indicative of security risks, we can evaluate the scope and impact of these risks, and thereby determine whether constellations of data in the security graph represent a real or potential security issue.
 
 The examples in this notebook shows a sample security graph solution using an open dataset as well as data visualizations that allow one to better understand the structure of a security graph.
+
+## [Life Sciences](./05-Life-Science-Applications/01-Modeling-Molecular-Structures-as-Graph-Data-Gremlin.ipynb)
+
+A molecular modeling graph which represents chemical structures as graph data. Visualizing atoms as nodes, and the bonds between atoms as edges, enables users to explore chemical structures in a persistent environment. Using the popular open-source bioinformatics package RDKit, and a molecule represented as a SMILES string, walk through the process of transforming a molecule into a graph. Also, walk through a simple example of using packages in the graph-notebook environment. 
+
+The examples in this notebook show how to take the SMILES format string for the molecule caffeine and transform it into a graph representation. The notebook also includes exploration and visualization of the caffeine molecule as a graph.
 
 ## [People Analytics using Machine Learning](../04-Machine-Learning/Sample-Applications/01-People-Analytics)
 
