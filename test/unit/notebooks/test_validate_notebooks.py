@@ -40,7 +40,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/03-Identity-Graphs/03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL/03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/04-Security-Graphs/01-Building-a-Security-Graph-Application-with-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/04-Security-Graphs/01-Building-a-Security-Graph-Application-with-openCypher.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/05-Life-Science-Applications/01-Modeling-Molecular-Structures-as-Graph-Data-Gremlin',
+            f'{NOTEBOOK_BASE_DIR}/03-Sample-Applications/05-Life-Science-Applications/01-Modeling-Molecular-Structures-as-Graph-Data-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-00-Getting-Started-with-Neptune-ML-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-01-Introduction-to-Node-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Machine-Learning/Neptune-ML-02-Introduction-to-Node-Regression-Gremlin.ipynb',
