@@ -38,7 +38,7 @@ The examples in this notebook shows a sample security graph solution using an op
 
 ## [Life Sciences](./05-Life-Science-Applications/01-Modeling-Molecular-Structures-as-Graph-Data-Gremlin.ipynb)
 
-A molecular modeling graph which represents chemical structures as graph data. Visualizing atoms as nodes, and the bonds between atoms as edges, enables users to explore chemical structures in a persistent environment. Using the popular open-source bioinformatics package RDKit, and a molecule represented as a SMILES string, walk through the process of transforming a molecule into a graph. Also, walk through a simple example of using packages in the graph-notebook environment. 
+A molecular modeling graph which represents chemical structures as graph data. Visualizing atoms as nodes, and the bonds between atoms as edges, enables users to explore chemical structures in a persistent environment. Using the popular open-source bioinformatics package RDKit, and a molecule represented as a SMILES string, walk through the process of transforming a molecule into a graph. Also, walk through a simple example of using packages in the graph-notebook environment.
 
 The examples in this notebook show how to take the SMILES format string for the molecule caffeine and transform it into a graph representation. The notebook also includes exploration and visualization of the caffeine molecule as a graph.
 
