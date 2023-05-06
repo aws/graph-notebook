@@ -1146,8 +1146,9 @@ class Graph(Magics):
                 return status_res
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def db_reset(self, line):
+    def db_reset(self, line, local_ns: dict = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--generate-token', action='store_true', help='generate token for database reset')
@@ -1995,7 +1996,8 @@ class Graph(Magics):
 
     @line_magic
     @display_exceptions
-    def seed(self, line):
+    @needs_local_scope
+    def seed(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
         parser.add_argument('--dataset', type=str, default='')
@@ -2179,12 +2181,29 @@ class Graph(Magics):
         root_logger.setLevel(logging.CRITICAL)
 
     @line_magic
+    @needs_local_scope
+    def toggle_traceback(self, line, local_ns: dict = None):
+        show_traceback_ns_var = 'graph_notebook_show_traceback'
+        try:
+            show_traceback = local_ns[show_traceback_ns_var]
+            if not isinstance(show_traceback, bool):
+                show_traceback = False
+            else:
+                show_traceback = not show_traceback
+        except KeyError:
+            show_traceback = True
+
+        print(f"Display of tracebacks from magics is toggled {'ON' if show_traceback else 'OFF'}.")
+        store_to_ns(show_traceback_ns_var, show_traceback, local_ns)
+
+    @line_magic
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
     @line_cell_magic
     @display_exceptions
-    def graph_notebook_vis_options(self, line='', cell=''):
+    @needs_local_scope
+    def graph_notebook_vis_options(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         line_args = line.split()
