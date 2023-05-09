@@ -2182,11 +2182,15 @@ class Graph(Magics):
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
+    @magic_variables
     @line_cell_magic
     @display_exceptions
-    def graph_notebook_vis_options(self, line='', cell=''):
+    @needs_local_scope
+    def graph_notebook_vis_options(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store visualization settings to this variable')
+        parser.add_argument('--load-from', type=str, default='', help='load visualization settings from this variable')
         line_args = line.split()
         if line_args:
             if line_args[0] == 'reset':
@@ -2200,12 +2204,33 @@ class Graph(Magics):
         if line == 'reset':
             self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
 
-        if cell == '':
+        if cell == '' and not args.load_from:
             if not args.silent:
                 print(json.dumps(self.graph_notebook_vis_options, indent=2))
         else:
-            options_dict = json.loads(cell)
+            try:
+                if args.load_from:
+                    try:
+                        options_raw = local_ns[args.load_from]
+                        if isinstance(options_raw, dict):
+                            options_raw = json.dumps(options_raw)
+                        options_dict = json.loads(options_raw)
+                    except KeyError:
+                        print(f"Unable to load visualization settings, variable [{args.load_from}] does not exist in "
+                              f"the local namespace.")
+                        return
+                else:
+                    options_dict = json.loads(cell)
+            except (JSONDecodeError, TypeError) as e:
+                print(f"Unable to load visualization settings, variable [{args.load_from}] is not in valid JSON "
+                      f"format:\n")
+                print(e)
+                return
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
+            print("Visualization settings successfully changed to:\n")
+            print(json.dumps(self.graph_notebook_vis_options, indent=2))
+
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_vis_options, indent=2), local_ns)
 
     @magic_variables
     @line_cell_magic
