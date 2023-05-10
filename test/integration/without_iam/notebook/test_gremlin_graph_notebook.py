@@ -70,3 +70,30 @@ class TestGraphMagicGremlin(GraphNotebookIntegrationTest):
         gremlin_res = self.ip.user_ns[store_to_var]
 
         self.assertEqual(gremlin_res[0].label, 'value')
+
+    @pytest.mark.jupyter
+    @pytest.mark.gremlin
+    def test_gremlin_query_with_variables_and_list_access(self):
+        label = [["item0"], [["item3", "item4"], ["item2"]]]
+        self.ip.user_ns['test_list'] = label
+        query = "g.addV('${test_list[1][0][1]}')"
+
+        store_to_var = 'gremlin_res'
+        self.ip.run_cell_magic('gremlin', f'query --store-to {store_to_var}', query)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        gremlin_res = self.ip.user_ns[store_to_var]
+
+        self.assertEqual(gremlin_res[0].label, 'item4')
+
+    @pytest.mark.jupyter
+    @pytest.mark.gremlin
+    def test_gremlin_query_with_variables_and_mixed_access(self):
+        label = ({}, {'key': ['value']})
+        self.ip.user_ns['test_mixed_var'] = label
+        query = "g.addV('${test_mixed_var[1]['key'][0]}')"
+        store_to_var = 'gremlin_res'
+        self.ip.run_cell_magic('gremlin', f'query --store-to {store_to_var}', query)
+        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        gremlin_res = self.ip.user_ns[store_to_var]
+
+        self.assertEqual(gremlin_res[0].label, 'value')

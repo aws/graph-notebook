@@ -31,27 +31,28 @@ We encourage others to contribute configurations they find useful. There is an [
 ## Features
 
 #### Notebook cell 'magic' extensions in the IPython 3 kernel
-`%%sparql` - Executes a SPARQL query against your configured database endpoint.
+`%%sparql` - Executes a SPARQL query against your configured database endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-sparql)
 
-`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return.
+`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-gremlin)
 
-`%%opencypher` or `%%oc` Executes an openCypher query against your database.
+`%%opencypher` or `%%oc` Executes an openCypher query against your database. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-opencypher)
 
 `%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
 
 `%%graph_notebook_vis_options` - Sets the executing notebook's [vis.js options](https://visjs.github.io/vis-network/docs/network/physics.html) to the JSON payload provided in the cell body.
 
-`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-line-magics-neptune_ml). [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
+**TIP** :point_right: `%%sparql`, `%%gremlin`, and `%%oc` share a [suite of common arguments](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebook-magics-query-args) that be used to customize the appearance of rendered graphs. Example usage of these arguments can also be found in the sample notebooks under [02-Visualization](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/02-Visualization).
 
-**TIP** :point_right:  There is syntax highlighting for `%%sparql`, `%%gremlin` and `%%oc` cells to help you structure your queries more easily.
+**TIP** :point_right: There is syntax highlighting for language query magic cells to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
 `%gremlin_status` - Obtain the status of Gremlin queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/gremlin-api-status.html)
 
 `%sparql_status` - Obtain the status of SPARQL queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-api-status.html)
 
-`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries.
+`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-opencypher-status.html)
 
 `%load` - Generate a form to submit a bulk loader job. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html)
 
@@ -61,8 +62,8 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%cancel_load` - Cancels a bulk load job. You can either provide a single `load_id`, or specify `--all-in-queue` to cancel all queued (and not actively running) jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-cancel.html)
 
-`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
-[Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-neptune_ml). You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
+[Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
@@ -92,8 +93,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.7.0-3.9.7
-* [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
+* [Python](https://www.python.org/downloads/) 3.7.x-3.10.11
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
@@ -104,9 +104,6 @@ You will need:
 Begin by installing `graph-notebook` and its prerequisites, then follow the remaining instructions for either Jupyter Classic Notebook or JupyterLab.
 
 ```
-# pin specific versions of required dependencies
-pip install rdflib==5.0.0
-
 # install the package
 pip install graph-notebook
 ```
@@ -161,6 +158,15 @@ Alternatively, the magic extensions can be manually reloaded for a single notebo
 ```
 %load_ext graph_notebook.magics
 ```
+
+## Upgrading an existing installation
+
+```
+# upgrade graph-notebook
+pip install graph-notebook --upgrade
+```
+
+After the above command completes, rerun the commands given at [Jupyter Classic Notebook](#jupyter-classic-notebook) or [JupyterLab 3.x](#jupyterlab-3x) based on which flavour is installed.
 
 ## Connecting to a graph database
 
@@ -232,6 +238,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "auth_mode": "DEFAULT",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
@@ -251,6 +258,7 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
   "auth_mode": "IAM",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
@@ -305,8 +313,8 @@ cd graph-notebook
 # 2) Create a new virtual environment
 
 # 2a) Option 1 - pyenv
-pyenv install 3.9.7  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
-pyenv virtualenv 3.9.7 build-graph-notebook
+pyenv install 3.10.11  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.10.11 build-graph-notebook
 pyenv local build-graph-notebook
 
 # 2b) Option 2 - venv
@@ -324,7 +332,7 @@ python3 setup.py bdist_wheel
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.5.3-py3-none-any.whl`
+`./dist/graph_notebook-3.8.1-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -335,7 +343,7 @@ pip install graph-notebook
 with
 
 ```
-pip install ./dist/graph_notebook-3.5.3-py3-none-any.whl
+pip install ./dist/graph_notebook-3.8.1-py3-none-any.whl
 ```
 
 

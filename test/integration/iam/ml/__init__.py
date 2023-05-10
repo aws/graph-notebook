@@ -15,6 +15,7 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_port(config.port) \
         .with_region(config.aws_region) \
         .with_tls(config.ssl) \
+        .with_ssl_verify(config.ssl_verify) \
         .with_proxy_host(config.proxy_host) \
         .with_proxy_port(config.proxy_port) \
         .with_sparql_path(config.sparql.path) \
@@ -40,4 +41,5 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.neo4j_auth == config.neo4j.auth
     assert client.neo4j_database == config.neo4j.database
     assert client.ssl is config.ssl
+    assert client.ssl_verify is config.ssl_verify
     return client

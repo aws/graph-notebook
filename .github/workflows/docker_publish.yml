@@ -1,0 +1,72 @@
+name: Build Docker image and publish to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'ECR image tag type'
+        required: false
+        type: choice
+        options:
+          - 'latest'
+          - 'release'
+        default: 'latest'
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get package version
+        uses: tyankatsu0105/read-package-version-actions@v1
+        with:
+          path: "./src/graph_notebook/widgets"
+        id: package-version
+
+      - name: Get image tag
+        id: get-image-tag
+        run: |
+          if ${{ github.event_name == 'workflow_dispatch' }} ; then
+            if ${{ inputs.image_tag == 'release'}}; then
+              echo "image_tag=${{ steps.package-version.outputs.version }}" >> $GITHUB_OUTPUT
+            else
+              echo "image_tag=latest" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_ECR }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ECR }}
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ECR }}
+          role-duration-seconds: 3600
+          role-session-name: NotebookImageUpdate
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+
+      - name: Build, tag, and push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: neptune
+          REPOSITORY: graph-notebook
+          IMAGE_TAG: ${{ steps.get-image-tag.outputs.image_tag }}
+        run: |
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG

@@ -9,17 +9,18 @@ from botocore.session import get_session
 
 from graph_notebook.configuration.generate_config import Configuration, AuthModeEnum
 from graph_notebook.configuration.get_config import get_config
-from graph_notebook.neptune.client import ClientBuilder
+from graph_notebook.neptune.client import ClientBuilder, NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host
 from test.integration.NeptuneIntegrationWorkflowSteps import TEST_CONFIG_PATH
 
 
 def setup_client_builder(config: Configuration) -> ClientBuilder:
-    if "amazonaws.com" in config.host:
+    if is_allowed_neptune_host(config.host, NEPTUNE_CONFIG_HOST_IDENTIFIERS):
         builder = ClientBuilder() \
             .with_host(config.host) \
             .with_port(config.port) \
             .with_region(config.aws_region) \
             .with_tls(config.ssl) \
+            .with_ssl_verify(config.ssl_verify) \
             .with_proxy_host(config.proxy_host) \
             .with_proxy_port(config.proxy_port) \
             .with_sparql_path(config.sparql.path) \
@@ -33,6 +34,7 @@ def setup_client_builder(config: Configuration) -> ClientBuilder:
             .with_host(config.host) \
             .with_port(config.port) \
             .with_tls(config.ssl) \
+            .with_ssl_verify(config.ssl_verify) \
             .with_proxy_host(config.proxy_host) \
             .with_proxy_port(config.proxy_port) \
             .with_sparql_path(config.sparql.path) \

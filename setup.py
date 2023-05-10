@@ -66,28 +66,31 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython>=3.5.1',
+        'gremlinpython>=3.5.1,<=3.6.2',
         'SPARQLWrapper==1.8.4',
-        'requests',
-        'ipywidgets',
+        'requests>=2.27.0,<=2.28.2',
+        'ipywidgets==7.7.2',
+        'jupyterlab_widgets>=1.0.0,<3.0.0',
         'networkx==2.4',
-        'Jinja2==3.0.3',
+        'Jinja2>=3.0.3,<=3.1.2',
         'notebook>=6.1.5,<6.5.0',
-        'jupyter-contrib-nbextensions',
-        'widgetsnbextension',
-        'jupyter>=1.0.0',
-        'botocore>=1.19.37',
-        'boto3>=1.17.58',
-        'ipython>=7.16.1,<7.17.0',
-        'neo4j==4.3.2',
+        'nbclient<=0.7.3',
+        'jupyter-contrib-nbextensions<=0.7.0',
+        'widgetsnbextension<=3.6.1',
+        'jupyter==1.0.0',
+        'botocore>=1.21.49,<=1.29.53',
+        'boto3>=1.18.49,<=1.26.53',
+        'ipython>=7.16.1,<=8.10.0',
+        'neo4j>=4.4.9,<5.0.0',
         'rdflib==5.0.0',
         'ipykernel==5.3.4',
-        'nbconvert>=6.3.0',
-        'jedi<0.18.0',
         'ipyfilechooser==0.6.0',
-        'markupsafe<2.1.0',
-        'itables>=1.0.0',
-        'pandas'
+        'nbconvert>=6.3.0,<=7.2.8',
+        'jedi>=0.18.1,<=0.18.2',
+        'itables>=1.0.0,<=1.5.2,!=1.4.3,!=1.4.4',
+        'pandas>=1.3.5,<=1.5.3',
+        'numpy<1.24.0',
+        'nest_asyncio>=1.5.5,<=1.5.6'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
@@ -102,6 +105,6 @@ setup(
     ],
     keywords='jupyter neptune gremlin sparql',
     tests_require=[
-        'pytest'
+        'pytest==6.2.5'
     ]
 )

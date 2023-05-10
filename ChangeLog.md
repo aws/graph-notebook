@@ -4,12 +4,64 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added support using local file paths with %seed ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+
+## Release 3.8.1 (April 17, 2023)
+- Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
+
+## Release 3.8.0 (April 16, 2023)
+- Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
+- Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
+- Patched nbextensions loader timeouts for large notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/455))
+- Fixed Dockerfile builds breaking with AL2023 ([Link to PR](https://github.com/aws/graph-notebook/pull/466))
+- Fixed `--store-to` option for several magics ([Link to PR](https://github.com/aws/graph-notebook/pull/463))
+- Fixed broken documentation links in Neptune ML notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/467)) ([PR #2](https://github.com/aws/graph-notebook/pull/468))
+- Fixed Gremlin graph tab not rendering with UUID type IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/475))
+
+## Release 3.7.3 (March 14, 2023)
+- Fixed detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
+- Added more helpful error messaging for `%statistics`/`%summary` ([Link to PR](https://github.com/aws/graph-notebook/pull/460))
+- Added Neptune Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/442))
+
+## Release 3.7.2 (March 9, 2023)
+- New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
+  - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
+- New openCypher Language Tutorial notebooks
+  - Path: 06-Language-Tutorials > 02-openCypher
+- Added support for Neptune Summary API ([Link to PR](https://github.com/aws/graph-notebook/pull/457))
+- Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
+- Added error messaging for incompatible host-specific `%%graph_notebok_config` parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/456))
+- Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
+- Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
+
+## Release 3.7.1 (January 25, 2023)
+- Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
+- Added support for list/tuple element access in cell variable injection ([Link to PR](https://github.com/aws/graph-notebook/pull/409))
+- Fixed failing endpoint creation step in [01-People-Analytics/People-Analytics-using-Neptune-ML](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb) ([Link to PR](https://github.com/aws/graph-notebook/pull/411))
+- Fixed browser-specific issues with fullscreen graph widget ([Link to PR](https://github.com/aws/graph-notebook/pull/427))
+- Fixed IAM authenticated Bolt queries failing on certain Neptune engine versions ([Link to PR](https://github.com/aws/graph-notebook/pull/438))
+- Fixed query status magics failing with a TypeError ([Link to PR](https://github.com/aws/graph-notebook/pull/419))
+- Pinned `numpy<1.24.0` to fix conflicts with `networkx` dependency during installation ([Link to PR](https://github.com/aws/graph-notebook/pull/416))
+- Pinned version ceiling for all dependencies ([Link to PR](https://github.com/aws/graph-notebook/pull/431))
+- Excluded certain `itables` versions causing errors in query magics ([PR #1](https://github.com/aws/graph-notebook/pull/429)) ([PR #2](https://github.com/aws/graph-notebook/pull/429))
+- Truncated metadata request/query time metrics ([Link to PR](https://github.com/aws/graph-notebook/pull/425))
+- Enabled unit test workflow runs for external pull requests ([Link to PR](https://github.com/aws/graph-notebook/pull/437))
+
+## Release 3.7.0 (December 7, 2022)
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
 - Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
-- Fixed results not being displayed for SPARQL ASK queries ([Link to PR](https://github.com/aws/graph-notebook/pull/385))
+- Added option to disable TLS certificate verification in `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/372))
+- Improved `%load` status output, fixed region option ([Link to PR](https://github.com/aws/graph-notebook/pull/395))
 - Updated [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/387))
+- Fixed results not being displayed for SPARQL ASK queries ([Link to PR](https://github.com/aws/graph-notebook/pull/385))
 - Fixed `%seed` failing to load SPARQL EPL dataset ([Link to PR](https://github.com/aws/graph-notebook/pull/389))
+- Fixed `%db_reset` status output not displaying in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/391))
+- Fixed `%%gremlin` throwing error for result sets with multiple datatypes [Link to PR](https://github.com/aws/graph-notebook/pull/388))
+- Fixed edge label creation in `02-Using-Gremlin-to-Access-the-Graph` ([Link to PR](https://github.com/aws/graph-notebook/pull/390))
+- Fixed igraph command error in `02-Logistics-Analysis-using-a-Transportation-Network` ([Link to PR](https://github.com/aws/graph-notebook/pull/404))
+- Bumped typescript to 4.1.x in graph_notebook_widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/393))
+- Pinned `ipywidgets==7.7.2` and `jupyterlab_widgets<3` ([Link to PR](https://github.com/aws/graph-notebook/pull/407))
+- Pinned `nbclient<=0.7.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/402))
 
 ## Release 3.6.2 (October 18, 2022)
 - New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))

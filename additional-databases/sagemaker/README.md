@@ -1,8 +1,7 @@
-## Launching graph-notebook using Amazon SageMaker
-You can easily launch instances of graph-notebook on Amazon SageMaker by using a lifecycle configuration. To learn more about lifecycle configurations and how to create one, see [documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/notebook-lifecycle-config.html).
+## Using graph-notebook on Amazon Sagemaker
 
-Use the sample lifecycle configuration in this folder, [`install-graph-notebook-lc.sh`](install-graph-notebook-lc.sh) ([`install-graph-notebook-lc-cn.sh`](install-graph-notebook-lc-cn.sh) if using `cn-north-1` or `cn-northwest-1` region) or create your own shell script. 
+Amazon Sagemaker Notebooks provide an easy and effective solution for hosting, configuring, and running `graph-notebook` against a graph database. These notebooks also serve as the base platform for [Neptune Workbench](https://docs.aws.amazon.com/neptune/latest/userguide/graph-notebooks.html). 
 
-After you create a lifecycle configuration on SageMaker, you can create new notebook instances by specifying a saved lifecycle configuration:
+If you would like to manually deploy a Neptune Workbench instance via AWS CloudFormation, please see the instructions in the [`neptune-notebook-cloudformation`](https://github.com/aws/graph-notebook/blob/main/additional-databases/sagemaker/neptune-notebook-cloudformation) folder. 
 
-![create-a-notebook](/././images/Create-Notebook-Instance.png)
+For non-Neptune use cases, you can follow the instructions in the [`sagemaker-notebook-lifecycle`](https://github.com/aws/graph-notebook/blob/main/additional-databases/sagemaker/sagemaker-notebook-lifecycle) folder.

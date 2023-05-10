@@ -19,6 +19,7 @@ from enum import Enum
 from copy import copy
 from sys import maxsize
 from json import JSONDecodeError
+from collections import deque
 from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 
 import ipywidgets as widgets
@@ -42,7 +43,8 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -242,6 +244,24 @@ def get_load_ids(neptune_client):
     return ids, res
 
 
+def process_statistics_400(is_summary: bool, response):
+    bad_request_res = json.loads(response.text)
+    res_code = bad_request_res['code']
+    if res_code == 'StatisticsNotAvailableException':
+        print("No statistics found. Please ensure that auto-generation of DFE statistics is enabled by running "
+              "'%statistics' and checking if 'autoCompute' if set to True. Alternately, you can manually "
+              "trigger statistics generation by running: '%statistics --mode refresh'.")
+    elif res_code == "BadRequestException":
+        print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
+              "greater in order to have DFE statistics enabled.")
+        if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+            print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
+                  "and later.")
+    else:
+        print("Query encountered 400 error, please see below.")
+    print(f"\nFull response: {bad_request_res}")
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -278,6 +298,7 @@ class Graph(Magics):
                 .with_port(config.port) \
                 .with_region(config.aws_region) \
                 .with_tls(config.ssl) \
+                .with_ssl_verify(config.ssl_verify) \
                 .with_proxy_host(config.proxy_host) \
                 .with_proxy_port(config.proxy_port) \
                 .with_sparql_path(config.sparql.path) \
@@ -291,6 +312,7 @@ class Graph(Magics):
                 .with_host(config.host) \
                 .with_port(config.port) \
                 .with_tls(config.ssl) \
+                .with_ssl_verify(config.ssl_verify) \
                 .with_sparql_path(config.sparql.path) \
                 .with_gremlin_traversal_source(config.gremlin.traversal_source) \
                 .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
@@ -397,32 +419,78 @@ class Graph(Magics):
         viewer.show()
 
     @line_magic
+    @needs_local_scope
+    @display_exceptions
     def statistics(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
                             help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
                                  f'Default: propertygraph.',
                             choices=STATISTICS_LANGUAGE_INPUTS)
-        parser.add_argument('-m', '--mode', type=str, default='status',
+        parser.add_argument('-m', '--mode', type=str, default='',
                             help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
-                                 f'Default: status')
+                                 f'Default: `basic` if `--summary` is specified, otherwise `status`.')
+        parser.add_argument('--summary', action='store_true', default=False, help="Retrieves the graph summary.")
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
 
         args = parser.parse_args(line.split())
+        mode = args.mode
 
-        if args.mode not in STATISTICS_MODES:
-            print(f'Invalid mode. Please specify one of: {STATISTICS_MODES}, or leave blank to retrieve status.')
+        if not mode:
+            mode = 'basic' if args.summary else 'status'
+        elif (args.summary and mode not in SUMMARY_MODES) or (not args.summary and mode not in STATISTICS_MODES):
+            err_endpoint_type, err_mode_list, err_default_mode = ("summary", SUMMARY_MODES[1:], "basic summary view") \
+                if args.summary else ("statistics", STATISTICS_MODES[1:], "status")
+            print(f'Invalid {err_endpoint_type} mode. Please specify one of: {err_mode_list}, '
+                  f'or leave blank to retrieve {err_default_mode}.')
             return
 
-        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res = self.client.statistics(args.language, args.summary, mode)
+        if statistics_res.status_code == 400:
+            if args.summary:
+                process_statistics_400(True, statistics_res)
+            else:
+                process_statistics_400(False, statistics_res)
+            return
         statistics_res.raise_for_status()
-        res = statistics_res.json()
+        statistics_res_json = statistics_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            print(json.dumps(statistics_res_json, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, statistics_res_json, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def summary(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                                 f'Default: propertygraph.',
+                            choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('--detailed', action='store_true', default=False,
+                            help="Toggles the display of structures fields on or off in the output. If not supplied, "
+                                 "we will default to the basic summary display mode.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+        if args.detailed:
+            mode = "detailed"
+        else:
+            mode = "basic"
+
+        summary_res = self.client.statistics(args.language, True, mode)
+        if summary_res.status_code == 400:
+            process_statistics_400(True, summary_res)
+            return
+        summary_res.raise_for_status()
+        summary_res_json = summary_res.json()
+        if not args.silent:
+            print(json.dumps(summary_res_json, indent=2))
+
+        store_to_ns(args.store_to, summary_res_json, local_ns)
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -768,6 +836,8 @@ class Graph(Magics):
                                  'TinkerPop driver "Serializers" enum values. Default is application/json')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('--profile-misc-args', type=str, default='{}',
+                            help='Additional profile options, passed in as a map.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
@@ -839,6 +909,12 @@ class Graph(Magics):
                             "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
                             "profile.indexOps": args.profile_indexOps}
+            try:
+                profile_misc_args_dict = json.loads(args.profile_misc_args)
+                profile_args.update(profile_misc_args_dict)
+            except JSONDecodeError:
+                print('--profile-misc-args received invalid input, please check that you are passing in a valid '
+                      'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
             res = self.client.gremlin_profile(query=cell, args=profile_args)
             res.raise_for_status()
             profile_bytes = res.content.replace(b'\xcc', b'-')
@@ -863,6 +939,7 @@ class Graph(Magics):
                                                                      query_time=query_time)
                 titles.append('Console')
 
+                gremlin_network = None
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
@@ -884,21 +961,39 @@ class Graph(Magics):
                     else:
                         pattern = parse_pattern_list_str(args.path_pattern)
                         gn.add_results_with_pattern(query_res, pattern)
+                    gremlin_network = gn
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
+                except ValueError as value_error:
+                    logger.debug(
+                        f'Unable to create graph network from result due to error: {value_error}. '
+                        f'Skipping from result set.')
+                if gremlin_network and len(gremlin_network.graph.nodes) > 0:
+                    try:
                         self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                             = args.stop_physics
                         self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        f = Force(network=gn, options=self.graph_notebook_vis_options)
+                        f = Force(network=gremlin_network, options=self.graph_notebook_vis_options)
                         titles.append('Graph')
                         children.append(f)
                         logger.debug('added gremlin network to tabs')
-                except ValueError as value_error:
-                    logger.debug(
-                        f'unable to create gremlin network from result. Skipping from result set: {value_error}')
+                    except Exception as force_error:
+                        logger.debug(
+                            f'Unable to render visualization from graph network due to error: {force_error}. Skipping.')
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
+
+                mixed_results = False
+                if query_res:
+                    # If the results set contains multiple datatypes, and the first result is a map, we need to insert a
+                    # temp non-map first element, or we will get an error when creating the Dataframe.
+                    if isinstance(query_res[0], dict) and len(query_res) > 1:
+                        if not all(isinstance(x, dict) for x in query_res[1:]):
+                            mixed_results = True
+                            query_res_deque = deque(query_res)
+                            query_res_deque.appendleft('x')
+                            query_res = list(query_res_deque)
+
                 results_df = pd.DataFrame(query_res)
                 # Checking for created indices instead of the df itself here, as df.empty will still return True when
                 # only empty maps/lists are present in the data.
@@ -909,6 +1004,8 @@ class Graph(Magics):
                         query_res_reformat.append([fixed_result])
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
+                    if mixed_results:
+                        results_df = results_df[1:]
                     results_df.drop(results_df.index[-1], inplace=True)
                 results_df.insert(0, "#", range(1, len(results_df) + 1))
                 if len(results_df.columns) == 2 and int(results_df.columns[1]) == 0:
@@ -1135,10 +1232,12 @@ class Graph(Magics):
                 job_status_output = widgets.Output()
                 status_hbox = widgets.HBox([interval_output])
                 vbox = widgets.VBox([status_hbox, job_status_output])
-                display(vbox)
+                with output:
+                    display(vbox)
 
                 last_poll_time = time.time()
                 interval_check_response = {}
+                new_interval = True
                 while retry > 0:
                     time_elapsed = int(time.time() - last_poll_time)
                     time_remaining = poll_interval - time_elapsed
@@ -1147,8 +1246,7 @@ class Graph(Magics):
                         with interval_output:
                             print('checking status...')
                         job_status_output.clear_output()
-                        with job_status_output:
-                            display_html(HTML(loading_wheel_html))
+                        new_interval = True
                         try:
                             retry -= 1
                             status_res = self.client.status()
@@ -1168,6 +1266,10 @@ class Graph(Magics):
                                 return
                         last_poll_time = time.time()
                     else:
+                        if new_interval:
+                            with job_status_output:
+                                display_html(HTML(loading_wheel_html))
+                            new_interval = False
                         with interval_output:
                             print(f'checking status in {time_remaining} seconds')
                     time.sleep(1)
@@ -1246,7 +1348,6 @@ class Graph(Magics):
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
 
         args = parser.parse_args(line.split())
-        region = self.graph_notebook_config.aws_region
         button = widgets.Button(description="Submit")
         output = widgets.Output()
         widget_width = '25%'
@@ -1288,7 +1389,7 @@ class Graph(Magics):
                 base_uri_hbox_visibility = 'flex'
 
         region_box = widgets.Text(
-            value=region,
+            value=args.region,
             placeholder=args.region,
             disabled=False,
             layout=widgets.Layout(width=widget_width)
@@ -1591,7 +1692,7 @@ class Graph(Magics):
                     'parallelism': parallelism.value,
                     'updateSingleCardinalityProperties': update_single_cardinality.value,
                     'queueRequest': queue_request.value,
-                    'region': region,
+                    'region': region_box.value,
                     'parserConfiguration': {}
                 }
 
@@ -1609,14 +1710,6 @@ class Graph(Magics):
                     if base_uri.value and source_format.value.lower() in BASE_URI_FORMATS:
                         kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
-                if source.value.startswith("s3://"):
-                    load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
-                else:
-                    load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
-                load_res.raise_for_status()
-                load_result = load_res.json()
-                store_to_ns(args.store_to, load_result, local_ns)
-
                 source_hbox.close()
                 source_format_hbox.close()
                 region_hbox.close()
@@ -1633,12 +1726,37 @@ class Graph(Magics):
                 named_graph_uri_hbox.close()
                 base_uri_hbox.close()
                 button.close()
-                output.close()
+
+                load_submit_status_output = widgets.Output()
+                load_submit_hbox = widgets.HBox([load_submit_status_output])
+                with output:
+                    display(load_submit_hbox)
+                with load_submit_status_output:
+                    print("Load request submitted, waiting for response...")
+                    display_html(HTML(loading_wheel_html))
+                try:
+                    if source.value.startswith("s3://"):
+                        load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
+                    else:
+                        load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
+                except Exception as e:
+                    load_submit_status_output.clear_output()
+                    with output:
+                        print("Failed to submit load request.")
+                        logger.error(e)
+                    return
+                load_submit_status_output.clear_output()
+                try:
+                    load_res.raise_for_status()
+                except Exception as e:
+                    # Ignore failure to retrieve status, we handle missing status below.
+                    pass
+                load_result = load_res.json()
+                store_to_ns(args.store_to, load_result, local_ns)
 
                 if 'status' not in load_result or load_result['status'] != '200 OK':
                     with output:
                         print('Something went wrong.')
-                        print(load_result)
                         logger.error(load_result)
                     return
 
@@ -1649,7 +1767,8 @@ class Graph(Magics):
                     start_msg_hbox = widgets.HBox([start_msg_label])
                     polling_msg_hbox = widgets.HBox([polling_msg_label])
                     vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
-                    display(vbox)
+                    with output:
+                        display(vbox)
                 else:
                     poll_interval = 5
                     load_id_label = widgets.Label(f'Load ID: {load_result["payload"]["loadId"]}')
@@ -1658,9 +1777,11 @@ class Graph(Magics):
                     load_id_hbox = widgets.HBox([load_id_label])
                     status_hbox = widgets.HBox([interval_output])
                     vbox = widgets.VBox([load_id_hbox, status_hbox, job_status_output])
-                    display(vbox)
+                    with output:
+                        display(vbox)
 
                     last_poll_time = time.time()
+                    new_interval = True
                     while True:
                         time_elapsed = int(time.time() - last_poll_time)
                         time_remaining = poll_interval - time_elapsed
@@ -1671,6 +1792,7 @@ class Graph(Magics):
                             job_status_output.clear_output()
                             with job_status_output:
                                 display_html(HTML(loading_wheel_html))
+                            new_interval = True
                             try:
                                 load_status_res = self.client.load_status(load_result['payload']['loadId'])
                                 load_status_res.raise_for_status()
@@ -1682,9 +1804,11 @@ class Graph(Magics):
                                     return
                             job_status_output.clear_output()
                             with job_status_output:
-                                print(f'Overall Status: {interval_check_response["payload"]["overallStatus"]["status"]}')
+                                print(f'Overall Status: '
+                                      f'{interval_check_response["payload"]["overallStatus"]["status"]}')
                                 if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
-                                    execution_time = interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                    execution_time = \
+                                        interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
                                     if execution_time == 0:
                                         execution_time_statement = '<1 second'
                                     elif execution_time > 59:
@@ -1697,6 +1821,10 @@ class Graph(Magics):
                                     return
                             last_poll_time = time.time()
                         else:
+                            if new_interval:
+                                with job_status_output:
+                                    display_html(HTML(loading_wheel_html))
+                                new_interval = False
                             with interval_output:
                                 print(f'checking status in {time_remaining} seconds')
                         time.sleep(1)
@@ -1787,8 +1915,7 @@ class Graph(Magics):
             vbox = widgets.VBox(labels)
             display(vbox)
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1818,8 +1945,7 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(res, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1868,8 +1994,7 @@ class Graph(Magics):
             else:
                 print("No cancellable load jobs were found.")
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = raw_res
+        store_to_ns(args.store_to, raw_res, local_ns)
 
     @line_magic
     @display_exceptions
