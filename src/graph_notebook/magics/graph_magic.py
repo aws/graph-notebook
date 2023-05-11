@@ -103,7 +103,7 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_MODEL_OPTIONS = ['', 'propertygraph', 'rdf']
-SEED_LANGUAGE_OPTIONS = ['', 'gremlin', 'cypher', 'sparql']
+SEED_LANGUAGE_OPTIONS = ['', 'gremlin', 'opencypher', 'sparql']
 SOURCE_OPTIONS = ['', 'samples', 'custom']
 
 LOADER_FORMAT_CHOICES = ['']
@@ -2015,7 +2015,7 @@ class Graph(Magics):
                                  'Accepted values: property_graph, rdf')
         parser.add_argument('--language', type=str.lower, default='',
                             help='Specifies what language you would like to load for. '
-                                 'Accepted values: gremlin, sparql, cypher')
+                                 'Accepted values: gremlin, sparql, opencypher')
         parser.add_argument('--dataset', type=str, default='',
                             help='Specifies what sample dataset you would like to load.')
         parser.add_argument('--source', type=str, default='',
@@ -2238,7 +2238,7 @@ class Graph(Magics):
                     return 2
 
         def process_cypher_query_line(query_line, line_index, q):
-            if not line:
+            if not query_line:
                 logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                 return 0
             try:
@@ -2358,8 +2358,9 @@ class Graph(Magics):
                             progress.close()
                             return
                 else:  # gremlin and cypher
+                    pg_language = language_dropdown.value if language_dropdown.value else 'gremlin'
                     if fullfile_query:  # treat entire file content as one query
-                        if model == 'propertygraph':
+                        if pg_language == 'gremlin':
                             query_status = process_gremlin_query_line(q['content'], 0, q)
                         else:
                             query_status = process_cypher_query_line(q['content'], 0, q)
@@ -2374,7 +2375,7 @@ class Graph(Magics):
                                 continue
                     else:  # treat each line as its own query
                         for line_index, query_line in enumerate(q['content'].splitlines()):
-                            if model == 'propertygraph':
+                            if pg_language == 'gremlin':
                                 query_status = process_gremlin_query_line(query_line, line_index, q)
                             else:
                                 query_status = process_cypher_query_line(query_line, line_index, q)
