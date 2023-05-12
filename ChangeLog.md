@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
+  - Path: 03-Sample-Applications > 05-Healthcare-and-Life-Sciences-Graphs
 - Added openCypher and local file path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
 - Added `%toggle_traceback` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/486))
 
