@@ -127,7 +127,7 @@ def magic_variables(func):
                     lambda m: get_variable_injection_value(raw_var=m.group(1), local_ns=local_ns), cell_string)
             return func(*args, **kwargs)
         except KeyError as key_error:
-            print(f'Terminated query due to undefined variable: {key_error}')
+            print(f'Terminated magic due to undefined variable: {key_error}')
             return
 
     return use_magic_variables
