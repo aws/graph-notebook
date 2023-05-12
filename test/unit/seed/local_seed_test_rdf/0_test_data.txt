@@ -1,0 +1,3 @@
+%%sparql
+
+INSERT DATA { <https://test.com/s> <https://test.com/p> <https://test.com/o> . }
