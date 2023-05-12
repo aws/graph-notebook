@@ -1,0 +1,1 @@
+g.addE("edge_0").property(id,"0").from(V("0")).to(V("1"))
