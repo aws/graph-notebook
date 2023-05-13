@@ -24,33 +24,35 @@ Instructions for connecting to the following graph databases:
 |[Gremlin Server](#gremlin-server)|     property graph      |       Gremlin       |
 |    [Blazegraph](#blazegraph)    |            RDF          |       SPARQL        |
 |[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin or SPARQL  |
+|         [Neo4J](#neo4j)         |     property graph      |       Cypher        |
 
 We encourage others to contribute configurations they find useful. There is an [`additional-databases`](https://github.com/aws/graph-notebook/blob/main/additional-databases) folder where more information can be found.
 
 ## Features
 
 #### Notebook cell 'magic' extensions in the IPython 3 kernel
-`%%sparql` - Executes a SPARQL query against your configured database endpoint.
+`%%sparql` - Executes a SPARQL query against your configured database endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-sparql)
 
-`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return.
+`%%gremlin` - Executes a Gremlin query against your database using web sockets. The results are similar to those a Gremlin console would return. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-gremlin)
 
-`%%opencypher` or `%%oc` Executes an openCypher query against your database.
+`%%opencypher` or `%%oc` Executes an openCypher query against your database. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-opencypher)
 
 `%%graph_notebook_config` - Sets the executing notebook's database configuration to the JSON payload provided in the cell body.
 
 `%%graph_notebook_vis_options` - Sets the executing notebook's [vis.js options](https://visjs.github.io/vis-network/docs/network/physics.html) to the JSON payload provided in the cell body.
 
-`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality. [Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-line-magics-neptune_ml). [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
+**TIP** :point_right: `%%sparql`, `%%gremlin`, and `%%oc` share a [suite of common arguments](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebook-magics-query-args) that be used to customize the appearance of rendered graphs. Example usage of these arguments can also be found in the sample notebooks under [02-Visualization](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/02-Visualization).
 
-**TIP** :point_right:  There is syntax highlighting for `%%sparql`, `%%gremlin` and `%%oc` cells to help you structure your queries more easily.
+**TIP** :point_right: There is syntax highlighting for language query magic cells to help you structure your queries more easily.
 
 #### Notebook line 'magic' extensions in the IPython 3 kernel
 `%gremlin_status` - Obtain the status of Gremlin queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/gremlin-api-status.html)
 
 `%sparql_status` - Obtain the status of SPARQL queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-api-status.html)
 
-`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries.
+`%opencypher_status` or `%oc_status` - Obtain the status of openCypher queries. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-opencypher-status.html)
 
 `%load` - Generate a form to submit a bulk loader job. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html)
 
@@ -58,8 +60,10 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%load_status` - Get the status of a provided `load_id`. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-status-examples.html)
 
-`%neptune_ml` - Set of commands to integrate with NeptuneML functionality. You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
-[Documentation](https://aws.amazon.com/neptune/machine-learning/)
+`%cancel_load` - Cancels a bulk load job. You can either provide a single `load_id`, or specify `--all-in-queue` to cancel all queued (and not actively running) jobs. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/load-api-reference-cancel.html)
+
+`%neptune_ml` - Set of commands to integrate with NeptuneML functionality, as described [here](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-neptune_ml). You can find a set of tutorial notebooks [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks/04-Machine-Learning).
+[Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html)
 
 `%status` - Check the Health Status of the configured host endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-status.html)
 
@@ -89,8 +93,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.6.13-3.9.7
-* [RDFLib](https://pypi.org/project/rdflib/) 5.0.0
+* [Python](https://www.python.org/downloads/) 3.7.x-3.10.11
 * A graph database that provides one or more of:
   *  A SPARQL 1.1 endpoint 
   *  An Apache TinkerPop Gremlin Server compatible endpoint
@@ -101,10 +104,6 @@ You will need:
 Begin by installing `graph-notebook` and its prerequisites, then follow the remaining instructions for either Jupyter Classic Notebook or JupyterLab.
 
 ```
-# pin specific versions of required dependencies
-pip install rdflib==5.0.0
-pip install markupsafe==2.0.1
-
 # install the package
 pip install graph-notebook
 ```
@@ -112,11 +111,7 @@ pip install graph-notebook
 ### Jupyter Classic Notebook
 
 ```
-# install and enable the visualization widget
-
-# ONLY RUN THIS LINE IF USING graph-notebook<=3.2.0
-jupyter nbextension install --py --sys-prefix graph_notebook.widgets
-
+# Enable the visualization widget
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
 # copy static html resources
@@ -144,26 +139,40 @@ pip install "jupyterlab>=3"
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
 
 # start jupyterlab
-python -m graph_notebook.start_jupyterlab —-jupyter-dir ~/notebook/destination/dir
+python -m graph_notebook.start_jupyterlab --jupyter-dir ~/notebook/destination/dir
 ```
 
 #### Loading magic extensions in JupyterLab
 
-When attempting to run a line/cell magic on a new notebook in JupyterLab, you may encounter an error like:
+When attempting to run a line/cell magic on a new notebook in JupyterLab, you may encounter the error:
 ```
 UsageError: Cell magic `%%graph_notebook_config` not found.
 ```
 
-To fix this, manually reload the magic extensions by running:
+To fix this, run the following command, then restart JupyterLab. 
+```
+python -m graph_notebook.ipython_profile.configure_ipython_profile
+```
+
+Alternatively, the magic extensions can be manually reloaded for a single notebook by running the following command in any empty cell.
 ```
 %load_ext graph_notebook.magics
 ```
+
+## Upgrading an existing installation
+
+```
+# upgrade graph-notebook
+pip install graph-notebook --upgrade
+```
+
+After the above command completes, rerun the commands given at [Jupyter Classic Notebook](#jupyter-classic-notebook) or [JupyterLab 3.x](#jupyterlab-3x) based on which flavour is installed.
 
 ## Connecting to a graph database
 
 ### Gremlin Server
 
-In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`. Optionally, modify `traversal_source` if your graph traversal source name differs from the default value. For a local Gremlin server (HTTP or WebSockets), you can use the following command:
+In a new cell in the Jupyter notebook, change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, and `ssl`. Optionally, modify `traversal_source` if your graph traversal source name differs from the default value, `username` and `password` if required by the graph store, or `message_serializer` for a specific data transfer format. For a local Gremlin server (HTTP or WebSockets), you can use the following command:
 
 ```
 %%graph_notebook_config
@@ -172,7 +181,10 @@ In a new cell in the Jupyter notebook, change the configuration using `%%graph_n
   "port": 8182,
   "ssl": false,
   "gremlin": {
-    "traversal_source": "g"
+    "traversal_source": "g",
+    "username": "",
+    "password": "",
+    "message_serializer": "graphsonv3"
   }
 }
 ```
@@ -226,6 +238,7 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
   "auth_mode": "DEFAULT",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
@@ -245,6 +258,7 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
   "auth_mode": "IAM",
   "load_from_s3_arn": "",
   "ssl": true,
+  "ssl_verify": true,
   "aws_region": "your-neptune-region"
 }
 ```
@@ -259,6 +273,79 @@ Additionally, you should have the following Amazon Web Services credentials avai
 These variables must follow a specific naming convention, as listed in the [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables)
 
 A list of all locations checked for Amazon Web Services credentials can also be found [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+
+### Neo4J
+
+Change the configuration using `%%graph_notebook_config` and modify the fields for `host`, `port`, `ssl`, and `neo4j` authentication. 
+
+If your Neo4J instance supports [multiple databases](https://neo4j.com/developer/manage-multiple-databases/), you can specify a database name via the `database` field. Otherwise, leave the `database` field blank to query the default database.
+
+For a local Neo4j Desktop database, you can use the following command:
+
+```
+%%graph_notebook_config
+{
+  "host": "localhost",
+  "port": 7687,
+  "ssl": false,
+  "neo4j": {
+    "username": "neo4j",
+    "password": "password",
+    "auth": true,
+    "database": ""
+  }
+}
+```
+
+Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint.
+
+To setup a new local Neo4J Desktop database for use with the graph notebook, check out the [Neo4J Desktop User Interface Guide](https://neo4j.com/developer/neo4j-desktop/).
+
+## Building From Source
+
+A pre-release distribution can be built from the graph-notebook repository via the following steps:
+
+```
+# 1) Clone the repository and navigate into the clone directory
+git clone https://github.com/aws/graph-notebook.git
+cd graph-notebook
+
+# 2) Create a new virtual environment
+
+# 2a) Option 1 - pyenv
+pyenv install 3.10.11  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.10.11 build-graph-notebook
+pyenv local build-graph-notebook
+
+# 2b) Option 2 - venv
+rm -rf /tmp/venv
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+
+# 3) Install build dependencies
+pip install --upgrade pip setuptools wheel twine
+pip install jupyterlab>=3
+
+# 4) Build the distribution
+python3 setup.py bdist_wheel
+```
+
+You should now be able to find the built distribution at
+
+`./dist/graph_notebook-3.8.1-py3-none-any.whl`
+
+And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
+
+```
+pip install graph-notebook
+```
+
+with
+
+```
+pip install ./dist/graph_notebook-3.8.1-py3-none-any.whl
+```
+
 
 ## Contributing Guidelines
 

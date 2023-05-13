@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import unittest
 from decimal import Decimal
+from uuid import uuid4
 from gremlin_python.structure.graph import Path, Edge, Vertex
 from gremlin_python.process.traversal import T, Direction
 from graph_notebook.network.EventfulNetwork import EVENT_ADD_NODE
@@ -190,6 +191,75 @@ class TestGremlinNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('1')
         self.assertEqual(node1['label'], '1')
         self.assertEqual(node1['title'], '1')
+
+    def test_add_explicit_type_vertex_with_string_id(self):
+        v_id = 'a_id'
+        vertex = Vertex(id=v_id)
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(v_id)
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties']['id'], v_id)
+
+    def test_add_explicit_type_vertex_with_uuid_id(self):
+        v_id = uuid4()
+        vertex = Vertex(id=v_id)
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(str(v_id))
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties']['id'], str(v_id))
+
+    def test_add_explicit_type_vertex_with_integer_id(self):
+        v_id = 1
+        vertex = Vertex(id=v_id)
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(v_id)
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties']['id'], v_id)
+
+    def test_add_vertex_with_string_id(self):
+        v_id = 'a_id'
+        vertex = {
+            T.id: v_id,
+            T.label: 'label'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(v_id)
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties'][T.id], v_id)
+
+    def test_add_vertex_with_uuid_id(self):
+        v_id = uuid4()
+        vertex = {
+            T.id: v_id,
+            T.label: 'label'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(str(v_id))
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties'][T.id], str(v_id))
+
+    def test_add_vertex_with_integer_id(self):
+        v_id = 99
+        vertex = {
+            T.id: v_id,
+            T.label: 'label'
+        }
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get(str(v_id))
+        self.assertIsNotNone(node)
+        self.assertEqual(node['properties'][T.id], v_id)
 
     def test_add_vertex_without_node_property(self):
         vertex = {
@@ -753,6 +823,51 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertIsInstance(final_lon_value, float)
         self.assertIsInstance(final_lat_value, float)
 
+    def test_add_explicit_type_single_edge_with_string_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = '1'
+
+        edge1 = Edge(id=e_id, outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[e_id]['properties']['id'], e_id)
+
+    def test_add_explicit_type_single_edge_with_uuid_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = uuid4()
+
+        edge1 = Edge(id=e_id, outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[str(e_id)]['properties']['id'], str(e_id))
+
+    def test_add_explicit_type_single_edge_with_integer_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = 1
+
+        edge1 = Edge(id=e_id, outV=vertex1, inV=vertex2, label='route')
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1)
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[e_id]['properties']['id'], e_id)
+
     def test_add_explicit_type_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
         vertex2 = Vertex(id='2')
@@ -980,6 +1095,51 @@ class TestGremlinNetwork(unittest.TestCase):
         edge = gn.graph.get_edge_data('1', '2')
         self.assertEqual(edge['1']['label'], 'v[2]')
         self.assertEqual(edge['1']['title'], 'v[2]')
+
+    def test_add_single_edge_with_string_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = '1'
+
+        edge1 = {T.id: e_id, T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[e_id]['properties'][T.id], e_id)
+
+    def test_add_single_edge_with_uuid_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = uuid4()
+
+        edge1 = {T.id: e_id, T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[str(e_id)]['properties'][T.id], str(e_id))
+
+    def test_add_single_edge_with_integer_id(self):
+        vertex1 = Vertex(id='1')
+        vertex2 = Vertex(id='2')
+        e_id = 1
+
+        edge1 = {T.id: e_id, T.label: 'route', 'outV': 'v[1]', 'inV': 'v[2]'}
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex1)
+        gn.add_vertex(vertex2)
+        gn.add_path_edge(edge1, from_id='1', to_id='2')
+        edge = gn.graph.get_edge_data('1', '2')
+        self.assertIsNotNone(edge)
+        self.assertEqual(edge[str(e_id)]['properties'][T.id], e_id)
 
     def test_add_single_edge_without_edge_property(self):
         vertex1 = Vertex(id='1')
@@ -1589,7 +1749,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"airport":{"code"}}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_with_groupby_invalid_json_multiple_labels(self):
         vertex1 = {
@@ -1613,8 +1773,8 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby(self):
         vertex = {
@@ -1628,7 +1788,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='foo')
         gn.add_vertex(vertex)
         node = gn.graph.nodes.get(vertex[T.id])
-        self.assertEqual(node['group'], '')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby_properties_json_single_label(self):
         vertex1 = {
@@ -1642,7 +1802,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"airport":{"groupby":"foo"}}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_groupby_properties_json_multiple_labels(self):
         vertex1 = {
@@ -1666,7 +1826,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn.add_vertex(vertex2)
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
         self.assertEqual(node2['group'], 'Europe')
 
     def test_group_nonexistent_label_properties_json_single_label(self):
@@ -1681,7 +1841,7 @@ class TestGremlinNetwork(unittest.TestCase):
         gn = GremlinNetwork(group_by_property='{"air_port":{"groupby":"code"}')
         gn.add_vertex(vertex1)
         node1 = gn.graph.nodes.get(vertex1[T.id])
-        self.assertEqual(node1['group'], '')
+        self.assertEqual(node1['group'], 'DEFAULT_GROUP')
 
     def test_group_nonexistent_label_properties_json_multiple_labels(self):
         vertex1 = {
@@ -1706,7 +1866,7 @@ class TestGremlinNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get(vertex1[T.id])
         node2 = gn.graph.nodes.get(vertex2[T.id])
         self.assertEqual(node1['group'], 'SEA')
-        self.assertEqual(node2['group'], '')
+        self.assertEqual(node2['group'], 'DEFAULT_GROUP')
 
     def test_group_without_groupby(self):
         vertex = {
@@ -2095,6 +2255,62 @@ class TestGremlinNetwork(unittest.TestCase):
         node = gn.graph.nodes.get('1')
         self.assertEqual(node['group'], '1')
 
+    def test_group_returnvertex_groupby_missing_property(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property="foo")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnvertex_groupby_missing_property_key_json(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property='{"foo":"label"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnvertex_groupby_missing_property_value_json(self):
+        vertex = Vertex(id='1')
+
+        gn = GremlinNetwork(group_by_property='{"vertex":"bar"}')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_default(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_groupby_property(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_property="foo")
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'DEFAULT_GROUP')
+
+    def test_group_returnmisctype_groupby_raw(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_raw=True)
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], 'a_vertex')
+
+    def test_group_returnmisctype_groupby_depth(self):
+        vertex = 'a_vertex'
+
+        gn = GremlinNetwork(group_by_property='TRAVERSAL_DEPTH')
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('a_vertex')
+        self.assertEqual(node['group'], '__DEPTH--1__')
+
     def test_group_by_raw_explicit(self):
         vertex = {
             T.id: '1234',
@@ -2156,6 +2372,26 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(edge_data, edge_expected)
         self.assertEqual(inv_data['properties'], edge_map[Direction.IN])
         self.assertEqual(outv_data['properties'], edge_map[Direction.OUT])
+
+    def test_add_elementmap_edge_with_direction_uuid_ids(self):
+        in_node_id = uuid4()
+        out_node_id = uuid4()
+        edge_map = {
+            T.id: '5298',
+            T.label: 'route',
+            Direction.IN: {T.id: in_node_id, T.label: 'airport'},
+            Direction.OUT: {T.id: out_node_id, T.label: 'airport'},
+            'dist': 763
+        }
+
+        gn = GremlinNetwork()
+        gn.insert_elementmap(edge_map, index=1)
+        inv_data = gn.graph.nodes.get(str(in_node_id))
+        outv_data = gn.graph.nodes.get(str(out_node_id))
+        self.assertIsNotNone(inv_data)
+        self.assertIsNotNone(outv_data)
+        self.assertEqual(inv_data['properties'][T.id], str(edge_map[Direction.IN][T.id]))
+        self.assertEqual(outv_data['properties'][T.id], str(edge_map[Direction.OUT][T.id]))
 
     def test_add_elementmap_edge_groupby_depth(self):
         edge_map = {

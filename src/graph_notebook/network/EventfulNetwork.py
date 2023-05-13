@@ -3,14 +3,15 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from collections import defaultdict
+from collections import defaultdict, abc
 import collections
 import re
 import json
 from networkx import MultiDiGraph
 from .Network import Network
 from typing import Tuple
-from graph_notebook.decorators.decorators import check_if_dict_access_regex, get_variable_injection_dict_and_indices
+from graph_notebook.decorators.decorators import check_if_access_regex, \
+    get_variable_injection_name_and_indices
 
 EVENT_ADD_NODE = 'add_node'
 EVENT_ADD_NODE_DATA = 'add_node_data'
@@ -84,8 +85,8 @@ class EventfulNetwork(Network):
 
         Ex. "names[2]" -> (names, 2)
         """
-        if re.match(check_if_dict_access_regex, property_with_index):
-            property_name, property_index = get_variable_injection_dict_and_indices(raw_var=property_with_index,
+        if re.match(check_if_access_regex, property_with_index):
+            property_name, property_index = get_variable_injection_name_and_indices(raw_var=property_with_index,
                                                                                     keys_are_str=False)
             if property_name and property_index:
                 property_indices_list = [property_name]
@@ -125,7 +126,7 @@ class EventfulNetwork(Network):
         items = []
         for k, v in d.items():
             new_key = parent_key + sep + k if parent_key else k
-            if isinstance(v, collections.MutableMapping):
+            if isinstance(v, collections.abc.MutableMapping):
                 items.extend(self.flatten(v).items())
             else:
                 items.append((new_key, v))

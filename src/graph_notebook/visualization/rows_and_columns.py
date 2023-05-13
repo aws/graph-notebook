@@ -33,26 +33,34 @@ def sparql_get_rows_and_columns(sparql_results):
     else:
         return None
 
-def opencypher_get_rows_and_columns(results, is_bolt=False):
+
+def opencypher_get_rows_and_columns(results, res_format: str = None):
     rows = []
     columns = set()
 
-    if not is_bolt:
+    if not res_format:
         if results['results']:
-            res=results['results']
+            res = results['results']
         else:
             return None
     else:
-        res=results
-    
-    if len(res)>0:
-        columns=res[0].keys()
-    
-    for r in res:
-        row = []
-        for key, item in r.items():
-            row.append(item)
-        rows.append(row)
+        res = results
+
+    if res_format != 'jolt':
+        if len(res) > 0:
+            columns = res[0].keys()
+
+        for r in res:
+            row = []
+            for key, item in r.items():
+                row.append(item)
+            rows.append(row)
+    else:
+        if len(res) > 0:
+            columns.add("Result")
+
+        for r in res:
+            rows.append(r)
 
     return {
         'columns': columns,

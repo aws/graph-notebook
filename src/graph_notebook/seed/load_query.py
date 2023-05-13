@@ -28,12 +28,12 @@ def file_to_query(file, path_to_data_sets):
         return None
     full_path = pjoin(path_to_data_sets, file)
     try:
-        with open(full_path, mode='r', encoding="utf-8") as f:
-            query = {
+        with open(full_path, mode='r', encoding="utf-8") as file_content:
+            query_dict = {
                 'name': file,
-                'content': f.read()
+                'content': file_content.read()
             }
-            return query
+            return query_dict
     except Exception:
         print(f"Unable to read queries from file [{file}] under local directory [{path_to_data_sets}]")
         return None

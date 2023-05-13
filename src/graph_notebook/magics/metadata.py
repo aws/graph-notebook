@@ -39,7 +39,8 @@ class Metadata(object):
         self.metrics[metric_name].set_value(value)
 
     def set_request_metrics(self, res: Response):
-        self.set_metric_value('request_time', 1000 * res.elapsed.total_seconds())
+        raw_request_time = 1000 * res.elapsed.total_seconds()
+        self.set_metric_value('request_time', round(raw_request_time, 2))
         self.set_metric_value('status', res.status_code)
         self.set_metric_value('status_ok', res.ok)
         self.set_metric_value('resp_size', sys.getsizeof(res.content))
@@ -217,8 +218,9 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
                                                                query_time=query_time)
 
 
-def build_opencypher_metadata_from_query(query_type: str, results: any, res: Response = None, query_time: float = None) -> Metadata:
-    if query_type in ['bolt', 'explain']:
+def build_opencypher_metadata_from_query(query_type: str, results: any, results_type: str = None, res: Response = None,
+                                         query_time: float = None) -> Metadata:
+    if results_type in ['bolt', 'jolt', 'explain']:
         res_final = results
     else:
         res_final = results['results']
@@ -229,7 +231,7 @@ def build_opencypher_metadata_from_query(query_type: str, results: any, res: Res
 
 def build_propertygraph_metadata_from_default_query(results: any, query_type: str = 'query', query_time: float = None) -> Metadata:
     propertygraph_metadata = create_propertygraph_metadata_obj(query_type)
-    propertygraph_metadata.set_metric_value('request_time', query_time)
+    propertygraph_metadata.set_metric_value('request_time', round(query_time, 2))
     if query_type != 'explain':
         propertygraph_metadata.set_metric_value('resp_size', sys.getsizeof(results))
         propertygraph_metadata.set_metric_value('results', len(results))
