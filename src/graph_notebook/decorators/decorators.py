@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import functools
 import json
 import re
+import traceback
 
 from IPython.core.display import HTML, display, clear_output
 
@@ -66,9 +67,14 @@ def get_variable_injection_value(raw_var: str, local_ns: dict):
 def display_exceptions(func):
     @functools.wraps(func)
     def do_display_exceptions(*args, **kwargs):
+        try:
+            show_traceback = kwargs['local_ns']['graph_notebook_show_traceback']
+        except KeyError:
+            show_traceback = False
         clear_output()
         tab = widgets.Tab()
 
+        server_error = False
         try:
             return func(*args, **kwargs)
         except KeyboardInterrupt:
@@ -77,23 +83,30 @@ def display_exceptions(func):
         except HTTPError as http_ex:
             caught_ex = http_ex
             raw_html = http_ex_to_html(http_ex)
+            server_error = True
         except GremlinServerError as gremlin_ex:
             caught_ex = gremlin_ex
             raw_html = gremlin_server_error_to_html(gremlin_ex)
+            server_error = True
         except Exception as e:
-            caught_ex = e
-            raw_html = exception_to_html(e)
+            if show_traceback:
+                caught_ex = traceback.format_exception(e)
+                traceback.print_exception(e)
+            else:
+                caught_ex = e
+                raw_html = exception_to_html(e)
 
         if 'local_ns' in kwargs:
             kwargs['local_ns']['graph_notebook_error'] = caught_ex
 
-        html = HTML(raw_html)
-        html_output = widgets.Output(layout={'overflow': 'scroll'})
-        with html_output:
-            display(html)
-        tab.children = [html_output]
-        tab.set_title(0, 'Error')
-        display(tab)
+        if server_error or not show_traceback:
+            html = HTML(raw_html)
+            html_output = widgets.Output(layout={'overflow': 'scroll'})
+            with html_output:
+                display(html)
+            tab.children = [html_output]
+            tab.set_title(0, 'Error')
+            display(tab)
 
     return do_display_exceptions
 
@@ -114,7 +127,7 @@ def magic_variables(func):
                     lambda m: get_variable_injection_value(raw_var=m.group(1), local_ns=local_ns), cell_string)
             return func(*args, **kwargs)
         except KeyError as key_error:
-            print(f'Terminated query due to undefined variable: {key_error}')
+            print(f'Terminated magic due to undefined variable: {key_error}')
             return
 
     return use_magic_variables
@@ -132,7 +145,7 @@ def http_ex_to_html(http_ex: HTTPError):
     return error_html
 
 
-def exception_to_html(ex: Exception):
+def exception_to_html(ex):
     content = {
         'error': ex
     }
