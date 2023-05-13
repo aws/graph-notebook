@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added openCypher and local file path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+- Added S3 support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/488))
 
 ## Release 3.8.1 (April 17, 2023)
 - Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
