@@ -56,7 +56,7 @@ RUN mkdir -p "${WORKING_DIR}" && \
     pip3 install --upgrade pip setuptools wheel && \
     pip3 install twine==3.7.1 && \
     pip3 install -r requirements.txt && \
-    pip3 install "jupyterlab>=3" && \
+    pip3 install "jupyterlab>=3,<4" && \
     # Build the package
     python3 setup.py sdist bdist_wheel && \
     # install the copied repo
