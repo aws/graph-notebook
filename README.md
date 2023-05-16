@@ -133,7 +133,7 @@ python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/d
 
 ```
 # install jupyterlab
-pip install "jupyterlab>=3"
+pip install "jupyterlab>=3,<4"
 
 # copy premade starter notebooks
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
@@ -324,7 +324,7 @@ source /tmp/venv/bin/activate
 
 # 3) Install build dependencies
 pip install --upgrade pip setuptools wheel twine
-pip install jupyterlab>=3
+pip install "jupyterlab>=3,<4"
 
 # 4) Build the distribution
 python3 setup.py bdist_wheel
