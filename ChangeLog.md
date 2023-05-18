@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `%toggle_traceback` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/486))
 - Added support for setting `%graph_notebook_vis_options` from a variable ([Link to PR](https://github.com/aws/graph-notebook/pull/487))
 - Pinned JupyterLab<4.x to fix Python 3.8/3.10 builds ([Link to PR](https://github.com/aws/graph-notebook/pull/490))
+- Changed datatype of "amount" from String to numeric for "Transaction" vertices in Fraud Graph sample notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/489))
 
 ## Release 3.8.1 (April 17, 2023)
 - Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
