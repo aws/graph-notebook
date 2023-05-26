@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
   - Path: 03-Sample-Applications > 05-Healthcare-and-Life-Sciences-Graphs
 - Added openCypher and local file path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+- Added S3 support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/488))
 - Added `%toggle_traceback` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/486))
 - Added support for setting `%graph_notebook_vis_options` from a variable ([Link to PR](https://github.com/aws/graph-notebook/pull/487))
 - Pinned JupyterLab<4.x to fix Python 3.8/3.10 builds ([Link to PR](https://github.com/aws/graph-notebook/pull/490))
@@ -151,6 +152,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
 - Added grouping by depth for Gremlin and openCypher queries ([PR #1](https://github.com/aws/graph-notebook/pull/241))([PR #2](https://github.com/aws/graph-notebook/pull/251))
 - Added grouping by raw node results ([Link to PR](https://github.com/aws/graph-notebook/pull/253))
+- Added loading from file path with `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/247))
 - Added `--no-scroll` option for disabling truncation of query result pages ([Link to PR](https://github.com/aws/graph-notebook/pull/243))
 - Added `--results-per-page` option ([Link to PR](https://github.com/aws/graph-notebook/pull/242))
 - Added relaxed seed command error handling ([Link to PR](https://github.com/aws/graph-notebook/pull/246))
