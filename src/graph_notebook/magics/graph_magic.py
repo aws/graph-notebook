@@ -50,7 +50,7 @@ from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
 from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
-from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name
+from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name, normalize_language_name
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
@@ -104,7 +104,8 @@ OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --ca
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
 SEED_MODEL_OPTIONS = ['', 'propertygraph', 'rdf']
 SEED_LANGUAGE_OPTIONS = ['', 'gremlin', 'opencypher', 'sparql']
-SOURCE_OPTIONS = ['', 'samples', 'custom']
+SEED_SOURCE_OPTIONS = ['', 'samples', 'custom']
+SEED_NO_DATASETS_FOUND_MSG = "(No datasets available)"
 
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
@@ -2037,7 +2038,7 @@ class Graph(Magics):
         output = widgets.Output()
         progress_output = widgets.Output()
         source_dropdown = widgets.Dropdown(
-            options=SOURCE_OPTIONS,
+            options=SEED_SOURCE_OPTIONS,
             description='Source type:',
             disabled=False
         )
@@ -2049,8 +2050,15 @@ class Graph(Magics):
             layout=widgets.Layout(display='none')
         )
 
-        language_dropdown = widgets.Dropdown(
+        custom_language_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
+            description='Language:',
+            disabled=False,
+            layout=widgets.Layout(display='none')
+        )
+
+        samples_pg_language_dropdown = widgets.Dropdown(
+            options=SEED_LANGUAGE_OPTIONS[:3],
             description='Language:',
             disabled=False,
             layout=widgets.Layout(display='none')
@@ -2091,7 +2099,8 @@ class Graph(Magics):
 
         submit_button = widgets.Button(description="Submit")
         model_dropdown.layout.visibility = 'hidden'
-        language_dropdown.layout.visibility = 'hidden'
+        custom_language_dropdown.layout.visibility = 'hidden'
+        samples_pg_language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
         fullfile_option_dropdown.layout.visibility = 'hidden'
         location_option_dropdown.layout.visibility = 'hidden'
@@ -2104,12 +2113,16 @@ class Graph(Magics):
             location_option_dropdown.layout.display = 'none'
             seed_file_location_text_hbox.layout.visibility = 'hidden'
             seed_file_location_text_hbox.layout.display = 'none'
-            language_dropdown.layout.visibility = 'hidden'
-            language_dropdown.layout.display = 'none'
+            custom_language_dropdown.layout.visibility = 'hidden'
+            custom_language_dropdown.layout.display = 'none'
+            samples_pg_language_dropdown.layout.visibility = 'hidden'
+            samples_pg_language_dropdown.layout.display = 'none'
             fullfile_option_dropdown.layout.visibility = 'hidden'
             fullfile_option_dropdown.layout.display = 'none'
             seed_file_location.layout.visibility = 'hidden'
             seed_file_location.layout.display = 'none'
+            seed_file_location_text_hbox.layout.visibility = 'hidden'
+            seed_file_location_text_hbox.layout.display = 'none'
             model_dropdown.layout.visibility = 'hidden'
             model_dropdown.layout.display = 'none'
             data_set_drop_down.layout.visibility = 'hidden'
@@ -2120,12 +2133,12 @@ class Graph(Magics):
             hide_all_widgets()
             selected_source = change['new']
             if selected_source == 'custom':
-                language_dropdown.layout.visibility = 'visible'
-                language_dropdown.layout.display = 'flex'
+                custom_language_dropdown.layout.visibility = 'visible'
+                custom_language_dropdown.layout.display = 'flex'
                 location_option_dropdown.layout.visibility = 'visible'
                 location_option_dropdown.layout.display = 'flex'
-                if language_dropdown.value:
-                    if language_dropdown.value != 'sparql':
+                if custom_language_dropdown.value:
+                    if custom_language_dropdown.value != 'sparql':
                         fullfile_option_dropdown.layout.visibility = 'visible'
                         fullfile_option_dropdown.layout.display = 'flex'
                 # If textbox has a value, OR we are loading from S3, display textbox instead of the filepicker
@@ -2135,13 +2148,13 @@ class Graph(Magics):
                 elif seed_file_location.value or location_option_dropdown.value == 'Local':
                     seed_file_location.layout.visibility = 'visible'
                     seed_file_location.layout.display = 'flex'
-                if language_dropdown.value \
+                if custom_language_dropdown.value \
                         and (seed_file_location_text.value or
                              (seed_file_location.value and location_option_dropdown.value == 'Local')):
                     submit_button.layout.visibility = 'visible'
             elif selected_source == 'samples':
-                language_dropdown.layout.visibility = 'hidden'
-                language_dropdown.layout.display = 'none'
+                custom_language_dropdown.layout.visibility = 'hidden'
+                custom_language_dropdown.layout.display = 'none'
                 fullfile_option_dropdown.layout.visibility = 'hidden'
                 fullfile_option_dropdown.layout.display = 'none'
                 seed_file_location.layout.visibility = 'hidden'
@@ -2149,13 +2162,26 @@ class Graph(Magics):
                 model_dropdown.layout.visibility = 'visible'
                 model_dropdown.layout.display = 'flex'
                 if model_dropdown.value:
-                    data_set_drop_down.layout.visibility = 'visible'
-                    data_set_drop_down.layout.display = 'flex'
-                    if data_set_drop_down.value:
-                        submit_button.layout.visibility = 'visible'
+                    show_dataset = False
+                    if model_dropdown.value == 'propertygraph':
+                        samples_pg_language_dropdown.layout.visibility = 'visible'
+                        samples_pg_language_dropdown.layout.display = 'flex'
+                        if samples_pg_language_dropdown.value != '':
+                            show_dataset = True
+                    else:
+                        samples_pg_language_dropdown.layout.visibility = 'hidden'
+                        samples_pg_language_dropdown.layout.display = 'none'
+                        show_dataset = True
+                    if show_dataset:
+                        data_set_drop_down.layout.visibility = 'visible'
+                        data_set_drop_down.layout.display = 'flex'
+                        if data_set_drop_down.value and data_set_drop_down.value != SEED_NO_DATASETS_FOUND_MSG:
+                            submit_button.layout.visibility = 'visible'
             else:
-                language_dropdown.layout.visibility = 'hidden'
-                language_dropdown.layout.display = 'none'
+                custom_language_dropdown.layout.visibility = 'hidden'
+                custom_language_dropdown.layout.display = 'none'
+                samples_pg_language_dropdown.layout.visibility = 'hidden'
+                samples_pg_language_dropdown.layout.display = 'none'
                 fullfile_option_dropdown.layout.visibility = 'hidden'
                 fullfile_option_dropdown.layout.display = 'none'
                 seed_file_location.layout.visibility = 'hidden'
@@ -2168,9 +2194,8 @@ class Graph(Magics):
                 data_set_drop_down.layout.display = 'none'
             return
 
-        def on_model_value_change(change):
-            selected_model = change['new']
-            data_sets = get_data_sets(selected_model)
+        def change_datasets_widget(samples_lang):
+            data_sets = get_data_sets(samples_lang)
             if data_sets:
                 data_sets.sort()
                 data_set_drop_down.options = [ds for ds in data_sets if
@@ -2179,9 +2204,30 @@ class Graph(Magics):
                 data_set_drop_down.layout.display = 'flex'
                 submit_button.layout.visibility = 'visible'
             else:
-                data_set_drop_down.layout.visibility = 'hidden'
-                data_set_drop_down.layout.display = 'none'
+                if samples_lang:
+                    data_set_drop_down.options = [SEED_NO_DATASETS_FOUND_MSG]
+                    data_set_drop_down.layout.visibility = 'visible'
+                    data_set_drop_down.layout.display = 'flex'
+                else:
+                    data_set_drop_down.layout.visibility = 'hidden'
+                    data_set_drop_down.layout.display = 'none'
                 submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_model_value_change(change):
+            selected_model = change['new']
+            samples_language = ''
+            if selected_model == 'propertygraph':
+                samples_pg_language_dropdown.layout.visibility = 'visible'
+                samples_pg_language_dropdown.layout.display = 'flex'
+                if samples_pg_language_dropdown.value != '':
+                    samples_language = samples_pg_language_dropdown.value
+            else:
+                samples_pg_language_dropdown.layout.visibility = 'hidden'
+                samples_pg_language_dropdown.layout.display = 'none'
+                if selected_model == 'rdf':
+                    samples_language = 'sparql'
+            change_datasets_widget(samples_language)
             return
 
         def on_dataset_value_change(change):
@@ -2190,7 +2236,12 @@ class Graph(Magics):
                 submit_button.layout.visibility = 'hidden'
             return
 
-        def on_language_value_change(change):
+        def on_samples_pg_language_value_change(change):
+            selected_pg_language = change['new']
+            change_datasets_widget(selected_pg_language)
+            return
+
+        def on_custom_language_value_change(change):
             # Preserve the value/state of the text/selector widget if it's already rendered
             # Otherwise, display the default selector widget (file browser)
             selected_language = change['new']
@@ -2237,19 +2288,14 @@ class Graph(Magics):
         def disable_seed_widgets():
             source_dropdown.disabled = True
             model_dropdown.disabled = True
-            language_dropdown.disabled = True
+            custom_language_dropdown.disabled = True
+            samples_pg_language_dropdown.disabled = True
             data_set_drop_down.disabled = True
             fullfile_option_dropdown.disabled = True
             location_option_dropdown.disabled = True
             seed_file_location_text.disabled = True
             seed_file_location.disabled = True
             submit_button.close()
-
-        def normalize_language_name(lang):
-            lang = lang.lower().replace('_', '')
-            if lang in ['opencypher', 'oc', 'cypher']:
-                lang = 'opencypher'
-            return lang
 
         def process_gremlin_query_line(query_line, line_index, q):
             # Return a state here, with indication of any other variable states that need changing.
@@ -2357,15 +2403,15 @@ class Graph(Magics):
                 data_set = filename
                 fullfile_query = fullfile_option_dropdown.value
             disable_seed_widgets()
-            if language_dropdown.value and filename:
-                model = normalize_model_name(language_dropdown.value)
-                loading_msg_model = language_dropdown.value
+            if custom_language_dropdown.value and filename:
+                model = normalize_model_name(custom_language_dropdown.value)
+                seeding_language = normalize_language_name(custom_language_dropdown.value)
             else:
                 model = normalize_model_name(model_dropdown.value)
-                loading_msg_model = model
+                seeding_language = 'sparql' if model == 'rdf' else samples_pg_language_dropdown.value
             with output:
-                print(f'Loading data set {data_set} for {loading_msg_model}')
-            queries = get_queries(model, data_set, source_dropdown.value)
+                print(f'Loading data set {data_set} for {seeding_language}')
+            queries = get_queries(seeding_language, data_set, source_dropdown.value)
             if queries:
                 if len(queries) < 1:
                     with output:
@@ -2433,9 +2479,8 @@ class Graph(Magics):
                             progress.close()
                             return
                 else:  # gremlin and cypher
-                    pg_language = normalize_language_name(language_dropdown.value)
                     if fullfile_query:  # treat entire file content as one query
-                        if pg_language == 'opencypher':
+                        if seeding_language == 'opencypher':
                             query_status = process_cypher_query_line(q['content'], 0, q)
                         else:
                             query_status = process_gremlin_query_line(q['content'], 0, q)
@@ -2450,7 +2495,7 @@ class Graph(Magics):
                                 continue
                     else:  # treat each line as its own query
                         for line_index, query_line in enumerate(q['content'].splitlines()):
-                            if pg_language == 'opencypher':
+                            if seeding_language == 'opencypher':
                                 query_status = process_cypher_query_line(query_line, line_index, q)
                             else:
                                 query_status = process_gremlin_query_line(query_line, line_index, q)
@@ -2477,21 +2522,52 @@ class Graph(Magics):
         source_dropdown.observe(on_source_value_change, names='value')
         model_dropdown.observe(on_model_value_change, names='value')
         data_set_drop_down.observe(on_dataset_value_change, names='value')
-        language_dropdown.observe(on_language_value_change, names='value')
+        custom_language_dropdown.observe(on_custom_language_value_change, names='value')
+        samples_pg_language_dropdown.observe(on_samples_pg_language_value_change, names='value')
         location_option_dropdown.observe(on_location_value_change, names='value')
         seed_file_location_text.observe(on_seedfile_text_value_change, names='value')
         seed_file_location.observe(on_seedfile_select_value_change, names='value')
 
-        display(source_dropdown, model_dropdown, language_dropdown, data_set_drop_down, fullfile_option_dropdown,
-                location_option_dropdown, seed_file_location, seed_file_location_text_hbox,  # seed_file_location_text,
-                submit_button, progress_output, output)
+        display(source_dropdown, model_dropdown, custom_language_dropdown, samples_pg_language_dropdown,
+                data_set_drop_down, fullfile_option_dropdown, location_option_dropdown, seed_file_location,
+                seed_file_location_text_hbox, submit_button, progress_output, output)
 
-        if args.source != '' or args.language != '':
+        if (args.model != '' or args.language != '') and args.source == '':
+            source_dropdown.value = 'samples'
+            normed_model = normalize_model_name(args.model)
+            normed_language = normalize_language_name(args.language)
+            selected_model = None
+            selected_language = None
+            if normed_model != '' and normed_model in SEED_MODEL_OPTIONS:
+                if normed_model == 'propertygraph':
+                    selected_model = 'propertygraph'
+                    if normed_language in ['gremlin', 'opencypher']:
+                        selected_language = normed_language
+                else:
+                    selected_model = 'rdf'
+                    selected_language = 'sparql'
+            elif normed_language != '' and normed_language in SEED_LANGUAGE_OPTIONS:
+                if normed_language == 'sparql':
+                    selected_model = 'rdf'
+                    selected_language = 'sparql'
+                else:
+                    selected_model = 'propertygraph'
+                    selected_language = normed_language
+            if selected_model:
+                model_dropdown.value = selected_model
+                if selected_language:
+                    if selected_language != 'sparql':
+                        samples_pg_language_dropdown.value = selected_language
+                    if args.dataset != '' and args.dataset in data_set_drop_down.options:
+                        data_set_drop_down.value = args.dataset.lower()
+                        if args.run:
+                            on_button_clicked()
+        elif args.source != '' or args.language != '':
             source_dropdown.value = 'custom'
             valid_language_value = False
             language = normalize_language_name(args.language)
             if language != '' and language in SEED_LANGUAGE_OPTIONS:
-                language_dropdown.value = language
+                custom_language_dropdown.value = language
                 valid_language_value = True
             if args.source != '':
                 seed_file_location_text.value = args.source
@@ -2505,15 +2581,6 @@ class Graph(Magics):
                 seed_file_location.layout.display = 'none'
             if seed_file_location_text.value and valid_language_value and args.run:
                 on_button_clicked()
-        elif args.model != '':
-            source_dropdown.value = 'samples'
-            normed_model = normalize_model_name(args.model)
-            if normed_model in SEED_MODEL_OPTIONS:
-                model_dropdown.value = normed_model
-                if args.dataset != '' and args.dataset in data_set_drop_down.options:
-                    data_set_drop_down.value = args.dataset.lower()
-                    if args.run:
-                        on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):

@@ -16,11 +16,18 @@ from shutil import rmtree
 def normalize_model_name(name):
     name = name.lower().replace('_', '')
     # handles legacy scenarios
-    if name in ('gremlin', 'opencypher', 'property_graph', 'propertygraph'):
+    if name in ('gremlin', 'opencypher', 'property_graph', 'propertygraph', 'pg'):
         name = 'propertygraph'
     elif name in ('sparql', 'rdf'):
         name = 'rdf'
     return name
+
+
+def normalize_language_name(lang):
+    lang = lang.lower().replace('_', '')
+    if lang in ['opencypher', 'oc', 'cypher']:
+        lang = 'opencypher'
+    return lang
 
 
 def file_to_query(file, path_to_data_sets):
@@ -101,10 +108,11 @@ def download_and_extract_archive_from_s3(bucket_name, filepath):
 
 
 # returns a list of queries which correspond to a given query language and name
-def get_queries(model, name, location):
+def get_queries(query_language, name, location):
     if location == 'samples':
         d = os.path.dirname(os.path.realpath(__file__))
-        path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model), name)
+        path_to_data_sets = pjoin(d, 'queries', normalize_model_name(query_language),
+                                  normalize_language_name(query_language), name)
     else:
         # handle custom files here
         if name.startswith('s3://'):
@@ -137,11 +145,12 @@ def get_queries(model, name, location):
     return queries
 
 
-def get_data_sets(model):
-    if model == '':
+def get_data_sets(query_language):
+    if query_language == '':
         return []
     d = os.path.dirname(os.path.realpath(__file__))
-    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(model))
+    path_to_data_sets = pjoin(d, 'queries', normalize_model_name(query_language),
+                              normalize_language_name(query_language))
     data_sets = []
     for data_set in os.listdir(path_to_data_sets):
         if data_set != '__pycache__' and os.path.isdir(pjoin(path_to_data_sets, data_set)):

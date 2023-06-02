@@ -5,8 +5,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
   - Path: 03-Sample-Applications > 05-Healthcare-and-Life-Sciences-Graphs
-- Added openCypher and local file path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
-- Added S3 support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/488))
+- Added local file path and openCypher query support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+- Added S3 path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/488))
+- Added samples options for openCypher to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/494))
 - Added support for openCypher parameterized queries ([Link to PR](https://github.com/aws/graph-notebook/pull/496))
 - Added `%toggle_traceback` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/486))
 - Added support for setting `%graph_notebook_vis_options` from a variable ([Link to PR](https://github.com/aws/graph-notebook/pull/487))
