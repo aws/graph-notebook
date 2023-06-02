@@ -2543,6 +2543,8 @@ class Graph(Magics):
                     selected_model = 'propertygraph'
                     if normed_language in ['gremlin', 'opencypher']:
                         selected_language = normed_language
+                    elif normed_language == '':
+                        selected_language = 'gremlin'
                 else:
                     selected_model = 'rdf'
                     selected_language = 'sparql'
