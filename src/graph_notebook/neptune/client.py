@@ -327,7 +327,8 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
-    def opencypher_http(self, query: str, headers: dict = None, explain: str = None) -> requests.Response:
+    def opencypher_http(self, query: str, headers: dict = None, explain: str = None,
+                        query_params: dict = None) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -343,6 +344,8 @@ class Client(object):
             if explain:
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
+            if query_params:
+                data['parameters'] = str(query_params).replace("'", '"')  # '{"AUS_code":"AUS","WLG_code":"WLG"}'
         else:
             url += 'db/neo4j/tx/commit'
             headers['content-type'] = 'application/json'

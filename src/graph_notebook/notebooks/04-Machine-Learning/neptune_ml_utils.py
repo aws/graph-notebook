@@ -360,18 +360,23 @@ class MovieLensProcessor:
         genre_df['name'] = genre_df['~id']
         genre_df.to_csv(os.path.join(self.formatted_directory,
                                      'genre_vertex.csv'), index=False)
+        genres_edge_df_rows_list = [genres_edges_df]
 
         # Loop through all the movies and pull out the genres
         for index, row in movie_genre_df.iterrows():
             genre_lst = []
             for g in genres:
                 if row[g] == 1:
-                    genres_edges_df = genres_edges_df.append(
-                        {'~id': f"{row['~id']}-included_in-{g}", '~label': 'included_in',
-                         '~from': row['~id'], '~to': g}, ignore_index=True)
+                    row_as_df = pd.DataFrame.from_dict({'~id': f"{row['~id']}-included_in-{g}",
+                                                        '~label': 'included_in',
+                                                        '~from': row['~id'],
+                                                        '~to': g},
+                                                       orient='index').T
+                    genres_edge_df_rows_list.append(row_as_df)
                     genre_lst.append(g)
             movies_df.loc[index, 'genre:String[]'] = ';'.join(genre_lst)
 
+        genres_edges_df = pd.concat(genres_edge_df_rows_list, ignore_index=True)
         # rename the release data column to specify the data type
         movies_df['release_date:Date'] = movies_df['release_date']
         # Drop the genre columns as well as the uneeded release date columns

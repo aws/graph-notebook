@@ -2686,6 +2686,9 @@ class Graph(Magics):
         parser.add_argument('--explain-type', default='dynamic',
                             help='explain mode to use when using the explain query mode',
                             choices=['dynamic', 'static', 'details', 'debug'])
+        parser.add_argument('-qp', '--query-parameters', type=str, default='',
+                            help='Parameter definitions to apply to the query. This option can accept a local variable '
+                                 'name, or a string representation of the map.')
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
@@ -2727,6 +2730,20 @@ class Graph(Magics):
         res_format = None
         results_df = None
 
+        query_params = None
+        if args.query_parameters:
+            if args.query_parameters in local_ns:
+                query_params_input = local_ns[args.query_parameters]
+            else:
+                query_params_input = args.query_parameters
+            if isinstance(query_params_input, dict):
+                query_params = query_params_input
+            else:
+                try:
+                    query_params = json.loads(query_params_input.replace("'", '"'))
+                except Exception as e:
+                    print(f"Invalid query parameter input, ignoring.")
+
         if args.no_scroll:
             oc_layout = UNRESTRICTED_LAYOUT
             oc_scrollY = True
@@ -2747,7 +2764,7 @@ class Graph(Magics):
 
         if args.mode == 'explain':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            res = self.client.opencypher_http(cell, explain=args.explain_type)
+            res = self.client.opencypher_http(cell, explain=args.explain_type, query_params=query_params)
             query_time = time.time() * 1000 - query_start
             explain = res.content.decode("utf-8")
             res.raise_for_status()
@@ -2763,7 +2780,7 @@ class Graph(Magics):
                                                                     link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            oc_http = self.client.opencypher_http(cell)
+            oc_http = self.client.opencypher_http(cell, query_params=query_params)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
 
@@ -2821,7 +2838,10 @@ class Graph(Magics):
         elif args.mode == 'bolt':
             res_format = 'bolt'
             query_start = time.time() * 1000
-            res = self.client.opencyper_bolt(cell)
+            if query_params:
+                res = self.client.opencyper_bolt(cell, **query_params)
+            else:
+                res = self.client.opencyper_bolt(cell)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
