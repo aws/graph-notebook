@@ -17,6 +17,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Changed datatype of "amount" from String to numeric for "Transaction" vertices in Fraud Graph sample notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/489))
 - Replaced usages of deprecated DataFrame.append method in ML samples ([Link to PR](https://github.com/aws/graph-notebook/pull/495))
 - Set Gremlin as default language for PropertyGraph samples in `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/497))
+- Suppress InsecureRequestWarning if SSL verification is disabled ([Link to PR](https://github.com/aws/graph-notebook/pull/499))
 
 ## Release 3.8.1 (April 17, 2023)
 - Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
