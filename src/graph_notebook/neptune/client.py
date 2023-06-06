@@ -8,6 +8,7 @@ import logging
 import re
 
 import requests
+import urllib3
 from urllib.parse import urlparse, urlunparse
 from SPARQLWrapper import SPARQLWrapper
 from boto3 import Session
@@ -146,6 +147,8 @@ class Client(object):
         self.target_port = port
         self.ssl = ssl
         self.ssl_verify = ssl_verify
+        if not self.ssl_verify:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         self.sparql_path = sparql_path
         self.gremlin_traversal_source = gremlin_traversal_source
         self.gremlin_username = gremlin_username

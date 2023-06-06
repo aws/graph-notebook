@@ -136,6 +136,25 @@ class TestGenerateConfiguration(unittest.TestCase):
         config_from_file = get_config(self.test_file_path)
         self.assertEqual(config.to_dict(), config_from_file.to_dict())
 
+    def test_generate_configuration_override_defaults_neptune_no_verify(self):
+        auth_mode = AuthModeEnum.IAM
+        ssl = True
+        ssl_verify = False
+        loader_arn = 'foo'
+        aws_region = 'us-iso-east-1'
+        config = Configuration(self.neptune_host_reg, self.port, auth_mode=auth_mode,
+                               load_from_s3_arn=loader_arn,
+                               ssl=ssl, ssl_verify=ssl_verify,
+                               aws_region=aws_region)
+
+        c = generate_config(config.host, config.port, auth_mode=config.auth_mode,
+                            load_from_s3_arn=config.load_from_s3_arn,
+                            ssl=config.ssl, ssl_verify=config.ssl_verify,
+                            aws_region=config.aws_region)
+        c.write_to_file(self.test_file_path)
+        config_from_file = get_config(self.test_file_path)
+        self.assertEqual(config.to_dict(), config_from_file.to_dict())
+
     def test_generate_configuration_override_defaults_neptune_cn(self):
         auth_mode = AuthModeEnum.IAM
         ssl = False
