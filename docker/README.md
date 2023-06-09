@@ -6,10 +6,10 @@ Default password is `admin`.
 
 ## Example Runs
 ```sh
-docker run --network="host"  -p 8888:8888 -t graph-notebook
+docker run -p 8888:8888 -t graph-notebook
 
 # Sharing directories
-docker run --network="host"  -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
+docker run -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
 
 # For connecting with IAM Auth
 docker run -p 8888:8888 \
