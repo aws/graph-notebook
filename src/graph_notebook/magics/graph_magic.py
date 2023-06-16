@@ -44,7 +44,8 @@ from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, 
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
-    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES, \
+    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -516,9 +517,9 @@ class Graph(Magics):
                             help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, '
                                  'the endpoint called would be host:port/foo/bar')
         parser.add_argument('--expand-all', action='store_true')
-        parser.add_argument('--explain-type', default='dynamic',
-                            help='explain mode to use when using the explain query mode',
-                            choices=['dynamic', 'static', 'details'])
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Expected values: ${SPARQL_EXPLAIN_MODES}')
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-m', '--media-type', type=str, default='',
@@ -804,6 +805,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
+        parser.add_argument('--explain-type', type=str.lower, default='',
+                            help='Explain mode to use when using the explain query mode.')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='T.label',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
@@ -881,7 +884,8 @@ class Graph(Magics):
         transport_args = {'max_content_length': args.max_content_length}
 
         if mode == QueryMode.EXPLAIN:
-            res = self.client.gremlin_explain(cell)
+            res = self.client.gremlin_explain(cell,
+                                              args={'explain.mode': args.explain_type} if args.explain_type else {})
             res.raise_for_status()
             # Replace strikethrough character bytes, can't be encoded to ASCII
             explain_bytes = res.content.replace(b'\xcc', b'-')
@@ -2685,9 +2689,9 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--explain-type', default='dynamic',
-                            help='explain mode to use when using the explain query mode',
-                            choices=['dynamic', 'static', 'details', 'debug'])
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Accepted values: ${OPENCYPHER_EXPLAIN_MODES}')
         parser.add_argument('-qp', '--query-parameters', type=str, default='',
                             help='Parameter definitions to apply to the query. This option can accept a local variable '
                                  'name, or a string representation of the map.')

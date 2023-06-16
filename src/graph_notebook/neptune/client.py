@@ -114,6 +114,9 @@ STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "re
 SUMMARY_MODES = ["", "basic", "detailed"]
 STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "oc", "opencypher", "sparql", "rdf"]
 
+SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
+OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
+
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
@@ -211,12 +214,8 @@ class Client(object):
         if 'content-type' not in headers:
             headers['content-type'] = DEFAULT_SPARQL_CONTENT_TYPE
 
-        explain = explain.lower()
         if explain != '':
-            if explain not in ['static', 'dynamic', 'details']:
-                raise ValueError('explain mode not valid, must be one of "static", "dynamic", or "details"')
-            else:
-                data['explain'] = explain
+            data['explain'] = explain
 
         if path != '':
             sparql_path = f'/{path}'
