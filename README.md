@@ -29,7 +29,7 @@ We encourage others to contribute configurations they find useful. There is an [
 
 ## Features
 
-#### Notebook cell 'magic' extensions in the IPython 3 kernel
+### Notebook cell 'magic' extensions in the IPython 3 kernel
 
 `%%sparql` - Executes a SPARQL query against your configured database endpoint. [Documentation](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks-magics.html#notebooks-cell-magics-sparql)
 
