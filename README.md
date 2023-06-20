@@ -288,7 +288,7 @@ in addition to the above configuration options, you can also specify the followi
 }
 ```
 
-Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balenacer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
+Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balancer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
 
 ## Authentication (Amazon Neptune)
 
