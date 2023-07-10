@@ -180,18 +180,18 @@ Configuration options can be set using the `%graph_notebook_config` magic comman
 
 | Configuration Option | Description | Default Value | Type |
 | --- | --- | --- | --- |
-| auth_mode | the authentication mode to use for Amazon Neptune connections | DEFAULT | string |
-| aws_region | the AWS region to use for Amazon Neptune connections | your-region-1 | string |
-| host | the host url to form a connection with | localhost | string |
-| load_from_s3_arn | the ARN of the S3 bucket to load data from [Amazon Neptune only] | | string |
-| port | the port to use when creating a connection | 8182 | number |
-| proxy_host | the proxy host url to route a connection through [Amazon Neptune only]| | string |
-| proxy_port | the proxy port to use when creating proxy connection [Amazon Neptune only] | 8182 | number |
-| ssl | whether to make connections to the created endpoint with ssl or not [True/False] | False | boolean |
-| ssl_verify | whether to verify the server's TLS certificate or not [True/False] | True | boolean |
+| auth_mode | The authentication mode to use for Amazon Neptune connections | DEFAULT | string |
+| aws_region | The AWS region to use for Amazon Neptune connections | your-region-1 | string |
+| host | The host url to form a connection with | localhost | string |
+| load_from_s3_arn | The ARN of the S3 bucket to load data from [Amazon Neptune only] | | string |
+| port | The port to use when creating a connection | 8182 | number |
+| proxy_host | The proxy host url to route a connection through [Amazon Neptune only]| | string |
+| proxy_port | The proxy port to use when creating proxy connection [Amazon Neptune only] | 8182 | number |
+| ssl | Whether to make connections to the created endpoint with ssl or not [True/False] | False | boolean |
+| ssl_verify | Whether to verify the server's TLS certificate or not [True/False] | True | boolean |
 | sparql | SPARQL connection object | ``` { "path": "sparql" } ``` | string |
-| gremlin | Gremlin connection object | ``` { "username": "neo4j", "password": "password", "auth": true, "database": null } ```| string |
-| neo4j | Neo4J connection object |```{ "username": "", "password": "", "traversal_source": "g",  "message_serializer": "graphsonv3" }``` | string |
+| gremlin | Gremlin connection object | ``` { "username": "", "password": "", "traversal_source": "g",  "message_serializer": "graphsonv3" } ```| string |
+| neo4j | Neo4J connection object |``` { "username": "neo4j", "password": "password", "auth": true, "database": null } ``` | string |
 
 ### Gremlin Server
 
