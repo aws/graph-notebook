@@ -62,7 +62,12 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/02-Variable-Length-Paths.ipynb',
             f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/03-Ordering-Functions-Grouping.ipynb',
             f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/04-Creating-Updating-Delete-Queries.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/openCypher-Exercises-Answer-Key.ipynb']
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/02-openCypher/openCypher-Exercises-Answer-Key.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/03-Gremlin/01-Basic-Read-Queries.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/03-Gremlin/02-Loops-Repeats.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/03-Gremlin/03-Ordering-Functions-Grouping.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/06-Language-Tutorials/03-Gremlin/04-Creating-Updating-Deleting-Queries.ipynb'
+            ]
         notebook_paths = get_all_notebooks_paths()
         expected_paths.sort()
         notebook_paths.sort()
