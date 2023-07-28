@@ -16,101 +16,101 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_query(self):
-        query = '''MATCH(a)-->(b)
+        query = """MATCH(a)-->(b)
                     RETURN b
-                    LIMIT 1'''
+                    LIMIT 1"""
 
-        store_to_var = 'res'
-        cell = f'''%%oc --store-to {store_to_var}
-        {query}'''
+        store_to_var = "res"
+        cell = f"""%%oc --store-to {store_to_var}
+        {query}"""
         self.ip.run_cell(cell)
-        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        self.assertFalse("graph_notebook_error" in self.ip.user_ns)
         res = self.ip.user_ns[store_to_var]
 
         # TODO: how can we get a look at the objects which were displayed?
-        assert len(res['results']) == 1
-        assert 'b' in res['results'][0]
+        assert len(res["results"]) == 1
+        assert "b" in res["results"][0]
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_bolt(self):
-        query = '''MATCH(a)-->(b)
+        query = """MATCH(a)-->(b)
                         RETURN b
-                        LIMIT 1'''
+                        LIMIT 1"""
 
-        store_to_var = 'res'
-        cell = f'''%%oc bolt --store-to {store_to_var}
-            {query}'''
+        store_to_var = "res"
+        cell = f"""%%oc bolt --store-to {store_to_var}
+            {query}"""
         self.ip.run_cell(cell)
-        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        self.assertFalse("graph_notebook_error" in self.ip.user_ns)
         res = self.ip.user_ns[store_to_var]
 
         assert len(res) == 1
-        assert 'b' in res[0]
+        assert "b" in res[0]
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_query_parameterized_with_var_input(self):
         expected_league_name = "English Premier League"
-        query = 'MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name'
+        query = "MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name"
 
-        store_to_var = 'res'
-        self.ip.user_ns['params_var'] = {'LEAGUE_NICKNAME': 'EPL'}
-        cell = f'''%%oc --query-parameters params_var --store-to {store_to_var}
-                        {query}'''
+        store_to_var = "res"
+        self.ip.user_ns["params_var"] = {"LEAGUE_NICKNAME": "EPL"}
+        cell = f"""%%oc --query-parameters params_var --store-to {store_to_var}
+                        {query}"""
         self.ip.run_cell(cell)
         res = self.ip.user_ns[store_to_var]
 
-        assert len(res['results']) == 1
-        assert expected_league_name == res['results'][0]['l.name']
+        assert len(res["results"]) == 1
+        assert expected_league_name == res["results"][0]["l.name"]
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_query_parameterized_with_str_input(self):
         expected_league_name = "English Premier League"
-        query = 'MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name'
+        query = "MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name"
 
-        store_to_var = 'res'
+        store_to_var = "res"
         params_str = '{"LEAGUE_NICKNAME":"EPL"}'
-        cell = f'''%%oc --query-parameters {params_str} --store-to {store_to_var}
-                {query}'''
+        cell = f"""%%oc --query-parameters {params_str} --store-to {store_to_var}
+                {query}"""
         self.ip.run_cell(cell)
         res = self.ip.user_ns[store_to_var]
 
-        assert len(res['results']) == 1
-        assert expected_league_name == res['results'][0]['l.name']
+        assert len(res["results"]) == 1
+        assert expected_league_name == res["results"][0]["l.name"]
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_query_parameterized_invalid(self):
-        query = 'MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name'
+        query = "MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name"
 
-        self.ip.user_ns['params_var'] = ['LEAGUE_NICKNAME']
-        cell = f'''%%oc --query-parameters params_var 
-                    {query}'''
+        self.ip.user_ns["params_var"] = ["LEAGUE_NICKNAME"]
+        cell = f"""%%oc --query-parameters params_var 
+                    {query}"""
         self.ip.run_cell(cell)
-        self.assertTrue('graph_notebook_error' in self.ip.user_ns)
+        self.assertTrue("graph_notebook_error" in self.ip.user_ns)
 
     @pytest.mark.jupyter
     @pytest.mark.opencypher
     def test_opencypher_bolt_parameterized(self):
         expected_league_name = "English Premier League"
-        query = 'MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name'
+        query = "MATCH (l:League {nickname: $LEAGUE_NICKNAME}) RETURN l.name"
 
-        store_to_var = 'res'
+        store_to_var = "res"
         params_var = '{"LEAGUE_NICKNAME":"EPL"}'
-        cell = f'''%%oc bolt --query-parameters {params_var} --store-to {store_to_var}
-                    {query}'''
+        cell = f"""%%oc bolt --query-parameters {params_var} --store-to {store_to_var}
+                    {query}"""
         self.ip.run_cell(cell)
-        self.assertFalse('graph_notebook_error' in self.ip.user_ns)
+        self.assertFalse("graph_notebook_error" in self.ip.user_ns)
         res = self.ip.user_ns[store_to_var]
 
         assert len(res) == 1
-        assert expected_league_name == res[0]['l.name']
+        assert expected_league_name == res[0]["l.name"]
 
     @pytest.mark.jupyter
     def test_load_opencypher_config(self):
-        config = '''{
+        config = """{
                   "host": "localhost",
                   "port": 8182,
                   "auth_mode": "DEFAULT",
@@ -122,7 +122,12 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
                     "password": "password",
                     "auth": true,
                     "database": ""
+                  },
+                  "memgraph": {
+                    "username": "",
+                    "password": "",
+                    "auth": false
                   }
-                }'''
+                }"""
 
-        self.ip.run_cell_magic('graph_notebook_config', '', config)
+        self.ip.run_cell_magic("graph_notebook_config", "", config)

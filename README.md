@@ -25,6 +25,7 @@ Instructions for connecting to the following graph databases:
 |    [Blazegraph](#blazegraph)    |            RDF          |       SPARQL        |
 |[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin or SPARQL  |
 |         [Neo4J](#neo4j)         |     property graph      |       Cypher        |
+|         [Memgraph](#memgraph)   |     property graph      |       Cypher        |
 
 We encourage others to contribute configurations they find useful. There is an [`additional-databases`](https://github.com/aws/graph-notebook/blob/main/additional-databases) folder where more information can be found.
 
@@ -300,6 +301,31 @@ For a local Neo4j Desktop database, you can use the following command:
 Ensure that you also specify the `%%oc bolt` option when submitting queries to the Bolt endpoint.
 
 To setup a new local Neo4J Desktop database for use with the graph notebook, check out the [Neo4J Desktop User Interface Guide](https://neo4j.com/developer/neo4j-desktop/).
+
+### Memgraph
+
+Change the configuration using `%%graph_notebook_config` and modify the fields for `host` and `port`, `ssl`. 
+
+After local setup of Memgraph is complete, set the following configuration to connect from graph-notebook:
+
+```
+%%graph_notebook_config
+{
+  "host": "localhost",
+  "port": 7687,
+  "ssl": false
+}
+```
+
+Ensure that you specify the `%%oc bolt` option when submitting queries to the Bolt endpoint. For example, a correct way of running a Cypher query via Bolt protocol is:
+
+```
+%%oc bolt
+MATCH (n)
+RETURN count(n)
+```
+
+For more details on how to run Memgraph, refer to its [notebook guide](./additional-databases/memgraph/README.md).
 
 ## Building From Source
 

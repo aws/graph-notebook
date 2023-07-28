@@ -10,21 +10,33 @@ from graph_notebook.neptune.client import Client, ClientBuilder
 
 
 def setup_iam_client(config: Configuration) -> Client:
-    client = ClientBuilder() \
-        .with_host(config.host) \
-        .with_port(config.port) \
-        .with_region(config.aws_region) \
-        .with_tls(config.ssl) \
-        .with_ssl_verify(config.ssl_verify) \
-        .with_proxy_host(config.proxy_host) \
-        .with_proxy_port(config.proxy_port) \
-        .with_sparql_path(config.sparql.path) \
-        .with_gremlin_traversal_source(config.gremlin.traversal_source) \
-        .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
-        .with_gremlin_serializer(config.gremlin.message_serializer) \
-        .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
-        .with_iam(get_session()) \
+    client = (
+        ClientBuilder()
+        .with_host(config.host)
+        .with_port(config.port)
+        .with_region(config.aws_region)
+        .with_tls(config.ssl)
+        .with_ssl_verify(config.ssl_verify)
+        .with_proxy_host(config.proxy_host)
+        .with_proxy_port(config.proxy_port)
+        .with_sparql_path(config.sparql.path)
+        .with_gremlin_traversal_source(config.gremlin.traversal_source)
+        .with_gremlin_login(config.gremlin.username, config.gremlin.password)
+        .with_gremlin_serializer(config.gremlin.message_serializer)
+        .with_neo4j_login(
+            config.neo4j.username,
+            config.neo4j.password,
+            config.neo4j.auth,
+            config.neo4j.database,
+        )
+        .with_memgraph_login(
+            config.memgraph.username,
+            config.memgraph.password,
+            config.memgraph.auth,
+        )
+        .with_iam(get_session())
         .build()
+    )
 
     assert client.host == config.host
     assert client.port == config.port
@@ -39,7 +51,9 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.neo4j_username == config.neo4j.username
     assert client.neo4j_password == config.neo4j.password
     assert client.neo4j_auth == config.neo4j.auth
-    assert client.neo4j_database == config.neo4j.database
+    assert client.memgraph_username == config.memgraph.username
+    assert client.memgraph_password == config.memgraph.password
+    assert client.memgraph_auth == config.memgraph.auth
     assert client.ssl is config.ssl
     assert client.ssl_verify is config.ssl_verify
     return client
