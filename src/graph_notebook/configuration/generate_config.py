@@ -19,6 +19,7 @@ from graph_notebook.neptune.client import (
     DEFAULT_NEO4J_DATABASE,
     DEFAULT_MEMGRAPH_USERNAME,
     DEFAULT_MEMGRAPH_PASSWORD,
+    DEFAULT_MEMGRAPH_DATABASE,
     NEPTUNE_CONFIG_HOST_IDENTIFIERS,
     is_allowed_neptune_host,
     false_str_variants,
@@ -153,6 +154,7 @@ class MemgraphSection(object):
         username: str = "",
         password: str = "",
         auth: bool = False,
+        database: str = "",
     ):
         """
         :param username: login user for the Memgraph endpoint
@@ -164,10 +166,13 @@ class MemgraphSection(object):
             username = DEFAULT_MEMGRAPH_USERNAME
         if password == "":
             password = DEFAULT_MEMGRAPH_PASSWORD
+        if database == "":
+            database = DEFAULT_MEMGRAPH_DATABASE
 
         self.username = username
         self.password = password
         self.auth = True if auth in [True, "True", "true", "TRUE"] else False
+        self.database = database
 
     def to_dict(self):
         return self.__dict__
@@ -436,6 +441,11 @@ if __name__ == "__main__":
         "--auth_auth",
         help="whether to use auth for Memgraph connections or not [True|False]",
         default=True,
+    )
+    parser.add_argument(
+        "--memgraph_database",
+        help="the name of the database to use for Memgraph",
+        default=DEFAULT_MEMGRAPH_DATABASE,
     )
     args = parser.parse_args()
 

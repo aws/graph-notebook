@@ -193,6 +193,7 @@ Configuration options can be set using the `%graph_notebook_config` magic comman
 | sparql | SPARQL connection object | ``` { "path": "sparql" } ``` | string |
 | gremlin | Gremlin connection object | ``` { "username": "", "password": "", "traversal_source": "g",  "message_serializer": "graphsonv3" } ```| string |
 | neo4j | Neo4J connection object |``` { "username": "neo4j", "password": "password", "auth": true, "database": null } ``` | string |
+| memgraph | Memgraph connection object |``` { "username": "", "password": "", "auth": false, "database": "memgraph" } ``` | string |
 
 ### Gremlin Server
 

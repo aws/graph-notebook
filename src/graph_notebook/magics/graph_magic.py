@@ -426,6 +426,7 @@ class Graph(Magics):
                     config.memgraph.username,
                     config.memgraph.password,
                     config.memgraph.auth,
+                    config.memgraph.database,
                 )
             )
 

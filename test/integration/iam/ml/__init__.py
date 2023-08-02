@@ -33,6 +33,7 @@ def setup_iam_client(config: Configuration) -> Client:
             config.memgraph.username,
             config.memgraph.password,
             config.memgraph.auth,
+            config.memgraph.database,
         )
         .with_iam(get_session())
         .build()

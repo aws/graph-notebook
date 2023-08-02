@@ -39,6 +39,7 @@ DEFAULT_NEO4J_PASSWORD = "password"
 DEFAULT_NEO4J_DATABASE = DEFAULT_DATABASE
 DEFAULT_MEMGRAPH_USERNAME = ""
 DEFAULT_MEMGRAPH_PASSWORD = ""
+DEFAULT_MEMGRAPH_DATABASE = "memgraph"
 
 NEPTUNE_SERVICE_NAME = "neptune-db"
 logger = logging.getLogger("client")
@@ -191,6 +192,7 @@ class Client(object):
         neo4j_database: str = DEFAULT_NEO4J_DATABASE,
         memgraph_username: str = DEFAULT_MEMGRAPH_USERNAME,
         memgraph_password: str = DEFAULT_MEMGRAPH_PASSWORD,
+        memgraph_database: str = DEFAULT_MEMGRAPH_DATABASE,
         memgraph_auth: bool = False,
         auth=None,
         session: Session = None,
@@ -1058,10 +1060,13 @@ class ClientBuilder(object):
         self.args["neo4j_database"] = database
         return ClientBuilder(self.args)
 
-    def with_memgraph_login(self, username: str, password: str, auth: bool):
+    def with_memgraph_login(
+        self, username: str, password: str, auth: bool, database: str
+    ):
         self.args["memgraph_username"] = username
         self.args["memgraph_password"] = password
         self.args["memgraph_auth"] = auth
+        self.args["memgraph_database"] = database
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):

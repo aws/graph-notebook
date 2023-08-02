@@ -41,6 +41,7 @@ def setup_client_builder(config: Configuration) -> ClientBuilder:
                 config.memgraph.username,
                 config.memgraph.password,
                 config.memgraph.auth,
+                config.memgraph.database,
             )
         )
         if config.auth_mode == AuthModeEnum.IAM:
@@ -68,6 +69,7 @@ def setup_client_builder(config: Configuration) -> ClientBuilder:
                 config.memgraph.username,
                 config.memgraph.password,
                 config.memgraph.auth,
+                config.memgraph.database,
             )
         )
 

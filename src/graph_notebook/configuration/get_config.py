@@ -23,6 +23,7 @@ from graph_notebook.neptune.client import (
     DEFAULT_NEO4J_DATABASE,
     DEFAULT_MEMGRAPH_USERNAME,
     DEFAULT_MEMGRAPH_PASSWORD,
+    DEFAULT_MEMGRAPH_DATABASE,
 )
 
 neptune_params = ["auth_mode", "load_from_s3_arn", "aws_region"]
@@ -80,6 +81,10 @@ def get_config_from_dict(
         ):
             print(
                 "Ignoring Memgraph custom authentication, Amazon Neptune does not support this functionality.\n"
+            )
+        if memgraph_section.to_dict()["database"] != DEFAULT_MEMGRAPH_DATABASE:
+            print(
+                "Ignoring Memgraph custom database, Amazon Neptune does not support multiple databases.\n"
             )
         config = Configuration(
             host=data["host"],
