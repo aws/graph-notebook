@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
+- Fixed kernel crashing with ZMQ errors on magic execution ([Link to PR](https://github.com/aws/graph-notebook/pull/517))
 
 ## Release 3.8.2 (June 5, 2023)
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
