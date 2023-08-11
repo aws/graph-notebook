@@ -1,4 +1,4 @@
-FROM amazonlinux:2
+FROM amazonlinux:2022
 
 # Notebook Port
 EXPOSE 8888
@@ -11,7 +11,8 @@ ENV pipargs=""
 ENV WORKING_DIR="/root"
 ENV NOTEBOOK_DIR="${WORKING_DIR}/notebooks"
 ENV EXAMPLE_NOTEBOOK_DIR="${NOTEBOOK_DIR}/Example Notebooks"
-ENV NODE_VERSION=14.x
+ENV NODE_VERSION=14
+ENV PYTHON_VERSION=3.10
 ENV GRAPH_NOTEBOOK_AUTH_MODE="DEFAULT"
 ENV GRAPH_NOTEBOOK_HOST="neptune.cluster-XXXXXXXXXXXX.us-east-1.neptune.amazonaws.com"
 ENV GRAPH_NOTEBOOK_PROXY_PORT="8192"
@@ -36,18 +37,18 @@ RUN mkdir -p "${WORKING_DIR}" && \
     mkdir -p "${EXAMPLE_NOTEBOOK_DIR}" && \
     # Yum Update and install dependencies
     yum update -y && \
-    yum install tar gzip git amazon-linux-extras which -y && \
+    yum install tar gzip git findutils -y && \
     # Install NPM/Node
-    curl --silent --location https://rpm.nodesource.com/setup_${NODE_VERSION} | bash - && \
-    yum install nodejs -y && \
-    npm install -g opencollective && \
-    # Install Python 3.8
-    amazon-linux-extras install python3.8 -y && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1 && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash && \
+    . ~/.nvm/nvm.sh && \
+    nvm install ${NODE_VERSION} && \
+    # Install Python
+    yum install python${PYTHON_VERSION} -y && \
+    # update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1 && \
     echo 'Using python version:' && \
-    python3 --version && \
-    python3 -m ensurepip --upgrade  && \
-    python3 -m venv /tmp/venv && \
+    python${PYTHON_VERSION} --version && \
+    python${PYTHON_VERSION} -m ensurepip --upgrade  && \
+    python${PYTHON_VERSION} -m venv /tmp/venv && \
     source /tmp/venv/bin/activate && \
     cd "${WORKING_DIR}" && \
     # Clone the repo and install python dependencies
@@ -67,6 +68,7 @@ RUN mkdir -p "${WORKING_DIR}" && \
     jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets && \
     # This allows for the `.ipython` to be set
     python -m graph_notebook.start_jupyterlab --jupyter-dir "${NOTEBOOK_DIR}" && \
+    deactivate && \
     # Cleanup
     yum clean all && \
     yum remove wget tar git  -y && \
@@ -74,7 +76,8 @@ RUN mkdir -p "${WORKING_DIR}" && \
     rm -rf "${WORKING_DIR}/graph-notebook" && \
     rm -rf /root/.cache && \
     rm -rf /root/.npm/_cacache && \
-    rm -rf /usr/share
+    cd /usr/share && \
+    rm -r $(ls -A | grep -v terminfo)
 
 ADD "docker/Example-Remote-Server-Setup.ipynb" "${NOTEBOOK_DIR}/Example-Remote-Server-Setup.ipynb"
 ADD ./docker/service.sh /usr/bin/service.sh
