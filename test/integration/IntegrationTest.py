@@ -26,7 +26,8 @@ def setup_client_builder(config: Configuration) -> ClientBuilder:
             .with_sparql_path(config.sparql.path) \
             .with_gremlin_traversal_source(config.gremlin.traversal_source) \
             .with_gremlin_serializer(config.gremlin.message_serializer) \
-            .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database)
+            .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
+            .with_memgraph_login(config.memgraph.username, config.memgraph.password, config.memgraph.auth, config.memgraph.database)
         if config.auth_mode == AuthModeEnum.IAM:
             builder = builder.with_iam(get_session())
     else:
@@ -41,7 +42,8 @@ def setup_client_builder(config: Configuration) -> ClientBuilder:
             .with_gremlin_traversal_source(config.gremlin.traversal_source) \
             .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
             .with_gremlin_serializer(config.gremlin.message_serializer) \
-            .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database)
+            .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
+            .with_memgraph_login(config.memgraph.username, config.memgraph.password, config.memgraph.auth, config.memgraph.database)
 
     return builder
 

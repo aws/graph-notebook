@@ -10,6 +10,7 @@ from enum import Enum
 
 from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, DEFAULT_GREMLIN_SERIALIZER, \
     DEFAULT_GREMLIN_TRAVERSAL_SOURCE, DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, \
+    DEFAULT_MEMGRAPH_USERNAME, DEFAULT_MEMGRAPH_PASSWORD, DEFAULT_MEMGRAPH_DATABASE, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
     GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS
 
@@ -115,6 +116,34 @@ class Neo4JSection(object):
         return self.__dict__
 
 
+class MemgraphSection(object):
+    """
+    Used for Memgraph-specific settings in a notebook's configuration
+    """
+
+    def __init__(self, username: str = "", password: str = "", auth: bool = False, database: str = ""):
+        """
+        :param username: login user for the Memgraph endpoint
+        :param password: login password for the Memgraph endpoint
+        :param auth: authentication switch for the Memgraph endpoint
+        :param database: database used at Memgraph endpoint
+        """
+
+        if username == "":
+            username = DEFAULT_MEMGRAPH_USERNAME
+        if password == "":
+            password = DEFAULT_MEMGRAPH_PASSWORD
+        if database == "":
+            database = DEFAULT_MEMGRAPH_DATABASE
+
+        self.username = username
+        self.password = password
+        self.auth = True if auth in [True, "True", "true", "TRUE"] else False
+        self.database = database
+
+    def to_dict(self):
+        return self.__dict__
+    
 class Configuration(object):
     def __init__(self, host: str, port: int,
                  auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
@@ -122,6 +151,7 @@ class Configuration(object):
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  sparql_section: SparqlSection = None, gremlin_section: GremlinSection = None,
                  neo4j_section: Neo4JSection = None,
+                 memgraph_section: MemgraphSection = None,
                  neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
         self._host = host.strip()
         self.port = port
@@ -140,10 +170,12 @@ class Configuration(object):
             self.aws_region = aws_region
             self.gremlin = GremlinSection()
             self.neo4j = Neo4JSection()
+            self.memgraph = MemgraphSection()
         else:
             self.is_neptune_config = False
             self.gremlin = gremlin_section if gremlin_section is not None else GremlinSection()
             self.neo4j = neo4j_section if neo4j_section is not None else Neo4JSection()
+            self.memgraph = memgraph_section if memgraph_section is not None else MemgraphSection()
 
     @property
     def host(self):
@@ -175,7 +207,8 @@ class Configuration(object):
                 'aws_region': self.aws_region,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict(),
-                'neo4j': self.neo4j.to_dict()
+                'neo4j': self.neo4j.to_dict(),
+                'memgraph': self.memgraph.to_dict()
             }
         else:
             return {
@@ -187,7 +220,8 @@ class Configuration(object):
                 'ssl_verify': self.ssl_verify,
                 'sparql': self.sparql.to_dict(),
                 'gremlin': self.gremlin.to_dict(),
-                'neo4j': self.neo4j.to_dict()
+                'neo4j': self.neo4j.to_dict(),
+                'memgraph': self.memgraph.to_dict()
             }
 
     def write_to_file(self, file_path=DEFAULT_CONFIG_LOCATION):
@@ -202,11 +236,11 @@ def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, 
                     ssl_verify: bool = True, load_from_s3_arn='',
                     aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                     sparql_section: SparqlSection = SparqlSection(), gremlin_section: GremlinSection = GremlinSection(),
-                    neo4j_section=Neo4JSection(), neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
+                    neo4j_section=Neo4JSection(), memgraph_section=MemgraphSection(), neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
     use_ssl = False if ssl in false_str_variants else True
     verify_ssl = False if ssl_verify in false_str_variants else True
     c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, verify_ssl, aws_region, proxy_host, proxy_port,
-                      sparql_section, gremlin_section, neo4j_section, neptune_hosts)
+                      sparql_section, gremlin_section, neo4j_section, memgraph_section, neptune_hosts)
     return c
 
 
@@ -256,6 +290,14 @@ if __name__ == "__main__":
                         default=True)
     parser.add_argument("--neo4j_database", help="the name of the database to use for Neo4J",
                         default=DEFAULT_NEO4J_DATABASE)
+    parser.add_argument("--memgraph_username", help="the username to use for Memgraph connections",
+                        default=DEFAULT_MEMGRAPH_USERNAME)
+    parser.add_argument("--memgraph_password", help="the password to use for Memgraph connections",
+                        default=DEFAULT_MEMGRAPH_PASSWORD)
+    parser.add_argument("--memgraph_auth", help="whether to use auth for Memgraph connections or not [True|False]",
+                        default=True)
+    parser.add_argument("--memgraph_database", help="the name of the database to use for Memgraph",
+                        default=DEFAULT_MEMGRAPH_DATABASE)
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
@@ -266,6 +308,8 @@ if __name__ == "__main__":
                                             args.gremlin_password, args.gremlin_serializer),
                              Neo4JSection(args.neo4j_username, args.neo4j_password,
                                           args.neo4j_auth, args.neo4j_database),
+                             MemgraphSection(args.memgraph_username, args.memgraph_password, 
+                                            args.memgraph_auth, args.memgraph_database),
                              args.neptune_hosts)
     config.write_to_file(args.config_destination)
 

@@ -23,6 +23,7 @@ def setup_iam_client(config: Configuration) -> Client:
         .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
         .with_gremlin_serializer(config.gremlin.message_serializer) \
         .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth, config.neo4j.database) \
+        .with_memgraph_login(config.memgraph.username, config.memgraph.password, config.memgraph.auth, config.memgraph.database) \
         .with_iam(get_session()) \
         .build()
 
@@ -40,6 +41,10 @@ def setup_iam_client(config: Configuration) -> Client:
     assert client.neo4j_password == config.neo4j.password
     assert client.neo4j_auth == config.neo4j.auth
     assert client.neo4j_database == config.neo4j.database
+    assert client.memgraph_username == config.memgraph.username
+    assert client.memgraph_password == config.memgraph.password
+    assert client.memgraph_auth == config.memgraph.auth
+    assert client.memgraph_database == config.memgraph.database
     assert client.ssl is config.ssl
     assert client.ssl_verify is config.ssl_verify
     return client

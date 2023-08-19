@@ -320,7 +320,9 @@ class Graph(Magics):
                 .with_gremlin_login(config.gremlin.username, config.gremlin.password) \
                 .with_gremlin_serializer(config.gremlin.message_serializer) \
                 .with_neo4j_login(config.neo4j.username, config.neo4j.password, config.neo4j.auth,
-                                  config.neo4j.database)
+                                  config.neo4j.database) \
+                .with_memgraph_login(config.memgraph.username, config.memgraph.password, config.memgraph.auth,
+                                  config.memgraph.database)
 
         self.client = builder.build()
 

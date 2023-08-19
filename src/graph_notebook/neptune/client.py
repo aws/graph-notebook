@@ -37,6 +37,9 @@ DEFAULT_REGION = 'us-east-1'
 DEFAULT_NEO4J_USERNAME = 'neo4j'
 DEFAULT_NEO4J_PASSWORD = 'password'
 DEFAULT_NEO4J_DATABASE = DEFAULT_DATABASE
+DEFAULT_MEMGRAPH_USERNAME = ""
+DEFAULT_MEMGRAPH_PASSWORD = ""
+DEFAULT_MEMGRAPH_DATABASE = "memgraph"
 
 NEPTUNE_SERVICE_NAME = 'neptune-db'
 logger = logging.getLogger('client')
@@ -143,6 +146,8 @@ class Client(object):
                  gremlin_serializer: str = DEFAULT_GREMLIN_SERIALIZER,
                  neo4j_username: str = DEFAULT_NEO4J_USERNAME, neo4j_password: str = DEFAULT_NEO4J_PASSWORD,
                  neo4j_auth: bool = True, neo4j_database: str = DEFAULT_NEO4J_DATABASE,
+                 memgraph_username: str = DEFAULT_MEMGRAPH_USERNAME, memgraph_password: str = DEFAULT_MEMGRAPH_PASSWORD,
+                 memgraph_auth: bool = False, memgraph_database: str = DEFAULT_MEMGRAPH_DATABASE,
                  auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                  neptune_hosts: list = None):
@@ -161,6 +166,10 @@ class Client(object):
         self.neo4j_password = neo4j_password
         self.neo4j_auth = neo4j_auth
         self.neo4j_database = neo4j_database
+        self.memgraph_username = memgraph_username
+        self.memgraph_password = memgraph_password
+        self.memgraph_auth = memgraph_auth
+        self.memgraph_database = memgraph_database
         self.region = region
         self._auth = auth
         self._session = session
@@ -370,6 +379,7 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
+    # TODO Check this for Memgraph + typo on Cypher
     def opencyper_bolt(self, query: str, **kwargs):
         driver = self.get_opencypher_driver()
         with driver.session(database=self.neo4j_database) as session:
@@ -417,11 +427,13 @@ class Client(object):
                 password = DEFAULT_NEO4J_PASSWORD
                 auth_final = (user, password)
         else:
-            if self.neo4j_auth:
+            # user changed default Memgraph auth to True
+            if self.memgraph_auth:
+                auth_final = (self.memgraph_username, self.memgraph_password)
+            elif self.neo4j_auth:
                 auth_final = (self.neo4j_username, self.neo4j_password)
             else:
                 auth_final = None
-
         driver = GraphDatabase.driver(url, auth=auth_final, encrypted=self.ssl)
         return driver
 
@@ -863,6 +875,13 @@ class ClientBuilder(object):
         self.args['neo4j_password'] = password
         self.args['neo4j_auth'] = auth
         self.args['neo4j_database'] = database
+        return ClientBuilder(self.args)
+
+    def with_memgraph_login(self, username: str, password: str, auth: bool, database: str):
+        self.args["memgraph_username"] = username
+        self.args["memgraph_password"] = password
+        self.args["memgraph_auth"] = auth
+        self.args["memgraph_database"] = database
         return ClientBuilder(self.args)
 
     def with_tls(self, tls: bool):
