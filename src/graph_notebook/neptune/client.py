@@ -102,7 +102,9 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
-NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws.com.cn", "api.aws", "on.aws", "aws.dev"]
+NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws.com.cn",
+                                   "api.aws", "on.aws", "aws.dev",
+                                   "sc2s.sgov.gov", "c2s.ic.gov"]
 
 false_str_variants = [False, 'False', 'false', 'FALSE']
 
