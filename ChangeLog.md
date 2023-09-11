@@ -4,7 +4,15 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
+- Added general documentation for `%%graph_notebook_config` options ([Link to PR](https://github.com/aws/graph-notebook/pull/504))
 - Modified Dockerfile to support Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/519))
+- Updated Docker documentation with platform-specific run commands ([Link to PR](https://github.com/aws/graph-notebook/pull/502))
+- Fixed deprecation warnings in GitHub workflows ([Link to PR](https://github.com/aws/graph-notebook/pull/506))
+- Fixed seed dataset unzip path in Identity Graph sample notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/507))
+- Fixed unit test workflows failing on type check assertion ([Link to PR](https://github.com/aws/graph-notebook/pull/514))
+- Fixed bad queries in openCypher Language Tutorial samples ([PR #1](https://github.com/aws/graph-notebook/pull/525)) ([PR #2](https://github.com/aws/graph-notebook/pull/526))
+- Fixed kernel crashing with ZMQ errors on magic execution ([Link to PR](https://github.com/aws/graph-notebook/pull/517))
+- Unpinned `boto3` and `botocore` to support NeptuneData SDK ([Link to PR](https://github.com/aws/graph-notebook/pull/528))
 
 ## Release 3.8.2 (June 5, 2023)
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
