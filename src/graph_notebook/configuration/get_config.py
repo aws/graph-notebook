@@ -6,9 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 import json
 
 from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION, Configuration, AuthModeEnum, \
-    SparqlSection, GremlinSection, Neo4JSection
+    SparqlSection, GremlinSection, Neo4JSection, MemgraphSection
 from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
-    DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE
+    DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, DEFAULT_MEMGRAPH_USERNAME, DEFAULT_MEMGRAPH_PASSWORD, \
+    DEFAULT_MEMGRAPH_DATABASE
 
 neptune_params = ['auth_mode', 'load_from_s3_arn', 'aws_region']
 
@@ -21,6 +22,7 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
     sparql_section = SparqlSection(**data['sparql']) if 'sparql' in data else SparqlSection('')
     gremlin_section = GremlinSection(**data['gremlin']) if 'gremlin' in data else GremlinSection()
     neo4j_section = Neo4JSection(**data['neo4j']) if 'neo4j' in data else Neo4JSection('', '', True, '')
+    memgraph_section = (MemgraphSection(**data["memgraph"]) if "memgraph" in data else MemgraphSection("", "", False, ""))
     proxy_host = str(data['proxy_host']) if 'proxy_host' in data else ''
     proxy_port = int(data['proxy_port']) if 'proxy_port' in data else 8182
 
@@ -34,10 +36,19 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
             print('Ignoring Neo4J custom authentication, Amazon Neptune does not support this functionality.\n')
         if neo4j_section.to_dict()['database'] != DEFAULT_NEO4J_DATABASE:
             print('Ignoring Neo4J custom database, Amazon Neptune does not support multiple databases.\n')
+        if memgraph_section.to_dict()["username"] != DEFAULT_MEMGRAPH_USERNAME \
+            or memgraph_section.to_dict()["password"] != DEFAULT_MEMGRAPH_PASSWORD:
+            print(
+                "Ignoring Memgraph custom authentication, Amazon Neptune does not support this functionality.\n"
+            )
+        if memgraph_section.to_dict()["database"] != DEFAULT_MEMGRAPH_DATABASE:
+            print(
+                "Ignoring Memgraph custom database, Amazon Neptune does not support multiple databases.\n"
+            )
         config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
                                ssl=data['ssl'], ssl_verify=ssl_verify, load_from_s3_arn=data['load_from_s3_arn'],
                                aws_region=data['aws_region'], sparql_section=sparql_section,
-                               gremlin_section=gremlin_section, neo4j_section=neo4j_section,
+                               gremlin_section=gremlin_section, neo4j_section=neo4j_section, memgraph_section=memgraph_section,
                                proxy_host=proxy_host, proxy_port=proxy_port, neptune_hosts=neptune_hosts)
     else:
         excluded_params = []
@@ -50,7 +61,7 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
 
         config = Configuration(host=data['host'], port=data['port'], ssl=data['ssl'], ssl_verify=ssl_verify,
                                sparql_section=sparql_section, gremlin_section=gremlin_section, neo4j_section=neo4j_section,
-                               proxy_host=proxy_host, proxy_port=proxy_port)
+                               memgraph_section=memgraph_section, proxy_host=proxy_host, proxy_port=proxy_port)
     return config
 
 

@@ -11,6 +11,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed unit test workflows failing on type check assertion ([Link to PR](https://github.com/aws/graph-notebook/pull/514))
 - Fixed bad queries in openCypher Language Tutorial samples ([PR #1](https://github.com/aws/graph-notebook/pull/525)) ([PR #2](https://github.com/aws/graph-notebook/pull/526))
 - Fixed kernel crashing with ZMQ errors on magic execution ([Link to PR](https://github.com/aws/graph-notebook/pull/517))
+- Added Memgraph as an additional graph database and the supply chain analysis notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/522))
 
 ## Release 3.8.2 (June 5, 2023)
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))

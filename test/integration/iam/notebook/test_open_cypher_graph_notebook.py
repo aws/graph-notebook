@@ -123,6 +123,12 @@ class TestGraphMagicOpenCypher(GraphNotebookIntegrationTest):
                     "auth": true,
                     "database": ""
                   }
+                  "memgraph": {
+                    "username": "",
+                    "password": "",
+                    "auth": false,
+                    "database": "memgraph"
+                  }
                 }'''
 
         self.ip.run_cell_magic('graph_notebook_config', '', config)
