@@ -29,6 +29,7 @@ from itables import show, JavascriptFunction
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
+from gremlin_python.structure.graph import Path
 from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
@@ -808,15 +809,15 @@ class Graph(Magics):
         parser.add_argument('--explain-type', type=str.lower, default='',
                             help='Explain mode to use when using the explain query mode.')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
-        parser.add_argument('-g', '--group-by', type=str, default='T.label',
+        parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
                             help="Group nodes based on path hierarchy")
         parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
                             help="Group nodes by the raw result")
-        parser.add_argument('-d', '--display-property', type=str, default='T.label',
+        parser.add_argument('-d', '--display-property', type=str, default='',
                             help='Property to display the value of on each node, default is T.label')
-        parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
+        parser.add_argument('-de', '--edge-display-property', type=str, default='',
                             help='Property to display the value of on each edge, default is T.label')
         parser.add_argument('-t', '--tooltip-property', type=str, default='',
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
@@ -936,8 +937,16 @@ class Graph(Magics):
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
+            using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+            if self.graph_notebook_config.proxy_host != '' and self.client.is_neptune_domain():
+                using_http = True
+                query_res_http = self.client.gremlin_http_query(cell, headers={'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                query_res_http.raise_for_status()
+                query_res_http_json = query_res_http.json()
+                query_res = query_res_http_json['result']['data']
+            else:
+                query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
@@ -951,7 +960,8 @@ class Graph(Magics):
                     logger.debug(f'edge_display_property: {args.edge_display_property}')
                     logger.debug(f'label_max_length: {args.label_max_length}')
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
-                    gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                    gn = GremlinNetwork(group_by_property=args.group_by,
+                                        display_property=args.display_property,
                                         group_by_raw=args.group_by_raw,
                                         group_by_depth=args.group_by_depth,
                                         edge_display_property=args.edge_display_property,
@@ -959,10 +969,21 @@ class Graph(Magics):
                                         edge_tooltip_property=args.edge_tooltip_property,
                                         label_max_length=args.label_max_length,
                                         edge_label_max_length=args.edge_label_max_length,
-                                        ignore_groups=args.ignore_groups)
+                                        ignore_groups=args.ignore_groups,
+                                        using_http=using_http)
+
+                    if using_http and 'path()' in cell and query_res:
+                        first_path = query_res[0]
+                        if isinstance(first_path, dict) and first_path.keys() == {'labels', 'objects'}:
+                            query_res_to_path_type = []
+                            for path in query_res:
+                                new_path_list = path['objects']
+                                new_path = Path(labels=[], objects=new_path_list)
+                                query_res_to_path_type.append(new_path)
+                            query_res = query_res_to_path_type
 
                     if args.path_pattern == '':
-                        gn.add_results(query_res)
+                        gn.add_results(query_res, is_http=using_http)
                     else:
                         pattern = parse_pattern_list_str(args.path_pattern)
                         gn.add_results_with_pattern(query_res, pattern)
