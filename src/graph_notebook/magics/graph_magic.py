@@ -107,6 +107,7 @@ SEED_MODEL_OPTIONS = ['', 'propertygraph', 'rdf']
 SEED_LANGUAGE_OPTIONS = ['', 'gremlin', 'opencypher', 'sparql']
 SEED_SOURCE_OPTIONS = ['', 'samples', 'custom']
 SEED_NO_DATASETS_FOUND_MSG = "(No datasets available)"
+SEED_WIDGET_STYLE = {'description_width': '95px'}
 
 LOADER_FORMAT_CHOICES = ['']
 LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
@@ -2044,34 +2045,39 @@ class Graph(Magics):
         source_dropdown = widgets.Dropdown(
             options=SEED_SOURCE_OPTIONS,
             description='Source type:',
-            disabled=False
+            disabled=False,
+            style=SEED_WIDGET_STYLE
         )
 
         model_dropdown = widgets.Dropdown(
             options=SEED_MODEL_OPTIONS,
             description='Data model:',
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         custom_language_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS,
             description='Language:',
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         samples_pg_language_dropdown = widgets.Dropdown(
             options=SEED_LANGUAGE_OPTIONS[:3],
             description='Language:',
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         data_set_drop_down = widgets.Dropdown(
             description='Data set:',
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         fullfile_option_dropdown = widgets.Dropdown(
@@ -2079,7 +2085,8 @@ class Graph(Magics):
             options=[True, False],
             value=args.full_file_query,
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         location_option_dropdown = widgets.Dropdown(
@@ -2087,13 +2094,15 @@ class Graph(Magics):
             options=['Local', 'S3'],
             value='Local',
             disabled=False,
-            layout=widgets.Layout(display='none')
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         seed_file_location_text = widgets.Text(
             description='Source:',
             placeholder='path/to/seedfiles/directory',
-            disabled=False
+            disabled=False,
+            style=SEED_WIDGET_STYLE
         )
 
         seed_file_location = FileChooser()
