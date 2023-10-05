@@ -13,6 +13,7 @@ on:
         default: 'latest'
   push:
     branches:
+      - multiplatform-images
       - main
 
 jobs:
@@ -25,6 +26,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Set up QEMU
+          uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Get package version
         uses: tyankatsu0105/read-package-version-actions@v1
@@ -66,7 +73,8 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: neptune
           REPOSITORY: graph-notebook
-          IMAGE_TAG: ${{ steps.get-image-tag.outputs.image_tag }}
+          IMAGE_TAG: multiarch-test # ${{ steps.get-image-tag.outputs.image_tag }}
         run: |
-          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+          docker buildx build --push \
+            --platform linux/arm64,linux/amd64 \
+            --tag $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
