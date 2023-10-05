@@ -1,20 +1,9 @@
 name: Build Docker image and publish to ECR
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'ECR image tag type'
-        required: false
-        type: choice
-        options:
-          - 'latest'
-          - 'release'
-        default: 'latest'
   push:
     branches:
       - multiplatform-images
-      - main
 
 jobs:
   build-and-push-image:
