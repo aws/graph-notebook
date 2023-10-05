@@ -96,7 +96,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.7.x-3.10.11
+* [Python](https://www.python.org/downloads/) 3.7.x-3.10.13
 * A graph database that provides one or more of:
   * A SPARQL 1.1 endpoint
   * An Apache TinkerPop Gremlin Server compatible endpoint
@@ -357,8 +357,8 @@ cd graph-notebook
 # 2) Create a new virtual environment
 
 # 2a) Option 1 - pyenv
-pyenv install 3.10.11  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
-pyenv virtualenv 3.10.11 build-graph-notebook
+pyenv install 3.10.13  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
+pyenv virtualenv 3.10.13 build-graph-notebook
 pyenv local build-graph-notebook
 
 # 2b) Option 2 - venv
@@ -376,7 +376,7 @@ python3 setup.py bdist_wheel
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.8.2-py3-none-any.whl`
+`./dist/graph_notebook-3.9.0-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -387,7 +387,7 @@ pip install graph-notebook
 with
 
 ``` python
-pip install ./dist/graph_notebook-3.8.2-py3-none-any.whl
+pip install ./dist/graph_notebook-3.9.0-py3-none-any.whl
 
 ```
 
