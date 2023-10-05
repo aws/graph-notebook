@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Gremlin Language Tutorial notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/533))
+  - Path: 06-Language-Tutorials > 03-Gremlin
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
 - Added general documentation for `%%graph_notebook_config` options ([Link to PR](https://github.com/aws/graph-notebook/pull/504))
 - Added support for Gremlin proxy hosts and visualization of Neptune HTTP results ([Link to PR](https://github.com/aws/graph-notebook/pull/530))
