@@ -17,13 +17,13 @@ from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver import client, serializer
 from gremlin_python.driver.protocol import GremlinServerError
+from gremlin_python.driver.aiohttp.transport import AiohttpTransport
 from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.exceptions import AuthError
 from base64 import b64encode
 import nest_asyncio
 
 from graph_notebook.neptune.bolt_auth_token import NeptuneBoltAuthToken
-
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
@@ -45,7 +45,7 @@ logger = logging.getLogger('client')
 # TODO: add doc links to each command
 
 FORMAT_CSV = 'csv'
-FORMAT_OPENCYPHER='opencypher'
+FORMAT_OPENCYPHER = 'opencypher'
 FORMAT_NTRIPLE = 'ntriples'
 FORMAT_NQUADS = 'nquads'
 FORMAT_RDFXML = 'rdfxml'
@@ -191,11 +191,19 @@ class Client(object):
         return is_allowed_neptune_host(hostname=self.target_host, host_allowlist=self.neptune_hosts)
 
     def get_uri_with_port(self, use_websocket=False, use_proxy=False):
-        protocol = self._http_protocol
         if use_websocket is True:
             protocol = self._ws_protocol
+        else:
+            protocol = self._http_protocol
 
-        uri = f'{protocol}://{self.host}:{self.port}'
+        if use_proxy is True:
+            uri_host = self.proxy_host
+            uri_port = self.proxy_port
+        else:
+            uri_host = self.target_host
+            uri_port = self.target_port
+
+        uri = f'{protocol}://{uri_host}:{uri_port}'
         return uri
 
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
@@ -267,11 +275,20 @@ class Client(object):
     def get_gremlin_connection(self, transport_kwargs) -> client.Client:
         nest_asyncio.apply()
 
-        ws_url = f'{self.get_uri_with_port(use_websocket=True)}/gremlin'
-        request = self._prepare_request('GET', ws_url)
+        ws_url = f'{self.get_uri_with_port(use_websocket=True, use_proxy=False)}/gremlin'
+        if self.proxy_host != '':
+            proxy_http_url = f'{self.get_uri_with_port(use_websocket=False, use_proxy=True)}/gremlin'
+            transport_factory_args = lambda: AiohttpTransport(call_from_event_loop=True, proxy=proxy_http_url,
+                                                              **transport_kwargs)
+            request = self._prepare_request('GET', proxy_http_url)
+        else:
+            transport_factory_args = lambda: AiohttpTransport(**transport_kwargs)
+            request = self._prepare_request('GET', ws_url)
+
         traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
-        return client.Client(ws_url, traversal_source, username=self.gremlin_username,
-                             password=self.gremlin_password, message_serializer=self.gremlin_serializer,
+        return client.Client(ws_url, traversal_source, transport_factory=transport_factory_args,
+                             username=self.gremlin_username, password=self.gremlin_password,
+                             message_serializer=self.gremlin_serializer,
                              headers=dict(request.headers), **transport_kwargs)
 
     def gremlin_query(self, query, transport_args=None, bindings=None):
@@ -298,7 +315,8 @@ class Client(object):
         if headers is None:
             headers = {}
 
-        uri = f'{self.get_uri_with_port()}/gremlin'
+        use_proxy = True if self.proxy_host != '' else False
+        uri = f'{self.get_uri_with_port(use_websocket=False, use_proxy=use_proxy)}/gremlin'
         data = {'gremlin': query}
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
@@ -431,7 +449,7 @@ class Client(object):
         params = {}
         for k, v in kwargs.items():
             params[k] = v
-        req = self._prepare_request('GET', url, params=params,data='')
+        req = self._prepare_request('GET', url, params=params, data='')
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res.json()
 
@@ -850,7 +868,7 @@ class ClientBuilder(object):
     def with_gremlin_traversal_source(self, traversal_source: str):
         self.args['gremlin_traversal_source'] = traversal_source
         return ClientBuilder(self.args)
-        
+
     def with_gremlin_login(self, username: str, password: str):
         self.args['gremlin_username'] = username
         self.args['gremlin_password'] = password
@@ -859,7 +877,7 @@ class ClientBuilder(object):
     def with_gremlin_serializer(self, message_serializer: str):
         self.args['gremlin_serializer'] = message_serializer
         return ClientBuilder(self.args)
-    
+
     def with_neo4j_login(self, username: str, password: str, auth: bool, database: str):
         self.args['neo4j_username'] = username
         self.args['neo4j_password'] = password

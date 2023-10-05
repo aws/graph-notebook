@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
 - Added general documentation for `%%graph_notebook_config` options ([Link to PR](https://github.com/aws/graph-notebook/pull/504))
+- Added support for Gremlin proxy hosts and visualization of Neptune HTTP results ([Link to PR](https://github.com/aws/graph-notebook/pull/530))
 - Modified Dockerfile to support Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/519))
 - Updated Docker documentation with platform-specific run commands ([Link to PR](https://github.com/aws/graph-notebook/pull/502))
 - Fixed deprecation warnings in GitHub workflows ([Link to PR](https://github.com/aws/graph-notebook/pull/506))
