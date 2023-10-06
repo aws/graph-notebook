@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 3.9.0 (Oct 9, 2023)
 - New Gremlin Language Tutorial notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/533))
   - Path: 06-Language-Tutorials > 03-Gremlin
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
