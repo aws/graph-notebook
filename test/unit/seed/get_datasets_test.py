@@ -71,6 +71,18 @@ class TestGetDataSets(unittest.TestCase):
         self.assertEqual(1, len(queries))
         self.assertEqual('0_test_data.txt', queries[0]['name'])
 
+    def test_get_data_sets_cypher(self):
+        data_sets = get_data_sets('opencypher')
+        self.assertTrue('airports' in data_sets)
+
+    def test_get_sample_queries_cypher(self):
+        language = 'opencypher'
+        name = 'airports'
+        location = 'samples'
+        queries = get_queries(language, name, location)
+        self.assertEqual(1, len(queries))
+        self.assertEqual('airports_full.txt', queries[0]['name'])
+
     def test_get_custom_queries_from_directory_cypher(self):
         language = ''
         name = 'local_seed_test_cypher'

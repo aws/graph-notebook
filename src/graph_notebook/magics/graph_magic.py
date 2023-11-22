@@ -2513,7 +2513,8 @@ class Graph(Magics):
                             progress.close()
                             return
                 else:  # gremlin and cypher
-                    if fullfile_query:  # treat entire file content as one query
+                    # treat entire file content as one query
+                    if fullfile_query or (source_dropdown.value == 'samples' and 'full' in q['name']):
                         if seeding_language == 'opencypher':
                             query_status = process_cypher_query_line(q['content'], 0, q)
                         else:
