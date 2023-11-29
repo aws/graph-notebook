@@ -162,7 +162,7 @@ def http_ex_to_html(http_ex: HTTPError):
     return error_html
 
 
-def exception_to_html(ex: Exception):
+def exception_to_html(ex):
     content = {
         'error': ex
     }
