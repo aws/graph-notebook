@@ -38,7 +38,10 @@ DEFAULT_NEO4J_USERNAME = 'neo4j'
 DEFAULT_NEO4J_PASSWORD = 'password'
 DEFAULT_NEO4J_DATABASE = DEFAULT_DATABASE
 
-NEPTUNE_SERVICE_NAME = 'neptune-db'
+NEPTUNE_DB_SERVICE_NAME = 'neptune-db'
+NEPTUNE_ANALYTICS_SERVICE_NAME = 'neptune-graph'
+NEPTUNE_DB_CONFIG_NAMES = ['db', 'neptune-db']
+NEPTUNE_ANALYTICS_CONFIG_NAMES = ['graph', 'analytics', 'neptune-graph']
 logger = logging.getLogger('client')
 
 # TODO: Constants for states of each long-running job
@@ -61,7 +64,10 @@ MODE_NEW = 'NEW'
 MODE_AUTO = 'AUTO'
 
 LOAD_JOB_MODES = [MODE_RESUME, MODE_NEW, MODE_AUTO]
-VALID_FORMATS = [FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+DB_LOAD_TYPES = ['bulk']
+ANALYTICS_LOAD_TYPES = ['incremental']
+VALID_INCREMENTAL_FORMATS = ['', FORMAT_CSV, FORMAT_OPENCYPHER]
+VALID_BULK_FORMATS = VALID_INCREMENTAL_FORMATS + [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 PARALLELISM_OPTIONS = [PARALLELISM_LOW, PARALLELISM_MEDIUM, PARALLELISM_HIGH, PARALLELISM_OVERSUBSCRIBE]
 LOADER_ACTION = 'loader'
 
@@ -77,7 +83,9 @@ FINAL_LOAD_STATUSES = ['LOAD_COMPLETED',
                        'LOAD_S3_ACCESS_DENIED_ERROR',
                        'LOAD_IN_QUEUE',
                        'LOAD_FAILED_BECAUSE_DEPENDENCY_NOT_SATISFIED',
-                       'LOAD_FAILED_INVALID_REQUEST', ]
+                       'LOAD_FAILED_INVALID_REQUEST',
+                       'COMPLETED',
+                       'FAILED']
 
 EXPORT_SERVICE_NAME = 'execute-api'
 EXPORT_ACTION = 'neptune-export'
@@ -102,9 +110,9 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
+ANALYTICS_CONFIG_HOST_IDENTIFIERS = ["neptune-graph", "api.aws", "on.aws", "aws.dev"]
 NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws.com.cn",
-                                   "api.aws", "on.aws", "aws.dev",
-                                   "sc2s.sgov.gov", "c2s.ic.gov"]
+                                   "sc2s.sgov.gov", "c2s.ic.gov"] + ANALYTICS_CONFIG_HOST_IDENTIFIERS
 
 false_str_variants = [False, 'False', 'false', 'FALSE']
 
@@ -118,6 +126,8 @@ STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "oc", "opencyphe
 
 SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
+OPENCYPHER_PLAN_CACHE_MODES = ['auto', 'enabled', 'disabled']
+OPENCYPHER_DEFAULT_TIMEOUT = 120000
 
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
@@ -137,8 +147,19 @@ def get_gremlin_serializer(serializer_str: str):
         return serializer.GraphSONSerializersV3d0()
 
 
+def normalize_service_name(neptune_service: str):
+    if neptune_service in NEPTUNE_ANALYTICS_CONFIG_NAMES:
+        return NEPTUNE_ANALYTICS_SERVICE_NAME
+    else:
+        if neptune_service not in NEPTUNE_DB_CONFIG_NAMES:
+            print("Provided neptune_service is empty or invalid, defaulting to neptune-db.")
+        return NEPTUNE_DB_SERVICE_NAME
+
+
 class Client(object):
-    def __init__(self, host: str, port: int = DEFAULT_PORT, ssl: bool = True, ssl_verify: bool = True,
+    def __init__(self, host: str, port: int = DEFAULT_PORT,
+                 neptune_service: str = NEPTUNE_DB_SERVICE_NAME,
+                 ssl: bool = True, ssl_verify: bool = True,
                  region: str = DEFAULT_REGION, sparql_path: str = '/sparql',
                  gremlin_traversal_source: str = DEFAULT_GREMLIN_TRAVERSAL_SOURCE,
                  gremlin_username: str = '', gremlin_password: str = '',
@@ -150,6 +171,7 @@ class Client(object):
                  neptune_hosts: list = None):
         self.target_host = host
         self.target_port = port
+        self.neptune_service = neptune_service
         self.ssl = ssl
         self.ssl_verify = ssl_verify
         if not self.ssl_verify:
@@ -187,8 +209,17 @@ class Client(object):
             return self.proxy_port
         return self.target_port
 
+    @property
+    def service(self):
+        if self.neptune_service in NEPTUNE_ANALYTICS_CONFIG_NAMES:
+            return NEPTUNE_ANALYTICS_SERVICE_NAME
+        return NEPTUNE_DB_SERVICE_NAME
+
     def is_neptune_domain(self):
         return is_allowed_neptune_host(hostname=self.target_host, host_allowlist=self.neptune_hosts)
+
+    def is_analytics_domain(self):
+        return self.service == NEPTUNE_ANALYTICS_SERVICE_NAME
 
     def get_uri_with_port(self, use_websocket=False, use_proxy=False):
         if use_websocket is True:
@@ -350,7 +381,9 @@ class Client(object):
         return res
 
     def opencypher_http(self, query: str, headers: dict = None, explain: str = None,
-                        query_params: dict = None) -> requests.Response:
+                        query_params: dict = None,
+                        plan_cache: str = None,
+                        query_timeout: int = None) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -368,6 +401,11 @@ class Client(object):
                 headers['Accept'] = "text/html"
             if query_params:
                 data['parameters'] = str(query_params).replace("'", '"')  # '{"AUS_code":"AUS","WLG_code":"WLG"}'
+            if self.is_analytics_domain():
+                if plan_cache:
+                    data['planCache'] = plan_cache
+                if query_timeout:
+                    headers['query_timeout_millis'] = str(query_timeout)
         else:
             url += 'db/neo4j/tx/commit'
             headers['content-type'] = 'application/json'
@@ -798,7 +836,9 @@ class Client(object):
         res = self._http_session.send(req)
         return res
 
-    def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
+    def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=None):
+        if not service:
+            service = self.service
         self._ensure_http_session()
         if self.proxy_host != '':
             headers = {} if headers is None else headers
@@ -811,7 +851,7 @@ class Client(object):
 
         return request.prepare()
 
-    def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=NEPTUNE_SERVICE_NAME):
+    def _get_aws_request(self, method, url, *, data=None, params=None, headers=None, service=None):
         req = AWSRequest(method=method, url=url, data=data, params=params, headers=headers)
         if self.iam_enabled:
             credentials = self._session.get_credentials()
@@ -859,6 +899,10 @@ class ClientBuilder(object):
 
     def with_port(self, port: int):
         self.args['port'] = port
+        return ClientBuilder(self.args)
+
+    def with_neptune_service(self, neptune_service: str):
+        self.args['neptune_service'] = neptune_service
         return ClientBuilder(self.args)
 
     def with_sparql_path(self, path: str):

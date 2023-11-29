@@ -8,7 +8,10 @@ import json
 from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION, Configuration, AuthModeEnum, \
     SparqlSection, GremlinSection, Neo4JSection
 from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
-    DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE
+    DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, \
+    NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, NEPTUNE_DB_CONFIG_NAMES, NEPTUNE_ANALYTICS_CONFIG_NAMES
+
+neptune_params = ['neptune_service', 'auth_mode', 'load_from_s3_arn', 'aws_region']
 
 neptune_params = ['auth_mode', 'load_from_s3_arn', 'aws_region']
 
@@ -27,6 +30,7 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
     is_neptune_host = is_allowed_neptune_host(hostname=data["host"], host_allowlist=neptune_hosts)
 
     if is_neptune_host:
+        neptune_service = data['neptune_service'] if 'neptune_service' in data else NEPTUNE_DB_SERVICE_NAME
         if gremlin_section.to_dict()['traversal_source'] != 'g':
             print('Ignoring custom traversal source, Amazon Neptune does not support this functionality.\n')
         if neo4j_section.to_dict()['username'] != DEFAULT_NEO4J_USERNAME \
@@ -34,7 +38,9 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
             print('Ignoring Neo4J custom authentication, Amazon Neptune does not support this functionality.\n')
         if neo4j_section.to_dict()['database'] != DEFAULT_NEO4J_DATABASE:
             print('Ignoring Neo4J custom database, Amazon Neptune does not support multiple databases.\n')
-        config = Configuration(host=data['host'], port=data['port'], auth_mode=AuthModeEnum(data['auth_mode']),
+        config = Configuration(host=data['host'], port=data['port'],
+                               neptune_service=neptune_service,
+                               auth_mode=AuthModeEnum(data['auth_mode']),
                                ssl=data['ssl'], ssl_verify=ssl_verify, load_from_s3_arn=data['load_from_s3_arn'],
                                aws_region=data['aws_region'], sparql_section=sparql_section,
                                gremlin_section=gremlin_section, neo4j_section=neo4j_section,

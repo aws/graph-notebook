@@ -22,7 +22,7 @@ Instructions for connecting to the following graph databases:
 | :-----------------------------: | :---------------------: | :-----------------: |
 |[Gremlin Server](#gremlin-server)|     property graph      |       Gremlin       |
 |    [Blazegraph](#blazegraph)    |            RDF          |       SPARQL        |
-|[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin or SPARQL  |
+|[Amazon Neptune](#amazon-neptune)|  property graph or RDF  |  Gremlin, openCypher, or SPARQL  |
 |         [Neo4J](#neo4j)         |     property graph      |       Cypher        |
 
 We encourage others to contribute configurations they find useful. There is an [`additional-databases`](https://github.com/aws/graph-notebook/blob/main/additional-databases) folder where more information can be found.
@@ -184,6 +184,7 @@ Configuration options can be set using the `%graph_notebook_config` magic comman
 | aws_region | The AWS region to use for Amazon Neptune connections | your-region-1 | string |
 | host | The host url to form a connection with | localhost | string |
 | load_from_s3_arn | The ARN of the S3 bucket to load data from [Amazon Neptune only] | | string |
+| neptune_service | The name of the Neptune service for the host url [Amazon Neptune only] | neptune-db | string |
 | port | The port to use when creating a connection | 8182 | number |
 | proxy_host | The proxy host url to route a connection through [Amazon Neptune only]| | string |
 | proxy_port | The proxy port to use when creating proxy connection [Amazon Neptune only] | 8182 | number |
@@ -251,12 +252,15 @@ To setup a new local Blazegraph database for use with the graph notebook, check 
 
 ### Amazon Neptune
 
-Change the configuration using `%%graph_notebook_config` and modify the defaults as they apply to your Neptune cluster:
+Change the configuration using `%%graph_notebook_config` and modify the defaults as they apply to your Neptune instance.
+
+#### Neptune DB
 
 ``` python
 %%graph_notebook_config
 {
   "host": "your-neptune-endpoint",
+  "neptune_service": "neptune-db",
   "port": 8182,
   "auth_mode": "DEFAULT",
   "load_from_s3_arn": "",
@@ -266,9 +270,45 @@ Change the configuration using `%%graph_notebook_config` and modify the defaults
 }
 ```
 
+#### Neptune Analytics
+
+``` python
+%%graph_notebook_config
+{
+  "host": "your-neptune-endpoint",
+  "neptune_service": "neptune-graph",
+  "port": 443,
+  "auth_mode": "IAM",
+  "ssl": true,
+  "ssl_verify": true,
+  "aws_region": "your-neptune-region"
+}
+```
+
 To setup a new Amazon Neptune cluster, check out the [Amazon Web Services documentation](https://docs.aws.amazon.com/neptune/latest/userguide/manage-console-launch.html).
 
-When connecting the graph notebook to Neptune, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune).
+When connecting the graph notebook to Neptune via a private endpoint, make sure you have a network setup to communicate to the VPC that Neptune runs on. If not, you can follow [this guide](https://github.com/aws/graph-notebook/tree/main/additional-databases/neptune).
+
+In addition to the above configuration options, you can also specify the following options:
+
+### Amazon Neptune Proxy Connection
+
+``` python
+%%graph_notebook_config
+{
+  "host": "clustername.cluster-ididididid.us-east-1.neptune.amazonaws.com",
+  "neptune_service": "neptune-db",
+  "port": 8182,
+  "ssl": true,
+  "proxy_port": 8182,
+  "proxy_host": "host.proxy.com",
+  "auth_mode": "IAM",
+  "aws_region": "us-east-1",
+  "load_from_s3_arn": ""
+}
+```
+
+Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balancer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
 
 in addition to the above configuration options, you can also specify the following options:
 
@@ -298,6 +338,7 @@ If you are running a SigV4 authenticated endpoint, ensure that your configuratio
 %%graph_notebook_config
 {
   "host": "your-neptune-endpoint",
+  "neptune_service": "neptune-db",
   "port": 8182,
   "auth_mode": "IAM",
   "load_from_s3_arn": "",
@@ -376,7 +417,7 @@ python3 setup.py bdist_wheel
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-3.9.0-py3-none-any.whl`
+`./dist/graph_notebook-4.0.0-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -387,8 +428,7 @@ pip install graph-notebook
 with
 
 ``` python
-pip install ./dist/graph_notebook-3.9.0-py3-none-any.whl
-
+pip install ./dist/graph_notebook-4.0.0-py3-none-any.whl
 ```
 
 ## Contributing Guidelines

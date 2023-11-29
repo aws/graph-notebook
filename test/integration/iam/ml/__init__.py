@@ -13,6 +13,7 @@ def setup_iam_client(config: Configuration) -> Client:
     client = ClientBuilder() \
         .with_host(config.host) \
         .with_port(config.port) \
+        .with_neptune_service(config.neptune_service) \
         .with_region(config.aws_region) \
         .with_tls(config.ssl) \
         .with_ssl_verify(config.ssl_verify) \
@@ -28,6 +29,7 @@ def setup_iam_client(config: Configuration) -> Client:
 
     assert client.host == config.host
     assert client.port == config.port
+    assert client.neptune_service == config.neptune_service
     assert client.region == config.aws_region
     assert client.proxy_host == config.proxy_host
     assert client.proxy_port == config.proxy_port

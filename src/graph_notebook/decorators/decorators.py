@@ -12,6 +12,7 @@ from IPython.core.display import HTML, display, clear_output
 
 import ipywidgets as widgets
 from graph_notebook.visualization.template_retriever import retrieve_template
+from graph_notebook.neptune.client import NEPTUNE_ANALYTICS_SERVICE_NAME
 from gremlin_python.driver.protocol import GremlinServerError
 from requests import HTTPError
 
@@ -131,6 +132,22 @@ def magic_variables(func):
             return
 
     return use_magic_variables
+
+
+def neptune_db_only(func):
+    @functools.wraps(func)
+    def check_neptune_db(self, *args, **kwargs):
+        if not hasattr(self.graph_notebook_config, 'neptune_service'):
+            return func(*args, **kwargs)
+        else:
+            service_type = self.graph_notebook_config.neptune_service
+            if service_type == NEPTUNE_ANALYTICS_SERVICE_NAME:
+                print(f'This magic is unavailable for Neptune Analytics.')
+                return
+            else:
+                return func(*args, **kwargs)
+
+    return check_neptune_db
 
 
 def http_ex_to_html(http_ex: HTTPError):

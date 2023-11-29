@@ -3,6 +3,9 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 4.0.0 (Nov 29, 2023)
+- Added support for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/541))
 - Added Air-Routes and EPL sample seed datasets for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/540))
 
 ## Release 3.9.0 (Oct 9, 2023)
