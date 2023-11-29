@@ -11,7 +11,8 @@ from enum import Enum
 from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, DEFAULT_GREMLIN_SERIALIZER, \
     DEFAULT_GREMLIN_TRAVERSAL_SOURCE, DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
-    GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS
+    GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS, \
+    NEPTUNE_DB_SERVICE_NAME, normalize_service_name
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -117,6 +118,7 @@ class Neo4JSection(object):
 
 class Configuration(object):
     def __init__(self, host: str, port: int,
+                 neptune_service: str = NEPTUNE_DB_SERVICE_NAME,
                  auth_mode: AuthModeEnum = DEFAULT_AUTH_MODE,
                  load_from_s3_arn='', ssl: bool = True, ssl_verify: bool = True, aws_region: str = DEFAULT_REGION,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
@@ -135,6 +137,7 @@ class Configuration(object):
             or is_allowed_neptune_host(hostname=self.proxy_host, host_allowlist=neptune_hosts)
         if is_neptune_host:
             self.is_neptune_config = True
+            self.neptune_service = normalize_service_name(neptune_service)
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
@@ -165,6 +168,7 @@ class Configuration(object):
         if self.is_neptune_config:
             return {
                 'host': self.host,
+                'neptune_service': self.neptune_service,
                 'port': self.port,
                 'proxy_host': self.proxy_host,
                 'proxy_port': self.proxy_port,
@@ -199,19 +203,19 @@ class Configuration(object):
 
 
 def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, ssl: bool = True,
-                    ssl_verify: bool = True, load_from_s3_arn='',
+                    ssl_verify: bool = True, neptune_service: str = NEPTUNE_DB_SERVICE_NAME, load_from_s3_arn='',
                     aws_region: str = DEFAULT_REGION, proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
                     sparql_section: SparqlSection = SparqlSection(), gremlin_section: GremlinSection = GremlinSection(),
                     neo4j_section=Neo4JSection(), neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS):
     use_ssl = False if ssl in false_str_variants else True
     verify_ssl = False if ssl_verify in false_str_variants else True
-    c = Configuration(host, port, auth_mode, load_from_s3_arn, use_ssl, verify_ssl, aws_region, proxy_host, proxy_port,
-                      sparql_section, gremlin_section, neo4j_section, neptune_hosts)
+    c = Configuration(host, port, neptune_service, auth_mode, load_from_s3_arn, use_ssl, verify_ssl, aws_region,
+                      proxy_host, proxy_port, sparql_section, gremlin_section, neo4j_section, neptune_hosts)
     return c
 
 
 def generate_default_config():
-    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, True, '', DEFAULT_REGION)
+    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, True, NEPTUNE_DB_SERVICE_NAME, '', DEFAULT_REGION)
     return c
 
 
@@ -219,6 +223,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", help="the host url to form a connection with", required=True)
     parser.add_argument("--port", help="the port to use when creating a connection", default=8182)
+    parser.add_argument("--neptune_service",
+                        default=NEPTUNE_DB_SERVICE_NAME,
+                        help="The neptune service name to use for signing requests. "
+                             "Use 'neptune-db' for Neptune DB, and 'neptune-graph' for Neptune Analytics.")
     parser.add_argument("--auth_mode", default=AuthModeEnum.DEFAULT.value,
                         help="type of authentication the cluster being connected to is using. Can be DEFAULT or IAM")
     parser.add_argument("--ssl",
@@ -259,7 +267,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
-    config = generate_config(args.host, int(args.port), AuthModeEnum(auth_mode_arg), args.ssl, args.ssl_verify,
+    config = generate_config(args.host, int(args.port),
+                             AuthModeEnum(auth_mode_arg),
+                             args.ssl, args.ssl_verify,
+                             args.neptune_service,
                              args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port),
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,

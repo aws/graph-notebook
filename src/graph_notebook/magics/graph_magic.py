@@ -14,6 +14,7 @@ import datetime
 import os
 import uuid
 import ast
+from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
 from sys import maxsize
@@ -28,6 +29,7 @@ from itables import show, JavascriptFunction
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
+from gremlin_python.structure.graph import Path
 from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
@@ -36,19 +38,22 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, \
     AuthModeEnum, Configuration
-from graph_notebook.decorators.decorators import display_exceptions, magic_variables
+from graph_notebook.decorators.decorators import display_exceptions, magic_variables, neptune_db_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
-from graph_notebook.neptune.client import ClientBuilder, Client, VALID_FORMATS, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
+from graph_notebook.neptune.client import ClientBuilder, Client,PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
+    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES,  VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES
+    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES, \
+    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
 from graph_notebook.visualization.template_retriever import retrieve_template
 from graph_notebook.configuration.get_config import get_config, get_config_from_dict
-from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name
+from graph_notebook.seed.load_query import get_data_sets, get_queries, normalize_model_name, normalize_language_name
 from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
@@ -100,10 +105,14 @@ SPARQL_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancel
                             for example: %sparql_status --cancelQuery --queryId my-query-id'''
 OPENCYPHER_CANCEL_HINT_MSG = '''You must supply a string queryId when using --cancelQuery,
                                 for example: %opencypher_status --cancelQuery --queryId my-query-id'''
-SEED_LANGUAGE_OPTIONS = ['', 'Property_Graph', 'RDF']
-
-LOADER_FORMAT_CHOICES = ['']
-LOADER_FORMAT_CHOICES.extend(VALID_FORMATS)
+SEED_MODEL_OPTIONS_PG = ['', 'propertygraph']
+SEED_MODEL_OPTIONS = SEED_MODEL_OPTIONS_PG + ['rdf']
+SEED_LANGUAGE_OPTIONS_OC = ['', 'opencypher']
+SEED_LANGUAGE_OPTIONS_PG = SEED_LANGUAGE_OPTIONS_OC + ['gremlin']
+SEED_LANGUAGE_OPTIONS = SEED_LANGUAGE_OPTIONS_PG + ['sparql']
+SEED_SOURCE_OPTIONS = ['', 'samples', 'custom']
+SEED_NO_DATASETS_FOUND_MSG = "(No datasets available)"
+SEED_WIDGET_STYLE = {'description_width': '95px'}
 
 serializers_map = {
     "MIME_JSON": "application/json",
@@ -117,6 +126,8 @@ DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGr
 DEFAULT_BASE_URI = "http://aws.amazon.com/neptune/default"
 RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 BASE_URI_FORMATS = [FORMAT_RDFXML, FORMAT_TURTLE]
+DEFAULT_LOAD_CONCURRENCY = 1
+DEFAULT_LOAD_PERIODIC_COMMIT = 0
 
 MEDIA_TYPE_SPARQL_JSON = "application/sparql-results+json"
 MEDIA_TYPE_SPARQL_XML = "application/sparql-results+xml"
@@ -151,8 +162,8 @@ class QueryMode(Enum):
     EMPTY = ''
 
 
-def generate_seed_error_msg(error_content, file_index, line_index=None):
-    error_message = f"Terminated seed due to error in file {file_index}"
+def generate_seed_error_msg(error_content, file_name, line_index=None):
+    error_message = f"Terminated seed due to error in file {file_name}"
     if line_index:
         error_message = error_message + f" at line {line_index}"
     print(error_message)
@@ -240,6 +251,24 @@ def get_load_ids(neptune_client):
     return ids, res
 
 
+def process_statistics_400(is_summary: bool, response):
+    bad_request_res = json.loads(response.text)
+    res_code = bad_request_res['code']
+    if res_code == 'StatisticsNotAvailableException':
+        print("No statistics found. Please ensure that auto-generation of DFE statistics is enabled by running "
+              "'%statistics' and checking if 'autoCompute' if set to True. Alternately, you can manually "
+              "trigger statistics generation by running: '%statistics --mode refresh'.")
+    elif res_code == "BadRequestException":
+        print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
+              "greater in order to have DFE statistics enabled.")
+        if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+            print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
+                  "and later.")
+    else:
+        print("Query encountered 400 error, please see below.")
+    print(f"\nFull response: {bad_request_res}")
+
+
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
 # noinspection PyTypeChecker
 @magics_class
@@ -274,6 +303,7 @@ class Graph(Magics):
             builder = ClientBuilder() \
                 .with_host(config.host) \
                 .with_port(config.port) \
+                .with_neptune_service(config.neptune_service) \
                 .with_region(config.aws_region) \
                 .with_tls(config.ssl) \
                 .with_ssl_verify(config.ssl_verify) \
@@ -380,6 +410,7 @@ class Graph(Magics):
             print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
 
     @line_magic
+    @neptune_db_only
     def stream_viewer(self,line):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', default=STREAM_PG,
@@ -397,32 +428,81 @@ class Graph(Magics):
         viewer.show()
 
     @line_magic
+    @needs_local_scope
+    @display_exceptions
     def statistics(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
                             help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
                                  f'Default: propertygraph.',
                             choices=STATISTICS_LANGUAGE_INPUTS)
-        parser.add_argument('-m', '--mode', type=str, default='status',
+        parser.add_argument('-m', '--mode', type=str, default='',
                             help=f'The action to perform on the statistics endpoint. Valid inputs: {STATISTICS_MODES}. '
-                                 f'Default: status')
+                                 f'Default: `basic` if `--summary` is specified, otherwise `status`.')
+        parser.add_argument('--summary', action='store_true', default=False, help="Retrieves the graph summary.")
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
 
         args = parser.parse_args(line.split())
+        mode = args.mode
 
-        if args.mode not in STATISTICS_MODES:
-            print(f'Invalid mode. Please specify one of: {STATISTICS_MODES}, or leave blank to retrieve status.')
+        if not mode:
+            mode = 'basic' if args.summary else 'status'
+        elif (args.summary and mode not in SUMMARY_MODES) or (not args.summary and mode not in STATISTICS_MODES):
+            if mode == 'refresh' and self.client.is_analytics_domain():
+                print("Refresh mode is unavailable for Neptune Analytics.")
+                return
+            err_endpoint_type, err_mode_list, err_default_mode = ("summary", SUMMARY_MODES[1:], "basic summary view") \
+                if args.summary else ("statistics", STATISTICS_MODES[1:], "status")
+            print(f'Invalid {err_endpoint_type} mode. Please specify one of: {err_mode_list}, '
+                  f'or leave blank to retrieve {err_default_mode}.')
             return
 
-        statistics_res = self.client.statistics(args.language, args.mode)
+        statistics_res = self.client.statistics(args.language, args.summary, mode)
+        if statistics_res.status_code == 400:
+            if args.summary:
+                process_statistics_400(True, statistics_res)
+            else:
+                process_statistics_400(False, statistics_res)
+            return
         statistics_res.raise_for_status()
-        res = statistics_res.json()
+        statistics_res_json = statistics_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            print(json.dumps(statistics_res_json, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, statistics_res_json, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def summary(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                            help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                                 f'Default: propertygraph.',
+                            choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('--detailed', action='store_true', default=False,
+                            help="Toggles the display of structures fields on or off in the output. If not supplied, "
+                                 "we will default to the basic summary display mode.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+        if args.detailed:
+            mode = "detailed"
+        else:
+            mode = "basic"
+
+        summary_res = self.client.statistics(args.language, True, mode)
+        if summary_res.status_code == 400:
+            process_statistics_400(True, summary_res)
+            return
+        summary_res.raise_for_status()
+        summary_res_json = summary_res.json()
+        if not args.silent:
+            print(json.dumps(summary_res_json, indent=2))
+
+        store_to_ns(args.store_to, summary_res_json, local_ns)
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -439,6 +519,7 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def sparql(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -447,9 +528,9 @@ class Graph(Magics):
                             help='prefix path to sparql endpoint. For example, if "foo/bar" were specified, '
                                  'the endpoint called would be host:port/foo/bar')
         parser.add_argument('--expand-all', action='store_true')
-        parser.add_argument('--explain-type', default='dynamic',
-                            help='explain mode to use when using the explain query mode',
-                            choices=['dynamic', 'static', 'details'])
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Expected values: ${SPARQL_EXPLAIN_MODES}')
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-m', '--media-type', type=str, default='',
@@ -695,6 +776,7 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def sparql_status(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
@@ -731,20 +813,23 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
+        parser.add_argument('--explain-type', type=str.lower, default='',
+                            help='Explain mode to use when using the explain query mode.')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
-        parser.add_argument('-g', '--group-by', type=str, default='T.label',
+        parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
                             help="Group nodes based on path hierarchy")
         parser.add_argument('-gr', '--group-by-raw', action='store_true', default=False,
                             help="Group nodes by the raw result")
-        parser.add_argument('-d', '--display-property', type=str, default='T.label',
+        parser.add_argument('-d', '--display-property', type=str, default='',
                             help='Property to display the value of on each node, default is T.label')
-        parser.add_argument('-de', '--edge-display-property', type=str, default='T.label',
+        parser.add_argument('-de', '--edge-display-property', type=str, default='',
                             help='Property to display the value of on each edge, default is T.label')
         parser.add_argument('-t', '--tooltip-property', type=str, default='',
                             help='Property to display the value of on each node tooltip. If not specified, tooltip '
@@ -812,7 +897,8 @@ class Graph(Magics):
         transport_args = {'max_content_length': args.max_content_length}
 
         if mode == QueryMode.EXPLAIN:
-            res = self.client.gremlin_explain(cell)
+            res = self.client.gremlin_explain(cell,
+                                              args={'explain.mode': args.explain_type} if args.explain_type else {})
             res.raise_for_status()
             # Replace strikethrough character bytes, can't be encoded to ASCII
             explain_bytes = res.content.replace(b'\xcc', b'-')
@@ -863,21 +949,31 @@ class Graph(Magics):
                 else:
                     first_tab_html = pre_container_template.render(content='No profile found')
         else:
+            using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+            if self.graph_notebook_config.proxy_host != '' and self.client.is_neptune_domain():
+                using_http = True
+                query_res_http = self.client.gremlin_http_query(cell, headers={'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                query_res_http.raise_for_status()
+                query_res_http_json = query_res_http.json()
+                query_res = query_res_http_json['result']['data']
+            else:
+                query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
                                                                      query_time=query_time)
                 titles.append('Console')
 
+                gremlin_network = None
                 try:
                     logger.debug(f'groupby: {args.group_by}')
                     logger.debug(f'display_property: {args.display_property}')
                     logger.debug(f'edge_display_property: {args.edge_display_property}')
                     logger.debug(f'label_max_length: {args.label_max_length}')
                     logger.debug(f'ignore_groups: {args.ignore_groups}')
-                    gn = GremlinNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                    gn = GremlinNetwork(group_by_property=args.group_by,
+                                        display_property=args.display_property,
                                         group_by_raw=args.group_by_raw,
                                         group_by_depth=args.group_by_depth,
                                         edge_display_property=args.edge_display_property,
@@ -885,25 +981,42 @@ class Graph(Magics):
                                         edge_tooltip_property=args.edge_tooltip_property,
                                         label_max_length=args.label_max_length,
                                         edge_label_max_length=args.edge_label_max_length,
-                                        ignore_groups=args.ignore_groups)
+                                        ignore_groups=args.ignore_groups,
+                                        using_http=using_http)
+
+                    if using_http and 'path()' in cell and query_res:
+                        first_path = query_res[0]
+                        if isinstance(first_path, dict) and first_path.keys() == {'labels', 'objects'}:
+                            query_res_to_path_type = []
+                            for path in query_res:
+                                new_path_list = path['objects']
+                                new_path = Path(labels=[], objects=new_path_list)
+                                query_res_to_path_type.append(new_path)
+                            query_res = query_res_to_path_type
 
                     if args.path_pattern == '':
-                        gn.add_results(query_res)
+                        gn.add_results(query_res, is_http=using_http)
                     else:
                         pattern = parse_pattern_list_str(args.path_pattern)
                         gn.add_results_with_pattern(query_res, pattern)
+                    gremlin_network = gn
                     logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
+                except ValueError as value_error:
+                    logger.debug(
+                        f'Unable to create graph network from result due to error: {value_error}. '
+                        f'Skipping from result set.')
+                if gremlin_network and len(gremlin_network.graph.nodes) > 0:
+                    try:
                         self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
                             = args.stop_physics
                         self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        f = Force(network=gn, options=self.graph_notebook_vis_options)
+                        f = Force(network=gremlin_network, options=self.graph_notebook_vis_options)
                         titles.append('Graph')
                         children.append(f)
                         logger.debug('added gremlin network to tabs')
-                except ValueError as value_error:
-                    logger.debug(
-                        f'unable to create gremlin network from result. Skipping from result set: {value_error}')
+                    except Exception as force_error:
+                        logger.debug(
+                            f'Unable to render visualization from graph network due to error: {force_error}. Skipping.')
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
@@ -986,6 +1099,7 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def gremlin_status(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-q', '--queryId', default='',
@@ -1074,8 +1188,10 @@ class Graph(Magics):
                 return status_res
 
     @line_magic
+    @needs_local_scope
     @display_exceptions
-    def db_reset(self, line):
+    @neptune_db_only
+    def db_reset(self, line, local_ns: dict = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()
         parser.add_argument('-g', '--generate-token', action='store_true', help='generate token for database reset')
@@ -1233,10 +1349,18 @@ class Graph(Magics):
         logger.info(f'got the response {res}')
         return res
 
+    @magic_variables
     @line_magic
     @needs_local_scope
     @display_exceptions
     def load(self, line='', local_ns: dict = None):
+        if self.client.is_analytics_domain():
+            load_type = ANALYTICS_LOAD_TYPES[0]
+            load_formats = VALID_INCREMENTAL_FORMATS
+        else:
+            load_type = DB_LOAD_TYPES[0]
+            load_formats = VALID_BULK_FORMATS
+
         # TODO: change widgets to let any arbitrary inputs be added by users
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', '--source', default='s3://')
@@ -1246,7 +1370,7 @@ class Graph(Magics):
             print(f"Missing required configuration option 'load_from_s3_arn'. Please ensure that you have provided a "
                   "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
             return
-        parser.add_argument('-f', '--format', choices=LOADER_FORMAT_CHOICES, default=FORMAT_CSV)
+        parser.add_argument('-f', '--format', choices=load_formats, default=FORMAT_CSV)
         parser.add_argument('-p', '--parallelism', choices=PARALLELISM_OPTIONS, default=PARALLELISM_HIGH)
         try:
             parser.add_argument('-r', '--region', default=self.graph_notebook_config.aws_region)
@@ -1262,6 +1386,8 @@ class Graph(Magics):
         parser.add_argument('-q', '--queue-request', action='store_true', default=False)
         parser.add_argument('-d', '--dependencies', action='append', default=[])
         parser.add_argument('-e', '--no-edge-ids', action='store_true', default=False)
+        parser.add_argument('-c', '--concurrency', type=int, default=1)
+        parser.add_argument('-pc', '--periodic-commit', type=int, default=0)
         parser.add_argument('--named-graph-uri', type=str, default=DEFAULT_NAMEDGRAPH_URI,
                             help='The default graph for all RDF formats when no graph is specified. '
                                  'Default is http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph.')
@@ -1293,7 +1419,7 @@ class Graph(Magics):
         )
 
         source_format = widgets.Dropdown(
-            options=LOADER_FORMAT_CHOICES,
+            options=load_formats,
             value=args.format,
             disabled=False,
             layout=widgets.Layout(width=widget_width)
@@ -1303,15 +1429,21 @@ class Graph(Magics):
         gremlin_parser_options_hbox_visibility = 'none'
         named_graph_hbox_visibility = 'none'
         base_uri_hbox_visibility = 'none'
+        concurrency_hbox_visibility = 'none'
+        periodic_commit_hbox_visibility = 'none'
 
-        if source_format.value.lower() == FORMAT_CSV:
-            gremlin_parser_options_hbox_visibility = 'flex'
-        elif source_format.value.lower() == FORMAT_OPENCYPHER:
-            ids_hbox_visibility = 'flex'
-        elif source_format.value.lower() in RDF_LOAD_FORMATS:
-            named_graph_hbox_visibility = 'flex'
-            if source_format.value.lower() in BASE_URI_FORMATS:
-                base_uri_hbox_visibility = 'flex'
+        if load_type == 'incremental':
+            concurrency_hbox_visibility = 'flex'
+            periodic_commit_hbox_visibility = 'flex'
+        else:
+            if source_format.value.lower() == FORMAT_CSV:
+                gremlin_parser_options_hbox_visibility = 'flex'
+            elif source_format.value.lower() == FORMAT_OPENCYPHER:
+                ids_hbox_visibility = 'flex'
+            elif source_format.value.lower() in RDF_LOAD_FORMATS:
+                named_graph_hbox_visibility = 'flex'
+                if source_format.value.lower() in BASE_URI_FORMATS:
+                    base_uri_hbox_visibility = 'flex'
 
         region_box = widgets.Text(
             value=args.region,
@@ -1392,6 +1524,24 @@ class Graph(Magics):
             placeholder='load_A_id\nload_B_id',
             disabled=False,
             layout=widgets.Layout(width=widget_width)
+        )
+
+        concurrency = widgets.BoundedIntText(
+            value=str(args.concurrency),
+            placeholder=1,
+            min=1,
+            disabled=False,
+            layout=widgets.Layout(display=concurrency_hbox_visibility,
+                                  width=widget_width)
+        )
+
+        periodic_commit = widgets.BoundedIntText(
+            value=args.periodic_commit,
+            placeholder=0,
+            min=0,
+            disabled=False,
+            layout=widgets.Layout(display=periodic_commit_hbox_visibility,
+                                  width=widget_width)
         )
 
         poll_status = widgets.Dropdown(
@@ -1496,6 +1646,20 @@ class Graph(Magics):
 
         ids_hbox = widgets.HBox([ids_hbox_label, user_provided_edge_ids])
 
+        concurrency_hbox_label = widgets.Label('Concurrency:',
+                                               layout=widgets.Layout(width=label_width,
+                                                                     display=concurrency_hbox_visibility,
+                                                                     justify_content="flex-end"))
+
+        concurrency_hbox = widgets.HBox([concurrency_hbox_label, concurrency])
+
+        periodic_commit_hbox_label = widgets.Label('Periodic Commit:',
+                                                   layout=widgets.Layout(width=label_width,
+                                                                         display=periodic_commit_hbox_visibility,
+                                                                         justify_content="flex-end"))
+
+        periodic_commit_hbox = widgets.HBox([periodic_commit_hbox_label, periodic_commit])
+
         poll_status_label = widgets.Label('Poll Load Status:',
                                           layout=widgets.Layout(width=label_width,
                                                                 display="flex",
@@ -1548,23 +1712,21 @@ class Graph(Magics):
         source_format.observe(update_edge_ids_options, names='value')
         source_format.observe(update_parserconfig_options, names='value')
 
-        display(source_hbox,
-                source_format_hbox,
-                region_hbox,
-                arn_hbox,
-                mode_hbox,
-                fail_hbox,
-                parallelism_hbox,
-                cardinality_hbox,
-                queue_hbox,
-                dep_hbox,
-                poll_status_hbox,
-                ids_hbox,
-                allow_empty_strings_hbox,
-                named_graph_uri_hbox,
-                base_uri_hbox,
-                button,
-                output)
+        basic_load_boxes = [source_hbox, source_format_hbox, region_hbox, fail_hbox]
+        # load arguments for Analytics incremental load
+        incremental_load_boxes = [concurrency_hbox, periodic_commit_hbox]
+        # load arguments for Neptune bulk load
+        bulk_load_boxes = [arn_hbox, mode_hbox, parallelism_hbox, cardinality_hbox,
+                           queue_hbox, dep_hbox, ids_hbox, allow_empty_strings_hbox,
+                           named_graph_uri_hbox, base_uri_hbox, poll_status_hbox]
+        submit_load_boxes = [button, output]
+
+        if load_type == 'incremental':
+            display_boxes = basic_load_boxes + incremental_load_boxes + submit_load_boxes
+        else:
+            display_boxes = basic_load_boxes + bulk_load_boxes + submit_load_boxes
+
+        display(*display_boxes)
 
         def on_button_clicked(b):
             source_hbox.children = (source_hbox_label, source,)
@@ -1574,8 +1736,8 @@ class Graph(Magics):
             named_graph_uri_hbox.children = (named_graph_uri_hbox_label, named_graph_uri,)
             base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
-
-            dependencies_list = list(filter(None, dependencies.value.split('\n')))
+            concurrency_hbox.children = (concurrency_hbox_label, concurrency, )
+            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit, )
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -1597,11 +1759,13 @@ class Graph(Magics):
                 arn_validation_label = widgets.HTML('<p style="color:red;">Load ARN must start with "arn:aws"</p>')
                 arn_hbox.children += (arn_validation_label,)
 
-            if not len(dependencies_list) < 64:
-                validated = False
-                dep_validation_label = widgets.HTML(
-                    '<p style="color:red;">A maximum of 64 jobs may be queued at once.</p>')
-                dep_hbox.children += (dep_validation_label,)
+            if load_type == 'bulk':
+                dependencies_list = list(filter(None, dependencies.value.split('\n')))
+                if not len(dependencies_list) < 64:
+                    validated = False
+                    dep_validation_label = widgets.HTML(
+                        '<p style="color:red;">A maximum of 64 jobs may be queued at once.</p>')
+                    dep_hbox.children += (dep_validation_label,)
 
             if not validated:
                 return
@@ -1614,26 +1778,40 @@ class Graph(Magics):
             try:
                 kwargs = {
                     'failOnError': fail_on_error.value,
-                    'parallelism': parallelism.value,
-                    'updateSingleCardinalityProperties': update_single_cardinality.value,
-                    'queueRequest': queue_request.value,
-                    'region': region_box.value,
-                    'parserConfiguration': {}
+                    'region': region_box.value
                 }
 
-                if dependencies:
-                    kwargs['dependencies'] = dependencies_list
+                if load_type == 'incremental':
+                    incremental_load_kwargs = {
+                        'source': source.value,
+                        'format': source_format.value,
+                        'concurrency': concurrency.value,
+                        'periodicCommit': periodic_commit.value
+                    }
+                    kwargs.update(incremental_load_kwargs)
+                else:
+                    bulk_load_kwargs = {
+                        'parallelism': parallelism.value,
+                        'updateSingleCardinalityProperties': update_single_cardinality.value,
+                        'queueRequest': queue_request.value,
+                        'parserConfiguration': {}
+                    }
 
-                if source_format.value.lower() == FORMAT_OPENCYPHER:
-                    kwargs['userProvidedEdgeIds'] = user_provided_edge_ids.value
-                elif source_format.value.lower() == FORMAT_CSV:
-                    if allow_empty_strings.value == 'TRUE':
-                        kwargs['parserConfiguration']['allowEmptyStrings'] = True
-                elif source_format.value.lower() in RDF_LOAD_FORMATS:
-                    if named_graph_uri.value:
-                        kwargs['parserConfiguration']['namedGraphUri'] = named_graph_uri.value
-                    if base_uri.value and source_format.value.lower() in BASE_URI_FORMATS:
-                        kwargs['parserConfiguration']['baseUri'] = base_uri.value
+                    if dependencies:
+                        bulk_load_kwargs['dependencies'] = dependencies_list
+
+                    if source_format.value.lower() == FORMAT_OPENCYPHER:
+                        bulk_load_kwargs['userProvidedEdgeIds'] = user_provided_edge_ids.value
+                    elif source_format.value.lower() == FORMAT_CSV:
+                        if allow_empty_strings.value == 'TRUE':
+                            bulk_load_kwargs['parserConfiguration']['allowEmptyStrings'] = True
+                    elif source_format.value.lower() in RDF_LOAD_FORMATS:
+                        if named_graph_uri.value:
+                            bulk_load_kwargs['parserConfiguration']['namedGraphUri'] = named_graph_uri.value
+                        if base_uri.value and source_format.value.lower() in BASE_URI_FORMATS:
+                            bulk_load_kwargs['parserConfiguration']['baseUri'] = base_uri.value
+
+                    kwargs.update(bulk_load_kwargs)
 
                 source_hbox.close()
                 source_format_hbox.close()
@@ -1650,6 +1828,8 @@ class Graph(Magics):
                 allow_empty_strings_hbox.close()
                 named_graph_uri_hbox.close()
                 base_uri_hbox.close()
+                concurrency_hbox.close()
+                periodic_commit_hbox.close()
                 button.close()
 
                 load_submit_status_output = widgets.Output()
@@ -1657,102 +1837,130 @@ class Graph(Magics):
                 with output:
                     display(load_submit_hbox)
                 with load_submit_status_output:
-                    print("Load request submitted, waiting for response...")
+                    print(f"{load_type.capitalize()} load request submitted, waiting for response...")
                     display_html(HTML(loading_wheel_html))
                 try:
-                    if source.value.startswith("s3://"):
-                        load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
+                    if load_type == 'incremental':
+                        load_oc_params = '{'
+                        for param, value in kwargs.items():
+                            value_substr = str(value) if (isinstance(value, int) or param == 'failOnError') \
+                                else '"' + value + '"'
+                            next_param = param + ': ' + value_substr
+                            load_oc_params += next_param
+                            if param == 'periodicCommit':
+                                load_oc_params += '}'
+                            else:
+                                load_oc_params += ', '
+                        load_oc_query = f"CALL neptune.load({load_oc_params})"
+                        oc_load = self.client.opencypher_http(load_oc_query)
                     else:
-                        load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
+                        if source.value.startswith("s3://"):
+                            load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
+                        else:
+                            load_res = self.client.load(str(source_exp), source_format.value, **kwargs)
                 except Exception as e:
                     load_submit_status_output.clear_output()
                     with output:
-                        print("Failed to submit load request.")
+                        print(f"Failed to submit {load_type.capitalize()} load request.")
                         logger.error(e)
                     return
                 load_submit_status_output.clear_output()
-                try:
-                    load_res.raise_for_status()
-                except Exception as e:
-                    # Ignore failure to retrieve status, we handle missing status below.
-                    pass
-                load_result = load_res.json()
-                store_to_ns(args.store_to, load_result, local_ns)
 
-                if 'status' not in load_result or load_result['status'] != '200 OK':
+                if load_type == 'incremental':
+                    oc_load.raise_for_status()
+                    load_result = oc_load.json()
+                    store_to_ns(args.store_to, load_result, local_ns)
                     with output:
-                        print('Something went wrong.')
-                        logger.error(load_result)
-                    return
-
-                if poll_status.value == 'FALSE':
-                    start_msg_label = widgets.Label(f'Load started successfully!')
-                    polling_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
-                                                      f'in another cell to check the current status of your bulk load.')
-                    start_msg_hbox = widgets.HBox([start_msg_label])
-                    polling_msg_hbox = widgets.HBox([polling_msg_label])
-                    vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
-                    with output:
-                        display(vbox)
+                        print("Load completed.\n")
+                        print(json.dumps(load_result, indent=2))
                 else:
-                    poll_interval = 5
-                    load_id_label = widgets.Label(f'Load ID: {load_result["payload"]["loadId"]}')
-                    interval_output = widgets.Output()
-                    job_status_output = widgets.Output()
-                    load_id_hbox = widgets.HBox([load_id_label])
-                    status_hbox = widgets.HBox([interval_output])
-                    vbox = widgets.VBox([load_id_hbox, status_hbox, job_status_output])
-                    with output:
-                        display(vbox)
+                    try:
+                        load_res.raise_for_status()
+                    except Exception as e:
+                        # Ignore failure to retrieve status, we handle missing status below.
+                        pass
+                    load_result = load_res.json()
+                    store_to_ns(args.store_to, load_result, local_ns)
 
-                    last_poll_time = time.time()
-                    new_interval = True
-                    while True:
-                        time_elapsed = int(time.time() - last_poll_time)
-                        time_remaining = poll_interval - time_elapsed
-                        interval_output.clear_output()
-                        if time_elapsed > poll_interval:
-                            with interval_output:
-                                print('checking status...')
-                            job_status_output.clear_output()
-                            with job_status_output:
-                                display_html(HTML(loading_wheel_html))
-                            new_interval = True
-                            try:
-                                load_status_res = self.client.load_status(load_result['payload']['loadId'])
-                                load_status_res.raise_for_status()
-                                interval_check_response = load_status_res.json()
-                            except Exception as e:
-                                logger.error(e)
-                                with job_status_output:
-                                    print('Something went wrong updating job status. Ending.')
-                                    return
-                            job_status_output.clear_output()
-                            with job_status_output:
-                                print(f'Overall Status: '
-                                      f'{interval_check_response["payload"]["overallStatus"]["status"]}')
-                                if interval_check_response["payload"]["overallStatus"]["status"] in FINAL_LOAD_STATUSES:
-                                    execution_time = \
-                                        interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
-                                    if execution_time == 0:
-                                        execution_time_statement = '<1 second'
-                                    elif execution_time > 59:
-                                        execution_time_statement = str(datetime.timedelta(seconds=execution_time))
-                                    else:
-                                        execution_time_statement = f'{execution_time} seconds'
-                                    print('Total execution time: ' + execution_time_statement)
-                                    interval_output.close()
-                                    print('Done.')
-                                    return
-                            last_poll_time = time.time()
-                        else:
-                            if new_interval:
+                    if 'status' not in load_result or load_result['status'] != '200 OK':
+                        with output:
+                            print('Something went wrong.')
+                            logger.error(load_result)
+                        return
+
+                    if poll_status.value == 'FALSE':
+                        start_msg_label = widgets.Label(f'Load started successfully!')
+                        polling_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
+                                                          f'in another cell to check the current status of your bulk load.')
+                        start_msg_hbox = widgets.HBox([start_msg_label])
+                        polling_msg_hbox = widgets.HBox([polling_msg_label])
+                        vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
+                        with output:
+                            display(vbox)
+                    else:
+                        poll_interval = 5
+                        load_id_label = widgets.Label(f'Load ID: {load_result["payload"]["loadId"]}')
+                        interval_output = widgets.Output()
+                        job_status_output = widgets.Output()
+                        load_id_hbox = widgets.HBox([load_id_label])
+                        status_hbox = widgets.HBox([interval_output])
+                        vbox = widgets.VBox([load_id_hbox, status_hbox, job_status_output])
+                        with output:
+                            display(vbox)
+
+                        last_poll_time = time.time()
+                        new_interval = True
+                        while True:
+                            time_elapsed = int(time.time() - last_poll_time)
+                            time_remaining = poll_interval - time_elapsed
+                            interval_output.clear_output()
+                            if time_elapsed > poll_interval:
+                                with interval_output:
+                                    print('checking status...')
+                                job_status_output.clear_output()
                                 with job_status_output:
                                     display_html(HTML(loading_wheel_html))
-                                new_interval = False
-                            with interval_output:
-                                print(f'checking status in {time_remaining} seconds')
-                        time.sleep(1)
+                                new_interval = True
+                                try:
+                                    load_status_res = self.client.load_status(load_result['payload']['loadId'])
+                                    load_status_res.raise_for_status()
+                                    interval_check_response = load_status_res.json()
+                                except Exception as e:
+                                    logger.error(e)
+                                    with job_status_output:
+                                        print('Something went wrong updating job status. Ending.')
+                                        return
+                                job_status_output.clear_output()
+                                with job_status_output:
+                                    # parse status & execution_time differently for Analytics and NeptuneDB
+                                    overall_status = \
+                                        interval_check_response["payload"]["status"] if self.client.is_analytics_domain() \
+                                        else interval_check_response["payload"]["overallStatus"]["status"]
+                                    total_time_spent = \
+                                        interval_check_response["payload"]["timeElapsedSeconds"] if self.client.is_analytics_domain() \
+                                        else interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                    print(f'Overall Status: {overall_status}')
+                                    if overall_status in FINAL_LOAD_STATUSES:
+                                        execution_time = total_time_spent
+                                        if execution_time == 0:
+                                            execution_time_statement = '<1 second'
+                                        elif execution_time > 59:
+                                            execution_time_statement = str(datetime.timedelta(seconds=execution_time))
+                                        else:
+                                            execution_time_statement = f'{execution_time} seconds'
+                                        print('Total execution time: ' + execution_time_statement)
+                                        interval_output.close()
+                                        print('Done.')
+                                        return
+                                last_poll_time = time.time()
+                            else:
+                                if new_interval:
+                                    with job_status_output:
+                                        display_html(HTML(loading_wheel_html))
+                                    new_interval = False
+                                with interval_output:
+                                    print(f'checking status in {time_remaining} seconds')
+                            time.sleep(1)
 
             except HTTPError as httpEx:
                 output.clear_output()
@@ -1766,6 +1974,7 @@ class Graph(Magics):
     @line_magic
     @display_exceptions
     @needs_local_scope
+    @neptune_db_only
     def load_ids(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--details', action='store_true', default=False,
@@ -1840,8 +2049,7 @@ class Graph(Magics):
             vbox = widgets.VBox(labels)
             display(vbox)
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
@@ -1871,12 +2079,12 @@ class Graph(Magics):
         if not args.silent:
             print(json.dumps(res, indent=2))
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = res
+        store_to_ns(args.store_to, res, local_ns)
 
     @line_magic
     @display_exceptions
     @needs_local_scope
+    @neptune_db_only
     def cancel_load(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('load_id', nargs="?", default='', help='loader id to check status for')
@@ -1921,15 +2129,36 @@ class Graph(Magics):
             else:
                 print("No cancellable load jobs were found.")
 
-        if args.store_to != '' and local_ns is not None:
-            local_ns[args.store_to] = raw_res
+        store_to_ns(args.store_to, raw_res, local_ns)
 
     @line_magic
     @display_exceptions
-    def seed(self, line):
+    @needs_local_scope
+    def seed(self, line, local_ns: dict = None):
+        """
+        Provides a way to bulk insert data to your endpoint via Gremlin, openCypher, or SPARQL queries. Via the form
+        generated by running %seed with no arguments, you can do either of the following:
+
+        a) select a data model (property-graph or RDF), then choose from among a number of different sample data sets
+        that Neptune provides.
+
+        b) select a query language to load with, then provide a path to a local file with insert queries,
+        or a directory containing multiple of these files.
+        """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--model', type=str, default='', choices=SEED_LANGUAGE_OPTIONS)
-        parser.add_argument('--dataset', type=str, default='')
+        parser.add_argument('--model', type=str.lower, default='',
+                            help='Specifies what data model you would like to load for. '
+                                 'Accepted values: property_graph, rdf')
+        parser.add_argument('--language', type=str.lower, default='',
+                            help='Specifies what language you would like to load for. '
+                                 'Accepted values: gremlin, sparql, opencypher')
+        parser.add_argument('--dataset', type=str, default='',
+                            help='Specifies what sample dataset you would like to load.')
+        parser.add_argument('--source', type=str, default='',
+                            help='Specifies the full path to a local file or directory that you would like to '
+                                 'load from.')
+        parser.add_argument('-f', '--full-file-query', action='store_true', default=False,
+                            help='Read all content of a file as a single query, instead of per line')
         # TODO: Gremlin api paths are not yet supported.
         parser.add_argument('--path', '-p', default=SPARQL_ACTION,
                             help='prefix path to query endpoint. For example, "foo/bar". '
@@ -1941,43 +2170,406 @@ class Graph(Magics):
 
         output = widgets.Output()
         progress_output = widgets.Output()
+        source_dropdown = widgets.Dropdown(
+            options=SEED_SOURCE_OPTIONS,
+            description='Source type:',
+            disabled=False,
+            style=SEED_WIDGET_STYLE
+        )
+
+        if self.client.is_analytics_domain():
+            model_options = SEED_MODEL_OPTIONS_PG
+            custom_language_options = SEED_LANGUAGE_OPTIONS_OC
+            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_OC
+        else:
+            model_options = SEED_MODEL_OPTIONS
+            custom_language_options = SEED_LANGUAGE_OPTIONS
+            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_PG
+
         model_dropdown = widgets.Dropdown(
-            options=SEED_LANGUAGE_OPTIONS,
+            options=model_options,
             description='Data model:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
+        )
+
+        custom_language_dropdown = widgets.Dropdown(
+            options=custom_language_options,
+            description='Language:',
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
+        )
+
+        samples_pg_language_dropdown = widgets.Dropdown(
+            options=samples_pg_language_options,
+            description='Language:',
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
         data_set_drop_down = widgets.Dropdown(
             description='Data set:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
         )
 
+        fullfile_option_dropdown = widgets.Dropdown(
+            description='Full File Query:',
+            options=[True, False],
+            value=args.full_file_query,
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
+        )
+
+        location_option_dropdown = widgets.Dropdown(
+            description='Location:',
+            options=['Local', 'S3'],
+            value='Local',
+            disabled=False,
+            layout=widgets.Layout(display='none'),
+            style=SEED_WIDGET_STYLE
+        )
+
+        seed_file_location_text = widgets.Text(
+            description='Source:',
+            placeholder='path/to/seedfiles/directory',
+            disabled=False,
+            style=SEED_WIDGET_STYLE
+        )
+
+        seed_file_location = FileChooser()
+        seed_file_location.layout.display = 'none'
+
+        seed_file_location_text_hbox = widgets.HBox([seed_file_location_text])
+
         submit_button = widgets.Button(description="Submit")
+        model_dropdown.layout.visibility = 'hidden'
+        custom_language_dropdown.layout.visibility = 'hidden'
+        samples_pg_language_dropdown.layout.visibility = 'hidden'
         data_set_drop_down.layout.visibility = 'hidden'
+        fullfile_option_dropdown.layout.visibility = 'hidden'
+        location_option_dropdown.layout.visibility = 'hidden'
+        seed_file_location_text_hbox.layout.visibility = 'hidden'
+        seed_file_location.layout.visibility = 'hidden'
         submit_button.layout.visibility = 'hidden'
 
-        def on_value_change(change):
-            selected_model = change['new']
-            data_sets = get_data_sets(selected_model)
-            data_sets.sort()
-            data_set_drop_down.options = [ds for ds in data_sets if
-                                          ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
-            data_set_drop_down.layout.visibility = 'visible'
-            submit_button.layout.visibility = 'visible'
+        def hide_all_widgets():
+            location_option_dropdown.layout.visibility = 'hidden'
+            location_option_dropdown.layout.display = 'none'
+            seed_file_location_text_hbox.layout.visibility = 'hidden'
+            seed_file_location_text_hbox.layout.display = 'none'
+            custom_language_dropdown.layout.visibility = 'hidden'
+            custom_language_dropdown.layout.display = 'none'
+            samples_pg_language_dropdown.layout.visibility = 'hidden'
+            samples_pg_language_dropdown.layout.display = 'none'
+            fullfile_option_dropdown.layout.visibility = 'hidden'
+            fullfile_option_dropdown.layout.display = 'none'
+            seed_file_location.layout.visibility = 'hidden'
+            seed_file_location.layout.display = 'none'
+            seed_file_location_text_hbox.layout.visibility = 'hidden'
+            seed_file_location_text_hbox.layout.display = 'none'
+            model_dropdown.layout.visibility = 'hidden'
+            model_dropdown.layout.display = 'none'
+            data_set_drop_down.layout.visibility = 'hidden'
+            data_set_drop_down.layout.display = 'none'
+            submit_button.layout.visibility = 'hidden'
+
+        def on_source_value_change(change):
+            hide_all_widgets()
+            selected_source = change['new']
+            if selected_source == 'custom':
+                custom_language_dropdown.layout.visibility = 'visible'
+                custom_language_dropdown.layout.display = 'flex'
+                location_option_dropdown.layout.visibility = 'visible'
+                location_option_dropdown.layout.display = 'flex'
+                if custom_language_dropdown.value:
+                    if custom_language_dropdown.value != 'sparql':
+                        fullfile_option_dropdown.layout.visibility = 'visible'
+                        fullfile_option_dropdown.layout.display = 'flex'
+                # If textbox has a value, OR we are loading from S3, display textbox instead of the filepicker
+                if seed_file_location_text.value or location_option_dropdown.value == 'S3':
+                    seed_file_location_text_hbox.layout.visibility = 'visible'
+                    seed_file_location_text_hbox.layout.display = 'flex'
+                elif seed_file_location.value or location_option_dropdown.value == 'Local':
+                    seed_file_location.layout.visibility = 'visible'
+                    seed_file_location.layout.display = 'flex'
+                if custom_language_dropdown.value \
+                        and (seed_file_location_text.value or
+                             (seed_file_location.value and location_option_dropdown.value == 'Local')):
+                    submit_button.layout.visibility = 'visible'
+            elif selected_source == 'samples':
+                custom_language_dropdown.layout.visibility = 'hidden'
+                custom_language_dropdown.layout.display = 'none'
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+                model_dropdown.layout.visibility = 'visible'
+                model_dropdown.layout.display = 'flex'
+                if model_dropdown.value:
+                    show_dataset = False
+                    if model_dropdown.value == 'propertygraph':
+                        samples_pg_language_dropdown.layout.visibility = 'visible'
+                        samples_pg_language_dropdown.layout.display = 'flex'
+                        if samples_pg_language_dropdown.value != '':
+                            show_dataset = True
+                    else:
+                        samples_pg_language_dropdown.layout.visibility = 'hidden'
+                        samples_pg_language_dropdown.layout.display = 'none'
+                        show_dataset = True
+                    if show_dataset:
+                        data_set_drop_down.layout.visibility = 'visible'
+                        data_set_drop_down.layout.display = 'flex'
+                        if data_set_drop_down.value and data_set_drop_down.value != SEED_NO_DATASETS_FOUND_MSG:
+                            submit_button.layout.visibility = 'visible'
+            else:
+                custom_language_dropdown.layout.visibility = 'hidden'
+                custom_language_dropdown.layout.display = 'none'
+                samples_pg_language_dropdown.layout.visibility = 'hidden'
+                samples_pg_language_dropdown.layout.display = 'none'
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+                seed_file_location_text.layout.visibility = 'hidden'
+                seed_file_location_text.layout.display = 'none'
+                model_dropdown.layout.visibility = 'hidden'
+                model_dropdown.layout.display = 'none'
+                data_set_drop_down.layout.visibility = 'hidden'
+                data_set_drop_down.layout.display = 'none'
             return
 
-        def on_button_clicked(b=None):
-            submit_button.close()
+        def change_datasets_widget(samples_lang):
+            data_sets = get_data_sets(samples_lang)
+            if data_sets:
+                data_sets.sort()
+                data_set_drop_down.options = [ds for ds in data_sets if
+                                              ds != '__pycache__']  # being extra sure that we aren't passing __pycache__.
+                data_set_drop_down.layout.visibility = 'visible'
+                data_set_drop_down.layout.display = 'flex'
+                submit_button.layout.visibility = 'visible'
+            else:
+                if samples_lang:
+                    data_set_drop_down.options = [SEED_NO_DATASETS_FOUND_MSG]
+                    data_set_drop_down.layout.visibility = 'visible'
+                    data_set_drop_down.layout.display = 'flex'
+                else:
+                    data_set_drop_down.layout.visibility = 'hidden'
+                    data_set_drop_down.layout.display = 'none'
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_model_value_change(change):
+            selected_model = change['new']
+            samples_language = ''
+            if selected_model == 'propertygraph':
+                samples_pg_language_dropdown.layout.visibility = 'visible'
+                samples_pg_language_dropdown.layout.display = 'flex'
+                if samples_pg_language_dropdown.value != '':
+                    samples_language = samples_pg_language_dropdown.value
+            else:
+                samples_pg_language_dropdown.layout.visibility = 'hidden'
+                samples_pg_language_dropdown.layout.display = 'none'
+                if selected_model == 'rdf':
+                    samples_language = 'sparql'
+            change_datasets_widget(samples_language)
+            return
+
+        def on_dataset_value_change(change):
+            selected_dataset = change['new']
+            if not selected_dataset:
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_samples_pg_language_value_change(change):
+            selected_pg_language = change['new']
+            change_datasets_widget(selected_pg_language)
+            return
+
+        def on_custom_language_value_change(change):
+            # Preserve the value/state of the text/selector widget if it's already rendered
+            # Otherwise, display the default selector widget (file browser)
+            selected_language = change['new']
+            if selected_language != 'sparql':
+                fullfile_option_dropdown.layout.visibility = 'visible'
+                fullfile_option_dropdown.layout.display = 'flex'
+            else:
+                fullfile_option_dropdown.layout.visibility = 'hidden'
+                fullfile_option_dropdown.layout.display = 'none'
+            if not seed_file_location_text.value and seed_file_location_text_hbox.layout.visibility == 'hidden':
+                seed_file_location.layout.visibility = 'visible'
+                seed_file_location.layout.display = 'flex'
+                submit_button.layout.visibility = 'visible'
+            return
+
+        def on_location_value_change(change):
+            selected_location = change['new']
+            if selected_location == 'Local' and not seed_file_location_text.value:
+                seed_file_location_text_hbox.layout.visibility = 'hidden'
+                seed_file_location_text_hbox.layout.display = 'none'
+                seed_file_location.layout.visibility = 'visible'
+                seed_file_location.layout.display = 'flex'
+            else:
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+                seed_file_location_text_hbox.layout.visibility = 'visible'
+                seed_file_location_text_hbox.layout.display = 'flex'
+            return
+
+        def on_seedfile_text_value_change(change):
+            if seed_file_location_text.value:
+                submit_button.layout.visibility = 'visible'
+            else:
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def on_seedfile_select_value_change(change):
+            if seed_file_location.value:
+                submit_button.layout.visibility = 'visible'
+            else:
+                submit_button.layout.visibility = 'hidden'
+            return
+
+        def disable_seed_widgets():
+            source_dropdown.disabled = True
             model_dropdown.disabled = True
+            custom_language_dropdown.disabled = True
+            samples_pg_language_dropdown.disabled = True
             data_set_drop_down.disabled = True
-            model = normalize_model_name(model_dropdown.value)
-            data_set = data_set_drop_down.value.lower()
+            fullfile_option_dropdown.disabled = True
+            location_option_dropdown.disabled = True
+            seed_file_location_text.disabled = True
+            seed_file_location.disabled = True
+            submit_button.close()
+
+        def process_gremlin_query_line(query_line, line_index, q):
+            # Return a state here, with indication of any other variable states that need changing.
+            #  return 0 = continue
+            #  return 1 = continue, set any_errors_flag = True, error_count += 1
+            #  return 2 = progress.close() and return, set any_errors_flag = True, error_count += 1
+            if not query_line:
+                logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                return 0
+            try:
+                self.client.gremlin_query(query_line)
+                return 0
+            except GremlinServerError as gremlinEx:
+                try:
+                    error = json.loads(gremlinEx.args[0][5:])  # remove the leading error code.
+                    content = json.dumps(error, indent=2)
+                except Exception:
+                    content = {
+                        'error': gremlinEx
+                    }
+                logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q['name']}")
+                logger.debug(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'], line_index + 1)
+                    return 2
+            except Exception as e:
+                content = {
+                    'error': e
+                }
+                logger.debug(f"Exception at line {line_index + 1} in seed file {q['name']}")
+                logger.debug(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'], line_index + 1)
+                    return 2
+
+        def process_cypher_query_line(query_line, line_index, q):
+            if not query_line:
+                logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
+                return 0
+            try:
+                cypher_res = self.client.opencypher_http(query_line)
+                cypher_res.raise_for_status()
+                return 0
+            except HTTPError as httpEx:
+                try:
+                    error = json.loads(httpEx.response.content.decode('utf-8'))
+                    content = json.dumps(error, indent=2)
+                except Exception:
+                    content = {
+                        'error': httpEx
+                    }
+                logger.debug(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'])
+                    return 2
+            except Exception as ex:
+                content = {
+                    'error': str(ex)
+                }
+                logger.error(content)
+                if args.ignore_errors:
+                    return 1
+                else:
+                    with output:
+                        generate_seed_error_msg(content, q['name'])
+                    return 2
+
+        def on_button_clicked(b=None):
+            seed_file_location_text_hbox.children = (seed_file_location_text,)
+            filename = None
+            if source_dropdown.value == 'samples':
+                data_set = data_set_drop_down.value.lower()
+                fullfile_query = False
+            else:
+                if seed_file_location_text.value:
+                    stall_with_warning = False
+                    if location_option_dropdown.value == 'S3' and not (seed_file_location_text.value.startswith('s3://')
+                                                                       and len(seed_file_location_text.value) > 7):
+                        seed_file_location_text_validation_label = widgets.HTML(
+                            '<p style="color:red;">S3 source URI must start with s3://</p>')
+                        stall_with_warning = True
+                    elif location_option_dropdown.value == 'Local' \
+                            and not seed_file_location_text.value.startswith('/'):
+                        seed_file_location_text_validation_label = widgets.HTML(
+                            '<p style="color:red;">Local source URI must be a valid file path</p>')
+                        stall_with_warning = True
+                    if stall_with_warning:
+                        seed_file_location_text_validation_label.style = DescriptionStyle(color='red')
+                        seed_file_location_text_hbox.children += (seed_file_location_text_validation_label,)
+                        return
+                    filename = seed_file_location_text.value
+                elif seed_file_location.value:
+                    filename = seed_file_location.value
+                else:
+                    return
+                data_set = filename
+                fullfile_query = fullfile_option_dropdown.value
+            disable_seed_widgets()
+            if custom_language_dropdown.value and filename:
+                model = normalize_model_name(custom_language_dropdown.value)
+                seeding_language = normalize_language_name(custom_language_dropdown.value)
+            else:
+                model = normalize_model_name(model_dropdown.value)
+                seeding_language = 'sparql' if model == 'rdf' else samples_pg_language_dropdown.value
             with output:
-                print(f'Loading data set {data_set} for {model}')
-            queries = get_queries(model, data_set)
-            if len(queries) < 1:
+                print(f'Loading data set {data_set} for {seeding_language}')
+            queries = get_queries(seeding_language, data_set, source_dropdown.value)
+            if queries:
+                if len(queries) < 1:
+                    with output:
+                        print('Did not find any queries for the given dataset')
+                    return
+            else:
                 with output:
-                    print('Did not find any queries for the given dataset')
+                    print('Query retrieval from files terminated with errors.')
                 return
 
             load_index = 1  # start at 1 to have a non-empty progress bar
@@ -1998,49 +2590,7 @@ class Graph(Magics):
             for q in queries:
                 with output:
                     print(f'{progress.value}/{len(queries)}:\t{q["name"]}')
-                if model == 'propertygraph':
-                    # IMPORTANT: We treat each line as its own query!
-                    for line_index, line in enumerate(q['content'].splitlines()):
-                        if not line:
-                            logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
-                            continue
-                        try:
-                            self.client.gremlin_query(line)
-                        except GremlinServerError as gremlinEx:
-                            any_errors_flag = True
-                            error_count += 1
-                            try:
-                                error = json.loads(gremlinEx.args[0][5:])  # remove the leading error code.
-                                content = json.dumps(error, indent=2)
-                            except Exception:
-                                content = {
-                                    'error': gremlinEx
-                                }
-                            logger.debug(f"GremlinServerError at line {line_index + 1} in seed file {q['name']}")
-                            logger.debug(content)
-                            if args.ignore_errors:
-                                continue
-                            else:
-                                with output:
-                                    generate_seed_error_msg(content, q['name'], line_index + 1)
-                                progress.close()
-                                return
-                        except Exception as e:
-                            any_errors_flag = True
-                            error_count += 1
-                            content = {
-                                'error': e
-                            }
-                            logger.debug(f"Exception at line {line_index + 1} in seed file {q['name']}")
-                            logger.debug(content)
-                            if args.ignore_errors:
-                                continue
-                            else:
-                                with output:
-                                    generate_seed_error_msg(content, q['name'], line_index + 1)
-                                progress.close()
-                                return
-                else:
+                if model == 'rdf':
                     try:
                         self.client.sparql(q['content'], path=args.path)
                     except HTTPError as httpEx:
@@ -2056,6 +2606,7 @@ class Graph(Magics):
                             }
                         logger.debug(content)
                         if args.ignore_errors:
+                            progress.value += 1
                             continue
                         else:
                             with output:
@@ -2070,12 +2621,42 @@ class Graph(Magics):
                         }
                         logger.error(content)
                         if args.ignore_errors:
+                            progress.value += 1
                             continue
                         else:
                             with output:
                                 generate_seed_error_msg(content, q['name'])
                             progress.close()
                             return
+                else:  # gremlin and cypher
+                    # treat entire file content as one query
+                    if fullfile_query or (source_dropdown.value == 'samples' and 'full' in q['name']):
+                        if seeding_language == 'opencypher':
+                            query_status = process_cypher_query_line(q['content'], 0, q)
+                        else:
+                            query_status = process_gremlin_query_line(q['content'], 0, q)
+                        if query_status == 2:
+                            progress.close()
+                            return
+                        else:
+                            if query_status == 1:
+                                any_errors_flag = True
+                                error_count += 1
+                                progress.value += 1
+                                continue
+                    else:  # treat each line as its own query
+                        for line_index, query_line in enumerate(q['content'].splitlines()):
+                            if seeding_language == 'opencypher':
+                                query_status = process_cypher_query_line(query_line, line_index, q)
+                            else:
+                                query_status = process_gremlin_query_line(query_line, line_index, q)
+                            if query_status == 2:
+                                progress.close()
+                                return
+                            else:
+                                if query_status == 1:
+                                    any_errors_flag = True
+                                    error_count += 1
 
                 progress.value += 1
             # Sleep for two seconds so the user sees the progress bar complete
@@ -2089,15 +2670,70 @@ class Graph(Magics):
             return
 
         submit_button.on_click(on_button_clicked)
-        model_dropdown.observe(on_value_change, names='value')
+        source_dropdown.observe(on_source_value_change, names='value')
+        model_dropdown.observe(on_model_value_change, names='value')
+        data_set_drop_down.observe(on_dataset_value_change, names='value')
+        custom_language_dropdown.observe(on_custom_language_value_change, names='value')
+        samples_pg_language_dropdown.observe(on_samples_pg_language_value_change, names='value')
+        location_option_dropdown.observe(on_location_value_change, names='value')
+        seed_file_location_text.observe(on_seedfile_text_value_change, names='value')
+        seed_file_location.observe(on_seedfile_select_value_change, names='value')
 
-        display(model_dropdown, data_set_drop_down, submit_button, progress_output, output)
-        if args.model != '':
-            model_dropdown.value = args.model
-            if args.dataset != '' and args.dataset in data_set_drop_down.options:
-                data_set_drop_down.value = args.dataset.lower()
-                if args.run:
-                    on_button_clicked()
+        display(source_dropdown, model_dropdown, custom_language_dropdown, samples_pg_language_dropdown,
+                data_set_drop_down, fullfile_option_dropdown, location_option_dropdown, seed_file_location,
+                seed_file_location_text_hbox, submit_button, progress_output, output)
+
+        if (args.model != '' or args.language != '') and args.source == '':
+            source_dropdown.value = 'samples'
+            normed_model = normalize_model_name(args.model)
+            normed_language = normalize_language_name(args.language)
+            selected_model = None
+            selected_language = None
+            if normed_model != '' and normed_model in SEED_MODEL_OPTIONS:
+                if normed_model == 'propertygraph':
+                    selected_model = 'propertygraph'
+                    if normed_language in ['gremlin', 'opencypher']:
+                        selected_language = normed_language
+                    elif normed_language == '':
+                        selected_language = 'gremlin'
+                else:
+                    selected_model = 'rdf'
+                    selected_language = 'sparql'
+            elif normed_language != '' and normed_language in SEED_LANGUAGE_OPTIONS:
+                if normed_language == 'sparql':
+                    selected_model = 'rdf'
+                    selected_language = 'sparql'
+                else:
+                    selected_model = 'propertygraph'
+                    selected_language = normed_language
+            if selected_model:
+                model_dropdown.value = selected_model
+                if selected_language:
+                    if selected_language != 'sparql':
+                        samples_pg_language_dropdown.value = selected_language
+                    if args.dataset != '' and args.dataset in data_set_drop_down.options:
+                        data_set_drop_down.value = args.dataset.lower()
+                        if args.run:
+                            on_button_clicked()
+        elif args.source != '' or args.language != '':
+            source_dropdown.value = 'custom'
+            valid_language_value = False
+            language = normalize_language_name(args.language)
+            if language != '' and language in SEED_LANGUAGE_OPTIONS:
+                custom_language_dropdown.value = language
+                valid_language_value = True
+            if args.source != '':
+                seed_file_location_text.value = args.source
+                seed_file_location_text_hbox.layout.visibility = 'visible'
+                seed_file_location_text_hbox.layout.display = 'flex'
+                if seed_file_location_text.value.startswith('s3://'):
+                    location_option_dropdown.value = 'S3'
+                location_option_dropdown.layout.visibility = 'visible'
+                location_option_dropdown.layout.display = 'flex'
+                seed_file_location.layout.visibility = 'hidden'
+                seed_file_location.layout.display = 'none'
+            if seed_file_location_text.value and valid_language_value and args.run:
+                on_button_clicked()
 
     @line_magic
     def enable_debug(self, line):
@@ -2110,14 +2746,34 @@ class Graph(Magics):
         root_logger.setLevel(logging.CRITICAL)
 
     @line_magic
+    @needs_local_scope
+    def toggle_traceback(self, line, local_ns: dict = None):
+        show_traceback_ns_var = 'graph_notebook_show_traceback'
+        try:
+            show_traceback = local_ns[show_traceback_ns_var]
+            if not isinstance(show_traceback, bool):
+                show_traceback = False
+            else:
+                show_traceback = not show_traceback
+        except KeyError:
+            show_traceback = True
+
+        print(f"Display of tracebacks from magics is toggled {'ON' if show_traceback else 'OFF'}.")
+        store_to_ns(show_traceback_ns_var, show_traceback, local_ns)
+
+    @line_magic
     def graph_notebook_version(self, line):
         print(graph_notebook.__version__)
 
+    @magic_variables
     @line_cell_magic
     @display_exceptions
-    def graph_notebook_vis_options(self, line='', cell=''):
+    @needs_local_scope
+    def graph_notebook_vis_options(self, line='', cell='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store visualization settings to this variable')
+        parser.add_argument('--load-from', type=str, default='', help='load visualization settings from this variable')
         line_args = line.split()
         if line_args:
             if line_args[0] == 'reset':
@@ -2131,17 +2787,39 @@ class Graph(Magics):
         if line == 'reset':
             self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
 
-        if cell == '':
+        if cell == '' and not args.load_from:
             if not args.silent:
                 print(json.dumps(self.graph_notebook_vis_options, indent=2))
         else:
-            options_dict = json.loads(cell)
+            try:
+                if args.load_from:
+                    try:
+                        options_raw = local_ns[args.load_from]
+                        if isinstance(options_raw, dict):
+                            options_raw = json.dumps(options_raw)
+                        options_dict = json.loads(options_raw)
+                    except KeyError:
+                        print(f"Unable to load visualization settings, variable [{args.load_from}] does not exist in "
+                              f"the local namespace.")
+                        return
+                else:
+                    options_dict = json.loads(cell)
+            except (JSONDecodeError, TypeError) as e:
+                print(f"Unable to load visualization settings, variable [{args.load_from}] is not in valid JSON "
+                      f"format:\n")
+                print(e)
+                return
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
+            print("Visualization settings successfully changed to:\n")
+            print(json.dumps(self.graph_notebook_vis_options, indent=2))
+
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_vis_options, indent=2), local_ns)
 
     @magic_variables
     @line_cell_magic
     @display_exceptions
     @needs_local_scope
+    @neptune_db_only
     def neptune_ml(self, line, cell='', local_ns: dict = None):
         parser = generate_neptune_ml_parser()
         args = parser.parse_args(line.split())
@@ -2159,9 +2837,16 @@ class Graph(Magics):
         This method in its own handler so that the magics %%opencypher and %%oc can both call it
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--explain-type', default='dynamic',
-                            help='explain mode to use when using the explain query mode',
-                            choices=['dynamic', 'static', 'details', 'debug'])
+        parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
+                            help=f'Plan cache mode to use. Accepted values: ${OPENCYPHER_PLAN_CACHE_MODES}')
+        parser.add_argument('-qt', '--query-timeout', type=int, default=None,
+                            help=f'Maximum query timeout in milliseconds.')
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Accepted values: ${OPENCYPHER_EXPLAIN_MODES}')
+        parser.add_argument('-qp', '--query-parameters', type=str, default='',
+                            help='Parameter definitions to apply to the query. This option can accept a local variable '
+                                 'name, or a string representation of the map.')
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
@@ -2203,6 +2888,20 @@ class Graph(Magics):
         res_format = None
         results_df = None
 
+        query_params = None
+        if args.query_parameters:
+            if args.query_parameters in local_ns:
+                query_params_input = local_ns[args.query_parameters]
+            else:
+                query_params_input = args.query_parameters
+            if isinstance(query_params_input, dict):
+                query_params = query_params_input
+            else:
+                try:
+                    query_params = json.loads(query_params_input.replace("'", '"'))
+                except Exception as e:
+                    print(f"Invalid query parameter input, ignoring.")
+
         if args.no_scroll:
             oc_layout = UNRESTRICTED_LAYOUT
             oc_scrollY = True
@@ -2223,7 +2922,8 @@ class Graph(Magics):
 
         if args.mode == 'explain':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            res = self.client.opencypher_http(cell, explain=args.explain_type)
+            res = self.client.opencypher_http(cell, explain=args.explain_type, query_params=query_params,
+                                              plan_cache=args.plan_cache)
             query_time = time.time() * 1000 - query_start
             explain = res.content.decode("utf-8")
             res.raise_for_status()
@@ -2239,7 +2939,9 @@ class Graph(Magics):
                                                                     link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            oc_http = self.client.opencypher_http(cell)
+            oc_http = self.client.opencypher_http(cell, query_params=query_params,
+                                                  plan_cache=args.plan_cache,
+                                                  query_timeout=args.query_timeout)
             query_time = time.time() * 1000 - query_start
             oc_http.raise_for_status()
 
@@ -2297,7 +2999,10 @@ class Graph(Magics):
         elif args.mode == 'bolt':
             res_format = 'bolt'
             query_start = time.time() * 1000
-            res = self.client.opencyper_bolt(cell)
+            if query_params:
+                res = self.client.opencyper_bolt(cell, **query_params)
+            else:
+                res = self.client.opencyper_bolt(cell)
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,

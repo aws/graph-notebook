@@ -8,6 +8,7 @@ import unittest
 
 from graph_notebook.configuration.get_config import get_config
 from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, generate_config
+from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
 
 
 class TestGenerateConfiguration(unittest.TestCase):
@@ -21,6 +22,10 @@ class TestGenerateConfiguration(unittest.TestCase):
         cls.port = 8182
         cls.custom_hosts_list = ['localhost']
         cls.test_file_path = f'{os.path.abspath(os.path.curdir)}/test_configuration_file.json'
+        cls.neptune_service_db = NEPTUNE_DB_SERVICE_NAME
+        cls.neptune_service_db_short = 'db'
+        cls.neptune_service_graph = NEPTUNE_ANALYTICS_SERVICE_NAME
+        cls.neptune_service_graph_short = 'graph'
 
     def tearDown(self) -> None:
         if os.path.exists(self.test_file_path):
@@ -136,6 +141,25 @@ class TestGenerateConfiguration(unittest.TestCase):
         config_from_file = get_config(self.test_file_path)
         self.assertEqual(config.to_dict(), config_from_file.to_dict())
 
+    def test_generate_configuration_override_defaults_neptune_no_verify(self):
+        auth_mode = AuthModeEnum.IAM
+        ssl = True
+        ssl_verify = False
+        loader_arn = 'foo'
+        aws_region = 'us-iso-east-1'
+        config = Configuration(self.neptune_host_reg, self.port, auth_mode=auth_mode,
+                               load_from_s3_arn=loader_arn,
+                               ssl=ssl, ssl_verify=ssl_verify,
+                               aws_region=aws_region)
+
+        c = generate_config(config.host, config.port, auth_mode=config.auth_mode,
+                            load_from_s3_arn=config.load_from_s3_arn,
+                            ssl=config.ssl, ssl_verify=config.ssl_verify,
+                            aws_region=config.aws_region)
+        c.write_to_file(self.test_file_path)
+        config_from_file = get_config(self.test_file_path)
+        self.assertEqual(config.to_dict(), config_from_file.to_dict())
+
     def test_generate_configuration_override_defaults_neptune_cn(self):
         auth_mode = AuthModeEnum.IAM
         ssl = False
@@ -194,3 +218,31 @@ class TestGenerateConfiguration(unittest.TestCase):
         config.proxy_host = self.neptune_host_with_whitespace
         self.assertEqual(config.proxy_host, self.neptune_host_reg)
         self.assertEqual(config._proxy_host, self.neptune_host_reg)
+
+    def test_configuration_neptune_service_default(self):
+        config = Configuration(self.neptune_host_reg, self.port)
+        self.assertEqual(config.neptune_service, self.neptune_service_db)
+
+    def test_configuration_neptune_service_db(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service=self.neptune_service_db)
+        self.assertEqual(config.neptune_service, self.neptune_service_db)
+
+    def test_configuration_neptune_service_graph(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service=self.neptune_service_graph)
+        self.assertEqual(config.neptune_service, self.neptune_service_graph)
+
+    def test_configuration_neptune_service_db_short(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service=self.neptune_service_db_short)
+        self.assertEqual(config.neptune_service, self.neptune_service_db)
+
+    def test_configuration_neptune_service_graph_short(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service=self.neptune_service_graph_short)
+        self.assertEqual(config.neptune_service, self.neptune_service_graph)
+
+    def test_configuration_neptune_service_empty(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service='')
+        self.assertEqual(config.neptune_service, self.neptune_service_db)
+
+    def test_configuration_neptune_service_invalid(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service='rds')
+        self.assertEqual(config.neptune_service, self.neptune_service_db)

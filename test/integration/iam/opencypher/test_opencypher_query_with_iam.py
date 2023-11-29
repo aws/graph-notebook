@@ -22,7 +22,7 @@ class TestOpenCypherQueryWithIam(DataDrivenOpenCypherTest):
         assert oc_res.status_code == 200
 
         res = oc_res.json()
-        assert type(res) == dict
+        assert isinstance(res, dict)
         assert expected_league_name == res['results'][0]['l.name']
 
     @pytest.mark.opencypher

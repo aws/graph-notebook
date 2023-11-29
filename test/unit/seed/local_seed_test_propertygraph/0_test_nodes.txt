@@ -1,0 +1,2 @@
+g.addV("node_0").property(id,"0")
+g.addV("node_1").property(id,"1")

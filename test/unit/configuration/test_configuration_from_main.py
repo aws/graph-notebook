@@ -30,6 +30,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
     def test_generate_configuration_main_defaults_neptune_reg(self):
         expected_config = Configuration(self.neptune_host_reg,
                                         self.port,
+                                        neptune_service='neptune-db',
                                         auth_mode=AuthModeEnum.DEFAULT,
                                         load_from_s3_arn='',
                                         ssl=True)
@@ -48,13 +49,19 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.generate_config_from_main_and_test(expected_config)
 
     def test_generate_configuration_main_override_defaults_neptune_reg(self):
-        expected_config = Configuration(self.neptune_host_reg, self.port, auth_mode=AuthModeEnum.IAM,
-                                        load_from_s3_arn='loader_arn', ssl=False)
+        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False)
+        self.generate_config_from_main_and_test(expected_config, host_type='neptune')
+
+    def test_generate_configuration_main_override_defaults_neptune_no_verify(self):
+        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn',
+                                        ssl=True, ssl_verify=False)
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_neptune_cn(self):
-        expected_config = Configuration(self.neptune_host_cn, self.port, auth_mode=AuthModeEnum.IAM,
-                                        load_from_s3_arn='loader_arn', ssl=False)
+        expected_config = Configuration(self.neptune_host_cn, self.port, neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False)
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_generic(self):
@@ -64,8 +71,10 @@ class TestGenerateConfigurationMain(unittest.TestCase):
     def test_generate_configuration_main_empty_args_neptune(self):
         expected_config = Configuration(self.neptune_host_reg, self.port)
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
-                           f'--host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" '
-                           f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" ')
+                           f'--host "{expected_config.host}" --port "{expected_config.port}" '
+                           f'--auth_mode "" --ssl "" '
+                           f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" '
+                           f'--neptune_service ""')
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         self.assertEqual(expected_config.to_dict(), config.to_dict())
@@ -75,7 +84,8 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                            f'--host "{expected_config.host}" --port "{expected_config.port}" --auth_mode "" --ssl "" '
                            f'--load_from_s3_arn "" --config_destination="{self.test_file_path}" '
-                           f'--neptune_hosts {self.custom_hosts_list[0]}')
+                           f'--neptune_hosts {self.custom_hosts_list[0]} '
+                           f'--neptune_service ""')
         self.assertEqual(0, result)
         config = get_config(self.test_file_path, neptune_hosts=self.custom_hosts_list)
         self.assertEqual(expected_config.to_dict(), config.to_dict())
@@ -84,7 +94,8 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         expected_config = Configuration(self.generic_host, self.port)
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                            f'--host "{expected_config.host}" --port "{expected_config.port}" --ssl "" '
-                           f'--config_destination="{self.test_file_path}" ')
+                           f'--config_destination="{self.test_file_path}" '
+                           f'--neptune_service ""')
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         self.assertEqual(expected_config.to_dict(), config.to_dict())
@@ -95,8 +106,12 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         # Configuration object we get from the resulting file is what we expect.
         if host_type == 'neptune':
             result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
-                               f'--host "{source_config.host}" --port "{source_config.port}" '
-                               f'--auth_mode "{source_config.auth_mode.value}" --ssl "{source_config.ssl}" '
+                               f'--host "{source_config.host}" '
+                               f'--port "{source_config.port}" '
+                               f'--neptune_service "{source_config.neptune_service}" '
+                               f'--auth_mode "{source_config.auth_mode.value}" '
+                               f'--ssl "{source_config.ssl}" '
+                               f'--ssl-verify "{source_config.ssl_verify}" '
                                f'--load_from_s3_arn "{source_config.load_from_s3_arn}" '
                                f'--proxy_host "{source_config.proxy_host}" '
                                f'--proxy_port "{source_config.proxy_port}" '
@@ -106,7 +121,9 @@ class TestGenerateConfigurationMain(unittest.TestCase):
                                f'--host "{source_config.host}" --port "{source_config.port}" '
                                f'--proxy_host "{source_config.proxy_host}" '
                                f'--proxy_port "{source_config.proxy_port}" '
-                               f'--ssl "{source_config.ssl}" --config_destination="{self.test_file_path}" ')
+                               f'--ssl "{source_config.ssl}" '
+                               f'--ssl-verify "{source_config.ssl_verify}" '
+                               f'--config_destination="{self.test_file_path}" ')
         self.assertEqual(result, 0)
         config = get_config(self.test_file_path)
         self.assertEqual(source_config.to_dict(), config.to_dict())

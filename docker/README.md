@@ -1,15 +1,18 @@
-
-
 Run `%load_ext graph_notebook.magics` at the top of a notebook to enable gremlin magic like `%%gremlin`
 
 Default password is `admin`.
 
 ## Example Runs
+
+### On Linux:
+- Note that these commands invoke [host networking mode](https://docs.docker.com/network/host/). This mode is only compatible with Linux, and may cause issues if run on a Mac or Windows host.
+
 ```sh
-docker run --network="host"  -p 8888:8888 -t graph-notebook
+docker run --network="host" -p 8888:8888 -t graph-notebook
 
 # Sharing directories
-docker run --network="host"  -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
+docker run --network="host" -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
+
 
 # For connecting with IAM Auth
 docker run -p 8888:8888 \
@@ -20,11 +23,32 @@ docker run -p 8888:8888 \
  graph-notebook
 ```
 
-Example Notebooks are placed in the `Example Notebooks` sub-directory
+### On Mac/Windows:
+
+```sh
+docker run -p 8888:8888 -t graph-notebook
+
+# Sharing directories
+docker run -p 8889:8889 -p 8888:8888 -v $(pwd)/out:/working 
+
+# For connecting with IAM Auth
+docker run -p 8888:8888 \
+ -e AWS_ACCESS_KEY_ID \
+ -e AWS_SECRET_ACCESS_KEY \ 
+ -e AWS_SESSION_TOKEN \ 
+ -e AWS_REGION="us-east-1" \
+ graph-notebook
+```
+
+
+## Post-Launch Configuration
+
+Example Notebooks are placed in the `Example Notebooks` sub-directory.
 
 Within the Jupyter Notebook you must configure the Notebook settings to account for `localhost` or `remote` connections.
 
-### Example Localhost Connection:
+### Example Localhost Connection
+
 ```ipynb
 %%graph_notebook_config
     {
@@ -40,7 +64,8 @@ Within the Jupyter Notebook you must configure the Notebook settings to account 
     }
 ```
 
-### Example Neptune Proxy Connection:
+### Example Neptune Proxy Connection
+
 ```ipynb
     {
         "host": "clustername.cluster-ididididid.us-east-1.neptune.amazonaws.com",
@@ -53,8 +78,6 @@ Within the Jupyter Notebook you must configure the Notebook settings to account 
         "load_from_s3_arn": ""
     }
 ```
-
-
 
 ## Configurable Properties
 
@@ -77,7 +100,3 @@ Within the Jupyter Notebook you must configure the Notebook settings to account 
 | PROVIDE_EXAMPLES   | Whether or not to automatically copy example notebooks over when a volume is being shared.        |
 | GRAPH_NOTEBOOK_PROXY_HOST   | Host that will proxy requests to Neptune. Will not proxy if not provided.        |
 | GRAPH_NOTEBOOK_PROXY_PORT   | Port for proxy host.        |
-
-
-
-

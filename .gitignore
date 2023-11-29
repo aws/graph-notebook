@@ -31,3 +31,10 @@ src/graph_notebook/widgets/package-lock.json
 blazegraph.jnl
 rules.log
 *.env
+
+package-lock.json
+package.json
+graph_notebook.tar.gz
+
+
+

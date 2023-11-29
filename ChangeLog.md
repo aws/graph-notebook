@@ -3,9 +3,69 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 4.0.0 (Nov 29, 2023)
+- Added support for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/???))
+- Added Air-Routes and EPL sample seed datasets for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/540))
+
+## Release 3.9.0 (Oct 9, 2023)
+- New Gremlin Language Tutorial notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/533))
+  - Path: 06-Language-Tutorials > 03-Gremlin
+- Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
+- Added general documentation for `%%graph_notebook_config` options ([Link to PR](https://github.com/aws/graph-notebook/pull/504))
+- Added support for Gremlin proxy hosts and visualization of Neptune HTTP results ([Link to PR](https://github.com/aws/graph-notebook/pull/530))
+- Modified Dockerfile to support Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/519))
+- Updated Docker documentation with platform-specific run commands ([Link to PR](https://github.com/aws/graph-notebook/pull/502))
+- Fixed deprecation warnings in GitHub workflows ([Link to PR](https://github.com/aws/graph-notebook/pull/506))
+- Fixed seed dataset unzip path in Identity Graph sample notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/507))
+- Fixed unit test workflows failing on type check assertion ([Link to PR](https://github.com/aws/graph-notebook/pull/514))
+- Fixed bad queries in openCypher Language Tutorial samples ([PR #1](https://github.com/aws/graph-notebook/pull/525)) ([PR #2](https://github.com/aws/graph-notebook/pull/526))
+- Fixed kernel crashing with ZMQ errors on magic execution ([Link to PR](https://github.com/aws/graph-notebook/pull/517))
+- Fixed truncated descriptions for some `%seed` fields ([Link to PR](https://github.com/aws/graph-notebook/pull/531))
+- Unpinned `boto3` and `botocore` to support NeptuneData SDK ([Link to PR](https://github.com/aws/graph-notebook/pull/528))
+
+## Release 3.8.2 (June 5, 2023)
+- New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
+  - Path: 03-Sample-Applications > 05-Healthcare-and-Life-Sciences-Graphs
+- Added local file path and openCypher query support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
+- Added S3 path support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/488))
+- Added samples options for openCypher to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/494))
+- Added support for openCypher parameterized queries ([Link to PR](https://github.com/aws/graph-notebook/pull/496))
+- Added `%toggle_traceback` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/486))
+- Added support for setting `%graph_notebook_vis_options` from a variable ([Link to PR](https://github.com/aws/graph-notebook/pull/487))
+- Pinned JupyterLab<4.x to fix Python 3.8/3.10 builds ([Link to PR](https://github.com/aws/graph-notebook/pull/490))
+- Changed datatype of "amount" from String to numeric for "Transaction" vertices in Fraud Graph sample notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/489))
+- Replaced usages of deprecated DataFrame.append method in ML samples ([Link to PR](https://github.com/aws/graph-notebook/pull/495))
+- Set Gremlin as default language for PropertyGraph samples in `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/497))
+- Suppress InsecureRequestWarning if SSL verification is disabled ([Link to PR](https://github.com/aws/graph-notebook/pull/499))
+
+## Release 3.8.1 (April 17, 2023)
+- Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
+
+## Release 3.8.0 (April 16, 2023)
+- Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
+- Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
+- Patched nbextensions loader timeouts for large notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/455))
+- Fixed Dockerfile builds breaking with AL2023 ([Link to PR](https://github.com/aws/graph-notebook/pull/466))
+- Fixed `--store-to` option for several magics ([Link to PR](https://github.com/aws/graph-notebook/pull/463))
+- Fixed broken documentation links in Neptune ML notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/467)) ([PR #2](https://github.com/aws/graph-notebook/pull/468))
+- Fixed Gremlin graph tab not rendering with UUID type IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/475))
+
+## Release 3.7.3 (March 14, 2023)
+- Fixed detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
+- Added more helpful error messaging for `%statistics`/`%summary` ([Link to PR](https://github.com/aws/graph-notebook/pull/460))
+- Added Neptune Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/442))
+
+## Release 3.7.2 (March 9, 2023)
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
+- New openCypher Language Tutorial notebooks
+  - Path: 06-Language-Tutorials > 02-openCypher
+- Added support for Neptune Summary API ([Link to PR](https://github.com/aws/graph-notebook/pull/457))
 - Added `--profile-misc-args` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/443))
+- Added error messaging for incompatible host-specific `%%graph_notebok_config` parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/456))
+- Ensure default assignments for all Gremlin nodes when using grouping ([Link to PR](https://github.com/aws/graph-notebook/pull/448))
+- Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
 
 ## Release 3.7.1 (January 25, 2023)
 - Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
@@ -119,6 +179,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Updated the airports property graph seed files to the latest level and suffixed all doubles with 'd'. ([Link to PR](https://github.com/aws/graph-notebook/pull/257))
 - Added grouping by depth for Gremlin and openCypher queries ([PR #1](https://github.com/aws/graph-notebook/pull/241))([PR #2](https://github.com/aws/graph-notebook/pull/251))
 - Added grouping by raw node results ([Link to PR](https://github.com/aws/graph-notebook/pull/253))
+- Added loading from file path with `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/247))
 - Added `--no-scroll` option for disabling truncation of query result pages ([Link to PR](https://github.com/aws/graph-notebook/pull/243))
 - Added `--results-per-page` option ([Link to PR](https://github.com/aws/graph-notebook/pull/242))
 - Added relaxed seed command error handling ([Link to PR](https://github.com/aws/graph-notebook/pull/246))

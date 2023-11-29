@@ -78,16 +78,23 @@ def get_id(element):
     extract id from a given element for use in the GremlinNetwork
     """
     if isinstance(element, Vertex):
-        return str(element.id)
+        element_id = str(element.id)
     elif isinstance(element, Edge):
-        return str(element.label)
+        element_id = str(element.label)
     elif isinstance(element, dict):
         if T.id in element:
-            return element[T.id]
+            element_id = element[T.id]
+        elif 'id' in element:
+            element_id = element['id']
         else:
-            return generate_id_from_dict(element)
+            element_id = generate_id_from_dict(element)
     else:
-        return str(element)
+        element_id = str(element)
+
+    if isinstance(element_id, uuid.UUID):
+        element_id = str(element_id)
+
+    return element_id
 
 
 class GremlinNetwork(EventfulNetwork):
@@ -99,13 +106,19 @@ class GremlinNetwork(EventfulNetwork):
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
-                 edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=T_LABEL, display_property=T_LABEL,
-                 edge_display_property=T_LABEL, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False,
-                 group_by_depth=False, group_by_raw=False):
+                 edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=None, display_property=None,
+                 edge_display_property=None, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False,
+                 group_by_depth=False, group_by_raw=False, using_http=False):
         if graph is None:
             graph = MultiDiGraph()
         if group_by_depth:
             group_by_property = DEPTH_GRP_KEY
+        if not group_by_property:
+            group_by_property = 'label' if using_http else T_LABEL
+        if not display_property:
+            display_property = 'label' if using_http else T_LABEL
+        if not edge_display_property:
+            edge_display_property = 'label' if using_http else T_LABEL
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
                          ignore_groups, group_by_raw)
@@ -159,7 +172,7 @@ class GremlinNetwork(EventfulNetwork):
             except KeyError:
                 return
         else:
-            if custom_property == T_LABEL:
+            if custom_property in [T_LABEL, 'label']:
                 property_value = edge.label
             else:
                 try:
@@ -284,17 +297,25 @@ class GremlinNetwork(EventfulNetwork):
 
         return
 
-    def add_results(self, results):
+    def add_results(self, results, is_http=False):
         """
         receives path results and traverses them to add nodes and edges to the network graph.
         We will look at sets of three in a path to form a vertex -> edge -> vertex pattern. All other
         patters will be considered invalid at this time.
 
         :param results: the data to be processed. Must be of type :type Path
+        :param is_http: A flag indicating the type of token keys returned
         :return:
         """
         if not isinstance(results, list):
             raise ValueError("results must be a list of paths")
+
+        if is_http:
+            gremlin_id = 'id'
+            gremlin_label = 'label'
+        else:
+            gremlin_id = T.id
+            gremlin_label = T.label
 
         for path_index, path in enumerate(results):
             if isinstance(path, Path):
@@ -304,10 +325,10 @@ class GremlinNetwork(EventfulNetwork):
                 for i in range(len(path)):
                     if isinstance(path[i], dict):
                         is_elementmap = False
-                        if T.id in path[i] and T.label in path[i]:
+                        if gremlin_id in path[i] and gremlin_label in path[i]:
                             for prop, value in path[i].items():
-                                # T.id and/or T.label could be renamed by a project() step
-                                if isinstance(value, str) and prop not in [T.id, T.label]:
+                                # ID and/or Label property keys could be renamed by a project() step
+                                if isinstance(value, str) and prop not in [gremlin_id, gremlin_label]:
                                     is_elementmap = True
                                     break
                                 elif isinstance(value, dict):
@@ -325,7 +346,7 @@ class GremlinNetwork(EventfulNetwork):
                             self.insert_path_element(path, i)
                     else:
                         self.insert_path_element(path, i)
-            elif isinstance(path, dict) and T.id in path.keys() and T.label in path.keys():
+            elif isinstance(path, dict) and gremlin_id in path.keys() and gremlin_label in path.keys():
                 self.insert_elementmap(path, index=path_index)
             else:
                 raise ValueError("all entries in results must be paths or elementMaps")
@@ -342,7 +363,10 @@ class GremlinNetwork(EventfulNetwork):
         depth_group = "__DEPTH-" + str(path_index) + "__"
         node_id = ''
         if type(v) is Vertex:
-            node_id = v.id
+            if isinstance(v.id, uuid.UUID):
+                node_id = str(v.id)
+            else:
+                node_id = v.id
             title = v.label
             label_full = ''
             tooltip_display_is_set = True
@@ -423,8 +447,9 @@ class GremlinNetwork(EventfulNetwork):
             # Before looping though properties, we first search for T.label in vertex dict, then set title = T.label
             # Otherwise, we will hit KeyError if we don't iterate through T.label first to set the title
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
-            if T.label in v.keys():
-                title_plc = str(v[T.label])
+            if T.label in v.keys() or 'label' in v.keys():
+                label_key = T.label if T.label in v.keys() else 'label'
+                title_plc = str(v[label_key])
                 title, label = self.strip_and_truncate_label_and_title(title_plc, self.label_max_length)
             else:
                 title_plc = ''
@@ -434,7 +459,7 @@ class GremlinNetwork(EventfulNetwork):
                 group = str(v)
                 group_is_set = True
             for k in v:
-                if str(k) == T_ID:
+                if str(k) in [T_ID, 'id']:
                     node_id = str(v[k])
 
                 if isinstance(v[k], dict):
@@ -447,6 +472,8 @@ class GremlinNetwork(EventfulNetwork):
                     properties[k] = copy_val
                 elif isinstance(v[k], Decimal):
                     properties[k] = float(v[k])
+                elif isinstance(v[k], uuid.UUID):
+                    properties[k] = str(v[k])
                 else:
                     properties[k] = v[k]
 
@@ -491,6 +518,9 @@ class GremlinNetwork(EventfulNetwork):
             if not tooltip_display_is_set and label_full:
                 title = label_full
 
+            if not group and not group_is_set:
+                group = DEFAULT_GRP
+
             # handle when there is no id in a node. In this case, we will generate one which
             # is consistently regenerated so that duplicate dicts will be reduced to the same vertex.
             if node_id == '':
@@ -503,14 +533,13 @@ class GremlinNetwork(EventfulNetwork):
                     title += str(v[key])
             if label == '':
                 label = title if len(title) <= self.label_max_length else title[:self.label_max_length - 3] + '...'
-
             data = {'properties': properties, 'label': label, 'title': title, 'group': group}
         else:
             node_id = str(v)
             title = str(v)
             if self.group_by_property == DEPTH_GRP_KEY:
                 group = depth_group
-            if self.group_by_property == DEFAULT_RAW_GRP_KEY:
+            elif self.group_by_property == DEFAULT_RAW_GRP_KEY:
                 group = str(v)
             else:
                 group = DEFAULT_GRP
@@ -527,7 +556,12 @@ class GremlinNetwork(EventfulNetwork):
 
         if type(edge) is Edge:
             from_id = from_id if from_id != '' else edge.outV.id
+            if isinstance(from_id, uuid.UUID):
+                from_id = str(from_id)
             to_id = to_id if to_id != '' else edge.inV.id
+            if isinstance(to_id, uuid.UUID):
+                to_id = str(to_id)
+            edge_id = str(edge.id) if isinstance(edge.id, uuid.UUID) else edge.id
             edge_label_full = ''
             using_custom_tooltip = False
             tooltip_display_is_set = True
@@ -535,7 +569,7 @@ class GremlinNetwork(EventfulNetwork):
             if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
                 using_custom_tooltip = True
                 tooltip_display_is_set = False
-            data['properties'] = {'id': edge.id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
+            data['properties'] = {'id': edge_id, 'label': edge.label, 'outV': str(edge.outV), 'inV': str(edge.inV)}
 
             edge_label = edge_title if len(edge_title) <= self.edge_label_max_length \
                 else edge_title[:self.edge_label_max_length - 3] + '...'
@@ -562,7 +596,7 @@ class GremlinNetwork(EventfulNetwork):
             self.get_explicit_edge_property_value(data, edge, self.edge_tooltip_property)
 
             data['title'] = edge_title
-            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge.id, label=edge_label, title=edge_title,
+            self.add_edge(from_id=from_id, to_id=to_id, edge_id=edge_id, label=edge_label, title=edge_title,
                           data=data)
         elif type(edge) is dict:
             properties = {}
@@ -576,24 +610,27 @@ class GremlinNetwork(EventfulNetwork):
             if self.edge_tooltip_property and self.edge_tooltip_property != self.edge_display_property:
                 using_custom_tooltip = True
                 tooltip_display_is_set = False
-            if T.label in edge.keys():
-                edge_title_plc = str(edge[T.label])
+            if T.label in edge.keys() or 'label' in edge.keys():
+                label_key = T.label if T.label in edge.keys() else 'label'
+                edge_title_plc = str(edge[label_key])
                 edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_title_plc,
                                                                                  self.edge_label_max_length)
             else:
                 edge_title_plc = ''
             for k in edge:
-                if str(k) == T_ID:
+                if str(k) in [T_ID, 'id']:
                     edge_id = str(edge[k])
 
                 if isinstance(edge[k], dict):  # Handle Direction properties, where the value is a map
                     properties[k] = get_id(edge[k])
                 elif isinstance(edge[k], Decimal):
                     properties[k] = float(edge[k])
+                elif isinstance(edge[k], uuid.UUID):
+                    properties[k] = str(edge[k])
                 else:
                     properties[k] = edge[k]
 
-                if self.edge_display_property is not T_LABEL and not display_is_set:
+                if self.edge_display_property not in [T_LABEL, 'label'] and not display_is_set:
                     label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
                                                                                     self.edge_display_property)
                     if label_property_raw_value:
@@ -669,9 +706,10 @@ class GremlinNetwork(EventfulNetwork):
             from_id = get_id(path[i - 1])
 
         self.add_vertex(path[i], path_index=i)
-        if type(path[i - 1]) is not Edge:
-            if type(path[i - 1]) is dict:
-                if Direction.IN not in path[i-1]:
+        last_path = path[i - 1]
+        if type(last_path) is not Edge:
+            if type(last_path) is dict:
+                if Direction.IN not in last_path and 'IN' not in last_path:
                     self.add_blank_edge(from_id, get_id(path[i]))
             else:
                 self.add_blank_edge(from_id, get_id(path[i]))
@@ -686,15 +724,18 @@ class GremlinNetwork(EventfulNetwork):
         :param e_map: A dictionary containing the elementMap representation of a vertex or an edge
         """
         # Handle directed edge elementMap
-        if Direction.IN in e_map.keys() and Direction.OUT in e_map.keys():
-            from_id = get_id(e_map[Direction.OUT])
-            to_id = get_id(e_map[Direction.IN])
+        if (Direction.IN in e_map.keys() and Direction.OUT in e_map.keys()) \
+                or ('IN' in e_map.keys() and 'OUT' in e_map.keys()):
+            out_prop = Direction.OUT if Direction.OUT in e_map.keys() else 'OUT'
+            in_prop = Direction.IN if Direction.IN in e_map.keys() else 'IN'
+            from_id = get_id(e_map[out_prop])
+            to_id = get_id(e_map[in_prop])
             # Ensure that the default nodes includes with edge elementMaps do not overwrite nodes
             # with the same ID that have been explicitly inserted.
             if not self.graph.has_node(from_id):
-                self.add_vertex(e_map[Direction.OUT], path_index=index-1)
+                self.add_vertex(e_map[out_prop], path_index=index-1)
             if not self.graph.has_node(to_id):
-                self.add_vertex(e_map[Direction.IN], path_index=index+1)
+                self.add_vertex(e_map[in_prop], path_index=index+1)
             self.add_path_edge(e_map, from_id, to_id)
         # Handle vertex elementMap
         else:
