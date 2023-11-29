@@ -308,27 +308,7 @@ In addition to the above configuration options, you can also specify the followi
 }
 ```
 
-Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balancer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
-
-in addition to the above configuration options, you can also specify the following options:
-
-### Amazon Neptune Proxy Connection
-
-``` python
-%%graph_notebook_config
-{
-  "host": "clustername.cluster-ididididid.us-east-1.neptune.amazonaws.com",
-  "port": 8182,
-  "ssl": true,
-  "proxy_port": 8182,
-  "proxy_host": "host.proxy.com",
-  "auth_mode": "IAM",
-  "aws_region": "us-east-1",
-  "load_from_s3_arn": ""
-}
-```
-
-Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balancer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
+See also: Connecting to Amazon Neptune from clients outside the Neptune VPC using AWS Network [Load Balancer](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/#connecting-to-amazon-neptune-from-clients-outside-the-neptune-vpc-using-aws-network-load-balancer)
 
 ## Authentication (Amazon Neptune)
 
