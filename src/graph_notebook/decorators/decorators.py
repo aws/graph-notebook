@@ -136,7 +136,8 @@ def magic_variables(func):
 
 def neptune_db_only(func):
     @functools.wraps(func)
-    def check_neptune_db(self, *args, **kwargs):
+    def check_neptune_db(*args, **kwargs):
+        self = args[0]
         if not hasattr(self.graph_notebook_config, 'neptune_service'):
             return func(*args, **kwargs)
         else:
