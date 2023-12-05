@@ -3,9 +3,10 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Fixed `neptune_ml_utils` imports in `03-Neptune-ML` samples ([Link to PR](https://github.com/aws/graph-notebook/pull/546))
 
 ## Release 4.0.1 (Nov 29, 2023)
-- Fixed @neptune_db_only magics decorator [Link to PR](https://github.com/aws/graph-notebook/pull/543))
+- Fixed @neptune_db_only magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/543))
 
 ## Release 4.0.0 (Nov 29, 2023)
 - Added support for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/541))
