@@ -13,7 +13,6 @@ from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_al
 
 neptune_params = ['neptune_service', 'auth_mode', 'load_from_s3_arn', 'aws_region']
 
-neptune_params = ['auth_mode', 'load_from_s3_arn', 'aws_region']
 
 def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS) -> Configuration:
 
