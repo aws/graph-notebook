@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import unittest
 
-from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration
+from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration, GremlinSection
 from graph_notebook.configuration.get_config import get_config
 
 
@@ -57,6 +57,12 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
                                         auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn',
                                         ssl=True, ssl_verify=False)
+        self.generate_config_from_main_and_test(expected_config, host_type='neptune')
+
+    def test_generate_configuration_main_override_defaults_neptune_with_serializer(self):
+        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False,
+                                        gremlin_section=GremlinSection(message_serializer='graphbinary'))
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_neptune_cn(self):
@@ -115,7 +121,8 @@ class TestGenerateConfigurationMain(unittest.TestCase):
                                f'--load_from_s3_arn "{source_config.load_from_s3_arn}" '
                                f'--proxy_host "{source_config.proxy_host}" '
                                f'--proxy_port "{source_config.proxy_port}" '
-                               f'--config_destination="{self.test_file_path}" ')
+                               f'--gremlin_serializer "{source_config.gremlin.message_serializer}" '
+                               f'--config_destination="{self.test_file_path}"')
         else:
             result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
                                f'--host "{source_config.host}" --port "{source_config.port}" '

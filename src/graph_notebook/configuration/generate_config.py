@@ -141,7 +141,8 @@ class Configuration(object):
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
-            self.gremlin = GremlinSection()
+            self.gremlin = GremlinSection(message_serializer=gremlin_section.message_serializer) \
+                if gremlin_section is not None else GremlinSection()
             self.neo4j = Neo4JSection()
         else:
             self.is_neptune_config = False

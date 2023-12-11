@@ -7,7 +7,8 @@ import os
 import unittest
 
 from graph_notebook.configuration.get_config import get_config
-from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, generate_config
+from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, \
+    generate_config, GremlinSection
 from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
 
 
@@ -218,6 +219,46 @@ class TestGenerateConfiguration(unittest.TestCase):
         config.proxy_host = self.neptune_host_with_whitespace
         self.assertEqual(config.proxy_host, self.neptune_host_reg)
         self.assertEqual(config._proxy_host, self.neptune_host_reg)
+
+    def test_configuration_gremlinsection_generic_default(self):
+        config = Configuration('localhost', self.port)
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'graphsonv3')
+
+    def test_configuration_gremlinsection_generic_override(self):
+        config = Configuration('localhost',
+                               self.port,
+                               gremlin_section=GremlinSection(traversal_source='t',
+                                                              username='foo',
+                                                              password='bar',
+                                                              message_serializer='graphbinary'),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 't')
+        self.assertEqual(config.gremlin.username, 'foo')
+        self.assertEqual(config.gremlin.password, 'bar')
+        self.assertEqual(config.gremlin.message_serializer, 'graphbinaryv1')
+
+    def test_configuration_gremlinsection_neptune_default(self):
+        config = Configuration(self.neptune_host_reg, self.port)
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'graphsonv3')
+
+    def test_configuration_gremlinsection_neptune_override(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               gremlin_section=GremlinSection(traversal_source='t',
+                                                              username='foo',
+                                                              password='bar',
+                                                              message_serializer='graphbinary'),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'graphbinaryv1')
 
     def test_configuration_neptune_service_default(self):
         config = Configuration(self.neptune_host_reg, self.port)
