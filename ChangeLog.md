@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 4.0.2 (Dec 14, 2023)
 - Fixed `neptune_ml_utils` imports in `03-Neptune-ML` samples ([Link to PR](https://github.com/aws/graph-notebook/pull/546))
 - Enable Gremlin `message_serializer` config field for Neptune endpoints ([Link to PR](https://github.com/aws/graph-notebook/pull/547))
 
