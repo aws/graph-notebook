@@ -18,6 +18,6 @@ declare global {
 // eslint-disable-next-line @typescript-eslint/camelcase
 window.__webpack_public_path__ =
   document.body.getAttribute("data-base-url") +
-  "nbextensions/graph_notebook_widgets";
+  "nbextensions/@aws/graph_notebook_widgets";
 
 export * from "./index";

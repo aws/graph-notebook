@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 window["requirejs"].config({
   map: {
     "*": {
-      graph_notebook_widgets: "http://localhost:9000/index.js"
+      "@aws/graph_notebook_widgets": "http://localhost:9000/index.js"
     },
   },
 });

@@ -19,16 +19,16 @@ js_targets = [
 ]
 
 package_data_spec = {
-    'graph_notebook_widgets': [
+    '@aws/graph_notebook_widgets': [
         'nbextension/**js*',
         'labextension/**'
     ]
 }
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/graph_notebook_widgets', nb_path, '**'),
-    ('share/jupyter/labextensions/graph_notebook_widgets', lab_path, '**'),
-    ('share/jupyter/labextensions/graph_notebook_widgets', HERE, 'install.json'),
+    ('share/jupyter/nbextensions/@aws/graph_notebook_widgets', nb_path, '**'),
+    ('share/jupyter/labextensions/@aws/graph_notebook_widgets', lab_path, '**'),
+    ('share/jupyter/labextensions/@aws/graph_notebook_widgets', HERE, 'install.json'),
     ('etc/jupyter/nbconfig/notebook.d', HERE, 'graph_notebook_widgets.json')
 ]
 

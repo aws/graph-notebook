@@ -13,7 +13,7 @@ import { ForceModel, ForceView } from "./force_widget";
 
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
-const EXTENSION_ID = "graph_notebook_widgets:plugin";
+const EXTENSION_ID = "@aws/graph_notebook_widgets:plugin";
 
 /**
  * Activate the widget extension.

@@ -111,7 +111,7 @@ module.exports = [
       filename: "index.js",
       path: path.resolve(__dirname, "dist"),
       libraryTarget: "amd",
-      library: "graph_notebook_widgets",
+      library: "@aws/graph_notebook_widgets",
       publicPath:
         "https://unpkg.com/graph_notebook_widget@" + version + "/dist/",
     },
@@ -135,7 +135,7 @@ module.exports = [
     output: {
       filename: "embed-bundle.js",
       path: path.resolve(__dirname, "docs", "source", "_static"),
-      library: "graph_notebook_widgets",
+      library: "@aws/graph_notebook_widgets",
       libraryTarget: "amd",
     },
     module: {

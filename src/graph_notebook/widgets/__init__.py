@@ -36,6 +36,6 @@ def _jupyter_nbextension_paths():
     return [{
         'section': 'notebook',
         'src': 'nbextension/static',
-        'dest': 'graph_notebook_widgets',
-        'require': 'graph_notebook_widgets/extension'
+        'dest': '@aws/graph_notebook_widgets',
+        'require': '@aws/graph_notebook_widgets/extension'
     }]

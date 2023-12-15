@@ -3,7 +3,7 @@
 window["requirejs"].config({
   map: {
     "*": {
-      graph_notebook_widgets: "nbextensions/graph_notebook_widgets/index",
+      graph_notebook_widgets: "nbextensions/@aws/graph_notebook_widgets/index",
     },
   },
 });

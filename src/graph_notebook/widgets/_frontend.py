@@ -8,5 +8,5 @@ import graph_notebook
 Information about the frontend package of the widgets.
 """
 
-module_name = "graph_notebook_widgets"
+module_name = "@aws/graph_notebook_widgets"
 module_version = graph_notebook.__version__
