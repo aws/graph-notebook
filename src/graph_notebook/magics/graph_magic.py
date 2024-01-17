@@ -883,7 +883,8 @@ class Graph(Magics):
                             help="Hide the index column numbers when displaying the results.")
         parser.add_argument('-mcl', '--max-content-length', type=str, default='',
                             help="Specifies maximum size (in bytes) of results that can be returned to the "
-                                 "GremlinPython client. Default is 10MB")
+                                 "GremlinPython client. Abbreviated memory units (ex.'50MB') are accepted. "
+                                 "Default is 10MB")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
