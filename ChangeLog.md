@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Deprecated Python 3.7 support ([Link to PR](https://github.com/aws/graph-notebook/pull/551))
+- Added unit abbreviation support tk `--max-content-length` ([Link to PR](https://github.com/aws/graph-notebook/pull/553))
 
 ## Release 4.0.2 (Dec 14, 2023)
 - Fixed `neptune_ml_utils` imports in `03-Neptune-ML` samples ([Link to PR](https://github.com/aws/graph-notebook/pull/546))
