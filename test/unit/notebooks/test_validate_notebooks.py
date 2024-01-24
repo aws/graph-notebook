@@ -52,6 +52,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/03-Centrality-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/04-Community-Detection-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/05-Similarity-Algorithms.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/06-Vector-Similarity-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/01-FinTech/01-Fraud-Ring-Identifcation.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/02-Investment-Analysis/01-EDGAR-Competitior-Analysis-using-Knowledge-Graph-Graph-Algorithms-and-Vector-Search.ipynb',
