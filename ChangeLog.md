@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
+  - Path: 02-Neptune-Analytics > 02-Graph-Algorithms > 06-Vector-Similarity-Algorithms
 - Deprecated Python 3.7 support ([Link to PR](https://github.com/aws/graph-notebook/pull/551))
 
 ## Release 4.0.2 (Dec 14, 2023)
