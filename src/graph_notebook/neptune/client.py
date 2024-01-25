@@ -128,6 +128,7 @@ SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_PLAN_CACHE_MODES = ['auto', 'enabled', 'disabled']
 OPENCYPHER_DEFAULT_TIMEOUT = 120000
+OPENCYPHER_STATUS_STATE_MODES = ['ALL', 'RUNNING', 'WAITING', 'CANCELLING']
 
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
@@ -405,7 +406,7 @@ class Client(object):
                 if plan_cache:
                     data['planCache'] = plan_cache
                 if query_timeout:
-                    headers['query_timeout_millis'] = str(query_timeout)
+                    data['queryTimeoutMilliseconds'] = str(query_timeout)
         else:
             url += 'db/neo4j/tx/commit'
             headers['content-type'] = 'application/json'
@@ -441,16 +442,20 @@ class Client(object):
         driver.close()
         return data
 
-    def opencypher_status(self, query_id: str = '', include_waiting: bool = False):
+    def opencypher_status(self, query_id: str = '', include_waiting: bool = False, state: str = '',
+                          max_results: int = None, use_analytics_endpoint: bool = False):
+        if use_analytics_endpoint:
+            return self._analytics_query_status(query_id=query_id, state=state, max_results=max_results)
         kwargs = {}
         if include_waiting:
             kwargs['includeWaiting'] = True
         return self._query_status('openCypher', query_id=query_id, **kwargs)
 
-    def opencypher_cancel(self, query_id, silent: bool = False):
+    def opencypher_cancel(self, query_id, silent: bool = False, use_analytics_endpoint: bool = False):
         if type(query_id) is not str or query_id == '':
             raise ValueError('query_id must be a non-empty string')
-
+        if use_analytics_endpoint:
+            return self._analytics_query_status(query_id=query_id, cancel_query=True)
         return self._query_status('openCypher', query_id=query_id, cancelQuery=True, silent=silent)
 
     def get_opencypher_driver(self):
@@ -808,7 +813,25 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
-    def statistics(self, language: str, summary: bool = False, mode: str = '') -> requests.Response:
+    def _analytics_query_status(self, query_id: str = '', state: str = '', max_results: int = None,
+                                cancel_query: bool = False) -> requests.Response:
+        url = f'{self._http_protocol}://{self.host}:{self.port}/queries'
+        if query_id != '':
+            url += f'/{query_id}'
+        elif state != '':
+            url += f'?state={state}&maxResults={max_results}'
+
+        method = 'DELETE' if cancel_query else 'GET'
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        req = self._prepare_request(method, url, headers=headers)
+        res = self._http_session.send(req, verify=self.ssl_verify)
+        return res
+
+    def statistics(self, language: str, summary: bool = False, mode: str = '',
+                   use_analytics_endpoint: bool = False) -> requests.Response:
         headers = {
             'Accept': 'application/json'
         }
@@ -817,11 +840,12 @@ class Client(object):
         elif language == "sparql":
             language = "rdf"
 
-        url = f'{self._http_protocol}://{self.host}:{self.port}/{language}/statistics'
+        base_url = f'{self._http_protocol}://{self.host}:{self.port}'
+        url = base_url + f'/{language}/statistics'
         data = {'mode': mode}
 
         if summary:
-            summary_url = url + '/summary'
+            summary_url = (base_url if use_analytics_endpoint else url) + '/summary'
             if mode:
                 summary_mode_param = '?mode=' + mode
                 summary_url += summary_mode_param

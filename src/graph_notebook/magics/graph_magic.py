@@ -41,13 +41,14 @@ from graph_notebook.configuration.generate_config import generate_default_config
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables, neptune_db_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
-from graph_notebook.neptune.client import ClientBuilder, Client,PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
+from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES,  VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES, \
-    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT
+    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
+    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -251,22 +252,31 @@ def get_load_ids(neptune_client):
     return ids, res
 
 
-def process_statistics_400(is_summary: bool, response):
+def process_statistics_400(response, is_summary: bool = False, is_analytics: bool = False):
     bad_request_res = json.loads(response.text)
     res_code = bad_request_res['code']
     if res_code == 'StatisticsNotAvailableException':
-        print("No statistics found. Please ensure that auto-generation of DFE statistics is enabled by running "
-              "'%statistics' and checking if 'autoCompute' if set to True. Alternately, you can manually "
-              "trigger statistics generation by running: '%statistics --mode refresh'.")
+        print("No statistics found. ", end="")
+        if not is_analytics:
+            print("Please ensure that auto-generation of DFE statistics is enabled by running '%statistics' and "
+                  "checking if 'autoCompute' if set to True. Alternately, you can manually trigger statistics "
+                  "generation by running: '%statistics --mode refresh'.")
+        return
     elif res_code == "BadRequestException":
-        print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size r5.large or "
-              "greater in order to have DFE statistics enabled.")
-        if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
-            print("\nPlease also note that the Graph Summary API is only available in Neptune engine version 1.2.1.0 "
-                  "and later.")
-    else:
-        print("Query encountered 400 error, please see below.")
+        if is_analytics:
+            if bad_request_res["message"] == 'Bad route: /summary':
+                logger.debug("Encountered bad route exception for Analytics, retrying with legacy statistics endpoint.")
+                return 1
+        else:
+            print("Unable to query the statistics endpoint. Please check that your Neptune instance is of size "
+                  "r5.large or greater in order to have DFE statistics enabled.")
+            if is_summary and "Statistics is disabled" not in bad_request_res["detailedMessage"]:
+                print("\nPlease also note that the Graph Summary API is only available in Neptune engine version "
+                      "1.2.1.0 and later.")
+        return
+    print("Query encountered 400 error, please see below.")
     print(f"\nFull response: {bad_request_res}")
+    return
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -430,6 +440,7 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def statistics(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
@@ -461,9 +472,9 @@ class Graph(Magics):
         statistics_res = self.client.statistics(args.language, args.summary, mode)
         if statistics_res.status_code == 400:
             if args.summary:
-                process_statistics_400(True, statistics_res)
+                process_statistics_400(statistics_res)
             else:
-                process_statistics_400(False, statistics_res)
+                process_statistics_400(statistics_res)
             return
         statistics_res.raise_for_status()
         statistics_res_json = statistics_res.json()
@@ -493,10 +504,14 @@ class Graph(Magics):
         else:
             mode = "basic"
 
-        summary_res = self.client.statistics(args.language, True, mode)
+        is_analytics = self.client.is_analytics_domain()
+        summary_res = self.client.statistics(args.language, True, mode, is_analytics)
         if summary_res.status_code == 400:
-            process_statistics_400(True, summary_res)
-            return
+            retry_legacy = process_statistics_400(summary_res, is_summary=True, is_analytics=is_analytics)
+            if retry_legacy == 1:
+                summary_res = self.client.statistics(args.language, True, mode, False)
+            else:
+                return
         summary_res.raise_for_status()
         summary_res_json = summary_res.json()
         if not args.silent:
@@ -514,6 +529,16 @@ class Graph(Magics):
         self.graph_notebook_config.host = line
         self._generate_client_from_config(self.graph_notebook_config)
         print(f'set host to {self.graph_notebook_config.host}')
+
+    @line_magic
+    def graph_notebook_service(self, line):
+        if line == '':
+            print(f'current service name: {self.graph_notebook_config.neptune_service}')
+            return
+
+        self.graph_notebook_config.neptune_service = normalize_service_name(line)
+        self._generate_client_from_config(self.graph_notebook_config)
+        print(f'set service name to {self.graph_notebook_config.neptune_service}')
 
     @magic_variables
     @cell_magic
@@ -1160,6 +1185,7 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
     def status(self, line='', local_ns: dict = None):
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
@@ -3088,9 +3114,15 @@ class Graph(Magics):
         parser.add_argument('-c', '--cancelQuery', action='store_true', default=False,
                             help='Tells the status command to cancel a query. This parameter does not take a value.')
         parser.add_argument('-w', '--includeWaiting', action='store_true', default=False,
-                            help='When set to true and other parameters are not present, causes status information '
-                                 'for waiting queries to be returned as well as for running queries. '
-                                 'This parameter does not take a value.')
+                            help='Neptune DB only. When set to true and other parameters are not present, causes '
+                                 'status information for waiting queries to be returned as well as for running '
+                                 'queries. This parameter does not take a value.')
+        parser.add_argument('--state', type=str.upper, default='ALL',
+                            help=f'Neptune Analytics only. Specifies what subset of query states to retrieve the '
+                                 f'status of. Default is ALL. Accepted values: ${OPENCYPHER_STATUS_STATE_MODES}')
+        parser.add_argument('-m', '--maxResults', type=int, default=200,
+                            help=f'Neptune Analytics only. Sets an upper limit on the set of returned queries whose '
+                                 f'status matches --state. Default is 200.')
         parser.add_argument('-s', '--silent-cancel', action='store_true', default=False,
                             help='If silent_cancel=true then the running query is cancelled and the HTTP response '
                                  'code is 200. If silent_cancel is not present or silent_cancel=false, '
@@ -3099,11 +3131,30 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
+        using_analytics = self.client.is_analytics_domain()
         if not args.cancelQuery:
-            if args.includeWaiting and not args.queryId:
-                res = self.client.opencypher_status(include_waiting=args.includeWaiting)
+            query_id = ''
+            include_waiting = None
+            state = ''
+            max_results = None
+            if args.includeWaiting and not args.queryId and not self.client.is_analytics_domain():
+                include_waiting = args.includeWaiting
+            elif args.state and not args.queryId and self.client.is_analytics_domain():
+                state = args.state
+                max_results = args.maxResults
             else:
-                res = self.client.opencypher_status(query_id=args.queryId)
+                query_id = args.queryId
+            res = self.client.opencypher_status(query_id=query_id,
+                                                include_waiting=include_waiting,
+                                                state=state,
+                                                max_results=max_results,
+                                                use_analytics_endpoint=using_analytics)
+            if using_analytics and res.status_code == 400 and 'Bad route: /queries' in res.json()["message"]:
+                res = self.client.opencypher_status(query_id=query_id,
+                                                    include_waiting=include_waiting,
+                                                    state=state,
+                                                    max_results=max_results,
+                                                    use_analytics_endpoint=False)
             res.raise_for_status()
         else:
             if args.queryId == '':
@@ -3111,9 +3162,19 @@ class Graph(Magics):
                     print(OPENCYPHER_CANCEL_HINT_MSG)
                 return
             else:
-                res = self.client.opencypher_cancel(args.queryId, args.silent_cancel)
+                res = self.client.opencypher_cancel(args.queryId,
+                                                    silent=args.silent_cancel,
+                                                    use_analytics_endpoint=using_analytics)
+                if using_analytics and res.status_code == 400 and 'Bad route: /queries' in res.json()["message"]:
+                    res = self.client.opencypher_cancel(args.queryId,
+                                                        silent=args.silent_cancel,
+                                                        use_analytics_endpoint=False)
                 res.raise_for_status()
-        js = res.json()
-        store_to_ns(args.store_to, js, local_ns)
-        if not args.silent:
-            print(json.dumps(js, indent=2))
+        if using_analytics and args.cancelQuery:
+            if not args.silent:
+                print(f'Submitted cancellation request for query ID: {args.queryId}')
+        else:
+            js = res.json()
+            store_to_ns(args.store_to, js, local_ns)
+            if not args.silent:
+                print(json.dumps(js, indent=2))
