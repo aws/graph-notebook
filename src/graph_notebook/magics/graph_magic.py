@@ -46,7 +46,7 @@ from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPT
     DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES,  VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
-    STATISTICS_LANGUAGE_INPUTS, STATISTICS_MODES, SUMMARY_MODES, \
+    STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
     OPENCYPHER_STATUS_STATE_MODES, normalize_service_name
 from graph_notebook.network import SPARQLNetwork
@@ -504,12 +504,19 @@ class Graph(Magics):
         else:
             mode = "basic"
 
-        is_analytics = self.client.is_analytics_domain()
-        summary_res = self.client.statistics(args.language, True, mode, is_analytics)
+        language_ep = args.language
+        if self.client.is_analytics_domain():
+            is_analytics = True
+            if language_ep in STATISTICS_LANGUAGE_INPUTS_SPARQL:
+                print("SPARQL is not supported for Neptune Analytics, defaulting to PropertyGraph.")
+                language_ep = 'propertygraph'
+        else:
+            is_analytics = False
+        summary_res = self.client.statistics(language_ep, True, mode, is_analytics)
         if summary_res.status_code == 400:
             retry_legacy = process_statistics_400(summary_res, is_summary=True, is_analytics=is_analytics)
             if retry_legacy == 1:
-                summary_res = self.client.statistics(args.language, True, mode, False)
+                summary_res = self.client.statistics(language_ep, True, mode, False)
             else:
                 return
         summary_res.raise_for_status()
@@ -1556,6 +1563,7 @@ class Graph(Magics):
             value=str(args.concurrency),
             placeholder=1,
             min=1,
+            max=2**16,
             disabled=False,
             layout=widgets.Layout(display=concurrency_hbox_visibility,
                                   width=widget_width)
@@ -1565,6 +1573,7 @@ class Graph(Magics):
             value=args.periodic_commit,
             placeholder=0,
             min=0,
+            max=1000000,
             disabled=False,
             layout=widgets.Layout(display=periodic_commit_hbox_visibility,
                                   width=widget_width)
@@ -1779,13 +1788,12 @@ class Graph(Magics):
                 source_format_validation_label = widgets.HTML('<p style="color:red;">Format cannot be blank.</p>')
                 source_format_hbox.children += (source_format_validation_label,)
 
-            if not arn.value.startswith('arn:aws') and source.value.startswith(
-                    "s3://"):  # only do this validation if we are using an s3 bucket.
-                validated = False
-                arn_validation_label = widgets.HTML('<p style="color:red;">Load ARN must start with "arn:aws"</p>')
-                arn_hbox.children += (arn_validation_label,)
-
             if load_type == 'bulk':
+                if not arn.value.startswith('arn:aws') and source.value.startswith(
+                        "s3://"):  # only do this validation if we are using an s3 bucket.
+                    validated = False
+                    arn_validation_label = widgets.HTML('<p style="color:red;">Load ARN must start with "arn:aws"</p>')
+                    arn_hbox.children += (arn_validation_label,)
                 dependencies_list = list(filter(None, dependencies.value.split('\n')))
                 if not len(dependencies_list) < 64:
                     validated = False
@@ -1878,7 +1886,9 @@ class Graph(Magics):
                             else:
                                 load_oc_params += ', '
                         load_oc_query = f"CALL neptune.load({load_oc_params})"
+                        print(f"Incremental load call: {load_oc_query}")
                         oc_load = self.client.opencypher_http(load_oc_query)
+                        print("Request sent.")
                     else:
                         if source.value.startswith("s3://"):
                             load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)

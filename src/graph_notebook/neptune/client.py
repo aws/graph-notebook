@@ -122,7 +122,9 @@ GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializer
 
 STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
 SUMMARY_MODES = ["", "basic", "detailed"]
-STATISTICS_LANGUAGE_INPUTS = ["propertygraph", "pg", "gremlin", "oc", "opencypher", "sparql", "rdf"]
+STATISTICS_LANGUAGE_INPUTS_PG = ["propertygraph", "pg", "gremlin", "oc", "opencypher"]
+STATISTICS_LANGUAGE_INPUTS_SPARQL = ["sparql", "rdf"]
+STATISTICS_LANGUAGE_INPUTS = STATISTICS_LANGUAGE_INPUTS_PG + STATISTICS_LANGUAGE_INPUTS_SPARQL
 
 SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
