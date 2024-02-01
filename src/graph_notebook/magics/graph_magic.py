@@ -1886,9 +1886,7 @@ class Graph(Magics):
                             else:
                                 load_oc_params += ', '
                         load_oc_query = f"CALL neptune.load({load_oc_params})"
-                        print(f"Incremental load call: {load_oc_query}")
                         oc_load = self.client.opencypher_http(load_oc_query)
-                        print("Request sent.")
                     else:
                         if source.value.startswith("s3://"):
                             load_res = self.client.load(str(source_exp), source_format.value, arn.value, **kwargs)
