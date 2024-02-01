@@ -14,6 +14,7 @@ import datetime
 import os
 import uuid
 import ast
+import re
 from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
@@ -156,6 +157,9 @@ NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_NQU
                                           MEDIA_TYPE_NTRIPLES_TEXT, MEDIA_TYPE_TURTLE, MEDIA_TYPE_N3, MEDIA_TYPE_TRIX,
                                           MEDIA_TYPE_TRIG, MEDIA_TYPE_RDF4J_BINARY]
 
+byte_units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4}
+
+
 class QueryMode(Enum):
     DEFAULT = 'query'
     EXPLAIN = 'explain'
@@ -277,6 +281,17 @@ def process_statistics_400(response, is_summary: bool = False, is_analytics: boo
     print("Query encountered 400 error, please see below.")
     print(f"\nFull response: {bad_request_res}")
     return
+
+
+def mcl_to_bytes(mcl):
+    using_abb = re.match(r'(\d+)([A-Za-z]+)?', mcl, re.IGNORECASE)
+    if using_abb:
+        num, unit = using_abb.groups()
+        unit = unit.upper() if unit else 'B'
+        if unit in byte_units:
+            mcl_bytes = int(num) * byte_units[unit]
+            return mcl_bytes
+    return byte_units['MB'] * 10
 
 
 # TODO: refactor large magic commands into their own modules like what we do with %neptune_ml
@@ -898,9 +913,10 @@ class Graph(Magics):
                             help="Display the entire output without a scroll bar.")
         parser.add_argument('--hide-index', action='store_true', default=False,
                             help="Hide the index column numbers when displaying the results.")
-        parser.add_argument('-mcl', '--max-content-length', type=int, default=10*1024*1024,
+        parser.add_argument('-mcl', '--max-content-length', type=str, default='',
                             help="Specifies maximum size (in bytes) of results that can be returned to the "
-                                 "GremlinPython client. Default is 10MB")
+                                 "GremlinPython client. Abbreviated memory units (ex.'50MB') are accepted. "
+                                 "Default is 10MB")
 
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
@@ -926,7 +942,8 @@ class Graph(Magics):
             first_tab_output = widgets.Output(layout=gremlin_layout)
             children.append(first_tab_output)
 
-        transport_args = {'max_content_length': args.max_content_length}
+        mcl_bytes = mcl_to_bytes(args.max_content_length)
+        transport_args = {'max_content_length': mcl_bytes}
 
         if mode == QueryMode.EXPLAIN:
             res = self.client.gremlin_explain(cell,
