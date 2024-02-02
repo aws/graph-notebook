@@ -4,7 +4,6 @@ import logging
 import uuid
 from itertools import islice
 from enum import Enum
-from packaging.version import parse
 
 
 class BomType(Enum):
@@ -192,22 +191,12 @@ class Writer:
             res = list(map(dict, set(tuple(sorted(sub.items())) for sub in chunk)))
             self.execute_query({"rels": res}, query)
 
-    def parse_version(self, c: map, keyname: str):
-        try:
-            version = ".".join(c[keyname].split("-")[0].split(".")[:3])
-            ver = parse(version)
-            c["majorVersion"] = ver.major
-            c["minorVersion"] = ver.minor
-            c["buildVersion"] = ver.micro
-        except ValueError:
-            logger.warning(f"Error parsing version {c[keyname]}")
-        return c
-
     def execute_query(self, params, query):
-        resp = self.client.execute_open_cypher_query(
-            openCypherQuery=query,
-            parameters=json.dumps(params),
-            graphId=self.graph_identifier,
+        resp = self.client.execute_query(
+            queryString=query,
+            parameters=params,
+            language="OPEN_CYPHER",
+            graphIdentifier=self.graph_identifier,
         )
         if not resp["ResponseMetadata"]["HTTPStatusCode"] == 200:
             print(f"An error occurred on query: {query}")
@@ -269,10 +258,6 @@ class CycloneDXWriter(Writer):
         return document_id
 
     def __write_components(self, components: list, document_id: str):
-        for c in components:
-            if "version" in c:
-                c = self.parse_version(c, "version")
-
         self.write_objects(components, NodeLabels.COMPONENT.value, "name")
         describes_edges = [
             {"fromId": document_id, "toId": f"{NodeLabels.COMPONENT.value}_{c['name']}"}
@@ -368,9 +353,6 @@ class SPDXWriter(Writer):
 
     def __write_packages(self, packages: list):
         for c in packages:
-            if "versionInfo" in c:
-                c = self.parse_version(c, "versionInfo")
-
             if "externalRefs" in c:
                 for r in c["externalRefs"]:
                     if r["referenceType"] == "purl":
@@ -405,47 +387,44 @@ class SPDXWriter(Writer):
         described_by_edges = []
         contains_edges = []
         for d in relationships:
-            match d["relationshipType"]:
-                case "DESCRIBES":
-                    describes_edges.append(
-                        {
-                            "to": d["relatedSpdxElement"],
-                            "from": document_id,
-                        }
-                    )
-                case "DEPENDS_ON":
-                    depends_on_edges.append(
-                        {
-                            "to": d["relatedSpdxElement"],
-                            "from": document_id,
-                        }
-                    )
-                case "DEPENDENCY_OF":
-                    dependency_of_edges.append(
-                        {
-                            "to": d["relatedSpdxElement"],
-                            "from": document_id,
-                        }
-                    )
-                case "DESCRIBED_BY":
-                    described_by_edges.append(
-                        {
-                            "to": d["relatedSpdxElement"],
-                            "from": document_id,
-                        }
-                    )
-                case "CONTAINS":
-                    contains_edges.append(
-                        {
-                            "to": d["relatedSpdxElement"],
-                            "from": document_id,
-                        }
-                    )
-                case _:
-                    logging.warning(
-                        f"Unknown relationship type {d['relationshipType']}"
-                    )
-                    continue
+            if d["relationshipType"] == "DESCRIBES":
+                describes_edges.append(
+                    {
+                        "to": d["relatedSpdxElement"],
+                        "from": document_id,
+                    }
+                )
+            elif d["relationshipType"] == "DEPENDS_ON":
+                depends_on_edges.append(
+                    {
+                        "to": d["relatedSpdxElement"],
+                        "from": document_id,
+                    }
+                )
+            elif d["relationshipType"] == "DEPENDENCY_OF":
+                dependency_of_edges.append(
+                    {
+                        "to": d["relatedSpdxElement"],
+                        "from": document_id,
+                    }
+                )
+            elif d["relationshipType"] == "DESCRIBED_BY":
+                described_by_edges.append(
+                    {
+                        "to": d["relatedSpdxElement"],
+                        "from": document_id,
+                    }
+                )
+            elif d["relationshipType"] == "CONTAINS":
+                contains_edges.append(
+                    {
+                        "to": d["relatedSpdxElement"],
+                        "from": document_id,
+                    }
+                )
+            else:
+                logging.warning(f"Unknown relationship type {d['relationshipType']}")
+                continue
 
         if len(describes_edges) > 0:
             self.write_rel_match_on_property(
