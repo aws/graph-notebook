@@ -55,7 +55,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/06-Vector-Similarity-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/01-FinTech/01-Fraud-Ring-Identifcation.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/02-Investment-Analysis/01-EDGAR-Competitior-Analysis-using-Knowledge-Graph-Graph-Algorithms-and-Vector-Search.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/02-Investment-Analysis/01-EDGAR-Competitor-Analysis-using-Knowledge-Graph-Graph-Algorithms-and-Vector-Search.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/01-Getting-Started-with-Neptune-ML-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/02-Introduction-to-Node-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/03-Introduction-to-Node-Regression-Gremlin.ipynb',
