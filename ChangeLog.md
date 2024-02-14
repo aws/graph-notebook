@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Neptune Analytics notebooks - SBOM ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
+  - Path: 02-Neptune-Analytics > 03-Sample-Use-Cases > 03-Software-Bill-Of-Materials
 - Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
 
 ## Release 4.1.0 (February 1, 2024)
