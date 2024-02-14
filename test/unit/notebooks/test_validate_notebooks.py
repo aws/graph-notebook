@@ -55,7 +55,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/06-Vector-Similarity-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/Overview.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/01-FinTech/01-Fraud-Ring-Identifcation.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/02-Investment-Analysis/01-EDGAR-Competitior-Analysis-using-Knowledge-Graph-Graph-Algorithms-and-Vector-Search.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/02-Investment-Analysis/01-EDGAR-Competitor-Analysis-using-Knowledge-Graph-Graph-Algorithms-and-Vector-Search.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/00-Intro-to-Software-Bill-Of-Materials.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/01-SBOM-Dependency-Analysis.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/02-SBOM-Vulnerability-Analysis.ipynb',

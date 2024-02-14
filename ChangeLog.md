@@ -3,10 +3,15 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
+
+## Release 4.1.0 (February 1, 2024)
 - New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
   - Path: 02-Neptune-Analytics > 02-Graph-Algorithms > 06-Vector-Similarity-Algorithms
-- Deprecated Python 3.7 support ([Link to PR](https://github.com/aws/graph-notebook/pull/551))
+- Updated various Neptune magics for new Analytics API ([Link to PR](https://github.com/aws/graph-notebook/pull/560))
+- Added `%graph_notebook_service` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/560))
 - Added unit abbreviation support to `--max-content-length` ([Link to PR](https://github.com/aws/graph-notebook/pull/553))
+- Deprecated Python 3.7 support ([Link to PR](https://github.com/aws/graph-notebook/pull/551))
 
 ## Release 4.0.2 (Dec 14, 2023)
 - Fixed `neptune_ml_utils` imports in `03-Neptune-ML` samples ([Link to PR](https://github.com/aws/graph-notebook/pull/546))
