@@ -192,7 +192,7 @@ class Writer:
         arr_range = iter(params)
         chunks = iter(lambda: tuple(islice(arr_range, self.batch_size)), ())
         for chunk in chunks:
-            # This should not be needed but due to an issue with duplicate maps we have to guarantee uniqeness
+            # This should not be needed but due to an issue with duplicate maps we have to guarantee uniqueness
             res = list(map(dict, set(tuple(sorted(sub.items())) for sub in chunk)))
 
             self.execute_query({"props": res}, query)
