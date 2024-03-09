@@ -564,6 +564,7 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_graph_only
     def graph_pg_info(self, line='', local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('-m', '--metric', type=str, default='',
