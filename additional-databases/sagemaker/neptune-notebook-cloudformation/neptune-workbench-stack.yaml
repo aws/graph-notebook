@@ -52,10 +52,27 @@ Parameters:
     Description: The cluster endpoint of an existing Neptune cluster.
     Type: String
 
+  NeptuneClusterResourceId:
+    Description: The resource ID of the existing Neptune cluster.
+    Type: String
+
   NeptuneClusterPort:
-    Description: 'OPTIONAL: The Port of an existing Neptune cluster (default 8182).'
+    Description: 'OPTIONAL: The Port of the existing Neptune cluster (default 8182).'
     Type: String
     Default: '8182'
+
+  NeptuneClusterIAMAuthMode:
+    Description: Is IAM database authentication enabled on the existing Neptune cluster?
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+
+  NeptuneClusterLoadFromS3Arn:
+    Description: 'OPTIONAL: The ARN of the S3 bucket to load data from.'
+    Type: String
+    Default: ''
 
   NeptuneClusterSecurityGroups:
     Description: The VPC security group IDs. The security groups must be for the same VPC as specified in the subnet.
@@ -65,14 +82,20 @@ Parameters:
     Description: The ID of the subnet in a VPC to which you would like to have a connectivity from your ML compute instance.
     Type: AWS::EC2::Subnet::Id
 
-  SageMakerNotebookRole:
-    Description: The ARN for the IAM role that the notebook instance will assume.
+  SageMakerNotebookRoleArn:
+    Description: 'OPTIONAL: The ARN for the IAM role that the notebook instance will assume. If not provided, a role will be automatically created, based on the cluster information.'
     Type: String
-    AllowedPattern: ^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$
+    Default: ''
 
   SageMakerNotebookName:
     Description: The name of the Neptune notebook.
     Type: String
+
+Conditions:
+  UseSageMakerNotebookAutoRole:
+    Fn::Equals:
+      - !Ref SageMakerNotebookRoleArn
+      - ""
 
 Resources:
   NeptuneNotebookInstance:
@@ -89,42 +112,78 @@ Resources:
       SecurityGroupIds:
         Ref: NeptuneClusterSecurityGroups
       RoleArn:
-        Ref: SageMakerNotebookRole
+        Fn::If:
+          - UseSageMakerNotebookAutoRole
+          - Fn::GetAtt:
+              - SageMakerNotebookAutoRole
+              - Arn
+          - Ref: SageMakerNotebookRoleArn
       LifecycleConfigName:
         Fn::GetAtt:
-        - NeptuneNotebookInstanceLifecycleConfig
-        - NotebookInstanceLifecycleConfigName
+          - NeptuneNotebookInstanceLifecycleConfig
+          - NotebookInstanceLifecycleConfigName
+      Tags:
+        - Key: aws-neptune-cluster-id
+          Value: !Select [ 0, !Split [ ".", !Ref NeptuneClusterEndpoint ] ]
+        - Key: aws-neptune-resource-id
+          Value: !Ref NeptuneClusterResourceId
 
   NeptuneNotebookInstanceLifecycleConfig:
     Type: AWS::SageMaker::NotebookInstanceLifecycleConfig
     Properties:
       OnStart:
-      - Content:
-          Fn::Base64:
-            Fn::Join:
-            - ''
-            - - "#!/bin/bash\n"
-              - sudo -u ec2-user -i << 'EOF'
-              - "\n"
-              - echo 'export GRAPH_NOTEBOOK_AUTH_MODE=
-              - "DEFAULT' >> ~/.bashrc\n"
-              - echo 'export GRAPH_NOTEBOOK_HOST=
-              - !Ref NeptuneClusterEndpoint
-              - "' >> ~/.bashrc\n"
-              - echo 'export GRAPH_NOTEBOOK_PORT=
-              - !Ref NeptuneClusterPort
-              - "' >> ~/.bashrc\n"
-              - echo 'export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=
-              - "' >> ~/.bashrc\n"
-              - echo 'export AWS_REGION=
-              - !Ref AWS::Region
-              - "' >> ~/.bashrc\n"
-              - aws s3 cp s3://aws-neptune-notebook/graph_notebook.tar.gz /tmp/graph_notebook.tar.gz
-              - "\n"
-              - rm -rf /tmp/graph_notebook
-              - "\n"
-              - tar -zxvf /tmp/graph_notebook.tar.gz -C /tmp
-              - "\n"
-              - /tmp/graph_notebook/install.sh
-              - "\n"
-              - EOF
+        - Content:
+            Fn::Base64: !Sub |
+              #!/bin/bash
+              sudo -u ec2-user -i << 'EOF'
+              if [ "${NeptuneClusterIAMAuthMode}" == "true" ]; then
+                echo 'export GRAPH_NOTEBOOK_AUTH_MODE="IAM"' >> ~/.bashrc
+              else
+                echo 'export GRAPH_NOTEBOOK_AUTH_MODE="DEFAULT"' >> ~/.bashrc
+              fi
+              echo 'export GRAPH_NOTEBOOK_SSL=True' >> ~/.bashrc
+              echo 'export GRAPH_NOTEBOOK_HOST=${NeptuneClusterEndpoint}' >> ~/.bashrc
+              echo 'export GRAPH_NOTEBOOK_PORT=${NeptuneClusterPort}' >> ~/.bashrc
+              echo "export GRAPH_NOTEBOOK_SERVICE=neptune-db" >> ~/.bashrc
+              echo 'export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=${NeptuneClusterLoadFromS3Arn}' >> ~/.bashrc
+              echo 'export AWS_REGION=${AWS::Region}' >> ~/.bashrc
+              aws s3 cp s3://aws-neptune-notebook-${AWS::Region}/graph_notebook.tar.gz /tmp/graph_notebook.tar.gz
+              rm -rf /tmp/graph_notebook
+              tar -zxvf /tmp/graph_notebook.tar.gz -C /tmp
+              /tmp/graph_notebook/install.sh
+              EOF
+
+  SageMakerNotebookAutoRole:
+    Type: AWS::IAM::Role
+    Condition: UseSageMakerNotebookAutoRole
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SageMakerNotebookPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - Fn::Sub: "arn:${AWS::Partition}:s3:::aws-neptune-notebook-${AWS::Region}"
+                  - Fn::Sub: "arn:${AWS::Partition}:s3:::aws-neptune-notebook-${AWS::Region}/*"
+              - Effect: Allow
+                Action: neptune-db:connect
+                Resource:
+                  - Fn::Sub: "arn:${AWS::Partition}:neptune-db:${AWS::Region}:${AWS::AccountId}:${NeptuneClusterResourceId}/*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - Fn::Sub: "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/sagemaker/*"
