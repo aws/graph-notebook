@@ -61,13 +61,13 @@ Parameters:
     Type: String
     Default: '8182'
 
-  NeptuneClusterIAMAuthMode:
-    Description: Is IAM database authentication enabled on the existing Neptune cluster?
+  NeptuneClusterAuthMode:
+    Description: The IAM authentication setting on the existing Neptune cluster.
     Type: String
-    Default: false
+    Default: 'DEFAULT'
     AllowedValues:
-      - true
-      - false
+      - 'IAM'
+      - 'DEFAULT'
 
   NeptuneClusterLoadFromS3Arn:
     Description: 'OPTIONAL: The ARN of the S3 bucket to load data from.'
@@ -136,11 +136,7 @@ Resources:
             Fn::Base64: !Sub |
               #!/bin/bash
               sudo -u ec2-user -i << 'EOF'
-              if [ "${NeptuneClusterIAMAuthMode}" == "true" ]; then
-                echo 'export GRAPH_NOTEBOOK_AUTH_MODE="IAM"' >> ~/.bashrc
-              else
-                echo 'export GRAPH_NOTEBOOK_AUTH_MODE="DEFAULT"' >> ~/.bashrc
-              fi
+              echo 'export GRAPH_NOTEBOOK_AUTH_MODE=${NeptuneClusterAuthMode}' >> ~/.bashrc
               echo 'export GRAPH_NOTEBOOK_SSL=True' >> ~/.bashrc
               echo 'export GRAPH_NOTEBOOK_HOST=${NeptuneClusterEndpoint}' >> ~/.bashrc
               echo 'export GRAPH_NOTEBOOK_PORT=${NeptuneClusterPort}' >> ~/.bashrc
