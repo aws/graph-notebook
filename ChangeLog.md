@@ -5,6 +5,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
 - Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
+- New Sample Application - Northwind use case notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
+  - Path: 03-Sample-Applications > 07-Northwind-Use-Case
 
 ## Release 4.1.0 (February 1, 2024)
 - New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
