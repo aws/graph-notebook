@@ -132,6 +132,8 @@ OPENCYPHER_PLAN_CACHE_MODES = ['auto', 'enabled', 'disabled']
 OPENCYPHER_DEFAULT_TIMEOUT = 120000
 OPENCYPHER_STATUS_STATE_MODES = ['ALL', 'RUNNING', 'WAITING', 'CANCELLING']
 
+GRAPH_PG_INFO_METRICS = {'numVertices', 'numEdges', 'numVertexProperties', 'numEdgeProperties'}
+
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:

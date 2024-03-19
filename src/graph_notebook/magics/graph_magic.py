@@ -39,7 +39,8 @@ from requests import HTTPError
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, \
     AuthModeEnum, Configuration
-from graph_notebook.decorators.decorators import display_exceptions, magic_variables, neptune_db_only
+from graph_notebook.decorators.decorators import display_exceptions, magic_variables, \
+    neptune_db_only, neptune_graph_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
@@ -49,7 +50,7 @@ from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPT
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
-    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name
+    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name, GRAPH_PG_INFO_METRICS
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -211,6 +212,25 @@ def query_type_to_action(query_type):
     else:
         # TODO: check explicitly for all query types, raise exception for invalid query
         return 'sparqlupdate'
+
+
+def oc_results_df(oc_res, oc_res_format: str = None):
+    rows_and_columns = opencypher_get_rows_and_columns(oc_res, oc_res_format)
+    if rows_and_columns:
+        results_df = pd.DataFrame(rows_and_columns['rows'])
+        results_df = results_df.astype(str)
+        results_df = results_df.applymap(lambda x: replace_html_chars(x))
+        col_0_value = range(1, len(results_df) + 1)
+        results_df.insert(0, "#", col_0_value)
+        for col_index, col_name in enumerate(rows_and_columns['columns']):
+            results_df.rename({results_df.columns[col_index + 1]: col_name},
+                              axis='columns',
+                              inplace=True)
+        has_results = True
+    else:
+        results_df = None
+        has_results = False
+    return results_df, has_results
 
 
 def results_per_page_check(results_per_page):
@@ -540,6 +560,30 @@ class Graph(Magics):
             print(json.dumps(summary_res_json, indent=2))
 
         store_to_ns(args.store_to, summary_res_json, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def graph_pg_info(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-m', '--metric', type=str, default='',
+                            help=f'Metric to display the count of. If not specified, all available metrics and their '
+                                 f'counts will be returned.  Valid inputs: {GRAPH_PG_INFO_METRICS}')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='')
+
+        args = parser.parse_args(line.split())
+
+        if args.metric in GRAPH_PG_INFO_METRICS:
+            info_query = f"CALL neptune.graph.pg_info() YIELD metric, count WHERE metric = '{args.metric}' RETURN count"
+        else:
+            info_query = "CALL neptune.graph.pg_info() YIELD metric, count RETURN metric, count"
+
+        oc_rebuild_args = (f"{f'--store-to {args.store_to} ' if args.store_to else ''}"
+                           f"{'--silent' if args.silent else ''}")
+
+        self.handle_opencypher_query(oc_rebuild_args, info_query, local_ns)
 
     @line_magic
     def graph_notebook_host(self, line):
@@ -3013,17 +3057,9 @@ class Graph(Magics):
                 oc_metadata = build_opencypher_metadata_from_query(query_type='query', results=res,
                                                                    results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
-                if rows_and_columns:
+                results_df, has_results = oc_results_df(res, res_format)
+                if has_results:
                     titles.append('Console')
-                    results_df = pd.DataFrame(rows_and_columns['rows'])
-                    results_df = results_df.astype(str)
-                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
-                    results_df.insert(0, "#", range(1, len(results_df) + 1))
-                    for col_index, col_name in enumerate(rows_and_columns['columns']):
-                        results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                          axis='columns',
-                                          inplace=True)
                 try:
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
                                    group_by_raw=args.group_by_raw,
@@ -3059,17 +3095,9 @@ class Graph(Magics):
                 oc_metadata = build_opencypher_metadata_from_query(query_type='bolt', results=res,
                                                                    results_type=res_format, query_time=query_time)
                 first_tab_html = ""
-                rows_and_columns = opencypher_get_rows_and_columns(res, res_format)
-                if rows_and_columns:
+                results_df, has_results = oc_results_df(res, res_format)
+                if has_results:
                     titles.append('Console')
-                    results_df = pd.DataFrame(rows_and_columns['rows'])
-                    results_df = results_df.astype(str)
-                    results_df = results_df.applymap(lambda x: replace_html_chars(x))
-                    results_df.insert(0, "#", range(1, len(results_df) + 1))
-                    for col_index, col_name in enumerate(rows_and_columns['columns']):
-                        results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                          axis='columns',
-                                          inplace=True)
                 # Need to eventually add code to parse and display a network for the bolt format here
 
         if not args.silent:
