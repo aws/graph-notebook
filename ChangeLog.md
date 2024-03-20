@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
+- Updated NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/571))
 - Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
 - Added `%graph_pg_info` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/570))
 

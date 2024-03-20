@@ -1,10 +1,10 @@
 ## Launching graph-notebook as Amazon Neptune Workbench via AWS CloudFormation
 
-The AWS CloudFormation template in this folder, [`neptune-workbench-stack.yaml`](neptune-workbench-stack.yaml), deploys Amazon Neptune workbench notebooks as resources, and includes the base 'Getting Started' notebooks. The workbench lets you work with your Amazon Neptune cluster using Jupyter notebooks hosted by Amazon SageMaker. You are billed for workbench resources through Amazon SageMaker, separately from your Neptune billing.
+The AWS CloudFormation template in this folder, [`neptune-workbench-stack.yaml`](neptune-workbench-stack.yaml), deploys Amazon Neptune workbench notebooks as resources, and includes the base 'Getting Started' notebooks. The workbench lets you work with your Amazon Neptune Database cluster using Jupyter notebooks hosted by Amazon SageMaker. You are billed for workbench resources through Amazon SageMaker, separately from your Neptune billing.
 
 ### Parameter details
 #### Minimum permissions for the SageMakerNotebookRole
-This is the ARN for the AWS IAM role that the notebook instance will assume. Make sure that this role has at least the following minimum permissions within its service role policy:
+You may opt to have your notebook instance assume an existing AWS IAM role, via the `SageMakerNotebookRoleArn` stack parameter. Make sure that this role has at least the following minimum permissions within its service role policy:
 
 ```json
 {
@@ -17,19 +17,34 @@ This is the ARN for the AWS IAM role that the notebook instance will assume. Mak
         "s3:ListBucket"
       ],
       "Resource": [
-        "arn:aws:s3:::aws-neptune-notebook",
-        "arn:aws:s3:::aws-neptune-notebook/*"
+        "arn:(AWS Partition):s3:::aws-neptune-notebook-(AWS Region)",
+        "arn:(AWS Partition):s3:::aws-neptune-notebook-(AWS Region)/*"
       ]
     },
     {
       "Effect": "Allow",
       "Action": "neptune-db:connect",
       "Resource": [
-        "your-cluster-arn/*"
+        "arn:(AWS Partition):neptune-db:(AWS Region):(AWS Account ID):(Cluster Resource ID)/*"
       ]
     }
   ]
 }
+```
+
+If you would like to enable CloudWatch logging, also add:
+```json
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": [
+        "arn:(AWS Partition):logs:(AWS Region):(AWS Account ID):log-group:/aws/sagemaker/*"
+      ]
+    }
 ```
 
 The role should also establish the following trust relationship:
@@ -48,11 +63,3 @@ The role should also establish the following trust relationship:
   ]
 }
 ```
-
-#### How to populate the 'Cluster' value within the AWS Console for Amazon Neptune Notebooks
-Add the following tags manually to the notebook instance.
-
-| Key | Value |
-| ------------- |-------------|
-| **aws-neptune-cluster-id** | Amazon Neptune database cluster ID (found under *DB cluster id* under *Configuration* of the selected cluster in the AWS console) |
-| **aws-neptune-resource-id** | Amazon Neptune cluster resource ID (found under *Resource id* under *Configuration* of the selected cluster in the AWS console) |
