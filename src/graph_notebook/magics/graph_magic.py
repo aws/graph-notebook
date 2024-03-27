@@ -3020,9 +3020,10 @@ class Graph(Magics):
             res = self.client.opencypher_http(cell, explain=args.explain_type, query_params=query_params,
                                               plan_cache=args.plan_cache)
             query_time = time.time() * 1000 - query_start
-            explain = res.content.decode("utf-8")
+            res_replace_chars = res.content.replace(b'$', b'\&#36;')
+            explain = res_replace_chars.decode("utf-8")
             res.raise_for_status()
-            ##store_to_ns(args.store_to, explain, local_ns)
+            store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None,
                                                                    results_type='explain', res=res,
@@ -3153,7 +3154,8 @@ class Graph(Magics):
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
-        store_to_ns(args.store_to, res, local_ns)
+        if args.mode != 'explain':
+            store_to_ns(args.store_to, res, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):
         """
