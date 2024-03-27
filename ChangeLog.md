@@ -7,6 +7,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Updated NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/571))
 - Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
 - Added `%graph_pg_info` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/570))
+- Fixed unintended formatting in `%%oc explain` widget ([Link to PR](https://github.com/aws/graph-notebook/pull/576))
 
 ## Release 4.1.0 (February 1, 2024)
 - New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
