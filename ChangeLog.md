@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `%graph_pg_info` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/570))
 - Added documentation for FontAwesome 5 settings ([Link to PR](https://github.com/aws/graph-notebook/pull/575))
 - Fixed unintended formatting in `%%oc explain` widget ([Link to PR](https://github.com/aws/graph-notebook/pull/576))
+- Changed `%load` parameter and default value for failOnError ([Link to PR](https://github.com/aws/graph-notebook/pull/577))
 
 ## Release 4.1.0 (February 1, 2024)
 - New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
