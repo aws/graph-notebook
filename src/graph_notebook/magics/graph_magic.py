@@ -1472,7 +1472,7 @@ class Graph(Magics):
             print("Missing required configuration option 'aws_region'. Please ensure that you have provided a "
                   "valid Neptune cluster endpoint URI in the 'host' field of %graph_notebook_config.")
             return
-        parser.add_argument('--fail-on-failure', action='store_true', default=False)
+        parser.add_argument('--no-fail-on-error', action='store_true', default=False)
         parser.add_argument('--update-single-cardinality', action='store_true', default=True)
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--run', action='store_true', default=False)
@@ -1548,7 +1548,7 @@ class Graph(Magics):
 
         fail_on_error = widgets.Dropdown(
             options=['TRUE', 'FALSE'],
-            value=str(args.fail_on_failure).upper(),
+            value=str(not args.no_fail_on_error).upper(),
             disabled=False,
             layout=widgets.Layout(width=widget_width)
         )
