@@ -389,7 +389,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], 'US-AK')
         self.assertEqual(node2['group'], 'US-TX')
 
-    def test_group_with_groupby_property_id(self):
+    def test_group_with_groupby_property_id_custom(self):
         res = {
             "results": [
                 {
@@ -400,6 +400,46 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "id": "custom_id_159",
+                            "desc": "Fairbanks International Airport",
+                        }
+                    }
+                },
+                {
+                    "d": {
+                        "~id": "8",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "id": "custom_id_8",
+                            "desc": "Dallas/Fort Worth International Airport",
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(group_by_property='id')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('159')
+        node2 = gn.graph.nodes.get('8')
+        self.assertEqual(node1['group'], 'custom_id_159')
+        self.assertEqual(node2['group'], 'custom_id_8')
+
+    def test_group_with_groupby_property_id_actual(self):
+        res = {
+            "results": [
+                {
+                    "d": {
+                        "~id": "159",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "id": "test_id",
                             "desc": "Fairbanks International Airport",
                             "lon": -147.8560028,
                             "runways": 4,
@@ -423,6 +463,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "id": "test_id",
                             "desc": "Dallas/Fort Worth International Airport",
                             "lon": -97.0380020141602,
                             "runways": 7,
@@ -448,7 +489,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['group'], '159')
         self.assertEqual(node2['group'], '8')
 
-    def test_group_with_groupby_label(self):
+    def test_group_with_groupby_label_custom(self):
         res = {
             "results": [
                 {
@@ -459,6 +500,46 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "labels": "custom_label_159",
+                            "desc": "Fairbanks International Airport",
+                        }
+                    }
+                },
+                {
+                    "d": {
+                        "~id": "8",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "labels": "custom_label_8",
+                            "desc": "Dallas/Fort Worth International Airport",
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(group_by_property='labels')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('159')
+        node2 = gn.graph.nodes.get('8')
+        self.assertEqual(node1['group'], 'custom_label_159')
+        self.assertEqual(node2['group'], 'custom_label_8')
+
+    def test_group_with_groupby_label_actual(self):
+        res = {
+            "results": [
+                {
+                    "d": {
+                        "~id": "159",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "labels": "custom_label_159",
                             "desc": "Fairbanks International Airport",
                             "lon": -147.8560028,
                             "runways": 4,
@@ -482,6 +563,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "labels": "custom_label_8",
                             "desc": "Dallas/Fort Worth International Airport",
                             "lon": -97.0380020141602,
                             "runways": 7,
@@ -500,12 +582,12 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
 
-        gn = OCNetwork(group_by_property='region')
+        gn = OCNetwork(group_by_property='~labels')
         gn.add_results(res)        
         node1 = gn.graph.nodes.get('159')
         node2 = gn.graph.nodes.get('8')
-        self.assertEqual(node1['group'], 'US-AK')
-        self.assertEqual(node2['group'], 'US-TX')
+        self.assertEqual(node1['group'], 'airport')
+        self.assertEqual(node2['group'], 'airport')
 
     def test_group_with_groupby_depth_default(self):
         node = {
@@ -894,7 +976,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['group'], 'SEA')
 
-    def test_group_with_groupby_properties_json_label_value(self):
+    def test_group_with_groupby_properties_json_label_value_custom(self):
         res = {
             "results": [
                 {
@@ -905,6 +987,32 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "labels": "custom_label_22",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(group_by_property='{"airport":"labels"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['group'], 'custom_label_22')
+
+    def test_group_with_groupby_properties_json_label_value_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "labels": "custom_label_22",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -918,7 +1026,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['group'], 'airport')
 
-    def test_group_with_groupby_properties_json_ID_value(self):
+    def test_group_with_groupby_properties_json_ID_value_custom(self):
         res = {
             "results": [
                 {
@@ -929,6 +1037,32 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "id": "custom_id_22",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+
+        gn = OCNetwork(group_by_property='{"airport":"id"}')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['group'], 'custom_id_22')
+
+    def test_group_with_groupby_properties_json_ID_value_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "id": "custom_id_22",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -1236,7 +1370,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node1['label'], "S'E'A")
         self.assertEqual(node1['title'], "S'E'A")
 
-    def test_set_vertex_label_property_string_id(self):
+    def test_set_vertex_label_property_string_id_custom(self):
         res = {
             "results": [
                 {
@@ -1247,6 +1381,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "id": "node_22",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -1257,10 +1392,10 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn = OCNetwork(display_property='id')
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
-        self.assertEqual(node1['label'], '22')
-        self.assertEqual(node1['title'], '22')
+        self.assertEqual(node1['label'], 'node_22')
+        self.assertEqual(node1['title'], 'node_22')
 
-    def test_set_vertex_label_property_string_label(self):
+    def test_set_vertex_label_property_string_label_custom(self):
         res = {
             "results": [
                 {
@@ -1271,6 +1406,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "label": "airport_22",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -1281,10 +1417,10 @@ class TestOpenCypherNetwork(unittest.TestCase):
         gn = OCNetwork(display_property='label')
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
-        self.assertEqual(node1['label'], 'airport')
-        self.assertEqual(node1['title'], 'airport')
+        self.assertEqual(node1['label'], 'airport_22')
+        self.assertEqual(node1['title'], 'airport_22')
 
-    def test_set_vertex_label_property_string_type(self):
+    def test_set_vertex_label_property_string_type_custom(self):
         res = {
             "results": [
                 {
@@ -1295,6 +1431,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "type": "test_type",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -1303,6 +1440,81 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
         gn = OCNetwork(display_property='type')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'test_type')
+        self.assertEqual(node1['title'], 'test_type')
+
+    def test_set_vertex_label_property_string_id_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "id": "node_22",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='~id')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], '22')
+        self.assertEqual(node1['title'], '22')
+
+    def test_set_vertex_label_property_string_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "label": "airport_22",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='~labels')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'airport')
+
+    def test_set_vertex_label_property_string_type_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "type": "test_type",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(display_property='~entityType')
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'node')
@@ -1846,7 +2058,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
         self.assertEqual(node2['label'], 'NATO')
         self.assertEqual(node2['title'], 'NATO')
 
-    def test_set_vertex_tooltip_property_string(self):
+    def test_set_vertex_tooltip_property_string_custom(self):
         res = {
             "results": [
                 {
@@ -1857,6 +2069,7 @@ class TestOpenCypherNetwork(unittest.TestCase):
                             "airport"
                         ],
                         "~properties": {
+                            "type": "test_type",
                             "runways": 3,
                             "code": "SEA"
                         }
@@ -1865,6 +2078,31 @@ class TestOpenCypherNetwork(unittest.TestCase):
             ]
         }
         gn = OCNetwork(tooltip_property='type')
+        gn.add_results(res)
+        node1 = gn.graph.nodes.get('22')
+        self.assertEqual(node1['label'], 'airport')
+        self.assertEqual(node1['title'], 'test_type')
+
+    def test_set_vertex_tooltip_property_string_custom_actual(self):
+        res = {
+            "results": [
+                {
+                    "a": {
+                        "~id": "22",
+                        "~entityType": "node",
+                        "~labels": [
+                            "airport"
+                        ],
+                        "~properties": {
+                            "type": "test_type",
+                            "runways": 3,
+                            "code": "SEA"
+                        }
+                    }
+                }
+            ]
+        }
+        gn = OCNetwork(tooltip_property='~entityType')
         gn.add_results(res)
         node1 = gn.graph.nodes.get('22')
         self.assertEqual(node1['label'], 'airport')

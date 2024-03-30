@@ -65,11 +65,11 @@ class OCNetwork(EventfulNetwork):
                     label = props[custom_property[0]][custom_property[1]]
                 else:
                     label = title
-            elif custom_property in [ID_KEY, 'id']:
+            elif custom_property == ID_KEY:
                 label = node[ID_KEY]
-            elif custom_property in [LABEL_KEY, 'label']:
+            elif custom_property == LABEL_KEY:
                 label = node[LABEL_KEY]
-            elif custom_property in [VERTEX_TYPE_KEY, 'type']:
+            elif custom_property == VERTEX_TYPE_KEY:
                 label = node[VERTEX_TYPE_KEY]
             elif custom_property in props:
                 label = props[custom_property]
@@ -140,9 +140,9 @@ class OCNetwork(EventfulNetwork):
                     group = depth_group
                 elif self.group_by_property == DEFAULT_RAW_GRP_KEY:
                     group = str(node)
-                elif self.group_by_property in [LABEL_KEY, 'labels'] and len(node[LABEL_KEY]) > 0:
+                elif self.group_by_property == LABEL_KEY and len(node[LABEL_KEY]) > 0:
                     group = node[LABEL_KEY][0]
-                elif self.group_by_property in [ID_KEY, 'id']:
+                elif self.group_by_property == ID_KEY:
                     group = node[ID_KEY]
                 elif self.group_by_property in node[PROPERTIES_KEY]:
                     group = node[PROPERTIES_KEY][self.group_by_property]
@@ -158,9 +158,9 @@ class OCNetwork(EventfulNetwork):
                         group = depth_group
                     elif self.group_by_property[key] == DEFAULT_RAW_GRP_KEY:
                         group = str(node)
-                    elif self.group_by_property[key] in [LABEL_KEY, 'labels']:
+                    elif self.group_by_property[key] == LABEL_KEY:
                         group = node[LABEL_KEY][0]
-                    elif self.group_by_property[key] in [ID_KEY, 'id']:
+                    elif self.group_by_property[key] == ID_KEY:
                         group = node[ID_KEY]
                     else:
                         group = node[PROPERTIES_KEY][self.group_by_property[key]]
