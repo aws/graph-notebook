@@ -1,0 +1,8 @@
+plugins:
+- name: sbom
+  config:
+    paths: ./example_sboms/
+
+targets:
+  my-neptune:
+      database: neptune
