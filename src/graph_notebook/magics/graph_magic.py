@@ -15,6 +15,8 @@ import os
 import uuid
 import ast
 import re
+
+import pandas
 from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
@@ -95,6 +97,10 @@ cell_style_js = """
             }
             """
 
+JSON_FORMAT = "json"
+PANDAS_FORMATS = ["pd", "pandas", "df", "dataframe"]
+QUERY_STORE_TO_FORMATS = PANDAS_FORMATS + [JSON_FORMAT]
+DT_HTML_CHAR_MAP = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}
 
 logging.basicConfig()
 root_logger = logging.getLogger()
@@ -219,7 +225,7 @@ def oc_results_df(oc_res, oc_res_format: str = None):
     if rows_and_columns:
         results_df = pd.DataFrame(rows_and_columns['rows'])
         results_df = results_df.astype(str)
-        results_df = results_df.applymap(lambda x: replace_html_chars(x))
+        results_df = results_df.applymap(lambda x: encode_html_chars(x))
         col_0_value = range(1, len(results_df) + 1)
         results_df.insert(0, "#", col_0_value)
         for col_index, col_name in enumerate(rows_and_columns['columns']):
@@ -256,14 +262,20 @@ def generate_pagination_vars(visible_results: int):
     return visible_results_fixed, pagination_options, pagination_menu
 
 
-def replace_html_chars(result):
-    html_char_map = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}
+def encode_html_chars(result):
     fixed_result = str(result)
 
-    for k, v in iter(html_char_map.items()):
+    for k, v in iter(DT_HTML_CHAR_MAP.items()):
         fixed_result = fixed_result.replace(k, v)
 
     return fixed_result
+
+
+def decode_html_chars(results_df: pandas.DataFrame = None):
+    for k, v in iter(DT_HTML_CHAR_MAP.items()):
+        results_df = results_df.applymap(lambda x: x.replace(v, k))
+
+    return results_df
 
 
 def get_load_ids(neptune_client):
@@ -647,6 +659,9 @@ class Graph(Magics):
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--store-format', type=str.lower, default='json',
+                            help=f'Configures export type when using --store-to with base query mode. '
+                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -742,7 +757,6 @@ class Graph(Magics):
                 results = query_res.json()
             except Exception:
                 results = query_res.content.decode('utf-8')
-            store_to_ns(args.store_to, results, local_ns)
 
             if not args.silent:
                 # Assign an empty value so we can always display to table output.
@@ -792,11 +806,17 @@ class Graph(Magics):
 
                         rows_and_columns = sparql_get_rows_and_columns(results)
                         if rows_and_columns is not None:
-                            table_id = f"table-{str(uuid.uuid4())[:8]}"
-                            visible_results = results_per_page_check(args.results_per_page)
-                            first_tab_html = sparql_table_template.render(columns=rows_and_columns['columns'],
-                                                                          rows=rows_and_columns['rows'], guid=table_id,
-                                                                          amount=visible_results)
+                            results_df = pd.DataFrame(rows_and_columns['rows'])
+                            results_df = results_df.astype(str)
+                            results_df = results_df.applymap(lambda x: encode_html_chars(x))
+                            results_df.insert(0, "#", range(1, len(results_df) + 1))
+                            for col_index, col_name in enumerate(rows_and_columns['columns']):
+                                try:
+                                    results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                      axis='columns',
+                                                      inplace=True)
+                                except IndexError:
+                                    results_df.insert(col_index + 1, col_name, [])
 
                         # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
                         # pattern of showing a tsv with each line being a result binding in addition to new ones.
@@ -818,6 +838,15 @@ class Graph(Magics):
                     titles.append('JSON')
 
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
+
+            res_store_type = args.store_format
+            if res_store_type in PANDAS_FORMATS:
+                stored_results = results_df.drop("#", axis=1)
+            else:
+                if res_store_type != "json":
+                    print("Invalid --store-format input. Defaulting to JSON.")
+                stored_results = results
+            store_to_ns(args.store_to, stored_results, local_ns)
 
         if not args.silent:
             metadata_output = widgets.Output(layout=sparql_layout)
@@ -933,6 +962,9 @@ class Graph(Magics):
         parser.add_argument('-le', '--edge-label-max-length', type=int, default=10,
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--store-format', type=str.lower, default='json',
+                            help=f'Configures export type when using --store-to with base query mode. '
+                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('--profile-no-results', action='store_false', default=True,
                             help='Display only the result count. If not used, all query results will be displayed in '
@@ -1131,7 +1163,7 @@ class Graph(Magics):
                 if not results_df.index.empty:
                     query_res_reformat = []
                     for result in query_res:
-                        fixed_result = replace_html_chars(result)
+                        fixed_result = encode_html_chars(result)
                         query_res_reformat.append([fixed_result])
                     query_res_reformat.append([{'__DUMMY_KEY__': ['DUMMY_VALUE']}])
                     results_df = pd.DataFrame(query_res_reformat)
@@ -1187,7 +1219,20 @@ class Graph(Magics):
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
 
-        store_to_ns(args.store_to, query_res, local_ns)
+        res_store_type = args.store_format
+        if mode == QueryMode.DEFAULT:
+            if res_store_type in PANDAS_FORMATS:
+                results_df.index = results_df.index - 1
+                results_df.columns.name = None
+                stored_results = decode_html_chars(results_df)
+            else:
+                if res_store_type != "json":
+                    print("Invalid --store-format input. Defaulting to JSON.")
+                stored_results = query_res
+        else:
+            stored_results = query_res
+        store_to_ns(args.store_to, stored_results, local_ns)
+        # store_to_ns(args.store_to, query_res, local_ns)
 
     @line_magic
     @needs_local_scope
@@ -2965,6 +3010,9 @@ class Graph(Magics):
         parser.add_argument('-rel', '--rel-label-max-length', type=int, default=10,
                             help='Specifies max length of edge labels, in characters. Default is 10')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--store-format', type=str.lower, default='json',
+                            help=f'Configures export type when using --store-to with base query mode. '
+                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -3155,7 +3203,15 @@ class Graph(Magics):
                     display(HTML(first_tab_html))
 
         if args.mode != 'explain':
-            store_to_ns(args.store_to, res, local_ns)
+            res_store_type = args.store_format
+            if res_store_type in PANDAS_FORMATS:
+                results_df = results_df.drop("#", axis=1)
+                stored_results = decode_html_chars(results_df)
+            else:
+                if res_store_type != "json":
+                    print("Invalid --store-format input. Defaulting to JSON.")
+                stored_results = res
+            store_to_ns(args.store_to, stored_results, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):
         """
