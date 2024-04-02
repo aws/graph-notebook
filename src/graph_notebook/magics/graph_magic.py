@@ -1231,7 +1231,6 @@ class Graph(Magics):
         else:
             stored_results = query_res
         store_to_ns(args.store_to, stored_results, local_ns)
-        # store_to_ns(args.store_to, query_res, local_ns)
 
     @line_magic
     @needs_local_scope
