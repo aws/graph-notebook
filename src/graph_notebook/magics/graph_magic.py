@@ -16,7 +16,6 @@ import uuid
 import ast
 import re
 
-import pandas
 from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
@@ -271,7 +270,7 @@ def encode_html_chars(result):
     return fixed_result
 
 
-def decode_html_chars(results_df: pandas.DataFrame = None):
+def decode_html_chars(results_df: pd.DataFrame = None):
     for k, v in iter(DT_HTML_CHAR_MAP.items()):
         results_df = results_df.applymap(lambda x: x.replace(v, k))
 
