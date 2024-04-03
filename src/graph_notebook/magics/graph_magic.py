@@ -270,11 +270,48 @@ def encode_html_chars(result):
     return fixed_result
 
 
-def decode_html_chars(results_df: pd.DataFrame = None):
+def decode_html_chars(results_df: pd.DataFrame = None) -> pd.DataFrame:
     for k, v in iter(DT_HTML_CHAR_MAP.items()):
         results_df = results_df.applymap(lambda x: x.replace(v, k))
 
     return results_df
+
+
+def process_df_for_store(language: str = None, results_df: pd.DataFrame = None) -> pd.DataFrame:
+    if language == 'sparql':
+        results_df_final = results_df.drop("#", axis=1)
+    elif language == 'gremlin':
+        results_df.index = results_df.index - 1
+        results_df.columns.name = None
+        results_df_final = decode_html_chars(results_df)
+    else:
+        results_df = results_df.drop("#", axis=1)
+        results_df_final = decode_html_chars(results_df)
+    return results_df_final
+
+
+def get_results_for_store(store_type: str = "json", pandas_results: pd.DataFrame = None, json_results: dict = None):
+    if store_type in PANDAS_FORMATS:
+        return pandas_results
+    else:
+        if store_type != "json":
+            print("Invalid --store-format input. Defaulting to JSON.")
+    return json_results
+
+
+def export_csv_results(export_path: str = "results.csv", results_df: pd.DataFrame = None):
+    if export_path == '':
+        return
+
+    input_root, input_ext = os.path.splitext(export_path)
+    csv_ext = ".csv"
+    final_export_path = input_root + csv_ext
+    try:
+        results_df.to_csv(final_export_path, index=False)
+    except OSError:
+        print("CSV export failed. Please check that the path provided to --export-to is valid.")
+
+    return
 
 
 def get_load_ids(neptune_client):
@@ -661,6 +698,8 @@ class Graph(Magics):
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
                                  f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+        parser.add_argument('--export-to', type=str, default='',
+                            help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -704,7 +743,6 @@ class Graph(Magics):
             explain_bytes = res.content.replace(b'\xcc', b'-')
             explain_bytes = explain_bytes.replace(b'\xb6', b'')
             explain = explain_bytes.decode('utf-8')
-            store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 sparql_metadata = build_sparql_metadata_from_query(query_type='explain', res=res)
                 titles.append('Explain')
@@ -838,15 +876,6 @@ class Graph(Magics):
 
                 sparql_metadata = build_sparql_metadata_from_query(query_type='query', res=query_res, results=results)
 
-            res_store_type = args.store_format
-            if res_store_type in PANDAS_FORMATS:
-                stored_results = results_df.drop("#", axis=1)
-            else:
-                if res_store_type != "json":
-                    print("Invalid --store-format input. Defaulting to JSON.")
-                stored_results = results
-            store_to_ns(args.store_to, stored_results, local_ns)
-
         if not args.silent:
             metadata_output = widgets.Output(layout=sparql_layout)
             children.append(metadata_output)
@@ -891,6 +920,26 @@ class Graph(Magics):
             elif first_tab_html != "":
                 with first_tab_output:
                     display(HTML(first_tab_html))
+
+        if args.query_mode == 'query':
+            json_results = results
+            res_store_type = args.store_format
+            res_export_path = args.export_to
+
+            if res_store_type in PANDAS_FORMATS or res_export_path != '':
+                results_df = process_df_for_store(language='sparql',
+                                                  results_df=results_df)
+
+            stored_results = get_results_for_store(store_type=res_store_type,
+                                                   pandas_results=results_df,
+                                                   json_results=json_results)
+
+            export_csv_results(export_path=res_export_path,
+                               results_df=results_df)
+        else:
+            stored_results = explain
+
+        store_to_ns(args.store_to, stored_results, local_ns)
 
     @line_magic
     @needs_local_scope
@@ -964,6 +1013,8 @@ class Graph(Magics):
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
                                  f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+        parser.add_argument('--export-to', type=str, default='',
+                            help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('--profile-no-results', action='store_false', default=True,
                             help='Display only the result count. If not used, all query results will be displayed in '
@@ -1218,18 +1269,24 @@ class Graph(Magics):
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
 
-        res_store_type = args.store_format
         if mode == QueryMode.DEFAULT:
-            if res_store_type in PANDAS_FORMATS:
-                results_df.index = results_df.index - 1
-                results_df.columns.name = None
-                stored_results = decode_html_chars(results_df)
-            else:
-                if res_store_type != "json":
-                    print("Invalid --store-format input. Defaulting to JSON.")
-                stored_results = query_res
+            json_results = query_res
+            res_store_type = args.store_format
+            res_export_path = args.export_to
+
+            if res_store_type in PANDAS_FORMATS or res_export_path != '':
+                results_df = process_df_for_store(language='gremlin',
+                                                  results_df=results_df)
+
+            stored_results = get_results_for_store(store_type=res_store_type,
+                                                   pandas_results=results_df,
+                                                   json_results=json_results)
+
+            export_csv_results(export_path=res_export_path,
+                               results_df=results_df)
         else:
             stored_results = query_res
+
         store_to_ns(args.store_to, stored_results, local_ns)
 
     @line_magic
@@ -3011,6 +3068,8 @@ class Graph(Magics):
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
                                  f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+        parser.add_argument('--export-to', type=str, default='',
+                            help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
@@ -3069,7 +3128,6 @@ class Graph(Magics):
             res_replace_chars = res.content.replace(b'$', b'\&#36;')
             explain = res_replace_chars.decode("utf-8")
             res.raise_for_status()
-            store_to_ns(args.store_to, explain, local_ns)
             if not args.silent:
                 oc_metadata = build_opencypher_metadata_from_query(query_type='explain', results=None,
                                                                    results_type='explain', res=res,
@@ -3200,16 +3258,25 @@ class Graph(Magics):
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
-        if args.mode != 'explain':
+        if args.mode == QueryMode.EXPLAIN:
+            stored_results = explain
+        else:
+            json_results = res
             res_store_type = args.store_format
-            if res_store_type in PANDAS_FORMATS:
-                results_df = results_df.drop("#", axis=1)
-                stored_results = decode_html_chars(results_df)
-            else:
-                if res_store_type != "json":
-                    print("Invalid --store-format input. Defaulting to JSON.")
-                stored_results = res
-            store_to_ns(args.store_to, stored_results, local_ns)
+            res_export_path = args.export_to
+
+            if res_store_type in PANDAS_FORMATS or res_export_path != '':
+                results_df = process_df_for_store(language='oc',
+                                                  results_df=results_df)
+
+            stored_results = get_results_for_store(store_type=res_store_type,
+                                                   pandas_results=results_df,
+                                                   json_results=json_results)
+
+            export_csv_results(export_path=res_export_path,
+                               results_df=results_df)
+
+        store_to_ns(args.store_to, stored_results, local_ns)
 
     def handle_opencypher_status(self, line, local_ns):
         """
