@@ -921,7 +921,9 @@ class Graph(Magics):
                 with first_tab_output:
                     display(HTML(first_tab_html))
 
-        if args.query_mode == 'query':
+        if args.query_mode == 'explain':
+            stored_results = explain
+        elif results_df is not None:
             json_results = results
             res_store_type = args.store_format
             res_export_path = args.export_to
@@ -937,7 +939,7 @@ class Graph(Magics):
             export_csv_results(export_path=res_export_path,
                                results_df=results_df)
         else:
-            stored_results = explain
+            stored_results = results
 
         store_to_ns(args.store_to, stored_results, local_ns)
 
@@ -1269,7 +1271,7 @@ class Graph(Magics):
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
 
-        if mode == QueryMode.DEFAULT:
+        if mode == QueryMode.DEFAULT and results_df is not None:
             json_results = query_res
             res_store_type = args.store_format
             res_export_path = args.export_to
@@ -3260,7 +3262,7 @@ class Graph(Magics):
 
         if args.mode == QueryMode.EXPLAIN:
             stored_results = explain
-        else:
+        elif results_df is not None:
             json_results = res
             res_store_type = args.store_format
             res_export_path = args.export_to
@@ -3275,6 +3277,8 @@ class Graph(Magics):
 
             export_csv_results(export_path=res_export_path,
                                results_df=results_df)
+        else:
+            stored_results = res
 
         store_to_ns(args.store_to, stored_results, local_ns)
 
