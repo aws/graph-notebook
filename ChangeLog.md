@@ -3,6 +3,9 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+- New Neptune Analytics notebooks - SBOM ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
+  - Path: 02-Neptune-Analytics > 03-Sample-Use-Cases > 03-Software-Bill-Of-Materials
 - Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
 - Updated NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/571))
 - Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
@@ -13,6 +16,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Changed `%load` parameter and default value for failOnError ([Link to PR](https://github.com/aws/graph-notebook/pull/577))
 
 ## Release 4.1.0 (February 1, 2024)
+
 - New Neptune Analytics notebook - Vector Similarity Algorithms ([Link to PR](https://github.com/aws/graph-notebook/pull/555))
   - Path: 02-Neptune-Analytics > 02-Graph-Algorithms > 06-Vector-Similarity-Algorithms
 - Updated various Neptune magics for new Analytics API ([Link to PR](https://github.com/aws/graph-notebook/pull/560))
@@ -21,17 +25,21 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Deprecated Python 3.7 support ([Link to PR](https://github.com/aws/graph-notebook/pull/551))
 
 ## Release 4.0.2 (Dec 14, 2023)
+
 - Fixed `neptune_ml_utils` imports in `03-Neptune-ML` samples ([Link to PR](https://github.com/aws/graph-notebook/pull/546))
 - Enable Gremlin `message_serializer` config field for Neptune endpoints ([Link to PR](https://github.com/aws/graph-notebook/pull/547))
 
 ## Release 4.0.1 (Nov 29, 2023)
+
 - Fixed @neptune_db_only magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/543))
 
 ## Release 4.0.0 (Nov 29, 2023)
+
 - Added support for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/541))
 - Added Air-Routes and EPL sample seed datasets for openCypher ([Link to PR](https://github.com/aws/graph-notebook/pull/540))
 
 ## Release 3.9.0 (Oct 9, 2023)
+
 - New Gremlin Language Tutorial notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/533))
   - Path: 06-Language-Tutorials > 03-Gremlin
 - Added `--explain-type` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/503))
@@ -48,6 +56,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Unpinned `boto3` and `botocore` to support NeptuneData SDK ([Link to PR](https://github.com/aws/graph-notebook/pull/528))
 
 ## Release 3.8.2 (June 5, 2023)
+
 - New Sample Applications - Healthcare and Life Sciences notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/484))
   - Path: 03-Sample-Applications > 05-Healthcare-and-Life-Sciences-Graphs
 - Added local file path and openCypher query support to `%seed` ([Link to PR](https://github.com/aws/graph-notebook/pull/292))
@@ -63,9 +72,11 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Suppress InsecureRequestWarning if SSL verification is disabled ([Link to PR](https://github.com/aws/graph-notebook/pull/499))
 
 ## Release 3.8.1 (April 17, 2023)
+
 - Reinstate Python 3.7 support for compatibility with legacy AL1 Neptune Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/479))
 
 ## Release 3.8.0 (April 16, 2023)
+
 - Added support for Python 3.10 ([Link to PR](https://github.com/aws/graph-notebook/pull/476))
 - Deprecated Python 3.7 support ([PR #1](https://github.com/aws/graph-notebook/pull/453)) ([PR #2](https://github.com/aws/graph-notebook/pull/473))
 - Patched nbextensions loader timeouts for large notebooks ([PR #1](https://github.com/aws/graph-notebook/pull/455))
@@ -75,11 +86,13 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed Gremlin graph tab not rendering with UUID type IDs ([Link to PR](https://github.com/aws/graph-notebook/pull/475))
 
 ## Release 3.7.3 (March 14, 2023)
+
 - Fixed detailed mode output for graph summary requests ([Link to PR](https://github.com/aws/graph-notebook/pull/461))
 - Added more helpful error messaging for `%statistics`/`%summary` ([Link to PR](https://github.com/aws/graph-notebook/pull/460))
 - Added Neptune Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/442))
 
 ## Release 3.7.2 (March 9, 2023)
+
 - New Neptune ML notebook - Real Time Fraud Detection using Inductive Inference ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
   - Path: 04-Machine-Learning > Sample-Applications > 03-Real-Time-Fraud-Detection-Using-Inductive-Inference.ipynb
 - New openCypher Language Tutorial notebooks
@@ -91,6 +104,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed nbextensions loader timeout on large notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/455))
 
 ## Release 3.7.1 (January 25, 2023)
+
 - Added ECR auto-publish workflow ([Link to PR](https://github.com/aws/graph-notebook/pull/405))
 - Added support for list/tuple element access in cell variable injection ([Link to PR](https://github.com/aws/graph-notebook/pull/409))
 - Fixed failing endpoint creation step in [01-People-Analytics/People-Analytics-using-Neptune-ML](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/04-Machine-Learning/Sample-Applications/01-People-Analytics/People-Analytics-using-Neptune-ML.ipynb) ([Link to PR](https://github.com/aws/graph-notebook/pull/411))
@@ -104,6 +118,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Enabled unit test workflow runs for external pull requests ([Link to PR](https://github.com/aws/graph-notebook/pull/437))
 
 ## Release 3.7.0 (December 7, 2022)
+
 - Added Neo4J section to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/331))
 - Added custom Gremlin authentication and serializer support ([Link to PR](https://github.com/aws/graph-notebook/pull/356))
 - Added `%statistics` magic for Neptune DFE engine ([Link to PR](https://github.com/aws/graph-notebook/pull/377))
@@ -121,6 +136,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Pinned `nbclient<=0.7.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/402))
 
 ## Release 3.6.2 (October 18, 2022)
+
 - New Sample Applications - Security Graphs notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/373))
   - Path: 03-Sample-Applications > 04-Security-Graphs
 - Update sample notebooks with parallel, same-direction edges example ([Link to PR](https://github.com/aws/graph-notebook/pull/366))
@@ -133,6 +149,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added result media type selection for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/313))
 
 ## Release 3.6.0 (September 15, 2022)
+
 - New Language Tutorials - SPARQL Basics notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/316))
   - Path: 06-Language-Tutorials > 01-SPARQL > 01-SPARQL-Basics
 - New Neptune ML - Text Encoding Tutorial notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/338))
@@ -148,7 +165,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added new SageMaker installation script for China regions ([Link to PR](https://github.com/aws/graph-notebook/pull/361))
 
 ## Release 3.5.3 (July 25, 2022)
-- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures  like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
+
+- Docker support. Docker image can be built using the command `docker build .` and through Docker's `buildx`, this can support non-x86 CPU Architectures like ARM. ([Link to PR](https://github.com/aws/graph-notebook/pull/323))
   - Fix `service.sh` conditional checks, SSL parameter can now be changed. Fix permissions error on `service.sh` experienced by some users. ([Link to PR](https://github.com/aws/graph-notebook/pull/335))
 - Added `%%neptune_config_allowlist` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/327))
 - Added check to remove whitespace in `%graph_notebook_config` host fields ([Link to PR](https://github.com/aws/graph-notebook/pull/329))
@@ -161,19 +179,21 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Bumped jquery-ui from 1.13.1 to 1.13.2 (([Link to PR](https://github.com/aws/graph-notebook/pull/328))
 
 ## Release 3.5.1 (July 12, 2022)
+
 - Improved the `%stream_viewer` magic to show the commit timestamp and `isLastOp` information,
   if available. Also added additional hover (help) text to the stream viewer. ([Link to PR](https://github.com/aws/graph-notebook/pull/311))
 - Added `--max-content-length` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/305))
 - Added `proxy_host` and `proxy_port` options to the `%%graph_notebook_config` options. ([Link to PR](https://github.com/aws/graph-notebook/pull/310))
-  - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/). 
+  - This allows for proxied connections to your Neptune instance from outside your VPC. Supporting the patterns seen [here](https://aws-samples.github.io/aws-dbs-refarch-graph/src/connecting-using-a-load-balancer/).
 - Fixed results table formatting in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/297))
 - Fixed several typos in the Neptune ML 00 notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/319))
 - Renamed the Knowledge Graph application notebooks for clarity ([Link to PR](https://github.com/aws/graph-notebook/pull/320))
 
 ## Release 3.4.1 (June 7, 2022)
+
 - Identity Graph - ETL notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/288))
-    - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
-    - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
+  - Path: 03-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL
+  - Files: scripts/, glue_utils.py and 3-Identity-Graphs>03-Jumpstart-Identity-Graphs-Using-Canonical-Model-and-ETL notebook
 - Support variable injection in `%%graph_notebook_config` magic ([Link to PR](https://github.com/aws/graph-notebook/pull/287))
 - Added three notebooks to show data science workflows with Amazon Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/302))
 - Added JupyterLab startup script to auto-load magics extensions ([Link to PR](https://github.com/aws/graph-notebook/pull/277))
@@ -187,6 +207,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Removed `requests-aws4auth` requirement ([Link to PR](https://github.com/aws/graph-notebook/pull/291))
 
 ## Release 3.3.0 (March 28, 2022)
+
 - Support rendering of widgets in JupyterLab ([Link to PR](https://github.com/aws/graph-notebook/pull/271))
 - Fixed ASCII encoding error in Profile/Explain generation ([Link to PR](https://github.com/aws/graph-notebook/pull/275))
 - Fixed inaccessible data URL in NeptuneML utils ([Link to PR](https://github.com/aws/graph-notebook/pull/279))
@@ -195,6 +216,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added documentation for JupyterLab installation ([Link to PR](https://github.com/aws/graph-notebook/pull/284))
 
 ## Release 3.2.0 (February 25, 2022)
+
 - Added new notebooks: guides for using SPARQL and RDF with Neptune ML ([Link to PR](https://github.com/aws/graph-notebook/pull/252))
 - Added the ability to run explain plans to openCypher queries via `%%oc explain`. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
 - Added the ability to download the explain/profile plans for openCypher/Gremlin/SPARQL. ([Link to PR](https://github.com/aws/graph-notebook/pull/265))
@@ -213,6 +235,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed handling of Decimal type properties when rendering Gremlin query results ([Link to PR](https://github.com/aws/graph-notebook/pull/256))
 
 ## Release 3.1.1 (December 21, 2021)
+
 - Added new dataset for DiningByFriends, and associated notebook ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
 - Added new Neptune ML Sample Application for People Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/235))
 - Added graph customization support for SPARQL queries ([Link to PR](https://github.com/aws/graph-notebook/pull/236))
@@ -225,12 +248,14 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed Jupyter start script for cases where the nbconfig directory is missing ([Link to PR](https://github.com/aws/graph-notebook/pull/239))
 
 ## Release 3.0.8 (November 3, 2021)
+
 - Added support for specifying the Gremlin traversal source ([Link to PR](https://github.com/aws/graph-notebook/pull/221))
 - Added edge tooltips, and options for specifying edge label length ([Link to PR](https://github.com/aws/graph-notebook/pull/218))
 - Fixed configuration options missing when using a CN region Neptune host ([Link to PR](https://github.com/aws/graph-notebook/pull/223))
 - Correct naming of ID parameter for NeptuneML Endpoint command ([Link to PR](https://github.com/aws/graph-notebook/pull/217))
 
 ## Release 3.0.7 (October 25, 2021)
+
 - Added full support for NeptuneML API command parameters to `%neptune_ml` ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
 - Allow `%%neptune_ml` to accept JSON blob as parameter input for most phases ([Link to PR](https://github.com/aws/graph-notebook/pull/202))
 - Added `--silent` option for suppressing query output ([PR #1](https://github.com/aws/graph-notebook/pull/201)) ([PR #2](https://github.com/aws/graph-notebook/pull/203))
@@ -240,6 +265,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Removed default `/sparql` path suffix from non-Neptune SPARQL requests ([Link to PR](https://github.com/aws/graph-notebook/pull/210))
 
 ## Release 3.0.6 (September 20, 2021)
+
 - Added a new `%stream_viewer` magic that allows interactive exploration of the Neptune CDC stream (if enabled). ([Link to PR](https://github.com/aws/graph-notebook/pull/191))
 - Added support for multi-property values in vertex and edge labels ([Link to PR](https://github.com/aws/graph-notebook/pull/186))
 - Added new visualization physics options, toggle button ([Link to PR](https://github.com/aws/graph-notebook/pull/190))
@@ -278,8 +304,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 With the release of support for the openCypher query language in Amazon Neptune's lab mode, graph-notebook can now be used to execute and visualize openCypher queries with any compatible graph database.
 
-Two new magic commands have been added: 
-- `%%oc`/`%%opencypher` 
+Two new magic commands have been added:
+
+- `%%oc`/`%%opencypher`
 - `%%oc_status`/`%%opencypher_status`
 
 These openCypher magic commands inherit the majority of the query and visualization customization features that are already available in the Gremlin and SPARQL magics.
@@ -289,6 +316,7 @@ For more detailed information and examples of how you can execute and visualize 
 ([Link to PR](https://github.com/aws/graph-notebook/pull/153))
 
 **Other major updates**:
+
 - Added visualization support for elementMap Gremlin step ([Link to PR](https://github.com/aws/graph-notebook/pull/140))
 - Added support for additional customization of edge node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/132))
 - Refactored %load form display code for flexibility; fixes some descriptions being cut off
@@ -298,20 +326,24 @@ For more detailed information and examples of how you can execute and visualize 
 - Added new notebook to explain Identity Graph data modeling ([Link to PR](https://github.com/aws/graph-notebook/pull/154))
 
 **Minor updates**:
+
 - Included index operations metrics in metadata results tab for Gremlin Profile queries([Link to PR](https://github.com/aws/graph-notebook/pull/150))
 - Updated SPARQL EPL seed dataset file ([Link to PR](https://github.com/aws/graph-notebook/pull/134))
 - Updated documentation on using `%%graph_notebook_config` with an IAM enabled Neptune cluster ([Link to PR](https://github.com/aws/graph-notebook/pull/136))
-  
+
 **Bugfixes**:
+
 - Fixed improper handling of Blazegraph status response ([Link to PR](https://github.com/aws/graph-notebook/pull/137))
 - Fixed Gremlin node tooltips being displayed incorrectly ([Link to PR](https://github.com/aws/graph-notebook/pull/139))
 - Fixed bug in using Gremlin explain/profile with large result sets ([Link to PR](https://github.com/aws/graph-notebook/pull/141))
 - Pinned RDFLib version ([Link to PR](https://github.com/aws/graph-notebook/pull/151))
 
 ## Release 2.1.4 (June 27, 2021)
+
 - Added support for additional customization of graph node labels in Gremlin ([Link to PR](https://github.com/aws/graph-notebook/pull/127))
 
 ## Release 2.1.3 (June 18, 2021)
+
 - Added support for dictionary value access in variable injection([Link to PR](https://github.com/aws/graph-notebook/pull/126))
 
 ## Release 2.1.2 (May 10, 2021)
@@ -336,9 +368,9 @@ For more detailed information and examples of how you can execute and visualize 
 
 ## Release 2.0.12 (Mar 25, 2021)
 
- - Added default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
- - Added ipython as a dependency in `setup.py` ([Link to PR](https://github.com/aws/graph-notebook/pull/95))
- - Added parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage` ([Link to PR](https://github.com/aws/graph-notebook/pull/88))
+- Added default parameters for `get_load_status` ([Link to PR](https://github.com/aws/graph-notebook/pull/96))
+- Added ipython as a dependency in `setup.py` ([Link to PR](https://github.com/aws/graph-notebook/pull/95))
+- Added parameters in `load_status` for `details`, `errors`, `page`, and `errorsPerPage` ([Link to PR](https://github.com/aws/graph-notebook/pull/88))
 
 ## Release 2.0.10 (Mar 18, 2021)
 
@@ -350,7 +382,9 @@ For more detailed information and examples of how you can execute and visualize 
 - Changed SPARQL path parameter in %%graph-notebook-config command to no longer append /sparql to the end, which should give support to more SPARQL 1.1 endpoints [Link to PR](https://github.com/aws/graph-notebook/pull/75)
 
 #### New Notebooks and Datasets
-Added new sample application notebooks and `%seed` datasets under [03-Sample-Applications](src/graph_notebook/notebooks/03-Sample-Applications) for the following use cases: 
+
+Added new sample application notebooks and `%seed` datasets under [03-Sample-Applications](src/graph_notebook/notebooks/03-Sample-Applications) for the following use cases:
+
 - Fraud Graph
 - Knowledge Graph
 - Identity Graph
@@ -359,20 +393,23 @@ Added new sample application notebooks and `%seed` datasets under [03-Sample-App
 
 ## Release 2.0.7 (Feb 1, 2021)
 
-- Added  "What’s Next" sections to 01-Getting-Started notebooks to suggest users to relevant notebook tutorials [Link to PR](https://github.com/aws/graph-notebook/pull/60)
+- Added "What’s Next" sections to 01-Getting-Started notebooks to suggest users to relevant notebook tutorials [Link to PR](https://github.com/aws/graph-notebook/pull/60)
 
 ## Release 2.0.6 (Jan 28, 2021)
 
-- Added missing __init__ to notebook directories to they get installed correctly
+- Added missing **init** to notebook directories to they get installed correctly
 - Updated list of available magics in notebook documentation [Link to PR](https://github.com/aws/graph-notebook/pull/56)
 
 ## Release 2.0.5 (Jan 8, 2021)
 
 #### Gremlin Visualization
+
 - Enhanced Gremlin Visualization output to group vertices and color-code them based on groups. When not specified it will group by the label (if it exists). You can also specify the property to groupby using the switch --groupby or -g followed by the property name [Link to PR](https://github.com/aws/graph-notebook/pull/15)
 - Added the functionality to sort the values in the details box by key
 - Updated Air-Routes-Visualization notebook to discuss the group by functionality
+
 #### Neptune ML
+
 - Added new tutorial notebooks for Neptune ML functionality [Link to PR](https://github.com/aws/graph-notebook/pull/53)
 
 ## Release 2.0.3 (Dec 29, 2020)
@@ -399,7 +436,7 @@ This release features integration with the Neptune ML feature set in AWS Neptune
 - `%%neptune_ml dataprocessing start`
 - `%%neptune_ml training start`
 - `%%neptune_ml endpoint create`
-NOTE: If a cell magic is used, its line inputs for specifying parts of the command will be ignore such as `--job-id` as a line-param.
+  NOTE: If a cell magic is used, its line inputs for specifying parts of the command will be ignore such as `--job-id` as a line-param.
 
 Inject variable as cell input:
 Currently this will only work for our new cell magic commands details above. You can now specify a variable to use as the cell input received by our `neptune_ml` magics using the syntax ${var_name}. For example...
@@ -417,6 +454,7 @@ ${foo}
 NOTE: The above will only work if it is the sole content of the cell body. You cannot inline multiple variables at this time.
 
 #### SPARQL Enhancements
+
 - Support to allow namespace specification for Blazegraph endpoints by specify the prefix to the sparql endpoint being queried.
 - Add new config section for sparql-specific items [Link to PR](https://github.com/aws/graph-notebook/pull/49)
 - Specify explain prefix_path param explicitly in `%%sparql explain` magic variant [Link to PR](https://github.com/aws/graph-notebook/pull/52)
@@ -449,6 +487,6 @@ First release of graph-notebook on GitHub and to [PyPI](https://pypi.org/project
 
 [Link to PR](https://github.com/aws/graph-notebook/pull/3)
 
-The graph notebook is a Python library for Jupyter Notebooks that can run on local desktops and be used with databases that support either the RDF/SPARQL open standard or the open-source Apache TinkerPop graphs. 
+The graph notebook is a Python library for Jupyter Notebooks that can run on local desktops and be used with databases that support either the RDF/SPARQL open standard or the open-source Apache TinkerPop graphs.
 
 See [here](https://github.com/aws/graph-notebook#features) for a list of major features.
