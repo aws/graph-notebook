@@ -4,15 +4,17 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.2.0 (April 4, 2024)
+
 - New Neptune Analytics notebooks - SBOM ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
   - Path: 02-Neptune-Analytics > 03-Sample-Use-Cases > 03-Software-Bill-Of-Materials
-- Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
-- Updated NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/571))
-- Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
-- Added `%graph_pg_info` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/570))
-- Added documentation for FontAwesome 5 settings ([Link to PR](https://github.com/aws/graph-notebook/pull/575))
 - Added `--store-format` option to query magics ([Link to PR](https://github.com/aws/graph-notebook/pull/580))
 - Added `--export-to` CSV file option to query magics ([Link to PR](https://github.com/aws/graph-notebook/pull/582))
+- Added `%graph_pg_info` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/570))
+- Added `@neptune_graph_only` magics decorator ([Link to PR](https://github.com/aws/graph-notebook/pull/569))
+- Added documentation for FontAwesome 5 settings ([Link to PR](https://github.com/aws/graph-notebook/pull/575))
+- Updated `create-graph` CLI commands in Neptune Analytics samples ([Link to PR](https://github.com/aws/graph-notebook/pull/565))
+- Updated NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/571))
 - Fixed unintended formatting in `%%oc explain` widget ([Link to PR](https://github.com/aws/graph-notebook/pull/576))
 - Fixed serialization of NoneType for `%%oc` query parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/584))
 - Changed `%load` parameter and default value for failOnError ([Link to PR](https://github.com/aws/graph-notebook/pull/577))
