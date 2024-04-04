@@ -3097,10 +3097,11 @@ class Graph(Magics):
             else:
                 query_params_input = args.query_parameters
             if isinstance(query_params_input, dict):
-                query_params = query_params_input
+                query_params = json.dumps(query_params_input)
             else:
                 try:
-                    query_params = json.loads(query_params_input.replace("'", '"'))
+                    query_params_dict = json.loads(query_params_input.replace("'", '"'))
+                    query_params = json.dumps(query_params_dict)
                 except Exception as e:
                     print(f"Invalid query parameter input, ignoring.")
 
