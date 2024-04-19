@@ -77,7 +77,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/03-Sample-Applications/04-Telco-Networks/2a-GraphQueryGremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/03-Sample-Applications/04-Telco-Networks/2b-GraphQueryLLM.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/03-Sample-Applications/04-Telco-Networks/3a-TransductiveMode-CellPrediction.ipynb',
-            f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/03-Sample-Applications/04-Telco-Networks/3b-InductiveModeCell Prediction.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/03-Sample-Applications/04-Telco-Networks/3b-InductiveModeCell-Prediction.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Language-Tutorials/01-Gremlin/01-Basic-Read-Queries.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Language-Tutorials/01-Gremlin/02-Loops-Repeats.ipynb',
             f'{NOTEBOOK_BASE_DIR}/04-Language-Tutorials/01-Gremlin/03-Ordering-Functions-Grouping.ipynb',
