@@ -4,10 +4,11 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-## Release 4.2.0 (April 4, 2024)
-
 - New notebooks showing Telco examples leveraging GNN and LLM ([Link to PR](https://github.com/aws/graph-notebook/pull/587))
   - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
+
+## Release 4.2.0 (April 4, 2024)
+
 - New Neptune Analytics notebooks - SBOM ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
   - Path: 02-Neptune-Analytics > 03-Sample-Use-Cases > 03-Software-Bill-Of-Materials
 - Added `--store-format` option to query magics ([Link to PR](https://github.com/aws/graph-notebook/pull/580))
