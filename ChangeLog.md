@@ -4,6 +4,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- New notebooks showing Telco examples leveraging GNN and LLM ([Link to PR](https://github.com/aws/graph-notebook/pull/587))
+  - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
+
 ## Release 4.2.0 (April 4, 2024)
 
 - New Neptune Analytics notebooks - SBOM ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
