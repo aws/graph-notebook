@@ -72,7 +72,7 @@ setup(
         'ipywidgets==7.7.2',
         'jupyterlab_widgets>=1.0.0,<3.0.0',
         'networkx==2.4',
-        'Jinja2>=3.0.3,<=3.1.3',
+        'Jinja2>=3.0.3,<=3.1.4',
         'notebook>=6.1.5,<7.0.0',
         'nbclient<=0.7.3',
         'jupyter-contrib-nbextensions<=0.7.0',
