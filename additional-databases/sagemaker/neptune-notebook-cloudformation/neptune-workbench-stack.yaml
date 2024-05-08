@@ -79,7 +79,7 @@ Parameters:
     Type: List<AWS::EC2::SecurityGroup::Id>
 
   NeptuneClusterSubnetId:
-    Description: The ID of the subnet in a VPC to which you would like to have a connectivity from your ML compute instance.
+    Description: The ID of the subnet in a VPC to which you would like to have connectivity from your ML compute instance.
     Type: AWS::EC2::Subnet::Id
 
   SageMakerNotebookRoleArn:
@@ -90,6 +90,11 @@ Parameters:
   SageMakerNotebookName:
     Description: The name of the Neptune notebook.
     Type: String
+
+  EncryptionKey:
+    Description: 'OPTIONAL: The ARN of a KMS key to encrypt your notebook data with.'
+    Type: String
+    Default: ''
 
 Conditions:
   UseSageMakerNotebookAutoRole:
@@ -127,6 +132,8 @@ Resources:
           Value: !Select [ 0, !Split [ ".", !Ref NeptuneClusterEndpoint ] ]
         - Key: aws-neptune-resource-id
           Value: !Ref NeptuneClusterResourceId
+      KmsKeyId:
+        Ref: EncryptionKey
 
   NeptuneNotebookInstanceLifecycleConfig:
     Type: AWS::SageMaker::NotebookInstanceLifecycleConfig
