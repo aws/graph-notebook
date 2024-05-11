@@ -1202,8 +1202,9 @@ class Graph(Magics):
                 if query_res:
                     # If the results set contains multiple datatypes, and the first result is a map, we need to insert a
                     # temp non-map first element, or we will get an error when creating the Dataframe.
-                    if isinstance(query_res[0], dict) and len(query_res) > 1:
-                        if not all(isinstance(x, dict) for x in query_res[1:]):
+                    first_res_type = type(query_res[0])
+                    if first_res_type in [dict, list, set] and len(query_res) > 1:
+                        if not all(isinstance(x, first_res_type) for x in query_res[1:]):
                             mixed_results = True
                             query_res_deque = deque(query_res)
                             query_res_deque.appendleft('x')
