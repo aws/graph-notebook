@@ -669,7 +669,7 @@ class Graph(Magics):
         parser.add_argument('--expand-all', action='store_true')
         parser.add_argument('--explain-type', type=str.lower, default='dynamic',
                             help=f'Explain mode to use when using the explain query mode. '
-                                 f'Expected values: ${SPARQL_EXPLAIN_MODES}')
+                                 f'Expected values: {SPARQL_EXPLAIN_MODES}')
         parser.add_argument('--explain-format', default='text/html', help='response format for explain query mode',
                             choices=['text/csv', 'text/html'])
         parser.add_argument('-m', '--media-type', type=str, default='',
@@ -697,7 +697,7 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
-                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+                                 f'Valid inputs: {QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--export-to', type=str, default='',
                             help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -1014,7 +1014,7 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
-                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+                                 f'Valid inputs: {QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--export-to', type=str, default='',
                             help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -3036,12 +3036,12 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
-                            help=f'Plan cache mode to use. Accepted values: ${OPENCYPHER_PLAN_CACHE_MODES}')
+                            help=f'Plan cache mode to use. Accepted values: {OPENCYPHER_PLAN_CACHE_MODES}')
         parser.add_argument('-qt', '--query-timeout', type=int, default=None,
                             help=f'Maximum query timeout in milliseconds.')
         parser.add_argument('--explain-type', type=str.lower, default='dynamic',
                             help=f'Explain mode to use when using the explain query mode. '
-                                 f'Accepted values: ${OPENCYPHER_EXPLAIN_MODES}')
+                                 f'Accepted values: {OPENCYPHER_EXPLAIN_MODES}')
         parser.add_argument('-qp', '--query-parameters', type=str, default='',
                             help='Parameter definitions to apply to the query. This option can accept a local variable '
                                  'name, or a string representation of the map.')
@@ -3070,7 +3070,7 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--store-format', type=str.lower, default='json',
                             help=f'Configures export type when using --store-to with base query mode. '
-                                 f'Valid inputs: ${QUERY_STORE_TO_FORMATS}. Default is JSON')
+                                 f'Valid inputs: {QUERY_STORE_TO_FORMATS}. Default is JSON')
         parser.add_argument('--export-to', type=str, default='',
                             help='Export the base query mode CSV result to the provided file path.')
         parser.add_argument('--ignore-groups', action='store_true', default=False, help="Ignore all grouping options")
@@ -3301,7 +3301,7 @@ class Graph(Magics):
                                  'queries. This parameter does not take a value.')
         parser.add_argument('--state', type=str.upper, default='ALL',
                             help=f'Neptune Analytics only. Specifies what subset of query states to retrieve the '
-                                 f'status of. Default is ALL. Accepted values: ${OPENCYPHER_STATUS_STATE_MODES}')
+                                 f'status of. Default is ALL. Accepted values: {OPENCYPHER_STATUS_STATE_MODES}')
         parser.add_argument('-m', '--maxResults', type=int, default=200,
                             help=f'Neptune Analytics only. Sets an upper limit on the set of returned queries whose '
                                  f'status matches --state. Default is 200.')
