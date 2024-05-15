@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added KMS encryption support to NeptuneDB Notebook CloudFormation template ([Link to PR]https://github.com/aws/graph-notebook/pull/590)
 - Improved handling of mixed type Gremlin results ([Link to PR]https://github.com/aws/graph-notebook/pull/592)
 - Fixed formatting of query magic `--help` entries listing valid inputs ([Link to PR]https://github.com/aws/graph-notebook/pull/593)
+- Fixed endpoint creation bug in People-Analytics-using-Neptune-ML sample ([Link to PR](https://github.com/aws/graph-notebook/pull/595))
 
 ## Release 4.2.0 (April 4, 2024)
 
