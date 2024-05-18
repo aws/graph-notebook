@@ -455,7 +455,7 @@ class MovieLensProcessor:
 
         averages_graph = ConjunctiveGraph()
 
-        for index, row in ratings_vertices.groupby('~to').mean().iterrows():
+        for index, row in ratings_vertices.groupby('~to').mean(numeric_only=True).iterrows():
             score = int(round(row['score:Int']))
             averages_graph.add((
                 self.ns_resource[index], self.ns_ontology.criticScore, Literal(score, datatype=XSD.integer),
