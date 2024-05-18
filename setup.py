@@ -67,7 +67,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'gremlinpython>=3.5.1,<=3.6.2',
-        'SPARQLWrapper==1.8.4',
+        'SPARQLWrapper==2.0.0',
         'requests>=2.27.0,<=2.31.0',
         'ipywidgets==7.7.2',
         'jupyterlab_widgets>=1.0.0,<3.0.0',
@@ -82,7 +82,7 @@ setup(
         'boto3>=1.18.49',
         'ipython>=7.16.1,<=8.10.0',
         'neo4j>=4.4.9,<5.0.0',
-        'rdflib==5.0.0',
+        'rdflib==7.0.0',
         'ipykernel==5.3.4',
         'ipyfilechooser==0.6.0',
         'nbconvert>=6.3.0,<=7.2.8',

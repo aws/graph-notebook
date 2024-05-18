@@ -9,8 +9,8 @@ from rdflib.namespace import RDF, RDFS, OWL, XSD, SKOS, DOAP, FOAF, DC, DCTERMS,
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEFAULT_RAW_GRP_KEY
 
-NAMESPACE_RDFS = str(RDFS.uri)
-NAMESPACE_RDF = str(RDF.uri)
+NAMESPACE_RDFS = str(RDFS)
+NAMESPACE_RDF = str(RDF)
 NAMESPACE_OWL = str(OWL)
 NAMESPACE_XSD = str(XSD)
 NAMESPACE_SKOS = str(SKOS)
