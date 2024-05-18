@@ -8,9 +8,10 @@ Starting with v1.31.6, this file will contain a record of major features and upd
   - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
 - Added KMS encryption support to NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/590))
 - Improved handling of mixed type Gremlin results ([Link to PR](https://github.com/aws/graph-notebook/pull/592))
+- Updated to `rdflib==7.0.0` and `SPARQLWrapper==2.0.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
 - Fixed formatting of query magic `--help` entries listing valid inputs ([Link to PR](https://github.com/aws/graph-notebook/pull/593))
 - Fixed endpoint creation bug in People-Analytics-using-Neptune-ML sample ([Link to PR](https://github.com/aws/graph-notebook/pull/595))
-- Updated SPARQL dependencies to `rdflib==7.0.0` and `SPARQLWrapper==2.0.0` ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
+- Fixed deprecated usage of Pandas `DataFrameGroupBy.mean` in NeptuneML SPARQL utils ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
 
 ## Release 4.2.0 (April 4, 2024)
 
