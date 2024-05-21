@@ -124,10 +124,9 @@ SEED_WIDGET_STYLE = {'description_width': '95px'}
 
 serializers_map = {
     "MIME_JSON": "application/json",
-    "GRAPHSON_V2D0": "application/vnd.gremlin-v2.0+json",
-    "GRAPHSON_V3D0": "application/vnd.gremlin-v3.0+json",
-    "GRYO_V3D0": "application/vnd.gremlin-v3.0+gryo",
-    "GRAPHBINARY_V1D0": "application/vnd.graphbinary-v1.0"
+    "GRAPHSON_V2": "application/vnd.gremlin-v2.0+json",
+    "GRAPHSON_V3": "application/vnd.gremlin-v3.0+json",
+    "GRAPHBINARY_V1": "application/vnd.graphbinary-v1.0"
 }
 
 DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph"

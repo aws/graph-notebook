@@ -66,7 +66,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
-        'gremlinpython>=3.5.1,<=3.6.2',
+        'gremlinpython>=3.5.1,<=3.7.2',
         'SPARQLWrapper==2.0.0',
         'requests>=2.27.0,<=2.31.0',
         'ipywidgets==7.7.2',
