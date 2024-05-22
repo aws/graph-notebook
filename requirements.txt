@@ -9,7 +9,7 @@ nbclient<=0.7.0
 jupyter-contrib-nbextensions<=0.7.0
 widgetsnbextension<=3.6.1
 gremlinpython>=3.5.1,<=3.6.2
-requests>=2.27.0,<=2.31.0
+requests>=2.32.0,<=2.32.2
 ipython>=7.16.1,<=8.10.0
 ipykernel==5.3.4
 ipyfilechooser==0.6.0
