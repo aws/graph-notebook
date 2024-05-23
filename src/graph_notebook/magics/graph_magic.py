@@ -46,7 +46,7 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES,  VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
+    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
@@ -163,7 +163,7 @@ NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_NQU
                                           MEDIA_TYPE_NTRIPLES_TEXT, MEDIA_TYPE_TURTLE, MEDIA_TYPE_N3, MEDIA_TYPE_TRIX,
                                           MEDIA_TYPE_TRIG, MEDIA_TYPE_RDF4J_BINARY]
 
-byte_units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4}
+byte_units = {'B': 1, 'KB': 1024, 'MB': 1024 ** 2, 'GB': 1024 ** 3, 'TB': 1024 ** 4}
 
 
 class QueryMode(Enum):
@@ -504,11 +504,11 @@ class Graph(Magics):
 
     @line_magic
     @neptune_db_only
-    def stream_viewer(self,line):
+    def stream_viewer(self, line):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', default=STREAM_PG,
                             help=f'language  (default={STREAM_PG}) [{STREAM_PG}|{STREAM_RDF}]',
-                            choices = [STREAM_PG, STREAM_RDF])
+                            choices=[STREAM_PG, STREAM_RDF])
 
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
@@ -517,7 +517,7 @@ class Graph(Magics):
         language = args.language
         limit = args.limit
         uri = self.client.get_uri_with_port()
-        viewer = StreamViewer(self.client,uri,language,limit=limit)
+        viewer = StreamViewer(self.client, uri, language, limit=limit)
         viewer.show()
 
     @line_magic
@@ -860,7 +860,8 @@ class Graph(Magics):
                         if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
                             lines = []
                             for b in results['results']['bindings']:
-                                lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                                lines.append(
+                                    f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
                             raw_output = widgets.Output(layout=sparql_layout)
                             with raw_output:
                                 html = sparql_construct_template.render(lines=lines)
@@ -1130,7 +1131,8 @@ class Graph(Magics):
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             if self.graph_notebook_config.proxy_host != '' and self.client.is_neptune_domain():
                 using_http = True
-                query_res_http = self.client.gremlin_http_query(cell, headers={'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                query_res_http = self.client.gremlin_http_query(cell, headers={
+                    'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
                 query_res_http.raise_for_status()
                 query_res_http_json = query_res_http.json()
                 query_res = query_res_http_json['result']['data']
@@ -1514,7 +1516,7 @@ class Graph(Magics):
                 with output:
                     job_status_output.clear_output()
                     interval_output.close()
-                    total_status_wait = max_status_retries*poll_interval
+                    total_status_wait = max_status_retries * poll_interval
                     print(result)
                     if interval_check_response.get("status") != 'healthy':
                         print(f"Could not retrieve the status of the reset operation within the allotted time of "
@@ -1727,7 +1729,7 @@ class Graph(Magics):
             value=str(args.concurrency),
             placeholder=1,
             min=1,
-            max=2**16,
+            max=2 ** 16,
             disabled=False,
             layout=widgets.Layout(display=concurrency_hbox_visibility,
                                   width=widget_width)
@@ -1935,8 +1937,8 @@ class Graph(Magics):
             named_graph_uri_hbox.children = (named_graph_uri_hbox_label, named_graph_uri,)
             base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
-            concurrency_hbox.children = (concurrency_hbox_label, concurrency, )
-            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit, )
+            concurrency_hbox.children = (concurrency_hbox_label, concurrency,)
+            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit,)
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -2088,8 +2090,9 @@ class Graph(Magics):
 
                     if poll_status.value == 'FALSE':
                         start_msg_label = widgets.Label(f'Load started successfully!')
-                        polling_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
-                                                          f'in another cell to check the current status of your bulk load.')
+                        polling_msg_label = widgets.Label(
+                            f'You can run "%load_status {load_result["payload"]["loadId"]}" '
+                            f'in another cell to check the current status of your bulk load.')
                         start_msg_hbox = widgets.HBox([start_msg_label])
                         polling_msg_hbox = widgets.HBox([polling_msg_label])
                         vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
@@ -2132,11 +2135,13 @@ class Graph(Magics):
                                 with job_status_output:
                                     # parse status & execution_time differently for Analytics and NeptuneDB
                                     overall_status = \
-                                        interval_check_response["payload"]["status"] if self.client.is_analytics_domain() \
-                                        else interval_check_response["payload"]["overallStatus"]["status"]
+                                        interval_check_response["payload"][
+                                            "status"] if self.client.is_analytics_domain() \
+                                            else interval_check_response["payload"]["overallStatus"]["status"]
                                     total_time_spent = \
-                                        interval_check_response["payload"]["timeElapsedSeconds"] if self.client.is_analytics_domain() \
-                                        else interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                        interval_check_response["payload"][
+                                            "timeElapsedSeconds"] if self.client.is_analytics_domain() \
+                                            else interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
                                     print(f'Overall Status: {overall_status}')
                                     if overall_status in FINAL_LOAD_STATUSES:
                                         execution_time = total_time_spent
@@ -3036,7 +3041,7 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
-                            help=f'Neptune Analytics only. Specifies the plan cache mode to use. '
+                            help=f'Specifies the plan cache mode to use. '
                                  f'Accepted values: {OPENCYPHER_PLAN_CACHE_MODES}')
         parser.add_argument('-qt', '--query-timeout', type=int, default=None,
                             help=f'Neptune Analytics only. Specifies the maximum query timeout in milliseconds.')
@@ -3143,17 +3148,23 @@ class Graph(Magics):
                 first_tab_html = opencypher_explain_template.render(table=explain,
                                                                     link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
-            if not self.client.is_analytics_domain():
-                if args.plan_cache != 'auto':
-                    print("planCache is not supported for Neptune DB, ignoring.")
-                if args.query_timeout is not None:
-                    print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
+            if not self.client.is_analytics_domain() and args.query_timeout is not None:
+                print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
 
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell, query_params=query_params,
                                                   plan_cache=args.plan_cache,
                                                   query_timeout=args.query_timeout)
             query_time = time.time() * 1000 - query_start
+            if oc_http.status_code == 400 and not self.client.is_analytics_domain() and args.plan_cache != "auto":
+                try:
+                    oc_http_ex = json.loads(oc_http.content.decode('utf-8'))
+                    if (oc_http_ex["code"] == "MalformedQueryException"
+                            and oc_http_ex["detailedMessage"].startswith("Invalid input")):
+                        print("Please ensure that you are on NeptuneDB 1.3.2.0 or later when attempting to use "
+                              "--plan-cache.")
+                except:
+                    pass
             oc_http.raise_for_status()
 
             try:
