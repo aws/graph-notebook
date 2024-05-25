@@ -3035,9 +3035,10 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
-                            help=f'Plan cache mode to use. Accepted values: {OPENCYPHER_PLAN_CACHE_MODES}')
+                            help=f'Neptune Analytics only. Specifies the plan cache mode to use. '
+                                 f'Accepted values: {OPENCYPHER_PLAN_CACHE_MODES}')
         parser.add_argument('-qt', '--query-timeout', type=int, default=None,
-                            help=f'Maximum query timeout in milliseconds.')
+                            help=f'Neptune Analytics only. Specifies the maximum query timeout in milliseconds.')
         parser.add_argument('--explain-type', type=str.lower, default='dynamic',
                             help=f'Explain mode to use when using the explain query mode. '
                                  f'Accepted values: {OPENCYPHER_EXPLAIN_MODES}')
@@ -3141,6 +3142,12 @@ class Graph(Magics):
                 first_tab_html = opencypher_explain_template.render(table=explain,
                                                                     link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
+            if not self.client.is_analytics_domain():
+                if args.plan_cache != 'auto':
+                    print("planCache is not supported for Neptune DB, ignoring.")
+                if args.query_timeout is not None:
+                    print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
+
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell, query_params=query_params,
                                                   plan_cache=args.plan_cache,
