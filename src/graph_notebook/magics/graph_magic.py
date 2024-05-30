@@ -915,7 +915,8 @@ class Graph(Magics):
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=["pageLength"]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
@@ -1267,7 +1268,8 @@ class Graph(Magics):
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=["pageLength"]
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -2236,6 +2238,7 @@ class Graph(Magics):
                              scrollCollapse=True,
                              lengthMenu=[DEFAULT_PAGINATION_OPTIONS, DEFAULT_PAGINATION_MENU],
                              pageLength=10,
+                             buttons=["pageLength"]
                              )
 
                     with raw_output:
@@ -3263,7 +3266,8 @@ class Graph(Magics):
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=["pageLength"]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
