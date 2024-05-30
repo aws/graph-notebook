@@ -95,6 +95,19 @@ cell_style_js = """
                 $(td).css('font-size', '12px');
             }
             """
+SPARQL_RESULTS_FILENAME = "sparql_results"
+GREMLIN_RESULTS_FILENAME = "gremlin_results"
+OC_RESULTS_FILENAME = "oc_results"
+LOAD_IDS_FILENAME = "load_ids"
+RESULTS_EXPORT_OPTIONS = {
+    "columns": 1,
+    "modifier": {
+        "header": False,
+        "page": "all",
+        "order": "current",
+        "search": "applied",
+    }
+}
 
 JSON_FORMAT = "json"
 PANDAS_FORMATS = ["pd", "pandas", "df", "dataframe"]
@@ -915,7 +928,28 @@ class Graph(Magics):
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": SPARQL_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": SPARQL_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
@@ -1267,7 +1301,28 @@ class Graph(Magics):
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": GREMLIN_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": GREMLIN_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ],
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -2236,6 +2291,27 @@ class Graph(Magics):
                              scrollCollapse=True,
                              lengthMenu=[DEFAULT_PAGINATION_OPTIONS, DEFAULT_PAGINATION_MENU],
                              pageLength=10,
+                             buttons=[
+                                 "pageLength",
+                                 {
+                                     "extend": "copyHtml5",
+                                     "text": "Copy",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 },
+                                 {
+                                     "extend": "csvHtml5",
+                                     "title": LOAD_IDS_FILENAME,
+                                     "text": "Download CSV",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 },
+                                 {
+                                     "extend": "excelHtml5",
+                                     "filename": LOAD_IDS_FILENAME,
+                                     "title": None,
+                                     "text": "Download XLSX",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 }
+                             ]
                              )
 
                     with raw_output:
@@ -3263,7 +3339,28 @@ class Graph(Magics):
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": OC_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": OC_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
