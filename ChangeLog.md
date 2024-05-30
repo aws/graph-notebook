@@ -8,6 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
   - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
 - Added KMS encryption support to NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/590))
 - Added warnings for usage of `%%oc` with incompatible Neptune Analytics parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/599))
+- Added download and copy buttons to results table widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/602))
 - Improved handling of mixed type Gremlin results ([Link to PR](https://github.com/aws/graph-notebook/pull/592))
 - Upgraded `rdflib` to 7.0.0 and `SPARQLWrapper` to 2.0.0 ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
 - Upgraded `requests` to 2.32.x ([Link to PR](https://github.com/aws/graph-notebook/pull/600))
