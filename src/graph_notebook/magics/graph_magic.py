@@ -1322,7 +1322,7 @@ class Graph(Magics):
                                  "text": "Download XLSX",
                                  "exportOptions": RESULTS_EXPORT_OPTIONS
                              }
-                         ],
+                         ]
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))

@@ -11,6 +11,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Improved handling of mixed type Gremlin results ([Link to PR](https://github.com/aws/graph-notebook/pull/592))
 - Upgraded `rdflib` to 7.0.0 and `SPARQLWrapper` to 2.0.0 ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
 - Upgraded `requests` to 2.32.x ([Link to PR](https://github.com/aws/graph-notebook/pull/600))
+- Upgraded `itables` to 2.x ([Link to PR](https://github.com/aws/graph-notebook/pull/601))
 - Fixed formatting of query magic `--help` entries listing valid inputs ([Link to PR](https://github.com/aws/graph-notebook/pull/593))
 - Fixed endpoint creation bug in People-Analytics-using-Neptune-ML sample ([Link to PR](https://github.com/aws/graph-notebook/pull/595))
 - Fixed deprecated usage of Pandas `DataFrameGroupBy.mean` in NeptuneML SPARQL utils ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
