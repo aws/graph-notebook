@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.3.0 (June 3, 2024)
+
 - New notebooks showing Telco examples leveraging GNN and LLM ([Link to PR](https://github.com/aws/graph-notebook/pull/587))
   - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
 - Added KMS encryption support to NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/590))
