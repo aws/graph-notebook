@@ -8,7 +8,7 @@ import unittest
 
 from graph_notebook.configuration.get_config import get_config
 from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, \
-    generate_config, GremlinSection
+    generate_config, generate_default_config, GremlinSection, SparqlSection, Neo4JSection
 from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
 
 
@@ -31,6 +31,29 @@ class TestGenerateConfiguration(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
+
+    def test_generate_default_config(self):
+        config = generate_default_config()
+        self.assertEqual(True, config.is_neptune_config)
+        self.assertEqual('change-me', config.host)
+        self.assertEqual(8182, config.port)
+        self.assertEqual('', config._proxy_host)
+        self.assertEqual(8182, config.proxy_port)
+        self.assertEqual(DEFAULT_AUTH_MODE, config.auth_mode)
+        self.assertEqual(True, config.ssl)
+        self.assertEqual(True, config.ssl_verify)
+        self.assertEqual('neptune-db', config.neptune_service)
+        self.assertEqual('', config.load_from_s3_arn)
+        self.assertEqual('us-east-1', config.aws_region)
+        self.assertEqual('sparql', config.sparql.path)
+        self.assertEqual('g', config.gremlin.traversal_source)
+        self.assertEqual('', config.gremlin.username)
+        self.assertEqual('', config.gremlin.password)
+        self.assertEqual('graphsonv3', config.gremlin.message_serializer)
+        self.assertEqual('neo4j', config.neo4j.username)
+        self.assertEqual('password', config.neo4j.password)
+        self.assertEqual(True, config.neo4j.auth)
+        self.assertEqual(None, config.neo4j.database)
 
     def test_configuration_default_auth_defaults_neptune_reg(self):
         config = Configuration(self.neptune_host_reg, self.port)
