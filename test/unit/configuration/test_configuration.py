@@ -8,7 +8,7 @@ import unittest
 
 from graph_notebook.configuration.get_config import get_config
 from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, \
-    generate_config, generate_default_config, GremlinSection, SparqlSection, Neo4JSection
+    generate_config, generate_default_config, GremlinSection
 from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
 
 
