@@ -100,7 +100,7 @@ GREMLIN_RESULTS_FILENAME = "gremlin_results"
 OC_RESULTS_FILENAME = "oc_results"
 LOAD_IDS_FILENAME = "load_ids"
 RESULTS_EXPORT_OPTIONS = {
-    "columns": 1,
+    "columns": ":gt(0)",
     "modifier": {
         "header": False,
         "page": "all",
