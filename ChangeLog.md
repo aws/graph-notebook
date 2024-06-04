@@ -3,7 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
-- Updated default %graph_notebook_config to display Neptune-specific fields
+- Updated default %graph_notebook_config to display Neptune-specific fields ([Link to PR](https://github.com/aws/graph-notebook/pull/605))
 
 ## Release 4.3.0 (June 3, 2024)
 
