@@ -1614,16 +1614,15 @@ class Graph(Magics):
     @neptune_graph_only
     def reset_graph(self, line, local_ns: dict = None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('-s', '--skip-snapshot', action='store_true', default=True,
-                            help='Determines whether a final graph snapshot is created before the graph data is '
-                                 'deleted. Default is True.')
+        parser.add_argument('-ns', '--no-skip-snapshot', action='store_true', default=False,
+                            help='Creates a final graph snapshot before the graph data is deleted.')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='', help='Store query result to this variable.')
         args = parser.parse_args(line.split())
 
         try:
             graph_id = self.client.get_graph_id()
-            res = self.client.reset_graph(graph_id=graph_id, skip_snapshot=args.skip_snapshot)
+            res = self.client.reset_graph(graph_id=graph_id, no_skip_snapshot=args.no_skip_snapshot)
             if not args.silent:
                 print(f"ResetGraph call submitted successfully for graph ID [{graph_id}]. Please note that the graph "
                       f"may take several minutes to become available again.\n")
