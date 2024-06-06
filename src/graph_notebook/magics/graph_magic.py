@@ -95,6 +95,19 @@ cell_style_js = """
                 $(td).css('font-size', '12px');
             }
             """
+SPARQL_RESULTS_FILENAME = "sparql_results"
+GREMLIN_RESULTS_FILENAME = "gremlin_results"
+OC_RESULTS_FILENAME = "oc_results"
+LOAD_IDS_FILENAME = "load_ids"
+RESULTS_EXPORT_OPTIONS = {
+    "columns": ":gt(0)",
+    "modifier": {
+        "header": False,
+        "page": "all",
+        "order": "current",
+        "search": "applied",
+    }
+}
 
 JSON_FORMAT = "json"
 PANDAS_FORMATS = ["pd", "pandas", "df", "dataframe"]
@@ -916,7 +929,28 @@ class Graph(Magics):
                          paging=sparql_paging,
                          scrollCollapse=sparql_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": SPARQL_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": SPARQL_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
@@ -1269,7 +1303,28 @@ class Graph(Magics):
                          paging=gremlin_paging,
                          scrollCollapse=gremlin_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": GREMLIN_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": GREMLIN_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ]
                          )
                 else:  # Explain/Profile
                     display(HTML(first_tab_html))
@@ -1358,8 +1413,11 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
-    @neptune_db_only
     def status(self, line='', local_ns: dict = None):
+        if self.client.is_analytics_domain():
+            logger.info(f'Redirected %status call to %get_graph.')
+            self.get_graph(line, local_ns)
+            return
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
@@ -1385,6 +1443,33 @@ class Graph(Magics):
                           f'/blazegraph/#status')
                     print()
                 return status_res
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def get_graph(self, line='', local_ns: dict = None):
+        logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        try:
+            graph_id = self.client.get_graph_id()
+            res = self.client.get_graph(graph_id=graph_id)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to retrieve graph status:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
 
     @line_magic
     @needs_local_scope
@@ -1547,6 +1632,39 @@ class Graph(Magics):
 
         logger.info(f'got the response {res}')
         return res
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def graph_reset(self, line, local_ns: dict = None):
+        self.reset_graph(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def reset_graph(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-ns', '--no-skip-snapshot', action='store_true', default=False,
+                            help='Creates a final graph snapshot before the graph data is deleted.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='Store query result to this variable.')
+        args = parser.parse_args(line.split())
+
+        try:
+            graph_id = self.client.get_graph_id()
+            res = self.client.reset_graph(graph_id=graph_id, no_skip_snapshot=args.no_skip_snapshot)
+            if not args.silent:
+                print(f"ResetGraph call submitted successfully for graph ID [{graph_id}]. Please note that the graph "
+                      f"may take several minutes to become available again.\n")
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Received an error when attempting graph reset:")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
 
     @magic_variables
     @line_magic
@@ -2241,6 +2359,27 @@ class Graph(Magics):
                              scrollCollapse=True,
                              lengthMenu=[DEFAULT_PAGINATION_OPTIONS, DEFAULT_PAGINATION_MENU],
                              pageLength=10,
+                             buttons=[
+                                 "pageLength",
+                                 {
+                                     "extend": "copyHtml5",
+                                     "text": "Copy",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 },
+                                 {
+                                     "extend": "csvHtml5",
+                                     "title": LOAD_IDS_FILENAME,
+                                     "text": "Download CSV",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 },
+                                 {
+                                     "extend": "excelHtml5",
+                                     "filename": LOAD_IDS_FILENAME,
+                                     "title": None,
+                                     "text": "Download XLSX",
+                                     "exportOptions": RESULTS_EXPORT_OPTIONS
+                                 }
+                             ]
                              )
 
                     with raw_output:
@@ -3274,7 +3413,28 @@ class Graph(Magics):
                          paging=oc_paging,
                          scrollCollapse=oc_scrollCollapse,
                          lengthMenu=[final_pagination_options, final_pagination_menu],
-                         pageLength=visible_results
+                         pageLength=visible_results,
+                         buttons=[
+                             "pageLength",
+                             {
+                                 "extend": "copyHtml5",
+                                 "text": "Copy",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "csvHtml5",
+                                 "title": OC_RESULTS_FILENAME,
+                                 "text": "Download CSV",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             },
+                             {
+                                 "extend": "excelHtml5",
+                                 "filename": OC_RESULTS_FILENAME,
+                                 "title": None,
+                                 "text": "Download XLSX",
+                                 "exportOptions": RESULTS_EXPORT_OPTIONS
+                             }
+                         ]
                          )
             elif first_tab_html != "":
                 with first_tab_output:
