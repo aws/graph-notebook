@@ -1601,6 +1601,40 @@ class Graph(Magics):
         logger.info(f'got the response {res}')
         return res
 
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def graph_reset(self, line, local_ns: dict = None):
+        self.reset_graph(line, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def reset_graph(self, line, local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--skip-snapshot', action='store_true', default=True,
+                            help='Determines whether a final graph snapshot is created before the graph data is '
+                                 'deleted. Default is True.')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='Store query result to this variable.')
+        args = parser.parse_args(line.split())
+
+        try:
+            graph_id = self.client.get_graph_id()
+            res = self.client.reset_graph(graph_id=graph_id, skip_snapshot=args.skip_snapshot)
+            if not args.silent:
+                print(f"ResetGraph call submitted successfully for graph ID [{graph_id}]. Please note that the graph "
+                      f"may take several minutes to become available again.\n")
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Received an error when attempting graph reset:")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
+
     @magic_variables
     @line_magic
     @needs_local_scope
