@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
 
 ## Release 4.3.1 (June 3, 2024)
 
