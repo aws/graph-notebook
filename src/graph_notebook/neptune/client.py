@@ -589,6 +589,16 @@ class Client(object):
             logger.debug(f"Reset Graph call failed with service exception: {e}")
             raise e
 
+    def get_graph(self, graph_id: str = '') -> dict:
+        try:
+            res = self.neptune_graph_client.get_graph(
+                graphIdentifier=graph_id
+            )
+            return res
+        except ClientError as e:
+            logger.debug(f"GetGraph call failed with service exception: {e}")
+            raise e
+
     def dataprocessing_start(self, s3_input_uri: str, s3_output_uri: str, **kwargs) -> requests.Response:
         data = {
             'inputDataS3Location': s3_input_uri,

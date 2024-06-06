@@ -1411,8 +1411,11 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
-    @neptune_db_only
     def status(self, line='', local_ns: dict = None):
+        if self.client.is_analytics_domain():
+            logger.info(f'Redirected %status call to %get_graph.')
+            self.get_graph(line, local_ns)
+            return
         logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
         parser = argparse.ArgumentParser()
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
@@ -1438,6 +1441,33 @@ class Graph(Magics):
                           f'/blazegraph/#status')
                     print()
                 return status_res
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def get_graph(self, line='', local_ns: dict = None):
+        logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        try:
+            graph_id = self.client.get_graph_id()
+            res = self.client.get_graph(graph_id=graph_id)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to retrieve graph status:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
 
     @line_magic
     @needs_local_scope
