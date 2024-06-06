@@ -12,9 +12,11 @@ import urllib3
 from urllib.parse import urlparse, urlunparse
 from SPARQLWrapper import SPARQLWrapper
 from boto3 import Session
+from boto3 import client as boto3_client
 from botocore.session import Session as botocoreSession
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
+from botocore.exceptions import ClientError
 from gremlin_python.driver import client, serializer
 from gremlin_python.driver.protocol import GremlinServerError
 from gremlin_python.driver.aiohttp.transport import AiohttpTransport
@@ -202,6 +204,8 @@ class Client(object):
 
         self._http_session = None
 
+        self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region)
+
     @property
     def host(self):
         if self.proxy_host != '':
@@ -241,6 +245,11 @@ class Client(object):
 
         uri = f'{protocol}://{uri_host}:{uri_port}'
         return uri
+
+    def get_graph_id(self):
+        graph_host = self.host
+        graph_id = graph_host.split('.')[0]
+        return graph_id
 
     def sparql_query(self, query: str, headers=None, explain: str = '', path: str = '') -> requests.Response:
         if headers is None:
@@ -568,6 +577,27 @@ class Client(object):
         req = self._prepare_request('POST', url, data=data)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
+
+    def reset_graph(self, graph_id: str = '', no_skip_snapshot: bool = False) -> dict:
+        try:
+            res = self.neptune_graph_client.reset_graph(
+                graphIdentifier=graph_id,
+                skipSnapshot=(not no_skip_snapshot)
+            )
+            return res
+        except ClientError as e:
+            logger.debug(f"Reset Graph call failed with service exception: {e}")
+            raise e
+
+    def get_graph(self, graph_id: str = '') -> dict:
+        try:
+            res = self.neptune_graph_client.get_graph(
+                graphIdentifier=graph_id
+            )
+            return res
+        except ClientError as e:
+            logger.debug(f"GetGraph call failed with service exception: {e}")
+            raise e
 
     def dataprocessing_start(self, s3_input_uri: str, s3_output_uri: str, **kwargs) -> requests.Response:
         data = {
