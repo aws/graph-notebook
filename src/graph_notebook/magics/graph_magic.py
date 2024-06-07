@@ -135,12 +135,16 @@ SEED_SOURCE_OPTIONS = ['', 'samples', 'custom']
 SEED_NO_DATASETS_FOUND_MSG = "(No datasets available)"
 SEED_WIDGET_STYLE = {'description_width': '95px'}
 
+# Tokens as currently defined in TinkerPop 3.7: https://github.com/apache/tinkerpop/blob/3.7-dev/gremlin-util/src/main/java/org/apache/tinkerpop/gremlin/util/ser/SerTokens.java
 serializers_map = {
     "MIME_JSON": "application/json",
-    "GRAPHSON_V2D0": "application/vnd.gremlin-v2.0+json",
-    "GRAPHSON_V3D0": "application/vnd.gremlin-v3.0+json",
-    "GRYO_V3D0": "application/vnd.gremlin-v3.0+gryo",
-    "GRAPHBINARY_V1D0": "application/vnd.graphbinary-v1.0"
+    "GRAPHSON_V1": "application/vnd.gremlin-v1.0+json",
+    "GRAPHSON_V1_UNTYPED": "application/vnd.gremlin-v1.0+json;types=false",
+    "GRAPHSON_V2": "application/vnd.gremlin-v2.0+json",
+    "GRAPHSON_V2_UNTYPED":  "application/vnd.gremlin-v2.0+json;types=false",
+    "GRAPHSON_V3": "application/vnd.gremlin-v3.0+json",
+    "GRAPHSON_V3_UNTYPED": "application/vnd.gremlin-v3.0+json;types=false",
+    "GRAPHBINARY_V1": "application/vnd.graphbinary-v1.0"
 }
 
 DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph"
@@ -1058,9 +1062,9 @@ class Graph(Magics):
                                  'the profile report by default.')
         parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--profile-serializer', type=str, default='application/json',
+        parser.add_argument('--profile-serializer', type=str, default='GRAPHSON_V3_UNTYPED',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
-                                 'TinkerPop driver "Serializers" enum values. Default is application/json')
+                                 'TinkerPop driver "Serializers" enum values. Default is GRAPHSON_V3_UNTYPED')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
         parser.add_argument('--profile-misc-args', type=str, default='{}',
