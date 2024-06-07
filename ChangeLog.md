@@ -5,6 +5,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
 - Added `%get_graph` line magic and enabled `%status` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/611))
+- Added `%%oc --plan-cache` support for Neptune DB ([Link to PR](https://github.com/aws/graph-notebook/pull/613))
 
 ## Release 4.3.1 (June 3, 2024)
 
