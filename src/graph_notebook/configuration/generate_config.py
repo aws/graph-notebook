@@ -217,7 +217,16 @@ def generate_config(host, port, auth_mode: AuthModeEnum = AuthModeEnum.DEFAULT, 
 
 
 def generate_default_config():
-    c = generate_config('change-me', 8182, AuthModeEnum.DEFAULT, True, True, NEPTUNE_DB_SERVICE_NAME, '', DEFAULT_REGION)
+    neptune_hosts_with_dummy = NEPTUNE_CONFIG_HOST_IDENTIFIERS + ['change-me']
+    c = generate_config(host='change-me',
+                        port=8182,
+                        auth_mode=AuthModeEnum.DEFAULT,
+                        ssl=True,
+                        ssl_verify=True,
+                        neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                        load_from_s3_arn='',
+                        aws_region=DEFAULT_REGION,
+                        neptune_hosts=neptune_hosts_with_dummy)
     return c
 
 

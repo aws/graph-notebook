@@ -3,17 +3,24 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
+- Added `%get_graph` line magic and enabled `%status` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/611))
+
+## Release 4.3.1 (June 3, 2024)
 
 - New notebooks showing Telco examples leveraging GNN and LLM ([Link to PR](https://github.com/aws/graph-notebook/pull/587))
-  - Path: 02-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
+  - Path: 03-Neptune-ML > 03-Sample-Applications > 04-Telco-Networks
 - Added KMS encryption support to NeptuneDB Notebook CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/590))
 - Added warnings for usage of `%%oc` with incompatible Neptune Analytics parameters ([Link to PR](https://github.com/aws/graph-notebook/pull/599))
+- Added download and copy buttons to results table widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/602))
 - Improved handling of mixed type Gremlin results ([Link to PR](https://github.com/aws/graph-notebook/pull/592))
 - Upgraded `rdflib` to 7.0.0 and `SPARQLWrapper` to 2.0.0 ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
 - Upgraded `requests` to 2.32.x ([Link to PR](https://github.com/aws/graph-notebook/pull/600))
+- Upgraded `itables` to 2.x ([Link to PR](https://github.com/aws/graph-notebook/pull/601))
 - Fixed formatting of query magic `--help` entries listing valid inputs ([Link to PR](https://github.com/aws/graph-notebook/pull/593))
 - Fixed endpoint creation bug in People-Analytics-using-Neptune-ML sample ([Link to PR](https://github.com/aws/graph-notebook/pull/595))
 - Fixed deprecated usage of Pandas `DataFrameGroupBy.mean` in NeptuneML SPARQL utils ([Link to PR](https://github.com/aws/graph-notebook/pull/596))
+- Updated default %graph_notebook_config to display Neptune-specific fields ([Link to PR](https://github.com/aws/graph-notebook/pull/605))
 
 ## Release 4.2.0 (April 4, 2024)
 
