@@ -66,6 +66,7 @@ class GremlinSection(object):
             traversal_source = DEFAULT_GREMLIN_TRAVERSAL_SOURCE
 
         serializer_lower = message_serializer.lower()
+        # TODO: Update with untyped serializers once supported in GremlinPython
         if serializer_lower == '':
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
         elif serializer_lower in GRAPHSONV3_VARIANTS:
