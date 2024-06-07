@@ -163,6 +163,16 @@ def normalize_service_name(neptune_service: str):
         return NEPTUNE_DB_SERVICE_NAME
 
 
+def set_plan_cache_hint(query: str, plan_cache_value: str):
+    plan_cache_op_re = r"(?i)USING\s+QUERY:\s*PLANCACHE"
+    if re.search(plan_cache_op_re, query) is not None:
+        print("planCache hint is already present in query. Ignoring parameter value.")
+        return query
+    plan_cache_hint = f'USING QUERY: PLANCACHE "{plan_cache_value}"\n'
+    query_with_hint = plan_cache_hint + query
+    return query_with_hint
+
+
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT,
                  neptune_service: str = NEPTUNE_DB_SERVICE_NAME,
@@ -407,19 +417,23 @@ class Client(object):
             if 'content-type' not in headers:
                 headers['content-type'] = 'application/x-www-form-urlencoded'
             url += 'openCypher'
-            data = {
-                'query': query
-            }
+            data = {}
+            if plan_cache:
+                if plan_cache not in OPENCYPHER_PLAN_CACHE_MODES:
+                    print('Invalid --plan-cache mode specified, defaulting to auto.')
+                else:
+                    if self.is_analytics_domain():
+                        data['planCache'] = plan_cache
+                    elif plan_cache != 'auto':
+                        query = set_plan_cache_hint(query, plan_cache)
+            data['query'] = query
             if explain:
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
             if query_params:
                 data['parameters'] = str(query_params).replace("'", '"')  # '{"AUS_code":"AUS","WLG_code":"WLG"}'
-            if self.is_analytics_domain():
-                if plan_cache:
-                    data['planCache'] = plan_cache
-                if query_timeout:
-                    data['queryTimeoutMilliseconds'] = str(query_timeout)
+            if query_timeout and self.is_analytics_domain():
+                data['queryTimeoutMilliseconds'] = str(query_timeout)
         else:
             url += 'db/neo4j/tx/commit'
             headers['content-type'] = 'application/json'

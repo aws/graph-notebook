@@ -3,8 +3,10 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
 - Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
 - Added `%get_graph` line magic and enabled `%status` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/611))
+- Added `%%oc --plan-cache` support for Neptune DB ([Link to PR](https://github.com/aws/graph-notebook/pull/613))
 - Upgraded to Gremlin-Python 3.7 ([Link to PR](https://github.com/aws/graph-notebook/pull/597))
 
 ## Release 4.3.1 (June 3, 2024)
