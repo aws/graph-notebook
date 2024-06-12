@@ -51,7 +51,8 @@ from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPT
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
-    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name, GRAPH_PG_INFO_METRICS
+    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name, GRAPH_PG_INFO_METRICS, \
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -1027,6 +1028,11 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
+        parser.add_argument('-cp', '--connection-protocol', type=str.lower, default='',
+                            help=f'Neptune endpoints only. Connection protocol to use for connecting to the Gremlin '
+                                 f'database - either Websockets or HTTP. Valid inputs: {GREMLIN_PROTOCOL_FORMATS}. '
+                                 f'Default is {DEFAULT_GREMLIN_PROTOCOL}. Please note that this option has no effect '
+                                 f'on the Profile and Explain modes, which must use HTTP.')
         parser.add_argument('--explain-type', type=str.lower, default='',
                             help='Explain mode to use when using the explain query mode.')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
@@ -1167,13 +1173,17 @@ class Graph(Magics):
         else:
             using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            if self.graph_notebook_config.proxy_host != '' and self.client.is_neptune_domain():
-                using_http = True
-                query_res_http = self.client.gremlin_http_query(cell, headers={
-                    'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
-                query_res_http.raise_for_status()
-                query_res_http_json = query_res_http.json()
-                query_res = query_res_http_json['result']['data']
+            if self.client.is_neptune_domain():
+                connection_protocol = normalize_protocol_name(args.connection_protocol)
+                if self.graph_notebook_config.proxy_host != '' or connection_protocol == DEFAULT_HTTP_PROTOCOL:
+                    using_http = True
+                    query_res_http = self.client.gremlin_http_query(cell, headers={
+                        'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                    query_res_http.raise_for_status()
+                    query_res_http_json = query_res_http.json()
+                    query_res = query_res_http_json['result']['data']
+                else:
+                    query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             else:
                 query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start

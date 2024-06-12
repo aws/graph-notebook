@@ -122,6 +122,13 @@ GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0', 
 GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0', 'graphsonmessageserializerv2']
 GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1', 'graphbinarymessageserializerv1']
 
+DEFAULT_WS_PROTOCOL = "websockets"
+DEFAULT_HTTP_PROTOCOL = "http"
+WS_PROTOCOL_FORMATS = ["ws", "websocket", DEFAULT_WS_PROTOCOL]
+HTTP_PROTOCOL_FORMATS = ["https", "rest", DEFAULT_HTTP_PROTOCOL]
+GREMLIN_PROTOCOL_FORMATS = WS_PROTOCOL_FORMATS + HTTP_PROTOCOL_FORMATS
+DEFAULT_GREMLIN_PROTOCOL = DEFAULT_WS_PROTOCOL
+
 STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
 SUMMARY_MODES = ["", "basic", "detailed"]
 STATISTICS_LANGUAGE_INPUTS_PG = ["propertygraph", "pg", "gremlin", "oc", "opencypher"]
@@ -152,6 +159,16 @@ def get_gremlin_serializer(serializer_str: str):
         return serializer.GraphSONSerializersV2d0()
     else:
         return serializer.GraphSONSerializersV3d0()
+
+
+def normalize_protocol_name(protocol: str):
+    if protocol in WS_PROTOCOL_FORMATS:
+        return DEFAULT_WS_PROTOCOL
+    elif protocol in HTTP_PROTOCOL_FORMATS:
+        return DEFAULT_HTTP_PROTOCOL
+    else:
+        print(f"Provided connection protocol is invalid for Neptune, defaulting to {DEFAULT_GREMLIN_PROTOCOL}.")
+        return DEFAULT_GREMLIN_PROTOCOL
 
 
 def normalize_service_name(neptune_service: str):

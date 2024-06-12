@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Added `--connection-protocol` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/617))
+
 ## Release 4.4.0 (June 10, 2024)
 
 - Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
