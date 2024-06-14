@@ -918,6 +918,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     sparql_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
@@ -1300,6 +1301,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     gremlin_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
@@ -3411,6 +3413,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     oc_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
