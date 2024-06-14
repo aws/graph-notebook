@@ -458,24 +458,24 @@ class Graph(Magics):
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
             of python Configuration object
             """
             config_dict = self.graph_notebook_config.to_dict()
-            store_to_ns(args.store_to, json.dumps(config_dict, indent=2), local_ns)
-            return print(json.dumps(config_dict, indent=2))
+            store_to_ns(args.store_to, json.dumps(config_dict, indent=4), local_ns)
+            return print(json.dumps(config_dict, indent=4))
         else:
             config_dict = self.graph_notebook_config.to_dict()
-            print(json.dumps(config_dict, indent=2))
+            print(json.dumps(config_dict, indent=4))
 
-        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=2), local_ns)
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
 
         return self.graph_notebook_config
 
@@ -1024,7 +1024,6 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
-    @neptune_db_only
     def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
@@ -1032,8 +1031,9 @@ class Graph(Magics):
         parser.add_argument('-cp', '--connection-protocol', type=str.lower, default='',
                             help=f'Neptune endpoints only. Connection protocol to use for connecting to the Gremlin '
                                  f'database - either Websockets or HTTP. Valid inputs: {GREMLIN_PROTOCOL_FORMATS}. '
-                                 f'Default is {DEFAULT_GREMLIN_PROTOCOL}. Please note that this option has no effect '
-                                 f'on the Profile and Explain modes, which must use HTTP.')
+                                 f'If not specified, defaults to the value of the gremlin.connection_protocol field '
+                                 f'in %graph_notebook_config. Please note that this option has no effect on the '
+                                 f'Profile and Explain modes, which must use HTTP.')
         parser.add_argument('--explain-type', type=str.lower, default='',
                             help='Explain mode to use when using the explain query mode.')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
@@ -1120,9 +1120,14 @@ class Graph(Magics):
         transport_args = {'max_content_length': mcl_bytes}
 
         if mode == QueryMode.EXPLAIN:
-            res = self.client.gremlin_explain(cell,
-                                              args={'explain.mode': args.explain_type} if args.explain_type else {})
-            res.raise_for_status()
+            try:
+                res = self.client.gremlin_explain(cell,
+                                                  args={'explain.mode': args.explain_type} if args.explain_type else {})
+                res.raise_for_status()
+            except Exception as e:
+                if self.client.is_analytics_domain():
+                    print("%%gremlin is incompatible with Neptune Analytics.")
+                raise e
             # Replace strikethrough character bytes, can't be encoded to ASCII
             explain_bytes = res.content.replace(b'\xcc', b'-')
             explain_bytes = explain_bytes.replace(b'\xb6', b'')
@@ -1156,8 +1161,13 @@ class Graph(Magics):
             except JSONDecodeError:
                 print('--profile-misc-args received invalid input, please check that you are passing in a valid '
                       'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
-            res = self.client.gremlin_profile(query=cell, args=profile_args)
-            res.raise_for_status()
+            try:
+                res = self.client.gremlin_profile(query=cell, args=profile_args)
+                res.raise_for_status()
+            except Exception as e:
+                if self.client.is_analytics_domain():
+                    print("%%gremlin is incompatible with Neptune Analytics.")
+                raise e
             profile_bytes = res.content.replace(b'\xcc', b'-')
             profile_bytes = profile_bytes.replace(b'\xb6', b'')
             query_res = profile_bytes.decode('utf-8')
@@ -1175,16 +1185,23 @@ class Graph(Magics):
             using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             if self.client.is_neptune_domain():
-                connection_protocol = normalize_protocol_name(args.connection_protocol)
-                if self.graph_notebook_config.proxy_host != '' or connection_protocol == DEFAULT_HTTP_PROTOCOL:
-                    using_http = True
-                    query_res_http = self.client.gremlin_http_query(cell, headers={
-                        'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
-                    query_res_http.raise_for_status()
-                    query_res_http_json = query_res_http.json()
-                    query_res = query_res_http_json['result']['data']
-                else:
-                    query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                connection_protocol = normalize_protocol_name(args.connection_protocol) \
+                    if args.connection_protocol != '' \
+                    else self.graph_notebook_config.gremlin.connection_protocol
+                try:
+                    if connection_protocol == DEFAULT_HTTP_PROTOCOL:
+                        using_http = True
+                        query_res_http = self.client.gremlin_http_query(cell, headers={
+                            'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                        query_res_http.raise_for_status()
+                        query_res_http_json = query_res_http.json()
+                        query_res = query_res_http_json['result']['data']
+                    else:
+                        query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                except Exception as e:
+                    if self.client.is_analytics_domain():
+                        print("%%gremlin is incompatible with Neptune Analytics.")
+                    raise e
             else:
                 query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start
