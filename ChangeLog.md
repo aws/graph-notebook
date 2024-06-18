@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.4.1 (June 17, 2024)
+
 - Added `--connection-protocol` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/617))
 - Added global Gremlin `connection_protocol` setting to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/621))
 - Added various enhancements for `%%gremlin` HTTP connections to Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/624))
