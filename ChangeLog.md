@@ -5,6 +5,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 - Set Gremlin `connection_protocol` defaults based on Neptune service when generating configuration via arguments ([Link to PR](https://github.com/aws/graph-notebook/pull/626))
 
+## Release 4.4.2 (June 18, 2024)
+- Set Gremlin `connection_protocol` defaults based on Neptune service when generating configuration via arguments ([Link to PR](https://github.com/aws/graph-notebook/pull/626))
+
 ## Release 4.4.1 (June 17, 2024)
 
 - Added `--connection-protocol` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/617))
