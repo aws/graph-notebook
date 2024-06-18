@@ -6,7 +6,6 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import sys
 import re
-import logging
 from typing import List
 from requests import Response
 from graph_notebook.visualization.template_retriever import retrieve_template
