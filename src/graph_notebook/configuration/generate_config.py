@@ -15,7 +15,8 @@ from graph_notebook.neptune.client import (SPARQL_ACTION, DEFAULT_PORT, DEFAULT_
                                            DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE,
                                            NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants,
                                            GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS,
-                                           NEPTUNE_DB_SERVICE_NAME, normalize_service_name)
+                                           NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
+                                           normalize_service_name)
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -299,7 +300,7 @@ if __name__ == "__main__":
                         default=DEFAULT_GREMLIN_SERIALIZER)
     parser.add_argument("--gremlin_connection_protocol",
                         help="the connection protocol to use for Gremlin connections",
-                        default=DEFAULT_GREMLIN_PROTOCOL)
+                        default='')
     parser.add_argument("--neo4j_username", help="the username to use for Neo4J connections",
                         default=DEFAULT_NEO4J_USERNAME)
     parser.add_argument("--neo4j_password", help="the password to use for Neo4J connections",
@@ -311,6 +312,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
+    protocol_arg = args.gremlin_connection_protocol
+    include_protocol = False
+    if is_allowed_neptune_host(args.host, args.neptune_hosts):
+        include_protocol = True
+        if not protocol_arg:
+            protocol_arg = DEFAULT_HTTP_PROTOCOL \
+                if args.neptune_service == NEPTUNE_ANALYTICS_SERVICE_NAME else DEFAULT_WS_PROTOCOL
     config = generate_config(args.host, int(args.port),
                              AuthModeEnum(auth_mode_arg),
                              args.ssl, args.ssl_verify,
@@ -319,7 +327,7 @@ if __name__ == "__main__":
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,
                                             args.gremlin_password, args.gremlin_serializer,
-                                            args.gremlin_connection_protocol),
+                                            protocol_arg, include_protocol),
                              Neo4JSection(args.neo4j_username, args.neo4j_password,
                                           args.neo4j_auth, args.neo4j_database),
                              args.neptune_hosts)
