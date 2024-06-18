@@ -8,6 +8,8 @@ import unittest
 
 from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration, GremlinSection
 from graph_notebook.configuration.get_config import get_config
+from graph_notebook.neptune.client import (NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
+                                           DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL)
 
 
 class TestGenerateConfigurationMain(unittest.TestCase):
@@ -49,25 +51,61 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.generate_config_from_main_and_test(expected_config)
 
     def test_generate_configuration_main_override_defaults_neptune_reg(self):
-        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
-                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False)
+        expected_config = Configuration(self.neptune_host_reg,
+                                        self.port,
+                                        neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM,
+                                        load_from_s3_arn='loader_arn',
+                                        ssl=False,
+                                        gremlin_section=GremlinSection(
+                                            connection_protocol=DEFAULT_HTTP_PROTOCOL,
+                                            include_protocol=True
+                                        )
+                                        )
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_neptune_no_verify(self):
-        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
-                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn',
-                                        ssl=True, ssl_verify=False)
+        expected_config = Configuration(self.neptune_host_reg,
+                                        self.port,
+                                        neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM,
+                                        load_from_s3_arn='loader_arn',
+                                        ssl=True,
+                                        ssl_verify=False,
+                                        gremlin_section=GremlinSection(
+                                            connection_protocol=DEFAULT_HTTP_PROTOCOL,
+                                            include_protocol=True
+                                        )
+                                        )
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_neptune_with_serializer(self):
-        expected_config = Configuration(self.neptune_host_reg, self.port, neptune_service='neptune-graph',
-                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False,
-                                        gremlin_section=GremlinSection(message_serializer='graphbinary'))
+        expected_config = Configuration(self.neptune_host_reg,
+                                        self.port,
+                                        neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM,
+                                        load_from_s3_arn='loader_arn',
+                                        ssl=False,
+                                        gremlin_section=GremlinSection(
+                                            message_serializer='graphbinary',
+                                            connection_protocol=DEFAULT_HTTP_PROTOCOL,
+                                            include_protocol=True
+                                        )
+                                        )
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_neptune_cn(self):
-        expected_config = Configuration(self.neptune_host_cn, self.port, neptune_service='neptune-graph',
-                                        auth_mode=AuthModeEnum.IAM, load_from_s3_arn='loader_arn', ssl=False)
+        expected_config = Configuration(self.neptune_host_cn,
+                                        self.port,
+                                        neptune_service='neptune-graph',
+                                        auth_mode=AuthModeEnum.IAM,
+                                        load_from_s3_arn='loader_arn',
+                                        ssl=False,
+                                        gremlin_section=GremlinSection(
+                                            connection_protocol=DEFAULT_HTTP_PROTOCOL,
+                                            include_protocol=True
+                                        )
+                                        )
         self.generate_config_from_main_and_test(expected_config, host_type='neptune')
 
     def test_generate_configuration_main_override_defaults_generic(self):
@@ -84,6 +122,48 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         self.assertEqual(expected_config.to_dict(), config.to_dict())
+
+    def test_generate_configuration_main_gremlin_protocol_no_service(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual(DEFAULT_WS_PROTOCOL, config_dict['gremlin']['connection_protocol'])
+
+    def test_generate_configuration_main_gremlin_protocol_db(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "{NEPTUNE_DB_SERVICE_NAME}" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual(DEFAULT_WS_PROTOCOL, config_dict['gremlin']['connection_protocol'])
+
+    def test_generate_configuration_main_gremlin_protocol_analytics(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "{NEPTUNE_ANALYTICS_SERVICE_NAME}" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual(DEFAULT_HTTP_PROTOCOL, config_dict['gremlin']['connection_protocol'])
 
     def test_generate_configuration_main_empty_args_custom(self):
         expected_config = Configuration(self.neptune_host_custom, self.port, neptune_hosts=self.custom_hosts_list)
