@@ -8,6 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 - Added `--connection-protocol` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/617))
 - Added global Gremlin `connection_protocol` setting to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/621))
+- Added various enhancements for `%%gremlin` HTTP connections to Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/624))
 - Restored left alignment of numeric value columns in results table widget ([Link to PR](https://github.com/aws/graph-notebook/pull/620))
 
 ## Release 4.4.0 (June 10, 2024)

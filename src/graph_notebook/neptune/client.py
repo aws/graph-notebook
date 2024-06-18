@@ -137,6 +137,7 @@ STATISTICS_LANGUAGE_INPUTS = STATISTICS_LANGUAGE_INPUTS_PG + STATISTICS_LANGUAGE
 
 SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
+GREMLIN_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_PLAN_CACHE_MODES = ['auto', 'enabled', 'disabled']
 OPENCYPHER_DEFAULT_TIMEOUT = 120000
 OPENCYPHER_STATUS_STATE_MODES = ['ALL', 'RUNNING', 'WAITING', 'CANCELLING']
@@ -257,7 +258,7 @@ class Client(object):
     def is_analytics_domain(self):
         return self.service == NEPTUNE_ANALYTICS_SERVICE_NAME
 
-    def get_uri_with_port(self, use_websocket=False, use_proxy=False):
+    def get_uri(self, use_websocket=False, use_proxy=False, include_port=True):
         if use_websocket is True:
             protocol = self._ws_protocol
         else:
@@ -270,7 +271,9 @@ class Client(object):
             uri_host = self.target_host
             uri_port = self.target_port
 
-        uri = f'{protocol}://{uri_host}:{uri_port}'
+        uri = f'{protocol}://{uri_host}'
+        if include_port:
+            uri += f':{uri_port}'
         return uri
 
     def get_graph_id(self):
@@ -347,9 +350,9 @@ class Client(object):
     def get_gremlin_connection(self, transport_kwargs) -> client.Client:
         nest_asyncio.apply()
 
-        ws_url = f'{self.get_uri_with_port(use_websocket=True, use_proxy=False)}/gremlin'
+        ws_url = f'{self.get_uri(use_websocket=True, use_proxy=False)}/gremlin'
         if self.proxy_host != '':
-            proxy_http_url = f'{self.get_uri_with_port(use_websocket=False, use_proxy=True)}/gremlin'
+            proxy_http_url = f'{self.get_uri(use_websocket=False, use_proxy=True)}/gremlin'
             transport_factory_args = lambda: AiohttpTransport(call_from_event_loop=True, proxy=proxy_http_url,
                                                               **transport_kwargs)
             request = self._prepare_request('GET', proxy_http_url)
@@ -387,9 +390,17 @@ class Client(object):
         if headers is None:
             headers = {}
 
+        data = {}
         use_proxy = True if self.proxy_host != '' else False
-        uri = f'{self.get_uri_with_port(use_websocket=False, use_proxy=use_proxy)}/gremlin'
-        data = {'gremlin': query}
+        if self.is_analytics_domain():
+            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=False)}/queries'
+            data['language'] = 'gremlin'
+            data['gremlin'] = query
+            headers['content-type'] = 'application/json'
+        else:
+            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
+            data['gremlin'] = query
+
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
@@ -412,12 +423,25 @@ class Client(object):
         return self._gremlin_query_plan(query=query, plan_type='profile', args=args)
 
     def _gremlin_query_plan(self, query: str, plan_type: str, args: dict, ) -> requests.Response:
-        url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/{plan_type}'
-        data = {'gremlin': query}
+        data = {}
+        headers = {}
+        url = f'{self._http_protocol}://{self.host}'
+        if self.is_analytics_domain():
+            url += '/queries'
+            data['gremlin'] = query
+            data['language'] = 'gremlin'
+            headers['content-type'] = 'application/json'
+            if plan_type == 'explain':
+                data['explain.mode'] = args.pop('explain.mode')
+            elif plan_type == 'profile':
+                data['profile.debug'] = args.pop('profile.debug')
+        else:
+            url += f':{self.port}/gremlin/{plan_type}'
+            data['gremlin'] = query
         if args:
             for param, value in args.items():
                 data[param] = value
-        req = self._prepare_request('POST', url, data=json.dumps(data))
+        req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
