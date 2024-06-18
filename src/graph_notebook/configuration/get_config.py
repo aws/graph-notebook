@@ -9,7 +9,7 @@ from graph_notebook.configuration.generate_config import DEFAULT_CONFIG_LOCATION
     SparqlSection, GremlinSection, Neo4JSection
 from graph_notebook.neptune.client import NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
     DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, \
-    NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, NEPTUNE_DB_CONFIG_NAMES, NEPTUNE_ANALYTICS_CONFIG_NAMES
+    NEPTUNE_DB_SERVICE_NAME, DEFAULT_WS_PROTOCOL, DEFAULT_HTTP_PROTOCOL
 
 neptune_params = ['neptune_service', 'auth_mode', 'load_from_s3_arn', 'aws_region']
 neptune_gremlin_params = ['connection_protocol']
@@ -33,11 +33,15 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
         neptune_service = data['neptune_service'] if 'neptune_service' in data else NEPTUNE_DB_SERVICE_NAME
         if 'gremlin' in data:
             data['gremlin']['include_protocol'] = True
+            if 'connection_protocol' not in data['gremlin']:
+                data['gremlin']['connection_protocol'] = DEFAULT_WS_PROTOCOL \
+                    if neptune_service == NEPTUNE_DB_SERVICE_NAME else DEFAULT_HTTP_PROTOCOL
             gremlin_section = GremlinSection(**data['gremlin'])
             if gremlin_section.to_dict()['traversal_source'] != 'g':
                 print('Ignoring custom traversal source, Amazon Neptune does not support this functionality.\n')
         else:
-            gremlin_section = GremlinSection(include_protocol=True)
+            protocol = DEFAULT_WS_PROTOCOL if neptune_service == NEPTUNE_DB_SERVICE_NAME else DEFAULT_HTTP_PROTOCOL
+            gremlin_section = GremlinSection(include_protocol=True, connection_protocol=protocol)
         if neo4j_section.to_dict()['username'] != DEFAULT_NEO4J_USERNAME \
                 or neo4j_section.to_dict()['password'] != DEFAULT_NEO4J_PASSWORD:
             print('Ignoring Neo4J custom authentication, Amazon Neptune does not support this functionality.\n')

@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import sys
 import re
+import logging
 from typing import List
 from requests import Response
 from graph_notebook.visualization.template_retriever import retrieve_template
@@ -204,8 +205,11 @@ def build_gremlin_metadata_from_query(query_type: str, results: any, res: Respon
     if query_type == 'explain':
         gremlin_metadata = create_propertygraph_metadata_obj('explain')
         gremlin_metadata.set_request_metrics(res)
-        gremlin_metadata.set_metric_value('predicates', int((re.search(r'# of predicates: (.*?)\n', results).group(1))
-                                                            .replace(".", '').replace(",", '')))
+        try:
+            gremlin_metadata.set_metric_value('predicates', int((re.search(r'# of predicates: (.*?)\n', results).group(1))
+                                                                .replace(".", '').replace(",", '')))
+        except AttributeError:
+            pass
         return gremlin_metadata
     elif query_type == 'profile':
         gremlin_metadata = create_propertygraph_metadata_obj('profile')

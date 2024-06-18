@@ -44,15 +44,16 @@ from graph_notebook.decorators.decorators import display_exceptions, magic_varia
     neptune_db_only, neptune_graph_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
-from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
+from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
-    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
-    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name, GRAPH_PG_INFO_METRICS, \
-    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name
+    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
+    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
+    normalize_service_name, GRAPH_PG_INFO_METRICS, \
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -534,7 +535,7 @@ class Graph(Magics):
 
         language = args.language
         limit = args.limit
-        uri = self.client.get_uri_with_port()
+        uri = self.client.get_uri(include_port=True)
         viewer = StreamViewer(self.client, uri, language, limit=limit)
         viewer.show()
 
@@ -1034,8 +1035,9 @@ class Graph(Magics):
                                  f'If not specified, defaults to the value of the gremlin.connection_protocol field '
                                  f'in %graph_notebook_config. Please note that this option has no effect on the '
                                  f'Profile and Explain modes, which must use HTTP.')
-        parser.add_argument('--explain-type', type=str.lower, default='',
-                            help='Explain mode to use when using the explain query mode.')
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Accepted values: {GREMLIN_EXPLAIN_MODES}')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
@@ -1074,6 +1076,8 @@ class Graph(Magics):
                                  'TinkerPop driver "Serializers" enum values. Default is GRAPHSON_V3_UNTYPED')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('--profile-debug', action='store_true', default=False,
+                            help='Enable debug mode.')
         parser.add_argument('--profile-misc-args', type=str, default='{}',
                             help='Additional profile options, passed in as a map.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
@@ -1154,7 +1158,8 @@ class Graph(Magics):
             profile_args = {"profile.results": args.profile_no_results,
                             "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
-                            "profile.indexOps": args.profile_indexOps}
+                            "profile.indexOps": args.profile_indexOps,
+                            "profile.debug": args.profile_debug}
             try:
                 profile_misc_args_dict = json.loads(args.profile_misc_args)
                 profile_args.update(profile_misc_args_dict)
