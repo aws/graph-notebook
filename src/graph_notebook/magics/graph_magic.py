@@ -1033,7 +1033,7 @@ class Graph(Magics):
                             help=f'Neptune endpoints only. Connection protocol to use for connecting to the Gremlin '
                                  f'database - either Websockets or HTTP. Valid inputs: {GREMLIN_PROTOCOL_FORMATS}. '
                                  f'If not specified, defaults to the value of the gremlin.connection_protocol field '
-                                 f'in %graph_notebook_config. Please note that this option has no effect on the '
+                                 f'in %%graph_notebook_config. Please note that this option has no effect on the '
                                  f'Profile and Explain modes, which must use HTTP.')
         parser.add_argument('--explain-type', type=str.lower, default='dynamic',
                             help=f'Explain mode to use when using the explain query mode. '
