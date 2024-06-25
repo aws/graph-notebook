@@ -59,9 +59,10 @@ def get_config_from_dict(data: dict, neptune_hosts: list = NEPTUNE_CONFIG_HOST_I
         for p in neptune_params:
             if p in data:
                 excluded_params.append(p)
-        for gp in neptune_gremlin_params:
-            if gp in data['gremlin']:
-                excluded_params.append(gp)
+        if 'gremlin' in data:
+            for gp in neptune_gremlin_params:
+                if gp in data['gremlin']:
+                    excluded_params.append(gp)
         if excluded_params:
             print(f"The provided configuration contains the following parameters that are incompatible with the "
                   f"specified host: {str(excluded_params)}. These parameters have not been saved.\n")
