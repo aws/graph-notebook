@@ -27,7 +27,7 @@ from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 import ipywidgets as widgets
 import pandas as pd
 import itables.options as opt
-from itables import show, JavascriptFunction
+from itables import show, JavascriptFunction, init_notebook_mode
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -725,6 +725,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -929,7 +932,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         sparql_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=sparql_scrollY,
                          columnDefs=sparql_columndefs,
@@ -1085,6 +1090,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -1334,7 +1342,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         gremlin_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=gremlin_scrollY,
                          columnDefs=gremlin_columndefs,
@@ -2341,6 +2351,9 @@ class Graph(Magics):
         parser.add_argument('--limit', type=int, default=maxsize,
                             help='If --details is True, only return the x most recent load job statuses. '
                                  'Defaults to sys.maxsize.')
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
@@ -2384,7 +2397,9 @@ class Graph(Magics):
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
 
                     with table_output:
+                        init_notebook_mode(connected=args.connected_table)
                         show(results_df,
+                             connected=args.connected_table,
                              scrollX=True,
                              scrollY="475px",
                              columnDefs=[
@@ -3262,6 +3277,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -3445,7 +3463,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         oc_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=oc_scrollY,
                          columnDefs=oc_columndefs,
