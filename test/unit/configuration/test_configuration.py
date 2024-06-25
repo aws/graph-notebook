@@ -342,7 +342,6 @@ class TestGenerateConfiguration(unittest.TestCase):
         config = get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.assertEqual(config.to_dict(), expected_config)
 
-
     def test_generate_configuration_with_defaults_neptune_reg(self):
         config = Configuration(self.neptune_host_reg, self.port)
         c = generate_config(config.host, config.port, auth_mode=config.auth_mode, ssl=config.ssl,
