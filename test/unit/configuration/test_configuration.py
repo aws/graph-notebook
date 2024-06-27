@@ -6,10 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import unittest
 
-from graph_notebook.configuration.get_config import get_config
+from graph_notebook.configuration.get_config import get_config, get_config_from_dict
 from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, \
     generate_config, generate_default_config, GremlinSection
-from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
+from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, \
+    DEFAULT_GREMLIN_PROTOCOL, DEFAULT_HTTP_PROTOCOL, NEPTUNE_CONFIG_HOST_IDENTIFIERS
 
 
 class TestGenerateConfiguration(unittest.TestCase):
@@ -49,6 +50,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual('g', config.gremlin.traversal_source)
         self.assertEqual('', config.gremlin.username)
         self.assertEqual('', config.gremlin.password)
+        self.assertEqual(DEFAULT_GREMLIN_PROTOCOL, config.gremlin.connection_protocol)
         self.assertEqual('graphsonv3', config.gremlin.message_serializer)
         self.assertEqual('neo4j', config.neo4j.username)
         self.assertEqual('password', config.neo4j.password)
@@ -118,6 +120,227 @@ class TestGenerateConfiguration(unittest.TestCase):
         ssl = False
         config = Configuration(self.generic_host, self.port, ssl=ssl)
         self.assertEqual(ssl, config.ssl)
+
+    def test_get_configuration_empty_input(self):
+        input_config = {}
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_no_host(self):
+        input_config = {
+            "port": 8182,
+            "ssl": True
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_generic_no_port(self):
+        input_config = {
+            "host": "localhost",
+            "ssl": True
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_generic_no_ssl(self):
+        input_config = {
+            "host": "localhost",
+            "port": 8182
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_generic_required_input(self):
+        input_config = {
+            "host": "localhost",
+            "port": 8182,
+            "ssl": True
+        }
+        expected_config = {
+            'host': 'localhost',
+            'port': 8182,
+            'proxy_host': '',
+            'proxy_port': 8182,
+            'ssl': True,
+            'ssl_verify': True,
+            'sparql': {
+                'path': ''
+            },
+            'gremlin': {
+                'traversal_source': 'g',
+                'username': '',
+                'password': '',
+                'message_serializer': 'graphsonv3'
+            },
+            'neo4j': {
+                'username': 'neo4j',
+                'password': 'password',
+                'auth': True,
+                'database': None
+            }
+        }
+        config = get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.assertEqual(config.to_dict(), expected_config)
+
+    def test_get_configuration_generic_all_input(self):
+        input_and_expected_config = {
+            'host': 'a_host',
+            'port': 9999,
+            'proxy_host': 'a_proxy_host',
+            'proxy_port': 9999,
+            'ssl': False,
+            'ssl_verify': False,
+            'sparql': {
+                'path': 'a_path'
+            },
+            'gremlin': {
+                'traversal_source': 'a',
+                'username': 'user',
+                'password': 'pass',
+                'message_serializer': 'graphbinaryv1'
+            },
+            'neo4j': {
+                'username': 'neo_user',
+                'password': 'neo_pass',
+                'auth': False,
+                'database': 'neo_db'
+            }
+        }
+        config = get_config_from_dict(input_and_expected_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.assertEqual(config.to_dict(), input_and_expected_config)
+
+    def test_get_configuration_neptune_no_auth_mode(self):
+        input_config = {
+            "host": "db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com",
+            "port": 8182,
+            "ssl": True,
+            "load_from_s3_arn": "",
+            "aws_region": "us-west-2"
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_neptune_no_load_arn(self):
+        input_config = {
+            "host": "db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com",
+            "port": 8182,
+            "ssl": True,
+            "aws_region": "us-west-2"
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_neptune_no_region(self):
+        input_config = {
+            "host": "db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com",
+            "port": 8182,
+            "ssl": True,
+            "load_from_s3_arn": ""
+        }
+        with self.assertRaises(KeyError):
+            get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+
+    def test_get_configuration_neptune_required_input(self):
+        input_config = {
+            "host": "db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com",
+            "port": 8182,
+            "auth_mode": "IAM",
+            "load_from_s3_arn": "",
+            "ssl": True,
+            "aws_region": "us-west-2"
+        }
+        expected_config = {
+            'host': 'db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com',
+            'neptune_service': 'neptune-db',
+            'port': 8182,
+            'proxy_host': '',
+            'proxy_port': 8182,
+            'auth_mode': 'IAM',
+            'load_from_s3_arn': '',
+            'ssl': True,
+            'ssl_verify': True,
+            'aws_region': 'us-west-2',
+            'sparql': {
+                'path': ''
+            },
+            'gremlin': {
+                'traversal_source': 'g',
+                'username': '',
+                'password': '',
+                'message_serializer': 'graphsonv3',
+                'connection_protocol': 'websockets'
+            },
+            'neo4j': {
+                'username': 'neo4j',
+                'password': 'password',
+                'auth': True,
+                'database': None
+            }
+        }
+
+        config = get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.assertEqual(config.to_dict(), expected_config)
+
+    def test_get_configuration_neptune_all_input(self):
+        input_config = {
+            'host': 'db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com',
+            'neptune_service': 'neptune-graph',
+            'port': 9999,
+            'proxy_host': 'a_proxy+port',
+            'proxy_port': 9999,
+            'auth_mode': 'DEFAULT',
+            'load_from_s3_arn': 'a_role',
+            'ssl': False,
+            'ssl_verify': False,
+            'aws_region': 'us-west-2',
+            'sparql': {
+                'path': 'a_path'
+            },
+            'gremlin': {
+                'traversal_source': 'a',
+                'username': 'a_user',
+                'password': 'a_pass',
+                'message_serializer': 'graphbinaryv1',
+                'connection_protocol': 'http'
+            },
+            'neo4j': {
+                'username': 'a_user',
+                'password': 'a_pass',
+                'auth': False,
+                'database': 'a_db'
+            }
+        }
+        expected_config = {
+            'host': 'db.cluster-xxxxxxxxx.us-west-2.neptune.amazonaws.com',
+            'neptune_service': 'neptune-graph',
+            'port': 9999,
+            'proxy_host': 'a_proxy+port',
+            'proxy_port': 9999,
+            'auth_mode': 'DEFAULT',
+            'load_from_s3_arn': 'a_role',
+            'ssl': False,
+            'ssl_verify': False,
+            'aws_region': 'us-west-2',
+            'sparql': {
+                'path': 'a_path'
+            },
+            'gremlin': {
+                'traversal_source': 'g',
+                'username': '',
+                'password': '',
+                'message_serializer': 'graphbinaryv1',
+                'connection_protocol': 'http'
+            },
+            'neo4j': {
+                'username': 'neo4j',
+                'password': 'password',
+                'auth': True,
+                'database': None
+            }
+        }
+
+        config = get_config_from_dict(input_config, neptune_hosts=NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.assertEqual(config.to_dict(), expected_config)
 
     def test_generate_configuration_with_defaults_neptune_reg(self):
         config = Configuration(self.neptune_host_reg, self.port)
@@ -219,6 +442,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         c = generate_config(config.host, config.port, ssl=config.ssl)
         c.write_to_file(self.test_file_path)
         config_from_file = get_config(self.test_file_path)
+        print(config_from_file.to_dict())
         self.assertEqual(config.to_dict(), config_from_file.to_dict())
 
     def test_configuration_neptune_host_with_whitespace(self):
@@ -249,6 +473,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
         self.assertEqual(config.gremlin.message_serializer, 'graphsonv3')
+        self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
 
     def test_configuration_gremlinsection_generic_override(self):
         config = Configuration('localhost',
@@ -262,6 +487,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.username, 'foo')
         self.assertEqual(config.gremlin.password, 'bar')
         self.assertEqual(config.gremlin.message_serializer, 'graphbinaryv1')
+        self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
 
     def test_configuration_gremlinsection_neptune_default(self):
         config = Configuration(self.neptune_host_reg, self.port)
@@ -269,6 +495,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
         self.assertEqual(config.gremlin.message_serializer, 'graphsonv3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_GREMLIN_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_override(self):
         config = Configuration(self.neptune_host_reg,
@@ -276,12 +503,30 @@ class TestGenerateConfiguration(unittest.TestCase):
                                gremlin_section=GremlinSection(traversal_source='t',
                                                               username='foo',
                                                               password='bar',
-                                                              message_serializer='graphbinary'),
+                                                              message_serializer='graphbinary',
+                                                              connection_protocol='http',
+                                                              include_protocol=True),
                                )
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
         self.assertEqual(config.gremlin.message_serializer, 'graphbinaryv1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_protocol_neptune_default_with_proxy(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               proxy_host='test_proxy')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_protocol_neptune_override_with_proxy(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               proxy_host='test_proxy',
+                               gremlin_section=GremlinSection(connection_protocol='ws',
+                                                              include_protocol=True)
+                               )
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_neptune_service_default(self):
         config = Configuration(self.neptune_host_reg, self.port)

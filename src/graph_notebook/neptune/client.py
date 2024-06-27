@@ -118,9 +118,16 @@ NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws
 
 false_str_variants = [False, 'False', 'false', 'FALSE']
 
-GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0']
-GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0']
-GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1']
+GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0', 'graphsonmessageserializerv3']
+GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0', 'graphsonmessageserializerv2']
+GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1', 'graphbinarymessageserializerv1']
+
+DEFAULT_WS_PROTOCOL = "websockets"
+DEFAULT_HTTP_PROTOCOL = "http"
+WS_PROTOCOL_FORMATS = ["ws", "websocket", DEFAULT_WS_PROTOCOL]
+HTTP_PROTOCOL_FORMATS = ["https", "rest", DEFAULT_HTTP_PROTOCOL]
+GREMLIN_PROTOCOL_FORMATS = WS_PROTOCOL_FORMATS + HTTP_PROTOCOL_FORMATS
+DEFAULT_GREMLIN_PROTOCOL = DEFAULT_WS_PROTOCOL
 
 STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
 SUMMARY_MODES = ["", "basic", "detailed"]
@@ -130,6 +137,7 @@ STATISTICS_LANGUAGE_INPUTS = STATISTICS_LANGUAGE_INPUTS_PG + STATISTICS_LANGUAGE
 
 SPARQL_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_EXPLAIN_MODES = ['dynamic', 'static', 'details']
+GREMLIN_EXPLAIN_MODES = ['dynamic', 'static', 'details']
 OPENCYPHER_PLAN_CACHE_MODES = ['auto', 'enabled', 'disabled']
 OPENCYPHER_DEFAULT_TIMEOUT = 120000
 OPENCYPHER_STATUS_STATE_MODES = ['ALL', 'RUNNING', 'WAITING', 'CANCELLING']
@@ -154,6 +162,16 @@ def get_gremlin_serializer(serializer_str: str):
         return serializer.GraphSONSerializersV3d0()
 
 
+def normalize_protocol_name(protocol: str):
+    if protocol in WS_PROTOCOL_FORMATS:
+        return DEFAULT_WS_PROTOCOL
+    elif protocol in HTTP_PROTOCOL_FORMATS:
+        return DEFAULT_HTTP_PROTOCOL
+    else:
+        print(f"Provided connection protocol is invalid for Neptune, defaulting to {DEFAULT_GREMLIN_PROTOCOL}.")
+        return DEFAULT_GREMLIN_PROTOCOL
+
+
 def normalize_service_name(neptune_service: str):
     if neptune_service in NEPTUNE_ANALYTICS_CONFIG_NAMES:
         return NEPTUNE_ANALYTICS_SERVICE_NAME
@@ -161,6 +179,16 @@ def normalize_service_name(neptune_service: str):
         if neptune_service not in NEPTUNE_DB_CONFIG_NAMES:
             print("Provided neptune_service is empty or invalid, defaulting to neptune-db.")
         return NEPTUNE_DB_SERVICE_NAME
+
+
+def set_plan_cache_hint(query: str, plan_cache_value: str):
+    plan_cache_op_re = r"(?i)USING\s+QUERY:\s*PLANCACHE"
+    if re.search(plan_cache_op_re, query) is not None:
+        print("planCache hint is already present in query. Ignoring parameter value.")
+        return query
+    plan_cache_hint = f'USING QUERY: PLANCACHE "{plan_cache_value}"\n'
+    query_with_hint = plan_cache_hint + query
+    return query_with_hint
 
 
 class Client(object):
@@ -230,7 +258,7 @@ class Client(object):
     def is_analytics_domain(self):
         return self.service == NEPTUNE_ANALYTICS_SERVICE_NAME
 
-    def get_uri_with_port(self, use_websocket=False, use_proxy=False):
+    def get_uri(self, use_websocket=False, use_proxy=False, include_port=True):
         if use_websocket is True:
             protocol = self._ws_protocol
         else:
@@ -243,7 +271,9 @@ class Client(object):
             uri_host = self.target_host
             uri_port = self.target_port
 
-        uri = f'{protocol}://{uri_host}:{uri_port}'
+        uri = f'{protocol}://{uri_host}'
+        if include_port:
+            uri += f':{uri_port}'
         return uri
 
     def get_graph_id(self):
@@ -320,9 +350,9 @@ class Client(object):
     def get_gremlin_connection(self, transport_kwargs) -> client.Client:
         nest_asyncio.apply()
 
-        ws_url = f'{self.get_uri_with_port(use_websocket=True, use_proxy=False)}/gremlin'
+        ws_url = f'{self.get_uri(use_websocket=True, use_proxy=False)}/gremlin'
         if self.proxy_host != '':
-            proxy_http_url = f'{self.get_uri_with_port(use_websocket=False, use_proxy=True)}/gremlin'
+            proxy_http_url = f'{self.get_uri(use_websocket=False, use_proxy=True)}/gremlin'
             transport_factory_args = lambda: AiohttpTransport(call_from_event_loop=True, proxy=proxy_http_url,
                                                               **transport_kwargs)
             request = self._prepare_request('GET', proxy_http_url)
@@ -360,9 +390,17 @@ class Client(object):
         if headers is None:
             headers = {}
 
+        data = {}
         use_proxy = True if self.proxy_host != '' else False
-        uri = f'{self.get_uri_with_port(use_websocket=False, use_proxy=use_proxy)}/gremlin'
-        data = {'gremlin': query}
+        if self.is_analytics_domain():
+            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=False)}/queries'
+            data['language'] = 'gremlin'
+            data['gremlin'] = query
+            headers['content-type'] = 'application/json'
+        else:
+            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
+            data['gremlin'] = query
+
         req = self._prepare_request('POST', uri, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
@@ -385,12 +423,25 @@ class Client(object):
         return self._gremlin_query_plan(query=query, plan_type='profile', args=args)
 
     def _gremlin_query_plan(self, query: str, plan_type: str, args: dict, ) -> requests.Response:
-        url = f'{self._http_protocol}://{self.host}:{self.port}/gremlin/{plan_type}'
-        data = {'gremlin': query}
+        data = {}
+        headers = {}
+        url = f'{self._http_protocol}://{self.host}'
+        if self.is_analytics_domain():
+            url += '/queries'
+            data['gremlin'] = query
+            data['language'] = 'gremlin'
+            headers['content-type'] = 'application/json'
+            if plan_type == 'explain':
+                data['explain.mode'] = args.pop('explain.mode')
+            elif plan_type == 'profile':
+                data['profile.debug'] = args.pop('profile.debug')
+        else:
+            url += f':{self.port}/gremlin/{plan_type}'
+            data['gremlin'] = query
         if args:
             for param, value in args.items():
                 data[param] = value
-        req = self._prepare_request('POST', url, data=json.dumps(data))
+        req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
@@ -407,19 +458,23 @@ class Client(object):
             if 'content-type' not in headers:
                 headers['content-type'] = 'application/x-www-form-urlencoded'
             url += 'openCypher'
-            data = {
-                'query': query
-            }
+            data = {}
+            if plan_cache:
+                if plan_cache not in OPENCYPHER_PLAN_CACHE_MODES:
+                    print('Invalid --plan-cache mode specified, defaulting to auto.')
+                else:
+                    if self.is_analytics_domain():
+                        data['planCache'] = plan_cache
+                    elif plan_cache != 'auto':
+                        query = set_plan_cache_hint(query, plan_cache)
+            data['query'] = query
             if explain:
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
             if query_params:
                 data['parameters'] = str(query_params).replace("'", '"')  # '{"AUS_code":"AUS","WLG_code":"WLG"}'
-            if self.is_analytics_domain():
-                if plan_cache:
-                    data['planCache'] = plan_cache
-                if query_timeout:
-                    data['queryTimeoutMilliseconds'] = str(query_timeout)
+            if query_timeout and self.is_analytics_domain():
+                data['queryTimeoutMilliseconds'] = str(query_timeout)
         else:
             url += 'db/neo4j/tx/commit'
             headers['content-type'] = 'application/json'

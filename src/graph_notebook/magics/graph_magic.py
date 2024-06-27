@@ -27,7 +27,7 @@ from graph_notebook.network.opencypher.OCNetwork import OCNetwork
 import ipywidgets as widgets
 import pandas as pd
 import itables.options as opt
-from itables import show, JavascriptFunction
+from itables import show, JavascriptFunction, init_notebook_mode
 from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
@@ -44,14 +44,16 @@ from graph_notebook.decorators.decorators import display_exceptions, magic_varia
     neptune_db_only, neptune_graph_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
 from graph_notebook.magics.streams import StreamViewer
-from graph_notebook.neptune.client import ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
+from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES,  VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
+    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
-    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, \
-    OPENCYPHER_STATUS_STATE_MODES, normalize_service_name, GRAPH_PG_INFO_METRICS
+    SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
+    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
+    normalize_service_name, GRAPH_PG_INFO_METRICS, \
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -135,12 +137,16 @@ SEED_SOURCE_OPTIONS = ['', 'samples', 'custom']
 SEED_NO_DATASETS_FOUND_MSG = "(No datasets available)"
 SEED_WIDGET_STYLE = {'description_width': '95px'}
 
+# Tokens as currently defined in TinkerPop 3.7: https://github.com/apache/tinkerpop/blob/3.7-dev/gremlin-util/src/main/java/org/apache/tinkerpop/gremlin/util/ser/SerTokens.java
 serializers_map = {
     "MIME_JSON": "application/json",
-    "GRAPHSON_V2D0": "application/vnd.gremlin-v2.0+json",
-    "GRAPHSON_V3D0": "application/vnd.gremlin-v3.0+json",
-    "GRYO_V3D0": "application/vnd.gremlin-v3.0+gryo",
-    "GRAPHBINARY_V1D0": "application/vnd.graphbinary-v1.0"
+    "GRAPHSON_V1": "application/vnd.gremlin-v1.0+json",
+    "GRAPHSON_V1_UNTYPED": "application/vnd.gremlin-v1.0+json;types=false",
+    "GRAPHSON_V2": "application/vnd.gremlin-v2.0+json",
+    "GRAPHSON_V2_UNTYPED":  "application/vnd.gremlin-v2.0+json;types=false",
+    "GRAPHSON_V3": "application/vnd.gremlin-v3.0+json",
+    "GRAPHSON_V3_UNTYPED": "application/vnd.gremlin-v3.0+json;types=false",
+    "GRAPHBINARY_V1": "application/vnd.graphbinary-v1.0"
 }
 
 DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph"
@@ -176,7 +182,7 @@ NEPTUNE_RDF_CONSTRUCT_DESCRIBE_FORMATS = [MEDIA_TYPE_SPARQL_JSON, MEDIA_TYPE_NQU
                                           MEDIA_TYPE_NTRIPLES_TEXT, MEDIA_TYPE_TURTLE, MEDIA_TYPE_N3, MEDIA_TYPE_TRIX,
                                           MEDIA_TYPE_TRIG, MEDIA_TYPE_RDF4J_BINARY]
 
-byte_units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4}
+byte_units = {'B': 1, 'KB': 1024, 'MB': 1024 ** 2, 'GB': 1024 ** 3, 'TB': 1024 ** 4}
 
 
 class QueryMode(Enum):
@@ -453,24 +459,24 @@ class Graph(Magics):
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             print('set notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             print('reset notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=2))
+            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
             of python Configuration object
             """
             config_dict = self.graph_notebook_config.to_dict()
-            store_to_ns(args.store_to, json.dumps(config_dict, indent=2), local_ns)
-            return print(json.dumps(config_dict, indent=2))
+            store_to_ns(args.store_to, json.dumps(config_dict, indent=4), local_ns)
+            return print(json.dumps(config_dict, indent=4))
         else:
             config_dict = self.graph_notebook_config.to_dict()
-            print(json.dumps(config_dict, indent=2))
+            print(json.dumps(config_dict, indent=4))
 
-        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=2), local_ns)
+        store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
 
         return self.graph_notebook_config
 
@@ -517,11 +523,11 @@ class Graph(Magics):
 
     @line_magic
     @neptune_db_only
-    def stream_viewer(self,line):
+    def stream_viewer(self, line):
         parser = argparse.ArgumentParser()
         parser.add_argument('language', nargs='?', default=STREAM_PG,
                             help=f'language  (default={STREAM_PG}) [{STREAM_PG}|{STREAM_RDF}]',
-                            choices = [STREAM_PG, STREAM_RDF])
+                            choices=[STREAM_PG, STREAM_RDF])
 
         parser.add_argument('--limit', type=int, default=10, help='Maximum number of rows to display at a time')
 
@@ -529,8 +535,8 @@ class Graph(Magics):
 
         language = args.language
         limit = args.limit
-        uri = self.client.get_uri_with_port()
-        viewer = StreamViewer(self.client,uri,language,limit=limit)
+        uri = self.client.get_uri(include_port=True)
+        viewer = StreamViewer(self.client, uri, language, limit=limit)
         viewer.show()
 
     @line_magic
@@ -719,6 +725,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -873,7 +882,8 @@ class Graph(Magics):
                         if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
                             lines = []
                             for b in results['results']['bindings']:
-                                lines.append(f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                                lines.append(
+                                    f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
                             raw_output = widgets.Output(layout=sparql_layout)
                             with raw_output:
                                 html = sparql_construct_template.render(lines=lines)
@@ -912,6 +922,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     sparql_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
@@ -921,7 +932,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         sparql_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=sparql_scrollY,
                          columnDefs=sparql_columndefs,
@@ -1017,13 +1030,19 @@ class Graph(Magics):
     @cell_magic
     @needs_local_scope
     @display_exceptions
-    @neptune_db_only
     def gremlin(self, line, cell, local_ns: dict = None):
         parser = argparse.ArgumentParser()
         parser.add_argument('query_mode', nargs='?', default='query',
                             help='query mode (default=query) [query|explain|profile]')
-        parser.add_argument('--explain-type', type=str.lower, default='',
-                            help='Explain mode to use when using the explain query mode.')
+        parser.add_argument('-cp', '--connection-protocol', type=str.lower, default='',
+                            help=f'Neptune endpoints only. Connection protocol to use for connecting to the Gremlin '
+                                 f'database - either Websockets or HTTP. Valid inputs: {GREMLIN_PROTOCOL_FORMATS}. '
+                                 f'If not specified, defaults to the value of the gremlin.connection_protocol field '
+                                 f'in %%graph_notebook_config. Please note that this option has no effect on the '
+                                 f'Profile and Explain modes, which must use HTTP.')
+        parser.add_argument('--explain-type', type=str.lower, default='dynamic',
+                            help=f'Explain mode to use when using the explain query mode. '
+                                 f'Accepted values: {GREMLIN_EXPLAIN_MODES}')
         parser.add_argument('-p', '--path-pattern', default='', help='path pattern')
         parser.add_argument('-g', '--group-by', type=str, default='',
                             help='Property used to group nodes (e.g. code, T.region) default is T.label')
@@ -1057,11 +1076,13 @@ class Graph(Magics):
                                  'the profile report by default.')
         parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--profile-serializer', type=str, default='application/json',
+        parser.add_argument('--profile-serializer', type=str, default='GRAPHSON_V3_UNTYPED',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
-                                 'TinkerPop driver "Serializers" enum values. Default is application/json')
+                                 'TinkerPop driver "Serializers" enum values. Default is GRAPHSON_V3_UNTYPED')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
+        parser.add_argument('--profile-debug', action='store_true', default=False,
+                            help='Enable debug mode.')
         parser.add_argument('--profile-misc-args', type=str, default='{}',
                             help='Additional profile options, passed in as a map.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
@@ -1069,6 +1090,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -1108,9 +1132,14 @@ class Graph(Magics):
         transport_args = {'max_content_length': mcl_bytes}
 
         if mode == QueryMode.EXPLAIN:
-            res = self.client.gremlin_explain(cell,
-                                              args={'explain.mode': args.explain_type} if args.explain_type else {})
-            res.raise_for_status()
+            try:
+                res = self.client.gremlin_explain(cell,
+                                                  args={'explain.mode': args.explain_type} if args.explain_type else {})
+                res.raise_for_status()
+            except Exception as e:
+                if self.client.is_analytics_domain():
+                    print("%%gremlin is incompatible with Neptune Analytics.")
+                raise e
             # Replace strikethrough character bytes, can't be encoded to ASCII
             explain_bytes = res.content.replace(b'\xcc', b'-')
             explain_bytes = explain_bytes.replace(b'\xb6', b'')
@@ -1137,15 +1166,21 @@ class Graph(Magics):
             profile_args = {"profile.results": args.profile_no_results,
                             "profile.chop": args.profile_chop,
                             "profile.serializer": serializer,
-                            "profile.indexOps": args.profile_indexOps}
+                            "profile.indexOps": args.profile_indexOps,
+                            "profile.debug": args.profile_debug}
             try:
                 profile_misc_args_dict = json.loads(args.profile_misc_args)
                 profile_args.update(profile_misc_args_dict)
             except JSONDecodeError:
                 print('--profile-misc-args received invalid input, please check that you are passing in a valid '
                       'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
-            res = self.client.gremlin_profile(query=cell, args=profile_args)
-            res.raise_for_status()
+            try:
+                res = self.client.gremlin_profile(query=cell, args=profile_args)
+                res.raise_for_status()
+            except Exception as e:
+                if self.client.is_analytics_domain():
+                    print("%%gremlin is incompatible with Neptune Analytics.")
+                raise e
             profile_bytes = res.content.replace(b'\xcc', b'-')
             profile_bytes = profile_bytes.replace(b'\xb6', b'')
             query_res = profile_bytes.decode('utf-8')
@@ -1162,12 +1197,24 @@ class Graph(Magics):
         else:
             using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            if self.graph_notebook_config.proxy_host != '' and self.client.is_neptune_domain():
-                using_http = True
-                query_res_http = self.client.gremlin_http_query(cell, headers={'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
-                query_res_http.raise_for_status()
-                query_res_http_json = query_res_http.json()
-                query_res = query_res_http_json['result']['data']
+            if self.client.is_neptune_domain():
+                connection_protocol = normalize_protocol_name(args.connection_protocol) \
+                    if args.connection_protocol != '' \
+                    else self.graph_notebook_config.gremlin.connection_protocol
+                try:
+                    if connection_protocol == DEFAULT_HTTP_PROTOCOL:
+                        using_http = True
+                        query_res_http = self.client.gremlin_http_query(cell, headers={
+                            'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                        query_res_http.raise_for_status()
+                        query_res_http_json = query_res_http.json()
+                        query_res = query_res_http_json['result']['data']
+                    else:
+                        query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                except Exception as e:
+                    if self.client.is_analytics_domain():
+                        print("%%gremlin is incompatible with Neptune Analytics.")
+                    raise e
             else:
                 query_res = self.client.gremlin_query(cell, transport_args=transport_args)
             query_time = time.time() * 1000 - query_start
@@ -1284,6 +1331,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     gremlin_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
@@ -1294,7 +1342,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         gremlin_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=gremlin_scrollY,
                          columnDefs=gremlin_columndefs,
@@ -1599,7 +1649,7 @@ class Graph(Magics):
                 with output:
                     job_status_output.clear_output()
                     interval_output.close()
-                    total_status_wait = max_status_retries*poll_interval
+                    total_status_wait = max_status_retries * poll_interval
                     print(result)
                     if interval_check_response.get("status") != 'healthy':
                         print(f"Could not retrieve the status of the reset operation within the allotted time of "
@@ -1845,7 +1895,7 @@ class Graph(Magics):
             value=str(args.concurrency),
             placeholder=1,
             min=1,
-            max=2**16,
+            max=2 ** 16,
             disabled=False,
             layout=widgets.Layout(display=concurrency_hbox_visibility,
                                   width=widget_width)
@@ -2053,8 +2103,8 @@ class Graph(Magics):
             named_graph_uri_hbox.children = (named_graph_uri_hbox_label, named_graph_uri,)
             base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
-            concurrency_hbox.children = (concurrency_hbox_label, concurrency, )
-            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit, )
+            concurrency_hbox.children = (concurrency_hbox_label, concurrency,)
+            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit,)
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -2107,6 +2157,7 @@ class Graph(Magics):
                     kwargs.update(incremental_load_kwargs)
                 else:
                     bulk_load_kwargs = {
+                        'mode': mode.value,
                         'parallelism': parallelism.value,
                         'updateSingleCardinalityProperties': update_single_cardinality.value,
                         'queueRequest': queue_request.value,
@@ -2206,8 +2257,9 @@ class Graph(Magics):
 
                     if poll_status.value == 'FALSE':
                         start_msg_label = widgets.Label(f'Load started successfully!')
-                        polling_msg_label = widgets.Label(f'You can run "%load_status {load_result["payload"]["loadId"]}" '
-                                                          f'in another cell to check the current status of your bulk load.')
+                        polling_msg_label = widgets.Label(
+                            f'You can run "%load_status {load_result["payload"]["loadId"]}" '
+                            f'in another cell to check the current status of your bulk load.')
                         start_msg_hbox = widgets.HBox([start_msg_label])
                         polling_msg_hbox = widgets.HBox([polling_msg_label])
                         vbox = widgets.VBox([start_msg_hbox, polling_msg_hbox])
@@ -2250,11 +2302,13 @@ class Graph(Magics):
                                 with job_status_output:
                                     # parse status & execution_time differently for Analytics and NeptuneDB
                                     overall_status = \
-                                        interval_check_response["payload"]["status"] if self.client.is_analytics_domain() \
-                                        else interval_check_response["payload"]["overallStatus"]["status"]
+                                        interval_check_response["payload"][
+                                            "status"] if self.client.is_analytics_domain() \
+                                            else interval_check_response["payload"]["overallStatus"]["status"]
                                     total_time_spent = \
-                                        interval_check_response["payload"]["timeElapsedSeconds"] if self.client.is_analytics_domain() \
-                                        else interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
+                                        interval_check_response["payload"][
+                                            "timeElapsedSeconds"] if self.client.is_analytics_domain() \
+                                            else interval_check_response["payload"]["overallStatus"]["totalTimeSpent"]
                                     print(f'Overall Status: {overall_status}')
                                     if overall_status in FINAL_LOAD_STATUSES:
                                         execution_time = total_time_spent
@@ -2298,6 +2352,9 @@ class Graph(Magics):
         parser.add_argument('--limit', type=int, default=maxsize,
                             help='If --details is True, only return the x most recent load job statuses. '
                                  'Defaults to sys.maxsize.')
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         parser.add_argument('--store-to', type=str, default='')
         args = parser.parse_args(line.split())
@@ -2341,7 +2398,9 @@ class Graph(Magics):
                     results_df.insert(0, "#", range(1, len(results_df) + 1))
 
                     with table_output:
+                        init_notebook_mode(connected=args.connected_table)
                         show(results_df,
+                             connected=args.connected_table,
                              scrollX=True,
                              scrollY="475px",
                              columnDefs=[
@@ -3175,7 +3234,7 @@ class Graph(Magics):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
-                            help=f'Neptune Analytics only. Specifies the plan cache mode to use. '
+                            help=f'Specifies the plan cache mode to use. '
                                  f'Accepted values: {OPENCYPHER_PLAN_CACHE_MODES}')
         parser.add_argument('-qt', '--query-timeout', type=int, default=None,
                             help=f'Neptune Analytics only. Specifies the maximum query timeout in milliseconds.')
@@ -3219,6 +3278,9 @@ class Graph(Magics):
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
                             help='Specifies maximum duration of visualization physics simulation. Default is 1500ms')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no query output.")
+        parser.add_argument('-ct', '--connected-table', action='store_true', default=False,
+                            help=f'Dynamically load jQuery and DataTables resources for iTables. For more information, see: '
+                                 f'https://mwouts.github.io/itables/quick_start.html#offline-mode-versus-connected-mode')
         parser.add_argument('-r', '--results-per-page', type=int, default=10,
                             help='Specifies how many query results to display per page in the output. Default is 10')
         parser.add_argument('--no-scroll', action='store_true', default=False,
@@ -3282,17 +3344,23 @@ class Graph(Magics):
                 first_tab_html = opencypher_explain_template.render(table=explain,
                                                                     link=f"data:text/html;base64,{base64_str}")
         elif args.mode == 'query':
-            if not self.client.is_analytics_domain():
-                if args.plan_cache != 'auto':
-                    print("planCache is not supported for Neptune DB, ignoring.")
-                if args.query_timeout is not None:
-                    print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
+            if not self.client.is_analytics_domain() and args.query_timeout is not None:
+                print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
 
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             oc_http = self.client.opencypher_http(cell, query_params=query_params,
                                                   plan_cache=args.plan_cache,
                                                   query_timeout=args.query_timeout)
             query_time = time.time() * 1000 - query_start
+            if oc_http.status_code == 400 and not self.client.is_analytics_domain() and args.plan_cache != "auto":
+                try:
+                    oc_http_ex = json.loads(oc_http.content.decode('utf-8'))
+                    if (oc_http_ex["code"] == "MalformedQueryException"
+                            and oc_http_ex["detailedMessage"].startswith("Invalid input")):
+                        print("Please ensure that you are on NeptuneDB 1.3.2.0 or later when attempting to use "
+                              "--plan-cache.")
+                except:
+                    pass
             oc_http.raise_for_status()
 
             try:
@@ -3386,6 +3454,7 @@ class Graph(Magics):
                     visible_results, final_pagination_options, final_pagination_menu = generate_pagination_vars(
                         args.results_per_page)
                     oc_columndefs = [
+                        {"type": "string", "targets": "_all"},
                         {"width": "5%", "targets": 0},
                         {"visible": True, "targets": 0},
                         {"searchable": False, "targets": 0},
@@ -3395,7 +3464,9 @@ class Graph(Magics):
                     ]
                     if args.hide_index:
                         oc_columndefs[1]["visible"] = False
+                    init_notebook_mode(connected=args.connected_table)
                     show(results_df,
+                         connected=args.connected_table,
                          scrollX=True,
                          scrollY=oc_scrollY,
                          columnDefs=oc_columndefs,

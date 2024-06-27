@@ -3,8 +3,28 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added `--connected-table` option to magics with table widget output ([Link to PR](https://github.com/aws/graph-notebook/pull/634))
+- Fixed broken `--help` option for `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/630))
+- Fixed openCypher query bug regression in the [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) sample ([Link to PR](https://github.com/aws/graph-notebook/pull/631))
+- Fixed `%%graph_notebook_config` error when excluding optional Gremlin section ([Link to PR](https://github.com/aws/graph-notebook/pull/633))
+- Fixed `--mode` argument for Neptune DB bulk loader requests via `%load` ([Link to PR](https://github.com/aws/graph-notebook/pull/637))
+
+## Release 4.4.2 (June 18, 2024)
+- Set Gremlin `connection_protocol` defaults based on Neptune service when generating configuration via arguments ([Link to PR](https://github.com/aws/graph-notebook/pull/626))
+
+## Release 4.4.1 (June 17, 2024)
+
+- Added `--connection-protocol` option to `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/617))
+- Added global Gremlin `connection_protocol` setting to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/621))
+- Added various enhancements for `%%gremlin` HTTP connections to Neptune ([Link to PR](https://github.com/aws/graph-notebook/pull/624))
+- Restored left alignment of numeric value columns in results table widget ([Link to PR](https://github.com/aws/graph-notebook/pull/620))
+
+## Release 4.4.0 (June 10, 2024)
+
 - Added `%reset_graph` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/610))
-- Added `%get_graph` line magic and enabled `%status` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/611))
+- Added `%get_graph` line magic, support `%status` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/611))
+- Added `%%oc --plan-cache` support for Neptune DB ([Link to PR](https://github.com/aws/graph-notebook/pull/613))
+- Upgraded to Gremlin-Python 3.7 ([Link to PR](https://github.com/aws/graph-notebook/pull/597))
 
 ## Release 4.3.1 (June 3, 2024)
 

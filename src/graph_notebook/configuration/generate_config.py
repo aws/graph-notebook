@@ -8,11 +8,15 @@ import json
 import os
 from enum import Enum
 
-from graph_notebook.neptune.client import SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION, DEFAULT_GREMLIN_SERIALIZER, \
-    DEFAULT_GREMLIN_TRAVERSAL_SOURCE, DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE, \
-    NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants, \
-    GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS, \
-    NEPTUNE_DB_SERVICE_NAME, normalize_service_name
+from graph_notebook.neptune.client import (SPARQL_ACTION, DEFAULT_PORT, DEFAULT_REGION,
+                                           DEFAULT_GREMLIN_SERIALIZER, DEFAULT_GREMLIN_TRAVERSAL_SOURCE,
+                                           DEFAULT_GREMLIN_PROTOCOL, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL,
+                                           HTTP_PROTOCOL_FORMATS, WS_PROTOCOL_FORMATS,
+                                           DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE,
+                                           NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants,
+                                           GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS,
+                                           NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
+                                           normalize_service_name)
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -53,19 +57,22 @@ class GremlinSection(object):
     """
 
     def __init__(self, traversal_source: str = '', username: str = '', password: str = '',
-                 message_serializer: str = ''):
+                 message_serializer: str = '', connection_protocol: str = '', include_protocol: bool = False):
         """
         :param traversal_source: used to specify the traversal source for a Gremlin traversal, in the case that we are
         connected to an endpoint that can access multiple graphs.
         :param username: used to specify a username for authenticating to Gremlin Server, if the endpoint supports it.
         :param password: used to specify a password for authenticating to Gremlin Server, if the endpoint supports it.
         :param message_serializer: used to specify a serializer for encoding the data to and from Gremlin Server.
+        :param connection_protocol: used to specify a protocol for the Gremlin connection.
+        :param include_protocol: used to specify whether to include connection_protocol in the Gremlin config.
         """
 
         if traversal_source == '':
             traversal_source = DEFAULT_GREMLIN_TRAVERSAL_SOURCE
 
         serializer_lower = message_serializer.lower()
+        # TODO: Update with untyped serializers once supported in GremlinPython
         if serializer_lower == '':
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
         elif serializer_lower in GRAPHSONV3_VARIANTS:
@@ -79,11 +86,24 @@ class GremlinSection(object):
                   f'Valid serializers: [graphsonv3, graphsonv2, graphbinaryv1].')
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
 
-
         self.traversal_source = traversal_source
         self.username = username
         self.password = password
         self.message_serializer = message_serializer
+
+        if include_protocol:
+            protocol_lower = connection_protocol.lower()
+            if protocol_lower == '':
+                connection_protocol = DEFAULT_GREMLIN_PROTOCOL
+            elif protocol_lower in HTTP_PROTOCOL_FORMATS:
+                connection_protocol = DEFAULT_HTTP_PROTOCOL
+            elif protocol_lower in WS_PROTOCOL_FORMATS:
+                connection_protocol = DEFAULT_WS_PROTOCOL
+            else:
+                print(f"Invalid connection protocol specified, defaulting to {DEFAULT_GREMLIN_PROTOCOL}. "
+                      f"Valid protocols: [websockets, http].")
+                connection_protocol = DEFAULT_GREMLIN_PROTOCOL
+            self.connection_protocol = connection_protocol
 
     def to_dict(self):
         return self.__dict__
@@ -141,8 +161,20 @@ class Configuration(object):
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
-            self.gremlin = GremlinSection(message_serializer=gremlin_section.message_serializer) \
-                if gremlin_section is not None else GremlinSection()
+            default_protocol = DEFAULT_HTTP_PROTOCOL if self._proxy_host != '' else DEFAULT_GREMLIN_PROTOCOL
+            if gremlin_section is not None:
+                if hasattr(gremlin_section, "connection_protocol"):
+                    if self._proxy_host != '' and gremlin_section.connection_protocol != DEFAULT_HTTP_PROTOCOL:
+                        print("Enforcing HTTP connection protocol for proxy connections.")
+                        final_protocol = DEFAULT_HTTP_PROTOCOL
+                    else:
+                        final_protocol = gremlin_section.connection_protocol
+                else:
+                    final_protocol = default_protocol
+                self.gremlin = GremlinSection(message_serializer=gremlin_section.message_serializer,
+                                              connection_protocol=final_protocol, include_protocol=True)
+            else:
+                self.gremlin = GremlinSection(connection_protocol=default_protocol, include_protocol=True)
             self.neo4j = Neo4JSection()
         else:
             self.is_neptune_config = False
@@ -266,6 +298,9 @@ if __name__ == "__main__":
     parser.add_argument("--gremlin_serializer",
                         help="the serializer to use as the encoding format when creating Gremlin connections",
                         default=DEFAULT_GREMLIN_SERIALIZER)
+    parser.add_argument("--gremlin_connection_protocol",
+                        help="the connection protocol to use for Gremlin connections",
+                        default='')
     parser.add_argument("--neo4j_username", help="the username to use for Neo4J connections",
                         default=DEFAULT_NEO4J_USERNAME)
     parser.add_argument("--neo4j_password", help="the password to use for Neo4J connections",
@@ -277,6 +312,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
+    protocol_arg = args.gremlin_connection_protocol
+    include_protocol = False
+    if is_allowed_neptune_host(args.host, args.neptune_hosts):
+        include_protocol = True
+        if not protocol_arg:
+            protocol_arg = DEFAULT_HTTP_PROTOCOL \
+                if args.neptune_service == NEPTUNE_ANALYTICS_SERVICE_NAME else DEFAULT_WS_PROTOCOL
     config = generate_config(args.host, int(args.port),
                              AuthModeEnum(auth_mode_arg),
                              args.ssl, args.ssl_verify,
@@ -284,7 +326,8 @@ if __name__ == "__main__":
                              args.load_from_s3_arn, args.aws_region, args.proxy_host, int(args.proxy_port),
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,
-                                            args.gremlin_password, args.gremlin_serializer),
+                                            args.gremlin_password, args.gremlin_serializer,
+                                            protocol_arg, include_protocol),
                              Neo4JSection(args.neo4j_username, args.neo4j_password,
                                           args.neo4j_auth, args.neo4j_database),
                              args.neptune_hosts)

@@ -11,20 +11,20 @@ from graph_notebook.magics.metadata import Metric, Metadata, set_gremlin_profile
 class TestMetadataClassFunctions(unittest.TestCase):
 
     def test_gremlin_profile_metadata_func(self):
-        time_expected = 392.686
-        predicates_expected = 16
-        results_num_expected = 100
-        serialization_expected = 2636.380
-        serializer_type_expected = "GRYO_V3D0"
-        results_size_expected = 23566
-        query_total_index_ops_expected = 3
-        query_unique_index_ops_expected = 3
+        time_expected = 18.669
+        predicates_expected = 18
+        results_num_expected = 5
+        serialization_expected = 15.464
+        serializer_type_expected = "application/vnd.gremlin-v3.0+json"
+        results_size_expected = 10162
+        query_total_index_ops_expected = 18
+        query_unique_index_ops_expected = 18
         query_duplication_ratio_expected = 1
         query_terms_materialized_expected = 0
-        seri_total_index_ops_expected = 200
-        seri_unique_index_ops_expected = 140
-        seri_duplication_ratio_expected = 1.43
-        seri_terms_materialized_expected = 393
+        seri_total_index_ops_expected = 18
+        seri_unique_index_ops_expected = 18
+        seri_duplication_ratio_expected = 1.0
+        seri_terms_materialized_expected = 0
 
         gremlin_metadata = Metadata()
         with open('gremlin_profile_sample_response.txt', 'r') as profile_file:

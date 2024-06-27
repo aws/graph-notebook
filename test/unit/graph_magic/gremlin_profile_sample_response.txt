@@ -4,11 +4,12 @@
 
 Query String
 ==================
-g.V().hasLabel("airport").has("code", "AUS").emit().repeat(in().simplePath()).times(2).limit(100)
+g.V().has('code','LHR').outE().inV().path().by(valueMap(true)).limit(5)
+
 
 Original Traversal
 ==================
-[GraphStep(vertex,[]), HasStep([~label.eq(airport), code.eq(AUS)]), RepeatStep(emit(true),[VertexStep(IN,vertex), PathFilterStep(simple), RepeatEndStep],until(loops(2))), RangeGlobalStep(0,100)]
+[GraphStep(vertex,[]), HasStep([code.eq(LHR)]), VertexStep(OUT,edge), EdgeVertexStep(IN), PathStep([[PropertyMapStep(value)]]), RangeGlobalStep(0,5)]
 
 Optimized Traversal
 ===================
@@ -16,88 +17,93 @@ Neptune steps:
 [
     NeptuneGraphQueryStep(Vertex) {
         JoinGroupNode {
-            PatternNode[(?1, <code>, "AUS", ?) . project ?1 .], {estimatedCardinality=1, indexTime=84, hashJoin=true, joinTime=3, actualTotalOutput=1}
-            PatternNode[(?1, <~label>, ?2=<airport>, <~>) . project ask .], {estimatedCardinality=3374, indexTime=29, hashJoin=true, joinTime=0, actualTotalOutput=61}
-            RepeatNode {
-                Repeat {
-                    PatternNode[(?3, ?5, ?1, ?6) . project ?1,?3 . IsEdgeIdFilter(?6) . SimplePathFilter(?1, ?3)) .], {hashJoin=true, estimatedCardinality=50148, indexTime=0, joinTime=3}
+            PatternNode[VP(?1, <code>, "LHR", <~>) . project ?1 .], {estimatedCardinality=1, expectedTotalOutput=1, indexTime=0, joinTime=0, numSearches=1, actualTotalOutput=1}
+            PatternNode[EL(?1, ?5, ?3, ?6) . project ?1,?6,?3 . IsEdgeIdFilter(?6) .], {estimatedCardinality=INFINITY, expectedTotalInput=1, indexTime=0, joinTime=0, numSearches=1}
+        }, finishers=[limit(5)], {path=[Vertex(?1):GraphStep, Edge(?6,?1,?3):VertexStep, Vertex(?3):EdgeVertexStep], joinStats=true, optimizationTime=2, maxVarId=15, executionTime=14}
+    },
+    NeptunePathStep {
+        NeptunePropertyMapStep {
+            JoinGroupNode {
+                PatternNode[VP(?1, ?8, ?9, <~>) .]
+            }, {initialValues={?1=null, ?3=null, ?6=null}}
+        },
+        NeptunePropertyMapStep {
+            JoinGroupNode {
+                UnionNode {
+                    PatternNode[EP(?6, ?10, ?11, <~>) .], {estimatedCardinality=63580}
+                    PatternNode[EL(?, ?12, ?, ?6) .], {estimatedCardinality=INFINITY}
                 }
-                Emit {
-                    Filter(true)
-                }
-                LoopsCondition {
-                    LoopsFilter([?1, ?3],eq(2))
-                }
-            }, annotations={repeatMode=BFS, emitFirst=true, untilFirst=false, leftVar=?1, rightVar=?3}
-        }, finishers=[limit(100)], annotations={path=[Vertex(?1):GraphStep, Repeat[Vertex(?3):VertexStep]], joinStats=true, optimizationTime=495, maxVarId=7, executionTime=323}
+            }, {initialValues={?1=null, ?3=null, ?6=null}}
+        },
+        NeptunePropertyMapStep {
+            JoinGroupNode {
+                PatternNode[VP(?3, ?13, ?14, <~>) .]
+            }, {initialValues={?1=null, ?3=null, ?6=null}}
+        }
     },
     NeptuneTraverserConverterStep
 ]
+
 
 Physical Pipeline
 =================
 NeptuneGraphQueryStep
     |-- StartOp
-    |-- JoinGroupOp
-        |-- SpoolerOp(100)
-        |-- DynamicJoinOp(PatternNode[(?1, <code>, "AUS", ?) . project ?1 .], {estimatedCardinality=1, indexTime=84, hashJoin=true})
-        |-- SpoolerOp(100)
-        |-- DynamicJoinOp(PatternNode[(?1, <~label>, ?2=<airport>, <~>) . project ask .], {estimatedCardinality=3374, indexTime=29, hashJoin=true})
-        |-- RepeatOp
-            |-- <upstream input> (Iteration 0) [visited=1, output=1 (until=0, emit=1), next=1]
-            |-- BindingSetQueue (Iteration 1) [visited=61, output=61 (until=0, emit=61), next=61]
-                |-- SpoolerOp(100)
-                |-- DynamicJoinOp(PatternNode[(?3, ?5, ?1, ?6) . project ?1,?3 . IsEdgeIdFilter(?6) . SimplePathFilter(?1, ?3)) .], {hashJoin=true, estimatedCardinality=50148, indexTime=0})
-            |-- BindingSetQueue (Iteration 2) [visited=38, output=38 (until=38, emit=0), next=0]
-                |-- SpoolerOp(100)
-                |-- DynamicJoinOp(PatternNode[(?3, ?5, ?1, ?6) . project ?1,?3 . IsEdgeIdFilter(?6) . SimplePathFilter(?1, ?3)) .], {hashJoin=true, estimatedCardinality=50148, indexTime=0})
-        |-- LimitOp(100)
+    |-- JoinGroupOp@2f500db7
+        |-- DynamicJoinOp@78b965ae(PipelineJoinOp(PatternNode[VP(?1, <code>, "LHR", <~>) . project ?1 .], {estimatedCardinality=1, expectedTotalOutput=1}))
+        |-- SpoolerOp(100, @78b965ae, null)
+        |-- DynamicJoinOp@67012ec9(PipelineJoinOp(PatternNode[EL(?1, ?5, ?3, ?6) . project ?1,?6,?3 . IsEdgeIdFilter(?6) .], {estimatedCardinality=INFINITY, expectedTotalInput=1}))
+        |-- LimitOp(5)
+
+NeptunePathStep
+    |-- BindingSetQueue
+    |-- JoinGroupOp@6a996745
+        |-- DynamicJoinOp@417c3e4f(PipelineJoinOp(PatternNode[VP(?1, ?8, ?9, <~>) .]))
+
+    |-- BindingSetQueue
+    |-- JoinGroupOp@2b0c033
+        |-- UnionOp@44764c1
+            |-- MultiplexerOp
+
+    |-- BindingSetQueue
+    |-- JoinGroupOp@60bf88a9
+        |-- DynamicJoinOp@32903d93(PipelineJoinOp(PatternNode[VP(?3, ?13, ?14, <~>) .]))
 
 Runtime (ms)
 ============
-Query Execution:  392.686
-Serialization:   2636.380
+Query Execution: 18.669
+Serialization:   15.464
 
 Traversal Metrics
 =================
 Step                                                               Count  Traversers       Time (ms)    % Dur
 -------------------------------------------------------------------------------------------------------------
-NeptuneGraphQueryStep(Vertex)                                        100         100         314.162    82.78
-NeptuneTraverserConverterStep                                        100         100          65.333    17.22
-                                            >TOTAL                     -           -         379.495        -
-
-Repeat Metrics
-==============
-Iteration  Visited   Output    Until     Emit     Next
-------------------------------------------------------
-        0        1        1        0        1        1
-        1       61       61        0       61       61
-        2       38       38       38        0        0
-------------------------------------------------------
-               100      100       38       62       62
+NeptuneGraphQueryStep(Vertex)                                          5           5           2.152    20.56
+NeptunePathStep([[NeptunePropertyMapStep], [Nep...                     5           5           4.317    41.25
+NeptuneTraverserConverterStep                                          5           5           3.997    38.19
+                                            >TOTAL                     -           -          10.466        -
 
 Predicates
 ==========
-# of predicates: 16
-
-WARNING: reverse traversal with no edge label(s) - .in() / .both() may impact query performance
+# of predicates: 18
 
 Results
 =======
-Count: 100
-Output: [v[3], v[3600], v[3614], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[47], v[49], v[136], v[13], v[15], v[16], v[17], v[18], v[389], v[20], v[21], v[22], v[23], v[24], v[25], v[26], v[27], v[28], v[416], v[29], v[30], v[430], v[31], v[9...
-Response serializer: GRYO_V3D0
-Response size (bytes): 23566
+Count: 5
+Output: [path[{country=[UK], code=[LHR], longest=[12799], city=[London], lon=[-0.461941003799], type=[airport], label=airport, elev=[83], icao=[EGLL], id=49, runways=[2], region=[GB-ENG], lat=[51.4706001282], desc=[London Heathrow]}, {dist=3533, id=9144, lab...
+Response serializer: application/vnd.gremlin-v3.0+json
+Response size (bytes): 10162
+
 
 Index Operations
 ================
 Query execution:
-    # of statement index ops: 3
-    # of unique statement index ops: 3
+    # of statement index ops: 18
+    # of unique statement index ops: 18
     Duplication ratio: 1.0
     # of terms materialized: 0
 Serialization:
-    # of statement index ops: 200
-    # of unique statement index ops: 140
-    Duplication ratio: 1.43
-    # of terms materialized: 393
+    # of statement index ops: 18
+    # of unique statement index ops: 18
+    Duplication ratio: 1.0
+    # of terms materialized: 0
