@@ -2161,6 +2161,7 @@ class Graph(Magics):
                     kwargs.update(incremental_load_kwargs)
                 else:
                     bulk_load_kwargs = {
+                        'mode': mode.value,
                         'parallelism': parallelism.value,
                         'updateSingleCardinalityProperties': update_single_cardinality.value,
                         'queueRequest': queue_request.value,
