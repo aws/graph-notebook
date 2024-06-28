@@ -1216,7 +1216,11 @@ class Graph(Magics):
                         print("%%gremlin is incompatible with Neptune Analytics.")
                     raise e
             else:
-                query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                try:
+                    query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                except Exception as e:
+                    store_to_ns(args.store_to, {'error': str(e)[5:]}, local_ns)  # remove the leading error code.
+                    raise e
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
