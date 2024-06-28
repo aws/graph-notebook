@@ -21,6 +21,7 @@
     "@types/feather-icons": "4.7.0",
     "@types/jquery": "3.5.0",
     "@types/jqueryui": "1.12.13",
+    "@types/lodash": "4.17.2",
     "@types/mocha": "7.0.2",
     "@types/node": "13.13.5",
     "@types/webpack-env": "1.15.2",
