@@ -483,6 +483,8 @@ class Graph(Magics):
 
         store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
 
+        return self.graph_notebook_config
+
     @line_cell_magic
     def neptune_config_allowlist(self, line='', cell=''):
         parser = argparse.ArgumentParser()
