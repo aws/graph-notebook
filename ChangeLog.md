@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added `--connected-table` option to magics with table widget output ([Link to PR](https://github.com/aws/graph-notebook/pull/634))
+- Changed `%%gremlin --store-to` to also store exceptions from non-Neptune queries ([Link to PR](https://github.com/aws/graph-notebook/pull/635))
 - Fixed broken `--help` option for `%%gremlin` ([Link to PR](https://github.com/aws/graph-notebook/pull/630))
 - Fixed openCypher query bug regression in the [`01-About-the-Neptune-Notebook`](https://github.com/aws/graph-notebook/blob/main/src/graph_notebook/notebooks/01-Getting-Started/01-About-the-Neptune-Notebook.ipynb) sample ([Link to PR](https://github.com/aws/graph-notebook/pull/631))
 - Fixed `%%graph_notebook_config` error when excluding optional Gremlin section ([Link to PR](https://github.com/aws/graph-notebook/pull/633))
