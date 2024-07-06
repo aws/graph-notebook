@@ -451,6 +451,7 @@ class Graph(Magics):
         parser.add_argument('mode', nargs='?', default='show',
                             help='mode (default=show) [show|reset|silent]')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         args = parser.parse_args(line.split())
 
         if cell != '':
@@ -458,12 +459,14 @@ class Graph(Magics):
             config = get_config_from_dict(data, neptune_hosts=self.neptune_cfg_allowlist)
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
-            print('set notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
+            if not args.silent:
+                print('set notebook config to:')
+                print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
-            print('reset notebook config to:')
-            print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
+            if not args.silent:
+                print('reset notebook config to:')
+                print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
@@ -471,10 +474,12 @@ class Graph(Magics):
             """
             config_dict = self.graph_notebook_config.to_dict()
             store_to_ns(args.store_to, json.dumps(config_dict, indent=4), local_ns)
-            return print(json.dumps(config_dict, indent=4))
+            if not args.silent:
+                return print(json.dumps(config_dict, indent=4))
         else:
             config_dict = self.graph_notebook_config.to_dict()
-            print(json.dumps(config_dict, indent=4))
+            if not args.silent:
+                print(json.dumps(config_dict, indent=4))
 
         store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
 
@@ -1216,7 +1221,11 @@ class Graph(Magics):
                         print("%%gremlin is incompatible with Neptune Analytics.")
                     raise e
             else:
-                query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                try:
+                    query_res = self.client.gremlin_query(cell, transport_args=transport_args)
+                except Exception as e:
+                    store_to_ns(args.store_to, {'error': str(e)[5:]}, local_ns)  # remove the leading error code.
+                    raise e
             query_time = time.time() * 1000 - query_start
             if not args.silent:
                 gremlin_metadata = build_gremlin_metadata_from_query(query_type='query', results=query_res,
