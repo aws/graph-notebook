@@ -46,6 +46,7 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/01-Neptune-Database/03-Sample-Applications/06-Data-Science-Samples/01-Identifying-Fraud-Rings-Using-Social-Network-Analytics.ipynb',
             f'{NOTEBOOK_BASE_DIR}/01-Neptune-Database/03-Sample-Applications/06-Data-Science-Samples/02-Identifying-1st-Person-Synthetic-Identity-Fraud-Using-Graph-Similarity.ipynb',
             f'{NOTEBOOK_BASE_DIR}/01-Neptune-Database/03-Sample-Applications/06-Data-Science-Samples/03-Logistics-Analysis-using-a-Transportation-Network.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/01-Neptune-Database/03-Sample-Applications/07-Games-Industry-Graphs/01-Building-a-Social-Network-for-Games-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/01-Getting-Started/01-Getting-Started-With-Neptune-Analytics.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/01-Getting-Started-With-Graph-Algorithms.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/02-Graph-Algorithms/02-Path-Finding-Algorithms.ipynb',
