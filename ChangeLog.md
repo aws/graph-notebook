@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- New Neptune Database notebook - Games Industry Graphs ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
+  - Path: 01-Neptune-Database > 03-Sample-Applications > 07-Games-Industry-Graphs
 - Added `--connected-table` option to magics with table widget output ([Link to PR](https://github.com/aws/graph-notebook/pull/634))
 - Added `--silent` option to the `%%graph_notebook_config` line and cell magics ([Link to PR](https://github.com/aws/graph-notebook/pull/641))
 - Changed `%%gremlin --store-to` to also store exceptions from non-Neptune queries ([Link to PR](https://github.com/aws/graph-notebook/pull/635))
