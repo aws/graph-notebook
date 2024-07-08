@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
 - New Neptune Database notebook - Games Industry Graphs ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
   - Path: 01-Neptune-Database > 03-Sample-Applications > 07-Games-Industry-Graphs
 - Added `--connected-table` option to magics with table widget output ([Link to PR](https://github.com/aws/graph-notebook/pull/634))
@@ -16,6 +17,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Removed unnecessarily verbose output from `get_config` function ([Link to PR](https://github.com/aws/graph-notebook/pull/642))
 
 ## Release 4.4.2 (June 18, 2024)
+
 - Set Gremlin `connection_protocol` defaults based on Neptune service when generating configuration via arguments ([Link to PR](https://github.com/aws/graph-notebook/pull/626))
 
 ## Release 4.4.1 (June 17, 2024)
