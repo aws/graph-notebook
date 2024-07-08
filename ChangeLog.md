@@ -13,6 +13,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Fixed `%%graph_notebook_config` error when excluding optional Gremlin section ([Link to PR](https://github.com/aws/graph-notebook/pull/633))
 - Fixed `--mode` argument for Neptune DB bulk loader requests via `%load` ([Link to PR](https://github.com/aws/graph-notebook/pull/637))
 - Switched to generating Jinja2 templates in sandboxed environment ([Link to PR](https://github.com/aws/graph-notebook/pull/639))
+- Removed unnecessarily verbose output from `get_config` function ([Link to PR](https://github.com/aws/graph-notebook/pull/642))
 
 ## Release 4.4.2 (June 18, 2024)
 - Set Gremlin `connection_protocol` defaults based on Neptune service when generating configuration via arguments ([Link to PR](https://github.com/aws/graph-notebook/pull/626))
