@@ -78,5 +78,4 @@ def get_config(path: str = DEFAULT_CONFIG_LOCATION,
                neptune_hosts: list = NEPTUNE_CONFIG_HOST_IDENTIFIERS) -> Configuration:
     with open(path) as config_file:
         data = json.load(config_file)
-        print(data)
         return get_config_from_dict(data=data, neptune_hosts=neptune_hosts)
