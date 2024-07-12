@@ -644,7 +644,7 @@ def _compile_pattern(pat, ignore_case=True):
     else:
         res = _translate_glob(pat)
     flags = re.IGNORECASE if ignore_case else 0
-    return re.compile(res, flags=flags).match
+    return re.compile(res, flags=flags | re.DOTALL | re.MULTILINE).match
 
 
 def _iexplode_path(path):
@@ -671,7 +671,7 @@ def _translate_glob(pat):
         translated_parts.append(_translate_glob_part(part))
     os_sep_class = '[%s]' % re.escape(SEPARATORS)
     res = _join_translated(translated_parts, os_sep_class)
-    return '(?ms){res}\\Z'.format(res=res)
+    return '{res}\\Z'.format(res=res)
 
 
 def _join_translated(translated_parts, os_sep_class):
