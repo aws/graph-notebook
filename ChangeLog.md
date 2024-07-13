@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.5.0 (July 15, 2024)
+
 - New Neptune Database notebook - Games Industry Graphs ([Link to PR](https://github.com/aws/graph-notebook/pull/566))
   - Path: 01-Neptune-Database > 03-Sample-Applications > 07-Games-Industry-Graphs
 - Added unified `%reset` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/644))
