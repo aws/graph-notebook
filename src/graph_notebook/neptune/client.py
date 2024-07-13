@@ -633,11 +633,11 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
-    def reset_graph(self, graph_id: str = '', no_skip_snapshot: bool = False) -> dict:
+    def reset_graph(self, graph_id: str = '', snapshot: bool = False) -> dict:
         try:
             res = self.neptune_graph_client.reset_graph(
                 graphIdentifier=graph_id,
-                skipSnapshot=(not no_skip_snapshot)
+                skipSnapshot=(not snapshot)
             )
             return res
         except ClientError as e:
