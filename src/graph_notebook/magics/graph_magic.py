@@ -1531,6 +1531,60 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_graph_only
+    def create_graph_snapshot(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--snapshot-name', type=str, default='',
+                            help="The name for the snapshot. Must start with a letter, contain only alphanumeric "
+                                 "characters or hyphens, and not end with or contain two consecutive hyphens. If not "
+                                 "supplied, this will default to the format 'snapshot-[graph_id]-[timestamp]'.")
+        parser.add_argument('-t', '--tags', type=str, default='',
+                            help='Metadata tags to attach to the graph snapshot. Pass a dict in string format, '
+                                 'ex. {"tag1":"foo","tag2":"bar"}')
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False,
+                            help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='',
+                            help='Store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        graph_id = self.client.get_graph_id()
+
+        if args.snapshot_name:
+            snapshot_name = args.snapshot_name
+        else:
+            datetime_iso = datetime.datetime.utcnow().isoformat()
+            timestamp = re.sub(r'\D', '', datetime_iso)
+            snapshot_name = f"snapshot-{graph_id}-{timestamp}"
+
+        if args.tags:
+            try:
+                tags = json.loads(args.tags)
+            except JSONDecodeError as e:
+                print("Tags map is improperly formatted, skipping.")
+                tags = None
+                logger.error(e)
+        else:
+            tags = None
+
+        try:
+            res = self.client.create_graph_snapshot(graph_id=graph_id, snapshot_name=snapshot_name, tags=tags)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print("Successfully submitted snapshot request:")
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to create the graph snapshot:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
     def reset(self, line, local_ns: dict = None, service: str = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()

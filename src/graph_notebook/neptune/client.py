@@ -654,6 +654,20 @@ class Client(object):
             logger.debug(f"GetGraph call failed with service exception: {e}")
             raise e
 
+    def create_graph_snapshot(self, graph_id: str = '', snapshot_name: str = '', tags: dict = None) -> dict:
+        if not tags:
+            tags = {}
+        try:
+            res = self.neptune_graph_client.create_graph_snapshot(
+                graphIdentifier=graph_id,
+                snapshotName=snapshot_name,
+                tags=tags
+            )
+            return res
+        except ClientError as e:
+            logger.debug(f"CreateGraphSnapshot call failed with service exception: {e}")
+            raise e
+
     def dataprocessing_start(self, s3_input_uri: str, s3_output_uri: str, **kwargs) -> requests.Response:
         data = {
             'inputDataS3Location': s3_input_uri,
