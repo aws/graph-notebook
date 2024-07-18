@@ -1778,15 +1778,29 @@ class Graph(Magics):
                         with interval_output:
                             print(f'checking status in {time_remaining} seconds')
                     time.sleep(1)
-                with output:
+                with (output):
                     job_status_output.clear_output()
                     interval_output.close()
                     total_status_wait = max_status_retries * poll_interval
-                    print(result)
-                    if interval_check_response.get("status") != 'healthy':
-                        print(f"Could not retrieve the status of the reset operation within the allotted time of "
-                              f"{total_status_wait} seconds. If the database is not in healthy status after at least 1 "
-                              f"minute, please try the operation again or reboot the {message_instance}.")
+                    final_status = interval_check_response.get("status")
+                    if using_db:
+                        if final_status != 'healthy':
+                            print(f"Could not retrieve the status of the reset operation within the allotted time of "
+                                  f"{total_status_wait} seconds. If the database is not in healthy status after at "
+                                  f"least 1 minute, please try the operation again or reboot the cluster.")
+                            print(result)
+                    else:
+                        if final_status == 'RESETTING':
+                            print(f"Reset is still in progress after the allotted wait time of {total_status_wait} "
+                                  f"seconds, halting status checks. Please use %status to verify when your graph is "
+                                  f"available again.")
+                            print(f"\nTIP: For future resets, you can use the --max-status-retries option to extend "
+                                  f"the total wait duration.")
+                        elif final_status != 'AVAILABLE':
+                            print(f"Graph is not in AVAILABLE or RESETTING status after the allotted time of "
+                                  f"{total_status_wait} seconds, something went wrong. "
+                                  f"Current status is {final_status}, see below for details.")
+                            print(result)
 
             def on_button_cancel_clicked(b):
                 confirm_text_hbox.close()

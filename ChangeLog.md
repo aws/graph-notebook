@@ -3,7 +3,9 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
 - Added `%create_graph_snapshot` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/653))
+- Added better `%reset` user messaging on status check timeout ([Link to PR](https://github.com/aws/graph-notebook/pull/652))
 - Upgraded `setuptools` dependency to 70.x ([Link to PR](https://github.com/aws/graph-notebook/pull/649))
 
 ## Release 4.5.0 (July 15, 2024)
