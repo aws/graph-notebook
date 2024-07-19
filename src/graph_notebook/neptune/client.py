@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 import re
+import datetime
 
 import requests
 import urllib3
@@ -189,6 +190,13 @@ def set_plan_cache_hint(query: str, plan_cache_value: str):
     plan_cache_hint = f'USING QUERY: PLANCACHE "{plan_cache_value}"\n'
     query_with_hint = plan_cache_hint + query
     return query_with_hint
+
+
+def generate_snapshot_name(graph_id: str):
+    datetime_iso = datetime.datetime.utcnow().isoformat()
+    timestamp = re.sub(r'\D', '', datetime_iso)
+    snapshot_name = f"snapshot-{graph_id}-{timestamp}"
+    return snapshot_name
 
 
 class Client(object):

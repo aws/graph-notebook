@@ -53,7 +53,8 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
     OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES,
     normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
-    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name)
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name,
+    generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -1554,9 +1555,7 @@ class Graph(Magics):
         if args.snapshot_name:
             snapshot_name = args.snapshot_name
         else:
-            datetime_iso = datetime.datetime.utcnow().isoformat()
-            timestamp = re.sub(r'\D', '', datetime_iso)
-            snapshot_name = f"snapshot-{graph_id}-{timestamp}"
+            snapshot_name = generate_snapshot_name(graph_id)
 
         if args.tags:
             try:
@@ -1628,8 +1627,12 @@ class Graph(Magics):
                     res = perform_reset_res.json()
                     return res
                 else:
+                    if snapshot:
+                        print(f"Snapshot creation is currently unsupported for prompt skip mode. Please use "
+                              f"%create_graph_snapshot to take a snapshot prior to attempting graph reset.")
+                        return
                     try:
-                        res = self.client.reset_graph(graph_id=graph_id, snapshot=snapshot)
+                        res = self.client.reset_graph(graph_id=graph_id, snapshot=False)
                         print(
                             f"ResetGraph call submitted successfully for graph ID [{graph_id}]. "
                             f"Please note that the graph may take several minutes to become available again, "
@@ -1712,8 +1715,55 @@ class Graph(Magics):
                             logger.error(result)
                         return
                 else:
+                    if snapshot_check_box.value:
+                        snapshot_name = generate_snapshot_name(graph_id)
+                        try:
+                            self.client.create_graph_snapshot(graph_id=graph_id, snapshot_name=snapshot_name)
+                        except Exception as e:
+                            with output:
+                                print("Graph snapshot creation request failed, please see the exception below.")
+                                print(f"\n{e}")
+                            logger.error(e)
+                            return
+
+                        snapshot_static_output = widgets.Output()
+                        snapshot_progress_output = widgets.Output()
+                        snapshot_hbox = widgets.HBox([snapshot_static_output, snapshot_progress_output])
+                        with snapshot_static_output:
+                            print("Creating graph snapshot, this may take several minutes")
+                        with output:
+                            display(snapshot_hbox)
+
+                        poll_interval = 5
+                        poll_index = 0
+                        status_ellipses = ""
+                        while True:
+                            snapshot_progress_output.clear_output()
+                            poll_index += 1
+                            if poll_index > poll_interval:
+                                snapshot_progress_output.clear_output()
+                                status_ellipses = ""
+                                interval_check_response = self.client.get_graph(graph_id=graph_id)
+                                current_status = interval_check_response["status"]
+                                if current_status == 'AVAILABLE':
+                                    snapshot_static_output.clear_output()
+                                    with snapshot_static_output:
+                                        print(f'Snapshot creation complete, starting reset.')
+                                        break
+                                elif current_status != 'SNAPSHOTTING':
+                                    snapshot_static_output.clear_output()
+                                    with snapshot_static_output:
+                                        print(f'Something went wrong with the snapshot creation.')
+                                        return
+                                poll_index = 0
+                            else:
+                                status_ellipses += "."
+                                with snapshot_progress_output:
+                                    print(status_ellipses)
+                            time.sleep(1)
+                        snapshot_progress_output.close()
                     try:
-                        result = self.client.reset_graph(graph_id=graph_id, snapshot=snapshot_check_box.value)
+                        result = self.client.reset_graph(graph_id=graph_id, snapshot=False)
                     except Exception as e:
                         with output:
                             print("Failed to initiate graph reset, please see the exception below.")
@@ -1739,7 +1789,7 @@ class Graph(Magics):
                     interval_output.clear_output()
                     if time_elapsed > poll_interval:
                         with interval_output:
-                            print('checking status...')
+                            print('Checking status...')
                         job_status_output.clear_output()
                         new_interval = True
                         try:
@@ -1776,7 +1826,7 @@ class Graph(Magics):
                                 display_html(HTML(loading_wheel_html))
                             new_interval = False
                         with interval_output:
-                            print(f'checking status in {time_remaining} seconds')
+                            print(f'Checking status in {time_remaining} seconds')
                     time.sleep(1)
                 with (output):
                     job_status_output.clear_output()
