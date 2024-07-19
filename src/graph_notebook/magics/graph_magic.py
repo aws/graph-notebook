@@ -391,6 +391,7 @@ class Graph(Magics):
         super(Graph, self).__init__(shell)
 
         self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.neptune_client_endpoint_url = None
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
@@ -428,6 +429,8 @@ class Graph(Magics):
                 builder = builder.with_iam(get_session())
             if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
                 builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
+            if self.neptune_client_endpoint_url:
+                builder = builder.with_custom_neptune_client_endpoint(self.neptune_client_endpoint_url)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -523,9 +526,29 @@ class Graph(Magics):
             allowlist_modified = False
 
         if allowlist_modified:
+            self._generate_client_from_config(self.graph_notebook_config)
             print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
         else:
             print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
+
+    @line_magic
+    def neptune_client_endpoint(self, line=''):
+        ep = line.lower()
+        if ep == '':
+            if self.neptune_client_endpoint_url:
+                print(f'SDK client is using custom endpoint_url: {self.neptune_client_endpoint_url}')
+            else:
+                print('No custom endpoint_url has been set for the SDK client.')
+            return
+        elif ep == 'reset':
+            self.neptune_client_endpoint_url = None
+            print('Reset SDK client to default endpoint_url.')
+        else:
+            self.neptune_client_endpoint_url = ep
+            print(f'Set SDK client to use endpoint_url: {self.neptune_client_endpoint_url}')
+
+        self._generate_client_from_config(self.graph_notebook_config)
+
 
     @line_magic
     @neptune_db_only
