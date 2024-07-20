@@ -211,7 +211,7 @@ class Client(object):
                  neo4j_auth: bool = True, neo4j_database: str = DEFAULT_NEO4J_DATABASE,
                  auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
-                 neptune_hosts: list = None):
+                 neptune_hosts: list = None, neptune_client_endpoint: str = None):
         self.target_host = host
         self.target_port = port
         self.neptune_service = neptune_service
@@ -240,7 +240,11 @@ class Client(object):
 
         self._http_session = None
 
-        self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region)
+        if neptune_client_endpoint is not None:
+            self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region,
+                                                     endpoint_url=neptune_client_endpoint)
+        else:
+            self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region)
 
     @property
     def host(self):
@@ -1090,6 +1094,10 @@ class ClientBuilder(object):
 
     def with_custom_neptune_hosts(self, neptune_hosts: list):
         self.args['neptune_hosts'] = neptune_hosts
+        return ClientBuilder(self.args)
+
+    def with_custom_neptune_client_endpoint(self, endpoint_url: str):
+        self.args['neptune_client_endpoint'] = endpoint_url
         return ClientBuilder(self.args)
 
     def build(self) -> Client:
