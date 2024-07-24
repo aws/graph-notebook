@@ -21,6 +21,17 @@ error_template = retrieve_template("error.html")
 check_if_access_regex = re.compile(r'^[a-zA-Z0-9_]+((\[\'.*?\'\])|(\[\".*?\"\])|(\[.*?\]))+$')
 var_name_regex = re.compile(r'^[^\[]*')
 
+db_to_graph_redirects = {
+    "statistics": "summary",
+    "db_reset": "graph_reset"
+}
+
+graph_to_db_redirects = {
+    "get_graph": "status",
+    "reset_graph": "db_reset",
+    "graph_reset": "db_reset"
+}
+
 
 def get_variable_injection_name_and_indices(raw_var: str, keys_are_str: bool = True):
     # get the name of the dict
@@ -138,12 +149,15 @@ def neptune_db_only(func):
     @functools.wraps(func)
     def check_neptune_db(*args, **kwargs):
         self = args[0]
+        magic_name = func.__name__
         if not hasattr(self.graph_notebook_config, 'neptune_service'):
             return func(*args, **kwargs)
         else:
             service_type = self.graph_notebook_config.neptune_service
             if service_type == NEPTUNE_ANALYTICS_SERVICE_NAME:
                 print(f'This magic is unavailable for Neptune Analytics.')
+                if magic_name in db_to_graph_redirects:
+                    print(f'\nPlease use %{db_to_graph_redirects[magic_name]} instead.')
                 return
             else:
                 return func(*args, **kwargs)
@@ -155,12 +169,15 @@ def neptune_graph_only(func):
     @functools.wraps(func)
     def check_neptune_graph(*args, **kwargs):
         self = args[0]
+        magic_name = func.__name__
         if not hasattr(self.graph_notebook_config, 'neptune_service'):
             return func(*args, **kwargs)
         else:
             service_type = self.graph_notebook_config.neptune_service
             if service_type == NEPTUNE_DB_SERVICE_NAME:
                 print(f'This magic is unavailable for Neptune DB.')
+                if magic_name in graph_to_db_redirects:
+                    print(f'\nPlease use %{graph_to_db_redirects[magic_name]} instead.')
                 return
             else:
                 return func(*args, **kwargs)

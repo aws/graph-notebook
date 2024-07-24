@@ -51,9 +51,10 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
-    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
-    normalize_service_name, GRAPH_PG_INFO_METRICS, \
-    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name)
+    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES,
+    normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name,
+    generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -390,6 +391,7 @@ class Graph(Magics):
         super(Graph, self).__init__(shell)
 
         self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
+        self.neptune_client_endpoint_url = None
         self.graph_notebook_config = generate_default_config()
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
@@ -427,6 +429,8 @@ class Graph(Magics):
                 builder = builder.with_iam(get_session())
             if self.neptune_cfg_allowlist != NEPTUNE_CONFIG_HOST_IDENTIFIERS:
                 builder = builder.with_custom_neptune_hosts(self.neptune_cfg_allowlist)
+            if self.neptune_client_endpoint_url:
+                builder = builder.with_custom_neptune_client_endpoint(self.neptune_client_endpoint_url)
         else:
             builder = ClientBuilder() \
                 .with_host(config.host) \
@@ -522,9 +526,29 @@ class Graph(Magics):
             allowlist_modified = False
 
         if allowlist_modified:
+            self._generate_client_from_config(self.graph_notebook_config)
             print(f'Set Neptune config allow list to: {self.neptune_cfg_allowlist}')
         else:
             print(f'Current Neptune config allow list: {self.neptune_cfg_allowlist}')
+
+    @line_magic
+    def neptune_client_endpoint(self, line=''):
+        ep = line.lower()
+        if ep == '':
+            if self.neptune_client_endpoint_url:
+                print(f'SDK client is using custom endpoint_url: {self.neptune_client_endpoint_url}')
+            else:
+                print('No custom endpoint_url has been set for the SDK client.')
+            return
+        elif ep == 'reset':
+            self.neptune_client_endpoint_url = None
+            print('Reset SDK client to default endpoint_url.')
+        else:
+            self.neptune_client_endpoint_url = ep
+            print(f'Set SDK client to use endpoint_url: {self.neptune_client_endpoint_url}')
+
+        self._generate_client_from_config(self.graph_notebook_config)
+
 
     @line_magic
     @neptune_db_only
@@ -1531,82 +1555,244 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
-    @neptune_db_only
-    def db_reset(self, line, local_ns: dict = None):
+    @neptune_graph_only
+    def create_graph_snapshot(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--snapshot-name', type=str, default='',
+                            help="The name for the snapshot. Must start with a letter, contain only alphanumeric "
+                                 "characters or hyphens, and not end with or contain two consecutive hyphens. If not "
+                                 "supplied, this will default to the format 'snapshot-[graph_id]-[timestamp]'.")
+        parser.add_argument('-t', '--tags', type=str, default='',
+                            help='Metadata tags to attach to the graph snapshot. Pass a dict in string format, '
+                                 'ex. {"tag1":"foo","tag2":"bar"}')
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False,
+                            help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='',
+                            help='Store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        graph_id = self.client.get_graph_id()
+
+        if args.snapshot_name:
+            snapshot_name = args.snapshot_name
+        else:
+            snapshot_name = generate_snapshot_name(graph_id)
+
+        if args.tags:
+            try:
+                tags = json.loads(args.tags)
+            except JSONDecodeError as e:
+                print("Tags map is improperly formatted, skipping.")
+                tags = None
+                logger.error(e)
+        else:
+            tags = None
+
+        try:
+            res = self.client.create_graph_snapshot(graph_id=graph_id, snapshot_name=snapshot_name, tags=tags)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print("Successfully submitted snapshot request:")
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to create the graph snapshot:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def reset(self, line, local_ns: dict = None, service: str = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()
-        parser.add_argument('-g', '--generate-token', action='store_true', help='generate token for database reset')
-        parser.add_argument('-t', '--token', default='', help='perform database reset with given token')
-        parser.add_argument('-y', '--yes', action='store_true', help='skip the prompt and perform database reset')
+        parser.add_argument('-g', '--generate-token', action='store_true',
+                            help='Generate token for database reset. Database only.')
+        parser.add_argument('-t', '--token', default='',
+                            help='Perform database reset with given token. Database only.')
+        parser.add_argument('-s', '--snapshot', action='store_true', default=False,
+                            help='Creates a final graph snapshot before the graph data is deleted. Analytics only.')
+        parser.add_argument('-y', '--yes', action='store_true',
+                            help='Skip the prompt and perform reset.')
         parser.add_argument('-m', '--max-status-retries', type=int, default=10,
                             help='Specifies how many times we should attempt to check if the database reset has '
                                  'completed, in intervals of 5 seconds. Default is 10')
         args = parser.parse_args(line.split())
         generate_token = args.generate_token
         skip_prompt = args.yes
+        snapshot = args.snapshot
+        if not service:
+            service = self.graph_notebook_config.neptune_service
+        if service == NEPTUNE_DB_SERVICE_NAME:
+            using_db = True
+            graph_id = None
+            message_instance = "cluster"
+        else:
+            using_db = False
+            graph_id = self.client.get_graph_id()
+            message_instance = "graph"
         max_status_retries = args.max_status_retries if args.max_status_retries > 0 else 1
-        if generate_token is False and args.token == '':
+        if not using_db or (generate_token is False and args.token == ''):
             if skip_prompt:
-                initiate_res = self.client.initiate_reset()
-                initiate_res.raise_for_status()
-                res = initiate_res.json()
-                token = res['payload']['token']
+                if using_db:
+                    initiate_res = self.client.initiate_reset()
+                    initiate_res.raise_for_status()
+                    res = initiate_res.json()
+                    token = res['payload']['token']
 
-                perform_reset_res = self.client.perform_reset(token)
-                perform_reset_res.raise_for_status()
-                logger.info(f'got the response {res}')
-                res = perform_reset_res.json()
-                return res
+                    perform_reset_res = self.client.perform_reset(token)
+                    perform_reset_res.raise_for_status()
+                    logger.info(f'got the response {res}')
+                    res = perform_reset_res.json()
+                    return res
+                else:
+                    if snapshot:
+                        print(f"Snapshot creation is currently unsupported for prompt skip mode. Please use "
+                              f"%create_graph_snapshot to take a snapshot prior to attempting graph reset.")
+                        return
+                    try:
+                        res = self.client.reset_graph(graph_id=graph_id, snapshot=False)
+                        print(
+                            f"ResetGraph call submitted successfully for graph ID [{graph_id}]. "
+                            f"Please note that the graph may take several minutes to become available again, "
+                            f"You can use %status or %get_graph to check the current status of the graph.\n")
+                        print(json.dumps(res, indent=2, default=str))
+                    except Exception as e:
+                        print("Received an error when attempting graph reset:")
+                        print(e)
+                    return
 
             output = widgets.Output()
-            source = 'Are you sure you want to delete all the data in your cluster?'
-            label = widgets.Label(source)
-            text_hbox = widgets.HBox([label])
-            check_box = widgets.Checkbox(
+            confirm_source = f'Are you sure you want to delete all the data in your {message_instance}?'
+            confirm_label = widgets.Label(confirm_source)
+            confirm_text_hbox = widgets.HBox([confirm_label])
+            confirm_check_box = widgets.Checkbox(
                 value=False,
                 disabled=False,
                 indent=False,
-                description='I acknowledge that upon deletion the cluster data will no longer be available.',
+                description=f'I acknowledge that upon deletion the {message_instance} data will no longer be available.',
                 layout=widgets.Layout(width='600px', margin='5px 5px 5px 5px')
             )
             button_delete = widgets.Button(description="Delete")
             button_cancel = widgets.Button(description="Cancel")
             button_hbox = widgets.HBox([button_delete, button_cancel])
 
-            display(text_hbox, check_box, button_hbox, output)
+            if using_db:
+                display(confirm_text_hbox, confirm_check_box, button_hbox, output)
+            else:
+                snapshot_source = f'OPTIONAL: Create a final graph snapshot before reset?'
+                snapshot_label = widgets.Label(snapshot_source)
+                snapshot_text_hbox = widgets.HBox([snapshot_label])
+                snapshot_check_box = widgets.Checkbox(
+                    value=snapshot,
+                    disabled=False,
+                    indent=False,
+                    description=f'Yes',
+                    layout=widgets.Layout(width='600px', margin='5px 5px 5px 5px')
+                )
+
+                display(confirm_text_hbox, confirm_check_box,
+                        snapshot_text_hbox, snapshot_check_box,
+                        button_hbox, output)
 
             def on_button_delete_clicked(b):
-                initiate_res = self.client.initiate_reset()
-                initiate_res.raise_for_status()
-                result = initiate_res.json()
+                if using_db:
+                    initiate_res = self.client.initiate_reset()
+                    initiate_res.raise_for_status()
+                    result = initiate_res.json()
 
-                text_hbox.close()
-                check_box.close()
+                confirm_text_hbox.close()
+                confirm_check_box.close()
+                if not using_db:
+                    snapshot_text_hbox.close()
+                    snapshot_check_box.close()
                 button_delete.close()
                 button_cancel.close()
                 button_hbox.close()
 
-                if not check_box.value:
+                if not confirm_check_box.value:
                     with output:
-                        print('Checkbox is not checked.')
-                    return
-                token = result['payload']['token']
-                if token == "":
-                    with output:
-                        print('Failed to get token.')
-                        print(result)
+                        print('Reset confirmation checkbox is not checked.')
                     return
 
-                perform_reset_res = self.client.perform_reset(token)
-                perform_reset_res.raise_for_status()
-                result = perform_reset_res.json()
+                if using_db:
+                    token = result['payload']['token']
+                    if token == "":
+                        with output:
+                            print('Failed to get token.')
+                            print(result)
+                        return
 
-                if 'status' not in result or result['status'] != '200 OK':
-                    with output:
-                        print('Database reset failed, please try the operation again or reboot the cluster.')
-                        print(result)
-                        logger.error(result)
-                    return
+                    perform_reset_res = self.client.perform_reset(token)
+                    perform_reset_res.raise_for_status()
+                    result = perform_reset_res.json()
+
+                    if 'status' not in result or result['status'] != '200 OK':
+                        with output:
+                            print('Database reset failed, please see exception below for details.')
+                            print(result)
+                            logger.error(result)
+                        return
+                else:
+                    if snapshot_check_box.value:
+                        snapshot_name = generate_snapshot_name(graph_id)
+                        try:
+                            self.client.create_graph_snapshot(graph_id=graph_id, snapshot_name=snapshot_name)
+                        except Exception as e:
+                            with output:
+                                print("Graph snapshot creation request failed, please see the exception below.")
+                                print(f"\n{e}")
+                            logger.error(e)
+                            return
+
+                        snapshot_static_output = widgets.Output()
+                        snapshot_progress_output = widgets.Output()
+                        snapshot_hbox = widgets.HBox([snapshot_static_output, snapshot_progress_output])
+                        with snapshot_static_output:
+                            print("Creating graph snapshot, this may take several minutes")
+                        with output:
+                            display(snapshot_hbox)
+
+                        poll_interval = 5
+                        poll_index = 0
+                        status_ellipses = ""
+                        while True:
+                            snapshot_progress_output.clear_output()
+                            poll_index += 1
+                            if poll_index > poll_interval:
+                                snapshot_progress_output.clear_output()
+                                status_ellipses = ""
+                                interval_check_response = self.client.get_graph(graph_id=graph_id)
+                                current_status = interval_check_response["status"]
+                                if current_status == 'AVAILABLE':
+                                    snapshot_static_output.clear_output()
+                                    with snapshot_static_output:
+                                        print(f'Snapshot creation complete, starting reset.')
+                                        break
+                                elif current_status != 'SNAPSHOTTING':
+                                    snapshot_static_output.clear_output()
+                                    with snapshot_static_output:
+                                        print(f'Something went wrong with the snapshot creation.')
+                                        return
+                                poll_index = 0
+                            else:
+                                status_ellipses += "."
+                                with snapshot_progress_output:
+                                    print(status_ellipses)
+                            time.sleep(1)
+                        snapshot_progress_output.close()
+                    try:
+                        result = self.client.reset_graph(graph_id=graph_id, snapshot=False)
+                    except Exception as e:
+                        with output:
+                            print("Failed to initiate graph reset, please see the exception below.")
+                            print(f"\n{e}")
+                        logger.error(e)
+                        return
 
                 retry = max_status_retries
                 poll_interval = 5
@@ -1626,25 +1812,35 @@ class Graph(Magics):
                     interval_output.clear_output()
                     if time_elapsed > poll_interval:
                         with interval_output:
-                            print('checking status...')
+                            print('Checking status...')
                         job_status_output.clear_output()
                         new_interval = True
                         try:
                             retry -= 1
-                            status_res = self.client.status()
-                            status_res.raise_for_status()
-                            interval_check_response = status_res.json()
+                            if using_db:
+                                status_res = self.client.status()
+                                status_res.raise_for_status()
+                                interval_check_response = status_res.json()
+                            else:
+                                interval_check_response = self.client.get_graph(graph_id=graph_id)
                         except Exception as e:
                             # Exception is expected when database is resetting, continue waiting
-                            with job_status_output:
-                                last_poll_time = time.time()
-                                time.sleep(1)
-                                continue
+                            if using_db:
+                                with job_status_output:
+                                    last_poll_time = time.time()
+                                    time.sleep(1)
+                                    continue
+                            else:
+                                print('Graph status check failed, something went wrong.')
+                                print(e)
+                                logger.error(e)
+                                return
                         job_status_output.clear_output()
                         with job_status_output:
-                            if interval_check_response["status"] == 'healthy':
+                            done_status = 'healthy' if using_db else 'AVAILABLE'
+                            if interval_check_response["status"] == done_status:
                                 interval_output.close()
-                                print('Database has been reset.')
+                                print(f'{message_instance.capitalize()} has been reset.')
                                 return
                         last_poll_time = time.time()
                     else:
@@ -1653,26 +1849,43 @@ class Graph(Magics):
                                 display_html(HTML(loading_wheel_html))
                             new_interval = False
                         with interval_output:
-                            print(f'checking status in {time_remaining} seconds')
+                            print(f'Checking status in {time_remaining} seconds')
                     time.sleep(1)
-                with output:
+                with (output):
                     job_status_output.clear_output()
                     interval_output.close()
                     total_status_wait = max_status_retries * poll_interval
-                    print(result)
-                    if interval_check_response.get("status") != 'healthy':
-                        print(f"Could not retrieve the status of the reset operation within the allotted time of "
-                              f"{total_status_wait} seconds. If the database is not in healthy status after at least 1 "
-                              f"minute, please try the operation again or reboot the cluster.")
+                    final_status = interval_check_response.get("status")
+                    if using_db:
+                        if final_status != 'healthy':
+                            print(f"Could not retrieve the status of the reset operation within the allotted time of "
+                                  f"{total_status_wait} seconds. If the database is not in healthy status after at "
+                                  f"least 1 minute, please try the operation again or reboot the cluster.")
+                            print(result)
+                    else:
+                        if final_status == 'RESETTING':
+                            print(f"Reset is still in progress after the allotted wait time of {total_status_wait} "
+                                  f"seconds, halting status checks. Please use %status to verify when your graph is "
+                                  f"available again.")
+                            print(f"\nTIP: For future resets, you can use the --max-status-retries option to extend "
+                                  f"the total wait duration.")
+                        elif final_status != 'AVAILABLE':
+                            print(f"Graph is not in AVAILABLE or RESETTING status after the allotted time of "
+                                  f"{total_status_wait} seconds, something went wrong. "
+                                  f"Current status is {final_status}, see below for details.")
+                            print(result)
 
             def on_button_cancel_clicked(b):
-                text_hbox.close()
-                check_box.close()
+                confirm_text_hbox.close()
+                confirm_check_box.close()
+                if not using_db:
+                    snapshot_text_hbox.close()
+                    snapshot_check_box.close()
                 button_delete.close()
                 button_cancel.close()
                 button_hbox.close()
                 with output:
-                    print('Database reset operation has been canceled.')
+                    print(f'{message_instance.capitalize()} reset operation has been canceled.')
 
             button_delete.on_click(on_button_delete_clicked)
             button_cancel.on_click(on_button_cancel_clicked)
@@ -1693,35 +1906,23 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_db_only
+    def db_reset(self, line, local_ns: dict = None):
+        self.reset(line, local_ns, service=NEPTUNE_DB_SERVICE_NAME)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
     @neptune_graph_only
     def graph_reset(self, line, local_ns: dict = None):
-        self.reset_graph(line, local_ns)
+        self.reset(line, local_ns, service=NEPTUNE_ANALYTICS_SERVICE_NAME)
 
     @line_magic
     @needs_local_scope
     @display_exceptions
     @neptune_graph_only
     def reset_graph(self, line, local_ns: dict = None):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-ns', '--no-skip-snapshot', action='store_true', default=False,
-                            help='Creates a final graph snapshot before the graph data is deleted.')
-        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
-        parser.add_argument('--store-to', type=str, default='', help='Store query result to this variable.')
-        args = parser.parse_args(line.split())
-
-        try:
-            graph_id = self.client.get_graph_id()
-            res = self.client.reset_graph(graph_id=graph_id, no_skip_snapshot=args.no_skip_snapshot)
-            if not args.silent:
-                print(f"ResetGraph call submitted successfully for graph ID [{graph_id}]. Please note that the graph "
-                      f"may take several minutes to become available again.\n")
-                print(json.dumps(res, indent=2, default=str))
-            store_to_ns(args.store_to, res, local_ns)
-        except Exception as e:
-            if not args.silent:
-                print("Received an error when attempting graph reset:")
-                print(e)
-            store_to_ns(args.store_to, e, local_ns)
+        self.reset(line, local_ns, service=NEPTUNE_ANALYTICS_SERVICE_NAME)
 
     @magic_variables
     @line_magic

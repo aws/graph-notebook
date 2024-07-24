@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 import re
+import datetime
 
 import requests
 import urllib3
@@ -191,6 +192,13 @@ def set_plan_cache_hint(query: str, plan_cache_value: str):
     return query_with_hint
 
 
+def generate_snapshot_name(graph_id: str):
+    datetime_iso = datetime.datetime.utcnow().isoformat()
+    timestamp = re.sub(r'\D', '', datetime_iso)
+    snapshot_name = f"snapshot-{graph_id}-{timestamp}"
+    return snapshot_name
+
+
 class Client(object):
     def __init__(self, host: str, port: int = DEFAULT_PORT,
                  neptune_service: str = NEPTUNE_DB_SERVICE_NAME,
@@ -203,7 +211,7 @@ class Client(object):
                  neo4j_auth: bool = True, neo4j_database: str = DEFAULT_NEO4J_DATABASE,
                  auth=None, session: Session = None,
                  proxy_host: str = '', proxy_port: int = DEFAULT_PORT,
-                 neptune_hosts: list = None):
+                 neptune_hosts: list = None, neptune_client_endpoint: str = None):
         self.target_host = host
         self.target_port = port
         self.neptune_service = neptune_service
@@ -232,7 +240,11 @@ class Client(object):
 
         self._http_session = None
 
-        self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region)
+        if neptune_client_endpoint is not None:
+            self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region,
+                                                     endpoint_url=neptune_client_endpoint)
+        else:
+            self.neptune_graph_client = boto3_client(service_name='neptune-graph', region_name=self.region)
 
     @property
     def host(self):
@@ -633,11 +645,11 @@ class Client(object):
         res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
-    def reset_graph(self, graph_id: str = '', no_skip_snapshot: bool = False) -> dict:
+    def reset_graph(self, graph_id: str = '', snapshot: bool = False) -> dict:
         try:
             res = self.neptune_graph_client.reset_graph(
                 graphIdentifier=graph_id,
-                skipSnapshot=(not no_skip_snapshot)
+                skipSnapshot=(not snapshot)
             )
             return res
         except ClientError as e:
@@ -652,6 +664,20 @@ class Client(object):
             return res
         except ClientError as e:
             logger.debug(f"GetGraph call failed with service exception: {e}")
+            raise e
+
+    def create_graph_snapshot(self, graph_id: str = '', snapshot_name: str = '', tags: dict = None) -> dict:
+        if not tags:
+            tags = {}
+        try:
+            res = self.neptune_graph_client.create_graph_snapshot(
+                graphIdentifier=graph_id,
+                snapshotName=snapshot_name,
+                tags=tags
+            )
+            return res
+        except ClientError as e:
+            logger.debug(f"CreateGraphSnapshot call failed with service exception: {e}")
             raise e
 
     def dataprocessing_start(self, s3_input_uri: str, s3_output_uri: str, **kwargs) -> requests.Response:
@@ -1068,6 +1094,10 @@ class ClientBuilder(object):
 
     def with_custom_neptune_hosts(self, neptune_hosts: list):
         self.args['neptune_hosts'] = neptune_hosts
+        return ClientBuilder(self.args)
+
+    def with_custom_neptune_client_endpoint(self, endpoint_url: str):
+        self.args['neptune_client_endpoint'] = endpoint_url
         return ClientBuilder(self.args)
 
     def build(self) -> Client:
