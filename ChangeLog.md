@@ -8,7 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added better `%reset` user messaging on status check timeout ([Link to PR](https://github.com/aws/graph-notebook/pull/652))
 - Modified the `%reset --snapshot` option to use the CreateGraphSnapshot API ([Link to PR](https://github.com/aws/graph-notebook/pull/654))
 - Upgraded `setuptools` dependency to 70.x ([Link to PR](https://github.com/aws/graph-notebook/pull/649))
-- Experimental build support for Python 3.11 ([Link to PR](https://github.com/aws/graph-notebook/pull/645))
+- Experimental support for Python 3.11 ([PR #1](https://github.com/aws/graph-notebook/pull/645)) ([PR #2](https://github.com/aws/graph-notebook/pull/656))
 
 ## Release 4.5.0 (July 15, 2024)
 
