@@ -90,7 +90,8 @@ setup(
         'itables>=2.0.0,<=2.1.0',
         'pandas>=1.3.5,<=1.5.3',
         'numpy<1.24.0',
-        'nest_asyncio>=1.5.5,<=1.5.6'
+        'nest_asyncio>=1.5.5,<=1.5.6',
+        'async-timeout>=4.0,<5.0'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
