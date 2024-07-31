@@ -244,7 +244,7 @@ def oc_results_df(oc_res, oc_res_format: str = None):
     if rows_and_columns:
         results_df = pd.DataFrame(rows_and_columns['rows'])
         results_df = results_df.astype(str)
-        results_df = results_df.applymap(lambda x: encode_html_chars(x))
+        results_df = results_df.map(lambda x: encode_html_chars(x))
         col_0_value = range(1, len(results_df) + 1)
         results_df.insert(0, "#", col_0_value)
         for col_index, col_name in enumerate(rows_and_columns['columns']):
@@ -292,7 +292,7 @@ def encode_html_chars(result):
 
 def decode_html_chars(results_df: pd.DataFrame = None) -> pd.DataFrame:
     for k, v in iter(DT_HTML_CHAR_MAP.items()):
-        results_df = results_df.applymap(lambda x: x.replace(v, k))
+        results_df = results_df.map(lambda x: x.replace(v, k))
 
     return results_df
 
@@ -896,7 +896,7 @@ class Graph(Magics):
                         if rows_and_columns is not None:
                             results_df = pd.DataFrame(rows_and_columns['rows'])
                             results_df = results_df.astype(str)
-                            results_df = results_df.applymap(lambda x: encode_html_chars(x))
+                            results_df = results_df.map(lambda x: encode_html_chars(x))
                             results_df.insert(0, "#", range(1, len(results_df) + 1))
                             for col_index, col_name in enumerate(rows_and_columns['columns']):
                                 try:
