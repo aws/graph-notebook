@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.5.1 (July 31, 2024)
+
 - Added `%create_graph_snapshot` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/653))
 - Added better `%reset` user messaging on status check timeout ([Link to PR](https://github.com/aws/graph-notebook/pull/652))
 - Modified the `%reset --snapshot` option to use the CreateGraphSnapshot API ([Link to PR](https://github.com/aws/graph-notebook/pull/654))
