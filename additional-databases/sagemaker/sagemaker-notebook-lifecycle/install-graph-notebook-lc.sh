@@ -14,7 +14,7 @@ NOTEBOOK_VERSION=""
 source activate JupyterSystemEnv
 
 echo "installing Python 3 kernel"
-python3 -m ipykernel install --sys-prefix --name python3 --display-name "Neptune_Python3"
+python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 3"
 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
