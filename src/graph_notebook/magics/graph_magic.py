@@ -155,7 +155,6 @@ DEFAULT_BASE_URI = "http://aws.amazon.com/neptune/default"
 RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
 BASE_URI_FORMATS = [FORMAT_RDFXML, FORMAT_TURTLE]
 DEFAULT_LOAD_CONCURRENCY = 1
-DEFAULT_LOAD_PERIODIC_COMMIT = 0
 
 MEDIA_TYPE_SPARQL_JSON = "application/sparql-results+json"
 MEDIA_TYPE_SPARQL_XML = "application/sparql-results+xml"
@@ -1962,7 +1961,6 @@ class Graph(Magics):
         parser.add_argument('-d', '--dependencies', action='append', default=[])
         parser.add_argument('-e', '--no-edge-ids', action='store_true', default=False)
         parser.add_argument('-c', '--concurrency', type=int, default=1)
-        parser.add_argument('-pc', '--periodic-commit', type=int, default=0)
         parser.add_argument('--named-graph-uri', type=str, default=DEFAULT_NAMEDGRAPH_URI,
                             help='The default graph for all RDF formats when no graph is specified. '
                                  'Default is http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph.')
@@ -2005,11 +2003,9 @@ class Graph(Magics):
         named_graph_hbox_visibility = 'none'
         base_uri_hbox_visibility = 'none'
         concurrency_hbox_visibility = 'none'
-        periodic_commit_hbox_visibility = 'none'
 
         if load_type == 'incremental':
             concurrency_hbox_visibility = 'flex'
-            periodic_commit_hbox_visibility = 'flex'
         else:
             if source_format.value.lower() == FORMAT_CSV:
                 gremlin_parser_options_hbox_visibility = 'flex'
@@ -2108,16 +2104,6 @@ class Graph(Magics):
             max=2 ** 16,
             disabled=False,
             layout=widgets.Layout(display=concurrency_hbox_visibility,
-                                  width=widget_width)
-        )
-
-        periodic_commit = widgets.BoundedIntText(
-            value=args.periodic_commit,
-            placeholder=0,
-            min=0,
-            max=1000000,
-            disabled=False,
-            layout=widgets.Layout(display=periodic_commit_hbox_visibility,
                                   width=widget_width)
         )
 
@@ -2230,13 +2216,6 @@ class Graph(Magics):
 
         concurrency_hbox = widgets.HBox([concurrency_hbox_label, concurrency])
 
-        periodic_commit_hbox_label = widgets.Label('Periodic Commit:',
-                                                   layout=widgets.Layout(width=label_width,
-                                                                         display=periodic_commit_hbox_visibility,
-                                                                         justify_content="flex-end"))
-
-        periodic_commit_hbox = widgets.HBox([periodic_commit_hbox_label, periodic_commit])
-
         poll_status_label = widgets.Label('Poll Load Status:',
                                           layout=widgets.Layout(width=label_width,
                                                                 display="flex",
@@ -2291,7 +2270,7 @@ class Graph(Magics):
 
         basic_load_boxes = [source_hbox, source_format_hbox, region_hbox, fail_hbox]
         # load arguments for Analytics incremental load
-        incremental_load_boxes = [concurrency_hbox, periodic_commit_hbox]
+        incremental_load_boxes = [concurrency_hbox]
         # load arguments for Neptune bulk load
         bulk_load_boxes = [arn_hbox, mode_hbox, parallelism_hbox, cardinality_hbox,
                            queue_hbox, dep_hbox, ids_hbox, allow_empty_strings_hbox,
@@ -2314,7 +2293,6 @@ class Graph(Magics):
             base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
             concurrency_hbox.children = (concurrency_hbox_label, concurrency,)
-            periodic_commit_hbox.children = (periodic_commit_hbox_label, periodic_commit,)
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -2361,8 +2339,7 @@ class Graph(Magics):
                     incremental_load_kwargs = {
                         'source': source.value,
                         'format': source_format.value,
-                        'concurrency': concurrency.value,
-                        'periodicCommit': periodic_commit.value
+                        'concurrency': concurrency.value
                     }
                     kwargs.update(incremental_load_kwargs)
                 else:
@@ -2406,7 +2383,6 @@ class Graph(Magics):
                 named_graph_uri_hbox.close()
                 base_uri_hbox.close()
                 concurrency_hbox.close()
-                periodic_commit_hbox.close()
                 button.close()
 
                 load_submit_status_output = widgets.Output()
@@ -2424,7 +2400,7 @@ class Graph(Magics):
                                 else '"' + value + '"'
                             next_param = param + ': ' + value_substr
                             load_oc_params += next_param
-                            if param == 'periodicCommit':
+                            if param == 'concurrency':
                                 load_oc_params += '}'
                             else:
                                 load_oc_params += ', '

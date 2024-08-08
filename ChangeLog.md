@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
+
 ## Release 4.5.1 (July 31, 2024)
 
 - Added `%create_graph_snapshot` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/653))
