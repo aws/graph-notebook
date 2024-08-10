@@ -1606,6 +1606,45 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_graph_only
+    def list_import_tasks(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-m', '--max-results', type=int, default=None,
+                            help="The total number of records to return in the command's output, valid range is "
+                                 "[1,100]. If there are more available import tasks than --max-results,"
+                                 " then you will receive a nextToken in the output, which you can resubmit with the "
+                                 "--next-token argument to paginate on the next subset of results.")
+        parser.add_argument('-nt', '--next-token', type=str, default='',
+                            help="Pagination token used to paginate output. If applicable, tokens can be found as the "
+                                 "nextToken field in the output of a previous %get_import_task execution. When this "
+                                 "argument is provided as input, the service returns results from where the previous "
+                                 "response left off.")
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        if args.max_results and not (1 <= args.max_results <= 100):
+            print("--max-results must be in range [1,100].")
+            return
+
+        try:
+            res = self.client.list_import_tasks(max_results=args.max_results, next_token=args.next_token)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to list import tasks:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
     def reset(self, line, local_ns: dict = None, service: str = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()
