@@ -4,11 +4,17 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
+
+## Release 4.5.1 (July 31, 2024)
+
 - Added `%create_graph_snapshot` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/653))
 - Added better `%reset` user messaging on status check timeout ([Link to PR](https://github.com/aws/graph-notebook/pull/652))
 - Modified the `%reset --snapshot` option to use the CreateGraphSnapshot API ([Link to PR](https://github.com/aws/graph-notebook/pull/654))
+- Upgraded `pandas` dependency to 2.x ([Link to PR](https://github.com/aws/graph-notebook/pull/658))
 - Upgraded `setuptools` dependency to 70.x ([Link to PR](https://github.com/aws/graph-notebook/pull/649))
 - Experimental support for Python 3.11 ([PR #1](https://github.com/aws/graph-notebook/pull/645)) ([PR #2](https://github.com/aws/graph-notebook/pull/656))
+- Updated sample SageMaker Lifecycle scripts ([Link to PR](https://github.com/aws/graph-notebook/pull/657))
 
 ## Release 4.5.0 (July 15, 2024)
 
