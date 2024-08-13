@@ -161,10 +161,6 @@ Mappings:
       "bucket": "aws-neptune-notebook-us-gov-east-1"
     us-gov-west-1:
       "bucket": "aws-neptune-notebook-us-gov-west-1"
-    ap-southeast-3:
-      "bucket": "aws-neptune-notebook-ap-southeast-3-bucket"
-    eu-south-2:
-      "bucket": "aws-neptune-notebook-eu-south-2-bucket"
 
 Resources:
   NeptuneNotebookInstance:
