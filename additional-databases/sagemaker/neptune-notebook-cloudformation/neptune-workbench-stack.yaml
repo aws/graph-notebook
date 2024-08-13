@@ -101,6 +101,11 @@ Conditions:
     Fn::Equals:
       - !Ref SageMakerNotebookRoleArn
       - ""
+  UseEncryptionKey:
+    Fn::Not:
+      - Fn::Equals:
+        - Ref: EncryptionKey
+        - ""
 
 Resources:
   NeptuneNotebookInstance:
@@ -133,7 +138,10 @@ Resources:
         - Key: aws-neptune-resource-id
           Value: !Ref NeptuneClusterResourceId
       KmsKeyId:
-        Ref: EncryptionKey
+        Fn::If:
+          - UseEncryptionKey
+          - Ref: EncryptionKey
+          - Ref: AWS::NoValue
 
   NeptuneNotebookInstanceLifecycleConfig:
     Type: AWS::SageMaker::NotebookInstanceLifecycleConfig
