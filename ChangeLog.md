@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Added `%get_import_task` line magic  ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 - Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
 - Made EncryptionKey optional in Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/663))
 
