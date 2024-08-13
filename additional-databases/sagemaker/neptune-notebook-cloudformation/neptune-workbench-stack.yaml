@@ -107,6 +107,65 @@ Conditions:
         - Ref: EncryptionKey
         - ""
 
+Mappings:
+  RegionMap:
+    cn-north-1:
+      "bucket": "aws-neptune-notebook-cn-north-1"
+    cn-northwest-1:
+      "bucket": "aws-neptune-notebook-cn-northwest-1"
+    us-east-2:
+      "bucket": "aws-neptune-notebook-us-east-2"
+    us-east-1:
+      "bucket": "aws-neptune-notebook-us-east-1"
+    us-west-1:
+      "bucket": "aws-neptune-notebook-us-west-1"
+    us-west-2:
+      "bucket": "aws-neptune-notebook-us-west-2"
+    ap-south-1:
+      "bucket": "aws-neptune-notebook-ap-south-1"
+    ap-northeast-2:
+      "bucket": "aws-neptune-notebook-ap-northeast-2"
+    ap-southeast-1:
+      "bucket": "aws-neptune-notebook-ap-southeast-1"
+    ap-southeast-2:
+      "bucket": "aws-neptune-notebook-ap-southeast-2"
+    ap-northeast-1:
+      "bucket": "aws-neptune-notebook-ap-northeast-1"
+    ca-central-1:
+      "bucket": "aws-neptune-notebook-ca-central-1"
+    eu-central-1:
+      "bucket": "aws-neptune-notebook-eu-central-1"
+    eu-west-1:
+      "bucket": "aws-neptune-notebook-eu-west-1"
+    eu-west-2:
+      "bucket": "aws-neptune-notebook-eu-west-2"
+    eu-west-3:
+      "bucket": "aws-neptune-notebook-eu-west-3"
+    eu-north-1:
+      "bucket": "aws-neptune-notebook-eu-north-1"
+    sa-east-1:
+      "bucket": "aws-neptune-notebook-sa-east-1"
+    af-south-1:
+      "bucket": "aws-neptune-notebook-af-south-1"
+    ap-east-1:
+      "bucket": "aws-neptune-notebook-ap-east-1"
+    me-south-1:
+      "bucket": "aws-neptune-notebook-me-south-1"
+    me-central-1:
+      "bucket": "aws-neptune-notebook-me-central-1"
+    ap-south-2:
+      "bucket": "aws-neptune-notebook-ap-south-2"
+    il-central-1:
+      "bucket": "aws-neptune-notebook-il-central-1"
+    us-gov-east-1:
+      "bucket": "aws-neptune-notebook-us-gov-east-1"
+    us-gov-west-1:
+      "bucket": "aws-neptune-notebook-us-gov-west-1"
+    ap-southeast-3:
+      "bucket": "aws-neptune-notebook-ap-southeast-3-bucket"
+    eu-south-2:
+      "bucket": "aws-neptune-notebook-eu-south-2-bucket"
+
 Resources:
   NeptuneNotebookInstance:
     Type: AWS::SageMaker::NotebookInstance
@@ -148,21 +207,27 @@ Resources:
     Properties:
       OnStart:
         - Content:
-            Fn::Base64: !Sub |
-              #!/bin/bash
-              sudo -u ec2-user -i << 'EOF'
-              echo 'export GRAPH_NOTEBOOK_AUTH_MODE=${NeptuneClusterAuthMode}' >> ~/.bashrc
-              echo 'export GRAPH_NOTEBOOK_SSL=True' >> ~/.bashrc
-              echo 'export GRAPH_NOTEBOOK_HOST=${NeptuneClusterEndpoint}' >> ~/.bashrc
-              echo 'export GRAPH_NOTEBOOK_PORT=${NeptuneClusterPort}' >> ~/.bashrc
-              echo "export GRAPH_NOTEBOOK_SERVICE=neptune-db" >> ~/.bashrc
-              echo 'export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=${NeptuneClusterLoadFromS3Arn}' >> ~/.bashrc
-              echo 'export AWS_REGION=${AWS::Region}' >> ~/.bashrc
-              aws s3 cp s3://aws-neptune-notebook-${AWS::Region}/graph_notebook.tar.gz /tmp/graph_notebook.tar.gz
-              rm -rf /tmp/graph_notebook
-              tar -zxvf /tmp/graph_notebook.tar.gz -C /tmp
-              /tmp/graph_notebook/install.sh
-              EOF
+            Fn::Base64: !Sub
+              - |+
+                #!/bin/bash
+                sudo -u ec2-user -i << 'EOF'
+                echo 'export GRAPH_NOTEBOOK_AUTH_MODE=${NeptuneClusterAuthMode}' >> ~/.bashrc
+                echo 'export GRAPH_NOTEBOOK_SSL=True' >> ~/.bashrc
+                echo 'export GRAPH_NOTEBOOK_HOST=${NeptuneClusterEndpoint}' >> ~/.bashrc
+                echo 'export GRAPH_NOTEBOOK_PORT=${NeptuneClusterPort}' >> ~/.bashrc
+                echo "export GRAPH_NOTEBOOK_SERVICE=neptune-db" >> ~/.bashrc
+                echo 'export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=${NeptuneClusterLoadFromS3Arn}' >> ~/.bashrc
+                echo 'export AWS_REGION=${AWS::Region}' >> ~/.bashrc
+                aws s3 cp s3://${S3Bucket}/graph_notebook.tar.gz /tmp/graph_notebook.tar.gz
+                rm -rf /tmp/graph_notebook
+                tar -zxvf /tmp/graph_notebook.tar.gz -C /tmp
+                /tmp/graph_notebook/install.sh
+                EOF
+              - S3Bucket:
+                  Fn::FindInMap:
+                    - RegionMap
+                    - Ref: AWS::Region
+                    - bucket
 
   SageMakerNotebookAutoRole:
     Type: AWS::IAM::Role
@@ -185,8 +250,20 @@ Resources:
                   - s3:GetObject
                   - s3:ListBucket
                 Resource:
-                  - Fn::Sub: "arn:${AWS::Partition}:s3:::aws-neptune-notebook-${AWS::Region}"
-                  - Fn::Sub: "arn:${AWS::Partition}:s3:::aws-neptune-notebook-${AWS::Region}/*"
+                  - Fn::Sub:
+                    - "arn:${AWS::Partition}:s3:::${S3Bucket}"
+                    - S3Bucket:
+                        Fn::FindInMap:
+                          - RegionMap
+                          - Ref: AWS::Region
+                          - bucket
+                  - Fn::Sub:
+                    - "arn:${AWS::Partition}:s3:::${S3Bucket}/*"
+                    - S3Bucket:
+                        Fn::FindInMap:
+                          - RegionMap
+                          - Ref: AWS::Region
+                          - bucket
               - Effect: Allow
                 Action: neptune-db:connect
                 Resource:
