@@ -60,6 +60,8 @@ class TestValidateAllNotebooks(unittest.TestCase):
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/00-Intro-to-Software-Bill-Of-Materials.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/01-SBOM-Dependency-Analysis.ipynb',
             f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/03-Sample-Use-Cases/03-Software-Bill-Of-Materials/02-SBOM-Vulnerability-Analysis.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/04-OpenCypher-Over-RDF/01-Air-Routes.ipynb',
+            f'{NOTEBOOK_BASE_DIR}/02-Neptune-Analytics/04-OpenCypher-Over-RDF/01-Air-Routes-GeoNames.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/01-Getting-Started-with-Neptune-ML-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/02-Introduction-to-Node-Classification-Gremlin.ipynb',
             f'{NOTEBOOK_BASE_DIR}/03-Neptune-ML/01-Gremlin/03-Introduction-to-Node-Regression-Gremlin.ipynb',
