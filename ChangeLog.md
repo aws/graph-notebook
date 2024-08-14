@@ -2,9 +2,10 @@
 
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
-## Release 4.5.2 (August 14, 2024)
+## Upcoming
 
-- Added new notebooks for oc-over-rdf ([Link to PR](https://github.com/aws/graph-notebook/pull/672))
+- New Neptune Analytics notebooks - openCypher over RDF ([Link to PR](https://github.com/aws/graph-notebook/pull/672))
+  - Path: 02-Neptune-Analytics > 04-OpenCypher-Over-RDF
 - Added regional S3 bucket mappings to Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/664))
 - Enabled n-triples data for `%load` with Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/671))
 - Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
