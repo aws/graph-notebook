@@ -5,8 +5,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 ## Upcoming
 
 - Added regional S3 bucket mappings to Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/664))
+- Enabled n-triples data for `%load` with Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/671))
+- Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
 - Made EncryptionKey optional in Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/663))
-- Removed unused options from `%load` ([Link to PR](https://github.com/aws/graph-notebook/pull/662))
 
 ## Release 4.5.1 (July 31, 2024)
 
