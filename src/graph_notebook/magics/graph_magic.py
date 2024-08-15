@@ -2339,7 +2339,8 @@ class Graph(Magics):
                     incremental_load_kwargs = {
                         'source': source.value,
                         'format': source_format.value,
-                        'concurrency': concurrency.value
+                        'concurrency': concurrency.value,
+                        'blankNodeHandling': 'convertToIri'
                     }
                     kwargs.update(incremental_load_kwargs)
                 else:
