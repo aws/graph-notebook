@@ -2339,10 +2339,8 @@ class Graph(Magics):
                     incremental_load_kwargs = {
                         'source': source.value,
                         'format': source_format.value,
-                        'concurrency': concurrency.value,
+                        'concurrency': concurrency.value
                     }
-                    if source.value == FORMAT_NTRIPLE:
-                        incremental_load_kwargs['blankNodeHandling'] = 'convertToIri'
                     kwargs.update(incremental_load_kwargs)
                 else:
                     bulk_load_kwargs = {
@@ -2403,6 +2401,8 @@ class Graph(Magics):
                             next_param = param + ': ' + value_substr
                             load_oc_params += next_param
                             if param == 'concurrency':
+                                if source_format.value == FORMAT_NTRIPLE:
+                                    load_oc_params += ', blankNodeHandling: "convertToIri"'
                                 load_oc_params += '}'
                             else:
                                 load_oc_params += ', '
