@@ -47,7 +47,7 @@ from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
     DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
-    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
+    FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, FORMAT_NTRIPLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
@@ -2339,8 +2339,10 @@ class Graph(Magics):
                     incremental_load_kwargs = {
                         'source': source.value,
                         'format': source_format.value,
-                        'concurrency': concurrency.value
+                        'concurrency': concurrency.value,
                     }
+                    if source.value == FORMAT_NTRIPLE:
+                        incremental_load_kwargs['blankNodeHandling'] = 'convertToIri'
                     kwargs.update(incremental_load_kwargs)
                 else:
                     bulk_load_kwargs = {
