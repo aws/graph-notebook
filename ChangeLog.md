@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.5.2 (August 15, 2024)
+
 - New Neptune Analytics notebooks - openCypher over RDF ([Link to PR](https://github.com/aws/graph-notebook/pull/672))
   - Path: 02-Neptune-Analytics > 04-OpenCypher-Over-RDF
 - Updated OC-RDF samples to use `%load` magic, and pull from regional S3 buckets ([Link to PR](https://github.com/aws/graph-notebook/pull/676))
