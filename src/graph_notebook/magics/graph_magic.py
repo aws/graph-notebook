@@ -241,7 +241,7 @@ def query_type_to_action(query_type):
 def oc_results_df(oc_res, oc_res_format: str = None):
     rows_and_columns = opencypher_get_rows_and_columns(oc_res, oc_res_format)
     if rows_and_columns:
-        results_df = pd.DataFrame(rows_and_columns['rows'])
+        results_df = pd.DataFrame(rows_and_columns['rows']).convert_dtypes()
         results_df = results_df.astype(str)
         results_df = results_df.map(lambda x: encode_html_chars(x))
         col_0_value = range(1, len(results_df) + 1)
@@ -893,7 +893,7 @@ class Graph(Magics):
 
                         rows_and_columns = sparql_get_rows_and_columns(results)
                         if rows_and_columns is not None:
-                            results_df = pd.DataFrame(rows_and_columns['rows'])
+                            results_df = pd.DataFrame(rows_and_columns['rows']).convert_dtypes()
                             results_df = results_df.astype(str)
                             results_df = results_df.map(lambda x: encode_html_chars(x))
                             results_df.insert(0, "#", range(1, len(results_df) + 1))
@@ -1323,7 +1323,7 @@ class Graph(Magics):
                             query_res_deque.appendleft('x')
                             query_res = list(query_res_deque)
 
-                results_df = pd.DataFrame(query_res)
+                results_df = pd.DataFrame(query_res).convert_dtypes()
                 # Checking for created indices instead of the df itself here, as df.empty will still return True when
                 # only empty maps/lists are present in the data.
                 if not results_df.index.empty:
