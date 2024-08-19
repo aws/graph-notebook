@@ -13,7 +13,7 @@ requests>=2.32.0,<=2.32.2
 ipython>=7.16.1,<=8.10.0
 ipykernel==5.3.4
 ipyfilechooser==0.6.0
-neo4j>=4.4.9,<5.0.0
+neo4j>=4.4.9,<=5.23.1
 rdflib==7.0.0
 setuptools>=70.0.0,<=70.0.3
 nbconvert>=6.3.0,<=7.2.8
