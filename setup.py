@@ -81,7 +81,7 @@ setup(
         'botocore>=1.34.74',
         'boto3>=1.34.74',
         'ipython>=7.16.1,<=8.10.0',
-        'neo4j>=4.4.9,<=5.23.1',
+        'neo4j>=5.0.0,<=5.23.1',
         'rdflib==7.0.0',
         'ipykernel==5.3.4',
         'ipyfilechooser==0.6.0',
