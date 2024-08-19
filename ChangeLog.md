@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
 
 ## Release 4.5.2 (August 15, 2024)
 
