@@ -1606,6 +1606,44 @@ class Graph(Magics):
     @line_magic
     @needs_local_scope
     @display_exceptions
+    @neptune_graph_only
+    def get_import_task(self, line='', local_ns: dict = None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-ti', '--task-identifier', type=str, default='',
+                            help="The unique identifier of an import task.")
+        parser.add_argument('--include-metadata', action='store_true', default=False,
+                            help="Display the response metadata if it is available.")
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        task_id_regex = "t-[a-z0-9]{10}"
+        if args.task_identifier == '':
+            print("Please provide an import task ID using the -ti or --task-identifier parameter.")
+            return
+        if not re.match(fr"^{task_id_regex}$", args.task_identifier):
+            print(f"Import task ID must satisfy the regular expression pattern: {task_id_regex}")
+            return
+
+        try:
+            res = self.client.get_import_task(task_id=args.task_identifier)
+            if not args.include_metadata:
+                res.pop('ResponseMetadata', None)
+            if not args.silent:
+                print(json.dumps(res, indent=2, default=str))
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                if "ResourceNotFoundException" in str(e):
+                    print(f"Unable to import task with ID: {args.task_identifier}")
+                else:
+                    print("Encountered an error when attempting to retrieve the specified import task:\n")
+                    print(e)
+            store_to_ns(args.store_to, e, local_ns)
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
     def reset(self, line, local_ns: dict = None, service: str = None):
         logger.info(f'calling system endpoint {self.client.host}')
         parser = argparse.ArgumentParser()
