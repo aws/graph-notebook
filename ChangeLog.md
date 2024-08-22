@@ -4,9 +4,19 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
 - Added `%get_import_task` line magic  ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
+
+## Release 4.5.2 (August 15, 2024)
+
+- New Neptune Analytics notebooks - openCypher over RDF ([Link to PR](https://github.com/aws/graph-notebook/pull/672))
+  - Path: 02-Neptune-Analytics > 04-OpenCypher-Over-RDF
+- Updated OC-RDF samples to use `%load` magic, and pull from regional S3 buckets ([Link to PR](https://github.com/aws/graph-notebook/pull/676))
+- Added regional S3 bucket mappings to Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/664))
+- Enabled n-triples data for `%load` with Neptune Analytics ([PR #1](https://github.com/aws/graph-notebook/pull/671)) ([PR #2](https://github.com/aws/graph-notebook/pull/675))
 - Removed unused options from `%load`([Link to PR](https://github.com/aws/graph-notebook/pull/662))
 - Made EncryptionKey optional in Neptune CloudFormation template ([Link to PR](https://github.com/aws/graph-notebook/pull/663))
+- Fixed unintended type coercion in results table with missing/null values ([Link to PR](https://github.com/aws/graph-notebook/pull/679))
 
 ## Release 4.5.1 (July 31, 2024)
 
