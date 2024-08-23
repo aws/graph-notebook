@@ -96,7 +96,7 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.8.x-3.10.13
+* [Python](https://www.python.org/downloads/) 3.9.x-3.10.14
 * A graph database that provides one or more of:
   * A SPARQL 1.1 endpoint
   * An Apache TinkerPop Gremlin Server compatible endpoint
