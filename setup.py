@@ -88,7 +88,7 @@ setup(
         'nbconvert>=6.3.0,<=7.2.8',
         'jedi>=0.18.1,<=0.18.2',
         'itables>=2.0.0,<=2.1.0',
-        'pandas>=2.0.0,<=2.2.2',
+        'pandas>=2.1.0,<=2.2.2',
         'numpy<1.24.0',
         'nest_asyncio>=1.5.5,<=1.5.6',
         'async-timeout>=4.0,<5.0'
@@ -101,7 +101,7 @@ setup(
     cmdclass=cmd_class,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.10',
         'License :: OSI Approved :: Apache Software License'
     ],
     keywords='jupyter neptune gremlin sparql',

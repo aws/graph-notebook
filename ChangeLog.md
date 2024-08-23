@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Deprecated Python 3.8 support ([Link to PR](https://github.com/aws/graph-notebook/pull/683))
 - Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
 - Added `%get_import_task` line magic  ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 
