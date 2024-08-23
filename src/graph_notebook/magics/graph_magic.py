@@ -207,6 +207,25 @@ def store_to_ns(key: str, value, ns: dict = None):
     ns[key] = value
 
 
+def export_config(export_path: str = "graph_notebook_config.json", config: dict = None, silent: bool = False):
+    if export_path == '':
+        return
+
+    input_root, input_ext = os.path.splitext(export_path)
+    csv_ext = ".json"
+    config_file_path = input_root + csv_ext
+    try:
+        with open(config_file_path, 'w') as cfg_file:
+            json.dump(config, cfg_file, indent=4)
+        if not silent:
+            print(f"\nExported config to file: {config_file_path}")
+    except Exception as e:
+        print("\nFailed to export config to JSON file.")
+        print(e)
+
+    return
+
+
 def str_to_query_mode(s: str) -> QueryMode:
     s = s.lower()
     for mode in list(QueryMode):
@@ -453,6 +472,8 @@ class Graph(Magics):
         parser = argparse.ArgumentParser()
         parser.add_argument('mode', nargs='?', default='show',
                             help='mode (default=show) [show|reset|silent]')
+        parser.add_argument('--export-to', type=str, default='',
+                            help='Export the configuration JSON object to the provided file path.')
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
         args = parser.parse_args(line.split())
@@ -463,12 +484,12 @@ class Graph(Magics):
             self.graph_notebook_config = config
             self._generate_client_from_config(config)
             if not args.silent:
-                print('set notebook config to:')
+                print('Set notebook config to:')
                 print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             if not args.silent:
-                print('reset notebook config to:')
+                print('Reset notebook config to:')
                 print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
         elif args.mode == 'silent':
             """
@@ -485,6 +506,7 @@ class Graph(Magics):
                 print(json.dumps(config_dict, indent=4))
 
         store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
+        export_config(args.export_to, self.graph_notebook_config.to_dict(), args.silent)
 
         return self.graph_notebook_config
 
