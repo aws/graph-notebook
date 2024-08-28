@@ -14,7 +14,7 @@ from graph_notebook.neptune.client import (SPARQL_ACTION, DEFAULT_PORT, DEFAULT_
                                            HTTP_PROTOCOL_FORMATS, WS_PROTOCOL_FORMATS,
                                            DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE,
                                            NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants,
-                                           GRAPHSONV3_VARIANTS, GRAPHSONV2_VARIANTS, GRAPHBINARYV1_VARIANTS,
+                                           GRAPHBINARYV1, GREMLIN_SERIALIZERS_HTTP,
                                            NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
                                            normalize_service_name)
 
@@ -73,17 +73,26 @@ class GremlinSection(object):
 
         serializer_lower = message_serializer.lower()
         # TODO: Update with untyped serializers once supported in GremlinPython
+        # Accept TinkerPop serializer class name
+        # https://github.com/apache/tinkerpop/blob/fd040c94a66516e473811fe29eaeaf4081cf104c/docs/src/reference/gremlin-applications.asciidoc#graphson
+        # https://github.com/apache/tinkerpop/blob/fd040c94a66516e473811fe29eaeaf4081cf104c/docs/src/reference/gremlin-applications.asciidoc#graphbinary
         if serializer_lower == '':
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
-        elif serializer_lower in GRAPHSONV3_VARIANTS:
-            message_serializer = 'graphsonv3'
-        elif serializer_lower in GRAPHSONV2_VARIANTS:
-            message_serializer = 'graphsonv2'
-        elif serializer_lower in GRAPHBINARYV1_VARIANTS:
-            message_serializer = 'graphbinaryv1'
+        elif 'graphson' in serializer_lower:
+            message_serializer = 'GraphSON'
+            if 'untyped' in serializer_lower:
+                message_serializer += 'Untyped'
+            if 'v1' in serializer_lower:
+                message_serializer += 'MessageSerializerV1'
+            elif 'v2' in serializer_lower:
+                message_serializer += 'MessageSerializerV2'
+            else:
+                message_serializer += 'MessageSerializerV3'
+        elif 'graphbinary' in serializer_lower:
+            message_serializer = GRAPHBINARYV1
         else:
             print(f'Invalid Gremlin serializer specified, defaulting to graphsonv3. '
-                  f'Valid serializers: [graphsonv3, graphsonv2, graphbinaryv1].')
+                  f'Valid serializers: {GREMLIN_SERIALIZERS_HTTP}.')
             message_serializer = DEFAULT_GREMLIN_SERIALIZER
 
         self.traversal_source = traversal_source
@@ -93,16 +102,21 @@ class GremlinSection(object):
 
         if include_protocol:
             protocol_lower = connection_protocol.lower()
-            if protocol_lower == '':
-                connection_protocol = DEFAULT_GREMLIN_PROTOCOL
-            elif protocol_lower in HTTP_PROTOCOL_FORMATS:
+            if message_serializer in GREMLIN_SERIALIZERS_HTTP:
                 connection_protocol = DEFAULT_HTTP_PROTOCOL
-            elif protocol_lower in WS_PROTOCOL_FORMATS:
-                connection_protocol = DEFAULT_WS_PROTOCOL
+                if protocol_lower != '' and protocol_lower not in HTTP_PROTOCOL_FORMATS:
+                    print(f"Enforcing HTTP protocol usage for serializer: {message_serializer}.")
             else:
-                print(f"Invalid connection protocol specified, defaulting to {DEFAULT_GREMLIN_PROTOCOL}. "
-                      f"Valid protocols: [websockets, http].")
-                connection_protocol = DEFAULT_GREMLIN_PROTOCOL
+                if protocol_lower == '':
+                    connection_protocol = DEFAULT_GREMLIN_PROTOCOL
+                elif protocol_lower in HTTP_PROTOCOL_FORMATS:
+                    connection_protocol = DEFAULT_HTTP_PROTOCOL
+                elif protocol_lower in WS_PROTOCOL_FORMATS:
+                    connection_protocol = DEFAULT_WS_PROTOCOL
+                else:
+                    print(f"Invalid connection protocol specified, defaulting to {DEFAULT_GREMLIN_PROTOCOL}. "
+                          f"Valid protocols: [websockets, http].")
+                    connection_protocol = DEFAULT_GREMLIN_PROTOCOL
             self.connection_protocol = connection_protocol
 
     def to_dict(self):
