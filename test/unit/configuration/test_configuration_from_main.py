@@ -135,7 +135,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         config_dict = config.to_dict()
-        self.assertEqual(DEFAULT_WS_PROTOCOL, config_dict['gremlin']['connection_protocol'])
+        self.assertEqual(DEFAULT_HTTP_PROTOCOL, config_dict['gremlin']['connection_protocol'])
 
     def test_generate_configuration_main_gremlin_protocol_db(self):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
@@ -149,7 +149,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         config_dict = config.to_dict()
-        self.assertEqual(DEFAULT_WS_PROTOCOL, config_dict['gremlin']['connection_protocol'])
+        self.assertEqual(DEFAULT_HTTP_PROTOCOL, config_dict['gremlin']['connection_protocol'])
 
     def test_generate_configuration_main_gremlin_protocol_analytics(self):
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
