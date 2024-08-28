@@ -9,7 +9,7 @@ import unittest
 from graph_notebook.configuration.generate_config import AuthModeEnum, Configuration, GremlinSection
 from graph_notebook.configuration.get_config import get_config
 from graph_notebook.neptune.client import (NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
-                                           DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL)
+                                           DEFAULT_HTTP_PROTOCOL)
 
 
 class TestGenerateConfigurationMain(unittest.TestCase):
