@@ -8,6 +8,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
 - Added `%get_import_task` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 - Added `--export-to` JSON file option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/684))
+- Fix ipython config dir logic ([Link to PR](https://github.com/aws/graph-notebook/pull/687))
 
 ## Release 4.5.2 (August 15, 2024)
 
