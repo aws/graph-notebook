@@ -6,8 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import json
 
-HOME_PATH = os.path.expanduser("~")
-IPYTHON_DIR_TREE = HOME_PATH + '/.ipython/profile_default'
+from IPython import paths as ipython_paths
+
+IPYTHON_DIR_TREE = ipython_paths.get_ipython_dir() + "/profile_default"
 IPYTHON_CFG_FILE_NAME = 'ipython_config.json'
 IPYTHON_CFG_PATH = IPYTHON_DIR_TREE + '/' + IPYTHON_CFG_FILE_NAME
 
