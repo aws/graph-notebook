@@ -9,6 +9,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `%get_import_task` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 - Added `--export-to` JSON file option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/684))
 - Fix ipython config dir logic ([Link to PR](https://github.com/aws/graph-notebook/pull/687))
+- Use extras\_require to specify tests ([Link to PR](https://github.com/aws/graph-notebook/pull/688))
 
 ## Release 4.5.2 (August 15, 2024)
 
