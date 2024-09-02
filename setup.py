@@ -105,7 +105,9 @@ setup(
         'License :: OSI Approved :: Apache Software License'
     ],
     keywords='jupyter neptune gremlin sparql',
-    tests_require=[
-        'pytest==6.2.5'
-    ]
+    extras_require={
+        'test': [
+            'pytest==6.2.5'
+            ],
+    }
 )
