@@ -431,8 +431,8 @@ class Client(object):
         use_proxy = True if self.proxy_host != '' else False
         if self.is_analytics_domain():
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=False)}/queries'
-            data['language'] = 'gremlin'
             data['query'] = query
+            data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
             print(f"URL: {uri}")
             print(f"Data: {data}")
