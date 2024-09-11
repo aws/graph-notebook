@@ -432,8 +432,11 @@ class Client(object):
         if self.is_analytics_domain():
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=False)}/queries'
             data['language'] = 'gremlin'
-            data['gremlin'] = query
+            data['query'] = query
             headers['content-type'] = 'application/json'
+            print(f"URL: {uri}")
+            print(f"Data: {data}")
+            print(f"Headers: {headers}")
         else:
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
             data['gremlin'] = query
@@ -465,13 +468,17 @@ class Client(object):
         url = f'{self._http_protocol}://{self.host}'
         if self.is_analytics_domain():
             url += '/queries'
-            data['gremlin'] = query
+            data['query'] = query
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
             if plan_type == 'explain':
-                data['explain.mode'] = args.pop('explain.mode')
+                data['explain-mode'] = args.pop('explain.mode')
             elif plan_type == 'profile':
-                data['profile.debug'] = args.pop('profile.debug')
+                for param, value in args.items():
+                    data[param] = value
+            print(f"URL: {url}")
+            print(f"Data: {data}")
+            print(f"Headers: {headers}")
         else:
             url += f':{self.port}/gremlin/{plan_type}'
             data['gremlin'] = query

@@ -36,6 +36,7 @@ from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
+from json_repair import repair_json
 
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, \
@@ -1185,6 +1186,8 @@ class Graph(Magics):
             try:
                 res = self.client.gremlin_explain(cell,
                                                   args={'explain.mode': args.explain_type} if args.explain_type else {})
+                print(res.text)
+                print(f'Status: {res.status_code}')
                 res.raise_for_status()
             except Exception as e:
                 if self.client.is_analytics_domain():
@@ -1226,6 +1229,8 @@ class Graph(Magics):
                       'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
             try:
                 res = self.client.gremlin_profile(query=cell, args=profile_args)
+                print(res.text)
+                print(f'Status: {res.status_code}')
                 res.raise_for_status()
             except Exception as e:
                 if self.client.is_analytics_domain():
@@ -1248,6 +1253,8 @@ class Graph(Magics):
             using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             if self.client.is_neptune_domain():
+                print(f"Using protocol: {args.connection_protocol}")
+                print(f"Using serializer: {self.graph_notebook_config.gremlin.message_serializer}")
                 if args.connection_protocol != '':
                     connection_protocol = normalize_protocol_name(args.connection_protocol)
                     if connection_protocol == DEFAULT_WS_PROTOCOL and \
@@ -1265,8 +1272,14 @@ class Graph(Magics):
                         message_serializer_mime = GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[message_serializer]
                         query_res_http = self.client.gremlin_http_query(cell, headers={
                             'Accept': message_serializer_mime})
+                        print(query_res_http.text)
+                        print(f'Status: {query_res_http.status_code}')
                         query_res_http.raise_for_status()
-                        query_res_http_json = query_res_http.json()
+                        try:
+                            query_res_http_json = query_res_http.json()
+                        except JSONDecodeError:
+                            query_res_fixed = repair_json(query_res_http.text)
+                            query_res_http_json = json.loads(query_res_fixed)
                         query_res = query_res_http_json['result']['data']
                     else:
                         query_res = self.client.gremlin_query(cell, transport_args=transport_args)

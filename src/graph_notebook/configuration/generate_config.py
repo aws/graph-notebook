@@ -83,7 +83,10 @@ class GremlinSection(object):
             if 'untyped' in serializer_lower:
                 message_serializer += 'Untyped'
             if 'v1' in serializer_lower:
-                message_serializer += 'MessageSerializerV1'
+                if 'untyped' in serializer_lower:
+                    message_serializer += 'MessageSerializerV1'
+                else:
+                    message_serializer += 'MessageSerializerGremlinV1'
             elif 'v2' in serializer_lower:
                 message_serializer += 'MessageSerializerV2'
             else:
