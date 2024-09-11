@@ -91,7 +91,8 @@ setup(
         'pandas>=2.1.0,<=2.2.2',
         'numpy<1.24.0',
         'nest_asyncio>=1.5.5,<=1.5.6',
-        'async-timeout>=4.0,<5.0'
+        'async-timeout>=4.0,<5.0',
+        'json-repair==0.29.2'
     ],
     package_data={
         'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
