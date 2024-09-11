@@ -1976,7 +1976,7 @@ class Graph(Magics):
     @display_exceptions
     @neptune_db_only
     def db_reset(self, line, local_ns: dict = None):
-        self.reset(line, local_ns, service=NEPTUNE_DB_SERVICE_NAME)
+        return self.reset(line, local_ns, service=NEPTUNE_DB_SERVICE_NAME)
 
     @line_magic
     @needs_local_scope
