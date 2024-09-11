@@ -36,6 +36,7 @@ from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
 from requests import HTTPError
+from json_repair import repair_json
 
 import graph_notebook
 from graph_notebook.configuration.generate_config import generate_default_config, DEFAULT_CONFIG_LOCATION, \
@@ -1257,7 +1258,11 @@ class Graph(Magics):
                         query_res_http = self.client.gremlin_http_query(cell, headers={
                             'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
                         query_res_http.raise_for_status()
-                        query_res_http_json = query_res_http.json()
+                        try:
+                            query_res_http_json = query_res_http.json()
+                        except JSONDecodeError:
+                            query_res_fixed = repair_json(query_res_http.text)
+                            query_res_http_json = json.loads(query_res_fixed)
                         query_res = query_res_http_json['result']['data']
                     else:
                         query_res = self.client.gremlin_query(cell, transport_args=transport_args)
