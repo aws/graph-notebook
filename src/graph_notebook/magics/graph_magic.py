@@ -1127,9 +1127,9 @@ class Graph(Magics):
                                  'the profile report by default.')
         parser.add_argument('--profile-chop', type=int, default=250,
                             help='Property to specify max length of profile results string. Default is 250')
-        parser.add_argument('--profile-serializer', type=str, default='GRAPHSON_V3_UNTYPED',
+        parser.add_argument('--profile-serializer', type=str, default='GRAPHSON_V3',
                             help='Specify how to serialize results. Allowed values are any of the valid MIME type or '
-                                 'TinkerPop driver "Serializers" enum values. Default is GRAPHSON_V3_UNTYPED')
+                                 'TinkerPop driver "Serializers" enum values. Default is GRAPHSON_V3')
         parser.add_argument('--profile-indexOps', action='store_true', default=False,
                             help='Show a detailed report of all index operations.')
         parser.add_argument('--profile-debug', action='store_true', default=False,
