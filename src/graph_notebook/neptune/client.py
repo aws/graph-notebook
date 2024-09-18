@@ -434,9 +434,6 @@ class Client(object):
             data['query'] = query
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
-            print(f"URL: {uri}")
-            print(f"Data: {data}")
-            print(f"Headers: {headers}")
         else:
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
             data['gremlin'] = query
@@ -479,9 +476,6 @@ class Client(object):
             elif plan_type == 'profile':
                 for param, value in args.items():
                     data[param] = value
-            print(f"URL: {url}")
-            print(f"Data: {data}")
-            print(f"Headers: {headers}")
         else:
             url += f':{self.port}/gremlin/{plan_type}'
             data['gremlin'] = query
