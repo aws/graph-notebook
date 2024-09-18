@@ -472,7 +472,10 @@ class Client(object):
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
             if plan_type == 'explain':
-                data['explain-mode'] = args.pop('explain.mode')
+                # Remove explain.mode once HTTP is changed
+                explain_mode = args.pop('explain.mode')
+                data['explain.mode'] = explain_mode
+                data['explain-mode'] = explain_mode
             elif plan_type == 'profile':
                 for param, value in args.items():
                     data[param] = value

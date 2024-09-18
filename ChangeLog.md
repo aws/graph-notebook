@@ -10,6 +10,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Added `--export-to` JSON file option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/684))
 - Improved iPython config directory retrieval logic ([Link to PR](https://github.com/aws/graph-notebook/pull/687))
 - Fixed `%db_reset` output for token modes ([Link to PR](https://github.com/aws/graph-notebook/pull/691))
+- Fixed `%%gremlin profile` serialization issue on Neptune DB v1.2 and older ([Link to PR](https://github.com/aws/graph-notebook/pull/694))
 - Use `extras_require` to specify tests ([Link to PR](https://github.com/aws/graph-notebook/pull/688))
 - Updated Gremlin HTTP requests, fixed handling of internal error responses ([Link to PR](https://github.com/aws/graph-notebook/pull/692))
 
