@@ -165,6 +165,48 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         config_dict = config.to_dict()
         self.assertEqual(DEFAULT_HTTP_PROTOCOL, config_dict['gremlin']['connection_protocol'])
 
+    def test_generate_configuration_main_gremlin_serializer_no_service(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual('GraphSONMessageSerializerV3', config_dict['gremlin']['message_serializer'])
+
+    def test_generate_configuration_main_gremlin_serializer_db(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "{NEPTUNE_DB_SERVICE_NAME}" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual('GraphSONMessageSerializerV3', config_dict['gremlin']['message_serializer'])
+
+    def test_generate_configuration_main_gremlin_serializer_analytics(self):
+        result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '
+                           f'--host "{self.neptune_host_reg}" '
+                           f'--port "{self.port}" '
+                           f'--neptune_service "{NEPTUNE_ANALYTICS_SERVICE_NAME}" '
+                           f'--auth_mode "" '
+                           f'--ssl "" '
+                           f'--load_from_s3_arn "" '
+                           f'--config_destination="{self.test_file_path}" ')
+        self.assertEqual(0, result)
+        config = get_config(self.test_file_path)
+        config_dict = config.to_dict()
+        self.assertEqual('GraphSONUntypedMessageSerializerV3', config_dict['gremlin']['message_serializer'])
+
     def test_generate_configuration_main_empty_args_custom(self):
         expected_config = Configuration(self.neptune_host_custom, self.port, neptune_hosts=self.custom_hosts_list)
         result = os.system(f'{self.python_cmd} -m graph_notebook.configuration.generate_config '

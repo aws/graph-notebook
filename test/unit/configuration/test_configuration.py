@@ -475,18 +475,40 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
         self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
 
-    def test_configuration_gremlinsection_generic_override(self):
+    def test_configuration_gremlinsection_generic_override_protocol(self):
+        config = Configuration('localhost',
+                               self.port,
+                               gremlin_section=GremlinSection(connection_protocol='http'),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
+
+    def test_configuration_gremlinsection_generic_override_serializer_invalid(self):
+        config = Configuration('localhost',
+                               self.port,
+                               gremlin_section=GremlinSection(message_serializer='not_a_serializer'),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
+
+    def test_configuration_gremlinsection_generic_override_serializer_http_only(self):
         config = Configuration('localhost',
                                self.port,
                                gremlin_section=GremlinSection(traversal_source='t',
                                                               username='foo',
                                                               password='bar',
-                                                              message_serializer='graphbinary'),
+                                                              message_serializer='GraphSONUntypedMessageSerializerV1'),
                                )
         self.assertEqual(config.gremlin.traversal_source, 't')
         self.assertEqual(config.gremlin.username, 'foo')
         self.assertEqual(config.gremlin.password, 'bar')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphBinaryMessageSerializerV1')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
         self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
 
     def test_configuration_gremlinsection_neptune_default(self):
@@ -497,7 +519,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
 
-    def test_configuration_gremlinsection_neptune_override(self):
+    def test_configuration_gremlinsection_neptune_override_all(self):
         config = Configuration(self.neptune_host_reg,
                                self.port,
                                gremlin_section=GremlinSection(traversal_source='t',
@@ -506,6 +528,240 @@ class TestGenerateConfiguration(unittest.TestCase):
                                                               message_serializer='graphbinary',
                                                               connection_protocol='http',
                                                               include_protocol=True),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_default_db(self):
+        config = Configuration(self.neptune_host_reg, self.port, neptune_service=NEPTUNE_DB_SERVICE_NAME)
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_protocol(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='http',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_protocol_invalid(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='not_a_protocol',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_serializer(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(message_serializer='graphbinary',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphBinaryMessageSerializerV1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_serializer_invalid(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(message_serializer='not_a_serializer',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_http_protocol_and_serializer(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='http',
+                                                              message_serializer='graphsonv1untyped',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_http_protocol_and_serializer_invalid(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='http',
+                                                              message_serializer='not_a_serializer',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_http_protocol_and_serializer_not_graphson_untyped(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='http',
+                                                              message_serializer='graphbinaryv1',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_ws_protocol_and_serializer(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='ws',
+                                                              message_serializer='graphbinaryv1',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphBinaryMessageSerializerV1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_ws_protocol_and_serializer_invalid(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='ws',
+                                                              message_serializer='graphbinaryv1',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphBinaryMessageSerializerV1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_db_override_ws_protocol_and_serializer_http_only(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_DB_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='ws',
+                                                              message_serializer='graphsonv3untyped',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_DB_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_default_analytics(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME)
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_analytics_override_ws_protocol(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='ws',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_analytics_override_serializer(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME,
+                               gremlin_section=GremlinSection(message_serializer='graphsonv1untyped',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV1')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_analytics_override_serializer_invalid(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME,
+                               gremlin_section=GremlinSection(message_serializer='not_a_serializer',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_analytics_override_serializer_not_graphson_untyped(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME,
+                               gremlin_section=GremlinSection(message_serializer='graphbinaryv1',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME),
+                               )
+        self.assertEqual(config.gremlin.traversal_source, 'g')
+        self.assertEqual(config.gremlin.username, '')
+        self.assertEqual(config.gremlin.password, '')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+
+    def test_configuration_gremlinsection_neptune_analytics_override_http_protocol(self):
+        config = Configuration(self.neptune_host_reg,
+                               self.port,
+                               neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME,
+                               gremlin_section=GremlinSection(connection_protocol='http',
+                                                              include_protocol=True,
+                                                              neptune_service=NEPTUNE_ANALYTICS_SERVICE_NAME),
                                )
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')

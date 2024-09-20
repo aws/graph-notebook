@@ -359,11 +359,14 @@ if __name__ == "__main__":
     auth_mode_arg = args.auth_mode if args.auth_mode != '' else AuthModeEnum.DEFAULT.value
     protocol_arg = args.gremlin_connection_protocol
     include_protocol = False
+    gremlin_service = ''
     if is_allowed_neptune_host(args.host, args.neptune_hosts):
         include_protocol = True
+        gremlin_service = args.neptune_service
         if not protocol_arg:
             protocol_arg = DEFAULT_HTTP_PROTOCOL \
                 if args.neptune_service == NEPTUNE_ANALYTICS_SERVICE_NAME else DEFAULT_WS_PROTOCOL
+
     config = generate_config(args.host, int(args.port),
                              AuthModeEnum(auth_mode_arg),
                              args.ssl, args.ssl_verify,
@@ -372,7 +375,7 @@ if __name__ == "__main__":
                              SparqlSection(args.sparql_path, ''),
                              GremlinSection(args.gremlin_traversal_source, args.gremlin_username,
                                             args.gremlin_password, args.gremlin_serializer,
-                                            protocol_arg, include_protocol),
+                                            protocol_arg, include_protocol, gremlin_service),
                              Neo4JSection(args.neo4j_username, args.neo4j_password,
                                           args.neo4j_auth, args.neo4j_database),
                              args.neptune_hosts)
