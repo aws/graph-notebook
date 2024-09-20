@@ -6,6 +6,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 - Deprecated Python 3.8 support ([Link to PR](https://github.com/aws/graph-notebook/pull/683))
 - Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
+- Upgraded nest_asyncio to 1.6.0 ([Link to PR](https://github.com/aws/graph-notebook/pull/698))
 - Added `%get_import_task` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 - Added `--export-to` JSON file option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/684))
 - Improved iPython config directory retrieval logic ([Link to PR](https://github.com/aws/graph-notebook/pull/687))
