@@ -25,6 +25,7 @@ from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.exceptions import AuthError
 from base64 import b64encode
 import nest_asyncio
+from networkx import is_valid_directed_joint_degree
 
 from graph_notebook.neptune.bolt_auth_token import NeptuneBoltAuthToken
 
@@ -139,7 +140,10 @@ GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP = {
 GREMLIN_SERIALIZERS_WS = [GRAPHSONV2, GRAPHSONV3, GRAPHBINARYV1]
 GREMLIN_SERIALIZERS_HTTP = [GRAPHSONV1, GRAPHSONV1_UNTYPED, GRAPHSONV2_UNTYPED, GRAPHSONV3_UNTYPED]
 GREMLIN_SERIALIZERS_ALL = GREMLIN_SERIALIZERS_WS + GREMLIN_SERIALIZERS_HTTP
-DEFAULT_GREMLIN_SERIALIZER = GRAPHSONV1_UNTYPED
+NEPTUNE_GREMLIN_SERIALIZERS_HTTP = [GRAPHSONV1_UNTYPED, GRAPHSONV2_UNTYPED, GRAPHSONV3_UNTYPED]
+DEFAULT_GREMLIN_WS_SERIALIZER = GRAPHSONV3
+DEFAULT_GREMLIN_HTTP_SERIALIZER = GRAPHSONV3_UNTYPED
+DEFAULT_GREMLIN_SERIALIZER = GRAPHSONV3_UNTYPED
 
 DEFAULT_WS_PROTOCOL = "websockets"
 DEFAULT_HTTP_PROTOCOL = "http"
@@ -188,13 +192,40 @@ def get_gremlin_serializer_mime(serializer_str: str):
 
 
 def normalize_protocol_name(protocol: str):
+    protocol = protocol.lower()
+    is_bad_protocol = False
     if protocol in WS_PROTOCOL_FORMATS:
-        return DEFAULT_WS_PROTOCOL
+        protocol = DEFAULT_WS_PROTOCOL
     elif protocol in HTTP_PROTOCOL_FORMATS:
-        return DEFAULT_HTTP_PROTOCOL
+        protocol = DEFAULT_HTTP_PROTOCOL
     else:
-        print(f"Provided connection protocol is invalid for Neptune, defaulting to {DEFAULT_GREMLIN_PROTOCOL}.")
-        return DEFAULT_GREMLIN_PROTOCOL
+        protocol = ''
+        is_bad_protocol = True
+    return protocol, is_bad_protocol
+
+
+def normalize_serializer_class_name(serializer: str):
+    serializer_lower = serializer.lower()
+    is_bad_serializer = False
+    if 'graphson' in serializer_lower:
+        message_serializer = 'GraphSON'
+        if 'untyped' in serializer_lower:
+            message_serializer += 'Untyped'
+        if 'v1' in serializer_lower:
+            if 'untyped' in serializer_lower:
+                message_serializer += 'MessageSerializerV1'
+            else:
+                message_serializer += 'MessageSerializerGremlinV1'
+        elif 'v2' in serializer_lower:
+            message_serializer += 'MessageSerializerV2'
+        else:
+            message_serializer += 'MessageSerializerV3'
+    elif 'graphbinary' in serializer_lower:
+        message_serializer = GRAPHBINARYV1
+    else:
+        message_serializer = ''
+        is_bad_serializer = True
+    return message_serializer, is_bad_serializer
 
 
 def normalize_service_name(neptune_service: str):
