@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 4.6.0 (September 19, 2024)
+
 - Updated Gremlin config `message_serializer` to accept all TinkerPop serializers ([Link to PR](https://github.com/aws/graph-notebook/pull/685))
 - Implemented service-based dynamic allowlists and defaults for Gremlin serializer and protocol combinations ([Link to PR](https://github.com/aws/graph-notebook/pull/697))
 - Added `%get_import_task` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
