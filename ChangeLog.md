@@ -4,11 +4,12 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
-- Updated the Gremlin `message_serializer` configuration field to accept all TinkerPop serialization formats ([Link to PR](https://github.com/aws/graph-notebook/pull/685))
+- Updated Gremlin config `message_serializer` to accept all TinkerPop serializers ([Link to PR](https://github.com/aws/graph-notebook/pull/685))
 - Added `%get_import_task` line magic ([Link to PR](https://github.com/aws/graph-notebook/pull/668))
 - Added `--export-to` JSON file option to `%%graph_notebook_config` ([Link to PR](https://github.com/aws/graph-notebook/pull/684))
 - Deprecated Python 3.8 support ([Link to PR](https://github.com/aws/graph-notebook/pull/683))
 - Upgraded Neo4j Bolt driver to v5.x ([Link to PR](https://github.com/aws/graph-notebook/pull/682))
+- Upgraded nest_asyncio to 1.6.0 ([Link to PR](https://github.com/aws/graph-notebook/pull/698))
 - Improved iPython config directory retrieval logic ([Link to PR](https://github.com/aws/graph-notebook/pull/687))
 - Fixed `%db_reset` output for token modes ([Link to PR](https://github.com/aws/graph-notebook/pull/691))
 - Fixed `%%gremlin profile` serialization issue on Neptune DB v1.2 and older ([Link to PR](https://github.com/aws/graph-notebook/pull/694))

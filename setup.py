@@ -90,7 +90,7 @@ setup(
         'itables>=2.0.0,<=2.1.0',
         'pandas>=2.1.0,<=2.2.2',
         'numpy<1.24.0',
-        'nest_asyncio>=1.5.5,<=1.5.6',
+        'nest_asyncio>=1.5.5,<=1.6.0',
         'async-timeout>=4.0,<5.0',
         'json-repair==0.29.2'
     ],
