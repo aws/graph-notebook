@@ -14,9 +14,12 @@ from graph_notebook.neptune.client import (SPARQL_ACTION, DEFAULT_PORT, DEFAULT_
                                            HTTP_PROTOCOL_FORMATS, WS_PROTOCOL_FORMATS,
                                            DEFAULT_NEO4J_USERNAME, DEFAULT_NEO4J_PASSWORD, DEFAULT_NEO4J_DATABASE,
                                            NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, false_str_variants,
-                                           GRAPHBINARYV1, GREMLIN_SERIALIZERS_HTTP,
+                                           GRAPHBINARYV1, GREMLIN_SERIALIZERS_HTTP, GREMLIN_SERIALIZERS_WS,
+                                           GREMLIN_SERIALIZERS_ALL, NEPTUNE_GREMLIN_SERIALIZERS_HTTP,
+                                           DEFAULT_GREMLIN_WS_SERIALIZER, DEFAULT_GREMLIN_HTTP_SERIALIZER,
                                            NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
-                                           normalize_service_name)
+                                           normalize_service_name, normalize_protocol_name,
+                                           normalize_serializer_class_name)
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser('~/graph_notebook_config.json')
 
@@ -57,7 +60,8 @@ class GremlinSection(object):
     """
 
     def __init__(self, traversal_source: str = '', username: str = '', password: str = '',
-                 message_serializer: str = '', connection_protocol: str = '', include_protocol: bool = False):
+                 message_serializer: str = '', connection_protocol: str = '',
+                 include_protocol: bool = False, neptune_service: str = ''):
         """
         :param traversal_source: used to specify the traversal source for a Gremlin traversal, in the case that we are
         connected to an endpoint that can access multiple graphs.
@@ -71,56 +75,77 @@ class GremlinSection(object):
         if traversal_source == '':
             traversal_source = DEFAULT_GREMLIN_TRAVERSAL_SOURCE
 
-        serializer_lower = message_serializer.lower()
-        # TODO: Update with untyped serializers once supported in GremlinPython
-        # Accept TinkerPop serializer class name
-        # https://github.com/apache/tinkerpop/blob/fd040c94a66516e473811fe29eaeaf4081cf104c/docs/src/reference/gremlin-applications.asciidoc#graphson
-        # https://github.com/apache/tinkerpop/blob/fd040c94a66516e473811fe29eaeaf4081cf104c/docs/src/reference/gremlin-applications.asciidoc#graphbinary
-        if serializer_lower == '':
-            message_serializer = DEFAULT_GREMLIN_SERIALIZER
-        elif 'graphson' in serializer_lower:
-            message_serializer = 'GraphSON'
-            if 'untyped' in serializer_lower:
-                message_serializer += 'Untyped'
-            if 'v1' in serializer_lower:
-                if 'untyped' in serializer_lower:
-                    message_serializer += 'MessageSerializerV1'
-                else:
-                    message_serializer += 'MessageSerializerGremlinV1'
-            elif 'v2' in serializer_lower:
-                message_serializer += 'MessageSerializerV2'
+        invalid_serializer_input = False
+        if message_serializer != '':
+            message_serializer, invalid_serializer_input = normalize_serializer_class_name(message_serializer)
+
+        if include_protocol:
+            # Neptune endpoint
+            invalid_protocol_input = False
+            if connection_protocol != '':
+                connection_protocol, invalid_protocol_input = normalize_protocol_name(connection_protocol)
+
+            if neptune_service == NEPTUNE_ANALYTICS_SERVICE_NAME:
+                if connection_protocol != DEFAULT_HTTP_PROTOCOL:
+                    if invalid_protocol_input:
+                        print(f"Invalid connection protocol specified, you must use {DEFAULT_HTTP_PROTOCOL}. ")
+                    elif connection_protocol == DEFAULT_WS_PROTOCOL:
+                        print(f"Enforcing HTTP protocol.")
+                    connection_protocol = DEFAULT_HTTP_PROTOCOL
+                # temporary restriction until GraphSON-typed and GraphBinary results are supported
+                if message_serializer not in NEPTUNE_GREMLIN_SERIALIZERS_HTTP:
+                    if message_serializer not in GREMLIN_SERIALIZERS_ALL:
+                        if invalid_serializer_input:
+                            print(f"Invalid serializer specified, defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
+                                  f"Valid serializers: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
+                    else:
+                        print(f"{message_serializer} is not currently supported for HTTP connections, "
+                              f"defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
+                              f"Please use one of: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
+                    message_serializer = DEFAULT_GREMLIN_HTTP_SERIALIZER
             else:
-                message_serializer += 'MessageSerializerV3'
-        elif 'graphbinary' in serializer_lower:
-            message_serializer = GRAPHBINARYV1
+                if connection_protocol not in [DEFAULT_WS_PROTOCOL, DEFAULT_HTTP_PROTOCOL]:
+                    if invalid_protocol_input:
+                        print(f"Invalid connection protocol specified, defaulting to {DEFAULT_WS_PROTOCOL}. "
+                              f"Valid protocols: [websockets, http].")
+                    connection_protocol = DEFAULT_WS_PROTOCOL
+
+                if connection_protocol == DEFAULT_HTTP_PROTOCOL:
+                    # temporary restriction until GraphSON-typed and GraphBinary results are supported
+                    if message_serializer not in NEPTUNE_GREMLIN_SERIALIZERS_HTTP:
+                        if message_serializer not in GREMLIN_SERIALIZERS_ALL:
+                            if invalid_serializer_input:
+                                print(f"Invalid serializer specified, defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
+                                      f"Valid serializers: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
+                        else:
+                            print(f"{message_serializer} is not currently supported for HTTP connections, "
+                                  f"defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
+                                  f"Please use one of: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
+                        message_serializer = DEFAULT_GREMLIN_HTTP_SERIALIZER
+                else:
+                    if message_serializer not in GREMLIN_SERIALIZERS_WS:
+                        if invalid_serializer_input:
+                            print(f"Invalid serializer specified, defaulting to {DEFAULT_GREMLIN_WS_SERIALIZER}. "
+                                  f"Valid serializers: {GREMLIN_SERIALIZERS_WS}")
+                        elif message_serializer != '':
+                            print(f"{message_serializer} is not currently supported by Gremlin Python driver, "
+                                  f"defaulting to {DEFAULT_GREMLIN_WS_SERIALIZER}. "
+                                  f"Valid serializers: {GREMLIN_SERIALIZERS_WS}")
+                        message_serializer = DEFAULT_GREMLIN_WS_SERIALIZER
+
+            self.connection_protocol = connection_protocol
         else:
-            print(f'Invalid Gremlin serializer specified, defaulting to graphsonv3. '
-                  f'Valid serializers: {GREMLIN_SERIALIZERS_HTTP}.')
-            message_serializer = DEFAULT_GREMLIN_SERIALIZER
+            # Non-Neptune database - check and set valid WebSockets serializer if invalid/empty
+            if message_serializer not in GREMLIN_SERIALIZERS_WS:
+                message_serializer = DEFAULT_GREMLIN_WS_SERIALIZER
+                if invalid_serializer_input:
+                    print(f'Invalid Gremlin serializer specified, defaulting to {DEFAULT_GREMLIN_WS_SERIALIZER}. '
+                          f'Valid serializers: {GREMLIN_SERIALIZERS_WS}.')
 
         self.traversal_source = traversal_source
         self.username = username
         self.password = password
         self.message_serializer = message_serializer
-
-        if include_protocol:
-            protocol_lower = connection_protocol.lower()
-            if message_serializer in GREMLIN_SERIALIZERS_HTTP:
-                connection_protocol = DEFAULT_HTTP_PROTOCOL
-                if protocol_lower != '' and protocol_lower not in HTTP_PROTOCOL_FORMATS:
-                    print(f"Enforcing HTTP protocol usage for serializer: {message_serializer}.")
-            else:
-                if protocol_lower == '':
-                    connection_protocol = DEFAULT_GREMLIN_PROTOCOL
-                elif protocol_lower in HTTP_PROTOCOL_FORMATS:
-                    connection_protocol = DEFAULT_HTTP_PROTOCOL
-                elif protocol_lower in WS_PROTOCOL_FORMATS:
-                    connection_protocol = DEFAULT_WS_PROTOCOL
-                else:
-                    print(f"Invalid connection protocol specified, defaulting to {DEFAULT_GREMLIN_PROTOCOL}. "
-                          f"Valid protocols: [websockets, http].")
-                    connection_protocol = DEFAULT_GREMLIN_PROTOCOL
-            self.connection_protocol = connection_protocol
 
     def to_dict(self):
         return self.__dict__
@@ -178,8 +203,8 @@ class Configuration(object):
             self.auth_mode = auth_mode
             self.load_from_s3_arn = load_from_s3_arn
             self.aws_region = aws_region
-            default_protocol = DEFAULT_HTTP_PROTOCOL if self._proxy_host != '' else DEFAULT_GREMLIN_PROTOCOL
             if gremlin_section is not None:
+                default_protocol = DEFAULT_HTTP_PROTOCOL if self._proxy_host != '' else ''
                 if hasattr(gremlin_section, "connection_protocol"):
                     if self._proxy_host != '' and gremlin_section.connection_protocol != DEFAULT_HTTP_PROTOCOL:
                         print("Enforcing HTTP connection protocol for proxy connections.")
@@ -189,9 +214,12 @@ class Configuration(object):
                 else:
                     final_protocol = default_protocol
                 self.gremlin = GremlinSection(message_serializer=gremlin_section.message_serializer,
-                                              connection_protocol=final_protocol, include_protocol=True)
+                                              connection_protocol=final_protocol,
+                                              include_protocol=True,
+                                              neptune_service=self.neptune_service)
             else:
-                self.gremlin = GremlinSection(connection_protocol=default_protocol, include_protocol=True)
+                self.gremlin = GremlinSection(include_protocol=True,
+                                              neptune_service=self.neptune_service)
             self.neo4j = Neo4JSection()
         else:
             self.is_neptune_config = False

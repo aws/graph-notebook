@@ -10,7 +10,7 @@ from graph_notebook.configuration.get_config import get_config, get_config_from_
 from graph_notebook.configuration.generate_config import Configuration, DEFAULT_AUTH_MODE, AuthModeEnum, \
     generate_config, generate_default_config, GremlinSection
 from graph_notebook.neptune.client import NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, \
-    DEFAULT_GREMLIN_PROTOCOL, DEFAULT_HTTP_PROTOCOL, NEPTUNE_CONFIG_HOST_IDENTIFIERS
+    DEFAULT_WS_PROTOCOL, DEFAULT_HTTP_PROTOCOL, NEPTUNE_CONFIG_HOST_IDENTIFIERS
 
 
 class TestGenerateConfiguration(unittest.TestCase):
@@ -50,8 +50,8 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual('g', config.gremlin.traversal_source)
         self.assertEqual('', config.gremlin.username)
         self.assertEqual('', config.gremlin.password)
-        self.assertEqual(DEFAULT_GREMLIN_PROTOCOL, config.gremlin.connection_protocol)
-        self.assertEqual('GraphSONUntypedMessageSerializerV1', config.gremlin.message_serializer)
+        self.assertEqual(DEFAULT_WS_PROTOCOL, config.gremlin.connection_protocol)
+        self.assertEqual('GraphSONMessageSerializerV3', config.gremlin.message_serializer)
         self.assertEqual('neo4j', config.neo4j.username)
         self.assertEqual('password', config.neo4j.password)
         self.assertEqual(True, config.neo4j.auth)
@@ -170,7 +170,7 @@ class TestGenerateConfiguration(unittest.TestCase):
                 'traversal_source': 'g',
                 'username': '',
                 'password': '',
-                'message_serializer': 'GraphSONUntypedMessageSerializerV1'
+                'message_serializer': 'GraphSONMessageSerializerV3'
             },
             'neo4j': {
                 'username': 'neo4j',
@@ -267,8 +267,8 @@ class TestGenerateConfiguration(unittest.TestCase):
                 'traversal_source': 'g',
                 'username': '',
                 'password': '',
-                'message_serializer': 'GraphSONUntypedMessageSerializerV1',
-                'connection_protocol': 'http'
+                'message_serializer': 'GraphSONMessageSerializerV3',
+                'connection_protocol': 'websockets'
             },
             'neo4j': {
                 'username': 'neo4j',
@@ -472,7 +472,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV1')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
         self.assertFalse(hasattr(config.gremlin, "connection_protocol"))
 
     def test_configuration_gremlinsection_generic_override(self):
@@ -494,8 +494,8 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV1')
-        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_GREMLIN_PROTOCOL)
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONMessageSerializerV3')
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_override(self):
         config = Configuration(self.neptune_host_reg,
@@ -510,14 +510,14 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphBinaryMessageSerializerV1')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_protocol_neptune_default_with_proxy(self):
         config = Configuration(self.neptune_host_reg,
                                self.port,
                                proxy_host='test_proxy')
-        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
+        self.assertEqual(config.gremlin.connection_protocol, DEFAULT_WS_PROTOCOL)
 
     def test_configuration_gremlinsection_protocol_neptune_override_with_proxy(self):
         config = Configuration(self.neptune_host_reg,

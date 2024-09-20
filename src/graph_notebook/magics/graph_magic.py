@@ -54,7 +54,7 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
     OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
     normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
-    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, \
+    GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, \
     GREMLIN_SERIALIZERS_WS, GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
@@ -1250,11 +1250,18 @@ class Graph(Magics):
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             if self.client.is_neptune_domain():
                 if args.connection_protocol != '':
-                    connection_protocol = normalize_protocol_name(args.connection_protocol)
+                    connection_protocol, bad_protocol_input = normalize_protocol_name(args.connection_protocol)
+                    if bad_protocol_input:
+                        if self.client.is_analytics_domain():
+                            connection_protocol = DEFAULT_HTTP_PROTOCOL
+                        else:
+                            connection_protocol = DEFAULT_WS_PROTOCOL
+                        print(f"Connection protocol input is invalid for Neptune, "
+                              f"defaulting to {connection_protocol}.")
                     if connection_protocol == DEFAULT_WS_PROTOCOL and \
                             self.graph_notebook_config.gremlin.message_serializer not in GREMLIN_SERIALIZERS_WS:
-                        print("Unsupported serializer for GremlinPython client, "
-                              "compatible serializers are: {GREMLIN_SERIALIZERS_WS}")
+                        print(f"Serializer is unsupported for GremlinPython client, "
+                              f"compatible serializers are: {GREMLIN_SERIALIZERS_WS}")
                         print("Defaulting to HTTP protocol.")
                         connection_protocol = DEFAULT_HTTP_PROTOCOL
                 else:
