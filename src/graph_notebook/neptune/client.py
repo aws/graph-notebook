@@ -32,7 +32,6 @@ from graph_notebook.neptune.bolt_auth_token import NeptuneBoltAuthToken
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
 # import graph_notebook.neptune.gremlin.graphsonV3d0_MapType_objectify_patch  # noqa F401
 
-DEFAULT_GREMLIN_SERIALIZER = 'graphsonv3'
 DEFAULT_GREMLIN_TRAVERSAL_SOURCE = 'g'
 DEFAULT_SPARQL_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 DEFAULT_PORT = 8182
@@ -119,16 +118,35 @@ NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws
 
 false_str_variants = [False, 'False', 'false', 'FALSE']
 
-GRAPHSONV3_VARIANTS = ['graphsonv3', 'graphsonv3d0', 'graphsonserializersv3d0', 'graphsonmessageserializerv3']
-GRAPHSONV2_VARIANTS = ['graphsonv2', 'graphsonv2d0', 'graphsonserializersv2d0', 'graphsonmessageserializerv2']
-GRAPHBINARYV1_VARIANTS = ['graphbinaryv1', 'graphbinary', 'graphbinaryserializersv1', 'graphbinarymessageserializerv1']
+GRAPHSONV1 = 'GraphSONMessageSerializerGremlinV1'
+GRAPHSONV2 = 'GraphSONMessageSerializerV2'
+GRAPHSONV3 = 'GraphSONMessageSerializerV3'
+GRAPHSONV1_UNTYPED = 'GraphSONUntypedMessageSerializerV1'
+GRAPHSONV2_UNTYPED = 'GraphSONUntypedMessageSerializerV2'
+GRAPHSONV3_UNTYPED = 'GraphSONUntypedMessageSerializerV3'
+GRAPHBINARYV1 = 'GraphBinaryMessageSerializerV1'
+
+GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP = {
+    GRAPHSONV1: 'application/vnd.gremlin-v1.0+json',
+    GRAPHSONV2: 'application/vnd.gremlin-v2.0+json',
+    GRAPHSONV3: 'application/vnd.gremlin-v3.0+json',
+    GRAPHSONV1_UNTYPED: 'application/vnd.gremlin-v1.0+json;types=false',
+    GRAPHSONV2_UNTYPED: 'application/vnd.gremlin-v2.0+json;types=false',
+    GRAPHSONV3_UNTYPED: 'application/vnd.gremlin-v3.0+json;types=false',
+    GRAPHBINARYV1: 'application/vnd.graphbinary-v1.0'
+}
+
+GREMLIN_SERIALIZERS_WS = [GRAPHSONV2, GRAPHSONV3, GRAPHBINARYV1]
+GREMLIN_SERIALIZERS_HTTP = [GRAPHSONV1, GRAPHSONV1_UNTYPED, GRAPHSONV2_UNTYPED, GRAPHSONV3_UNTYPED]
+GREMLIN_SERIALIZERS_ALL = GREMLIN_SERIALIZERS_WS + GREMLIN_SERIALIZERS_HTTP
+DEFAULT_GREMLIN_SERIALIZER = GRAPHSONV1_UNTYPED
 
 DEFAULT_WS_PROTOCOL = "websockets"
 DEFAULT_HTTP_PROTOCOL = "http"
 WS_PROTOCOL_FORMATS = ["ws", "websocket", DEFAULT_WS_PROTOCOL]
 HTTP_PROTOCOL_FORMATS = ["https", "rest", DEFAULT_HTTP_PROTOCOL]
 GREMLIN_PROTOCOL_FORMATS = WS_PROTOCOL_FORMATS + HTTP_PROTOCOL_FORMATS
-DEFAULT_GREMLIN_PROTOCOL = DEFAULT_WS_PROTOCOL
+DEFAULT_GREMLIN_PROTOCOL = DEFAULT_HTTP_PROTOCOL
 
 STATISTICS_MODES = ["", "status", "disableAutoCompute", "enableAutoCompute", "refresh", "delete"]
 SUMMARY_MODES = ["", "basic", "detailed"]
@@ -153,14 +171,20 @@ def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     return False
 
 
-def get_gremlin_serializer(serializer_str: str):
-    serializer_lower = serializer_str.lower()
-    if serializer_lower == 'graphbinaryv1':
+def get_gremlin_serializer_driver_class(serializer_str: str):
+    if serializer_str == GRAPHBINARYV1:
         return serializer.GraphBinarySerializersV1()
-    elif serializer_lower == 'graphsonv2':
+    elif serializer_str == GRAPHSONV2:
         return serializer.GraphSONSerializersV2d0()
     else:
         return serializer.GraphSONSerializersV3d0()
+
+
+def get_gremlin_serializer_mime(serializer_str: str):
+    if serializer_str in GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP.keys():
+        return GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[serializer_str]
+    else:
+        return GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[GRAPHSONV1_UNTYPED]
 
 
 def normalize_protocol_name(protocol: str):
@@ -223,7 +247,7 @@ class Client(object):
         self.gremlin_traversal_source = gremlin_traversal_source
         self.gremlin_username = gremlin_username
         self.gremlin_password = gremlin_password
-        self.gremlin_serializer = get_gremlin_serializer(gremlin_serializer)
+        self.gremlin_serializer = gremlin_serializer
         self.neo4j_username = neo4j_username
         self.neo4j_password = neo4j_password
         self.neo4j_auth = neo4j_auth
@@ -373,9 +397,10 @@ class Client(object):
             request = self._prepare_request('GET', ws_url)
 
         traversal_source = 'g' if self.is_neptune_domain() else self.gremlin_traversal_source
+        message_serializer = get_gremlin_serializer_driver_class(self.gremlin_serializer)
         return client.Client(ws_url, traversal_source, transport_factory=transport_factory_args,
                              username=self.gremlin_username, password=self.gremlin_password,
-                             message_serializer=self.gremlin_serializer,
+                             message_serializer=message_serializer,
                              headers=dict(request.headers), **transport_kwargs)
 
     def gremlin_query(self, query, transport_args=None, bindings=None):

@@ -52,10 +52,10 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
-    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES,
+    OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
     normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
-    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, normalize_protocol_name,
-    generate_snapshot_name)
+    DEFAULT_GREMLIN_PROTOCOL, GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, \
+    GREMLIN_SERIALIZERS_WS, GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -1249,14 +1249,23 @@ class Graph(Magics):
             using_http = False
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
             if self.client.is_neptune_domain():
-                connection_protocol = normalize_protocol_name(args.connection_protocol) \
-                    if args.connection_protocol != '' \
-                    else self.graph_notebook_config.gremlin.connection_protocol
+                if args.connection_protocol != '':
+                    connection_protocol = normalize_protocol_name(args.connection_protocol)
+                    if connection_protocol == DEFAULT_WS_PROTOCOL and \
+                            self.graph_notebook_config.gremlin.message_serializer not in GREMLIN_SERIALIZERS_WS:
+                        print("Unsupported serializer for GremlinPython client, "
+                              "compatible serializers are: {GREMLIN_SERIALIZERS_WS}")
+                        print("Defaulting to HTTP protocol.")
+                        connection_protocol = DEFAULT_HTTP_PROTOCOL
+                else:
+                    connection_protocol = self.graph_notebook_config.gremlin.connection_protocol
                 try:
                     if connection_protocol == DEFAULT_HTTP_PROTOCOL:
                         using_http = True
+                        message_serializer = self.graph_notebook_config.gremlin.message_serializer
+                        message_serializer_mime = GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[message_serializer]
                         query_res_http = self.client.gremlin_http_query(cell, headers={
-                            'Accept': 'application/vnd.gremlin-v1.0+json;types=false'})
+                            'Accept': message_serializer_mime})
                         query_res_http.raise_for_status()
                         try:
                             query_res_http_json = query_res_http.json()
