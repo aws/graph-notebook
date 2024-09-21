@@ -3597,8 +3597,11 @@ class Graph(Magics):
 
         if args.mode == 'explain':
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            res = self.client.opencypher_http(cell, explain=args.explain_type, query_params=query_params,
-                                              plan_cache=args.plan_cache)
+            res = self.client.opencypher_http(cell, 
+                                              explain=args.explain_type,
+                                              query_params=query_params,
+                                              plan_cache=args.plan_cache,
+                                              query_timeout=args.query_timeout)
             query_time = time.time() * 1000 - query_start
             res_replace_chars = res.content.replace(b'$', b'\&#36;')
             explain = res_replace_chars.decode("utf-8")
@@ -3617,7 +3620,8 @@ class Graph(Magics):
                 print("queryTimeoutMilliseconds is not supported for Neptune DB, ignoring.")
 
             query_start = time.time() * 1000  # time.time() returns time in seconds w/high precision; x1000 to get in ms
-            oc_http = self.client.opencypher_http(cell, query_params=query_params,
+            oc_http = self.client.opencypher_http(cell,
+                                                  query_params=query_params,
                                                   plan_cache=args.plan_cache,
                                                   query_timeout=args.query_timeout)
             query_time = time.time() * 1000 - query_start
