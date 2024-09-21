@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Enabled `--query-timeout` on `%%oc explain` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/701))
+
 ## Release 4.6.0 (September 19, 2024)
 
 - Updated Gremlin config `message_serializer` to accept all TinkerPop serializers ([Link to PR](https://github.com/aws/graph-notebook/pull/685))
