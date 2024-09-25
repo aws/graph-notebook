@@ -84,6 +84,8 @@ def get_id(element):
     elif isinstance(element, dict):
         if T.id in element:
             element_id = element[T.id]
+        elif '~id' in element:
+            element_id = element['~id']
         elif 'id' in element:
             element_id = element['id']
         else:
@@ -125,6 +127,8 @@ class GremlinNetwork(EventfulNetwork):
 
     def get_dict_element_property_value(self, element, k, temp_label, custom_property):
         property_value = None
+        if isinstance(temp_label, list):
+            temp_label = str(temp_label).strip("[]'")
         if isinstance(custom_property, dict):
             try:
                 if isinstance(custom_property[temp_label], tuple) and isinstance(element[k], list):
@@ -311,10 +315,10 @@ class GremlinNetwork(EventfulNetwork):
             raise ValueError("results must be a list of paths")
 
         if is_http:
-            gremlin_id = 'id'
+            gremlin_ids = ['id', '~id']
             gremlin_label = 'label'
         else:
-            gremlin_id = T.id
+            gremlin_ids = [T.id]
             gremlin_label = T.label
 
         for path_index, path in enumerate(results):
@@ -325,10 +329,15 @@ class GremlinNetwork(EventfulNetwork):
                 for i in range(len(path)):
                     if isinstance(path[i], dict):
                         is_elementmap = False
-                        if gremlin_id in path[i] and gremlin_label in path[i]:
+                        gremlin_id_in_path = False
+                        for possible_id in gremlin_ids:
+                            if possible_id in path[i]:
+                                gremlin_id_in_path = True
+                                break
+                        if gremlin_id_in_path and gremlin_label in path[i]:
                             for prop, value in path[i].items():
                                 # ID and/or Label property keys could be renamed by a project() step
-                                if isinstance(value, str) and prop not in [gremlin_id, gremlin_label]:
+                                if isinstance(value, str) and prop not in gremlin_ids + [gremlin_label]:
                                     is_elementmap = True
                                     break
                                 elif isinstance(value, dict):
@@ -346,8 +355,16 @@ class GremlinNetwork(EventfulNetwork):
                             self.insert_path_element(path, i)
                     else:
                         self.insert_path_element(path, i)
-            elif isinstance(path, dict) and gremlin_id in path.keys() and gremlin_label in path.keys():
-                self.insert_elementmap(path, index=path_index)
+            elif isinstance(path, dict):
+                gremlin_id_in_path_keys = False
+                for possible_id in gremlin_ids:
+                    if possible_id in path.keys():
+                        gremlin_id_in_path_keys = True
+                        break
+                if gremlin_id_in_path_keys and gremlin_label in path.keys():
+                    self.insert_elementmap(path, index=path_index)
+                else:
+                    raise ValueError("all entries in results must be paths or elementMaps")
             else:
                 raise ValueError("all entries in results must be paths or elementMaps")
 
@@ -383,7 +400,7 @@ class GremlinNetwork(EventfulNetwork):
                     # T.label is set in order to handle the default case of grouping by label
                     # when no explicit key is specified
                     group = v.label
-                elif str(self.group_by_property) in [T_ID, 'id']:
+                elif str(self.group_by_property) in [T_ID, 'id', '~id']:
                     group = v.id
                 elif self.group_by_property == DEPTH_GRP_KEY:
                     group = depth_group
@@ -396,7 +413,7 @@ class GremlinNetwork(EventfulNetwork):
                             group = str(v)
                         elif self.group_by_property[str(v.label)] in [T_LABEL, 'label']:
                             group = v.label
-                        elif self.group_by_property[str(v.label)] in [T_ID, 'id']:
+                        elif self.group_by_property[str(v.label)] in [T_ID, 'id', '~id']:
                             group = v.id
                         elif self.group_by_property[str(v.label)] == DEPTH_GRP_KEY:
                             group = depth_group
@@ -449,9 +466,11 @@ class GremlinNetwork(EventfulNetwork):
             # Since it is needed for checking for the vertex label's desired grouping behavior in group_by_property
             if T.label in v.keys() or 'label' in v.keys():
                 label_key = T.label if T.label in v.keys() else 'label'
-                title_plc = str(v[label_key])
+                label_raw = v[label_key]
+                title_plc = str(label_raw)
                 title, label = self.strip_and_truncate_label_and_title(title_plc, self.label_max_length)
             else:
+                label_raw = ''
                 title_plc = ''
                 group = DEFAULT_GRP
 
@@ -459,7 +478,7 @@ class GremlinNetwork(EventfulNetwork):
                 group = str(v)
                 group_is_set = True
             for k in v:
-                if str(k) in [T_ID, 'id']:
+                if str(k) in [T_ID, 'id', '~id']:
                     node_id = str(v[k])
 
                 if isinstance(v[k], dict):
@@ -499,7 +518,7 @@ class GremlinNetwork(EventfulNetwork):
                             group = str(v[k])
                             group_is_set = True
                 if not display_is_set:
-                    label_property_raw_value = self.get_dict_element_property_value(v, k, title_plc,
+                    label_property_raw_value = self.get_dict_element_property_value(v, k, label_raw,
                                                                                     self.display_property)
                     if label_property_raw_value:
                         label_full, label = self.strip_and_truncate_label_and_title(label_property_raw_value,
@@ -508,7 +527,7 @@ class GremlinNetwork(EventfulNetwork):
                             title = label_full
                         display_is_set = True
                 if not tooltip_display_is_set:
-                    tooltip_property_raw_value = self.get_dict_element_property_value(v, k, title_plc,
+                    tooltip_property_raw_value = self.get_dict_element_property_value(v, k, label_raw,
                                                                                       self.tooltip_property)
                     if tooltip_property_raw_value:
                         title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,
@@ -612,13 +631,14 @@ class GremlinNetwork(EventfulNetwork):
                 tooltip_display_is_set = False
             if T.label in edge.keys() or 'label' in edge.keys():
                 label_key = T.label if T.label in edge.keys() else 'label'
-                edge_title_plc = str(edge[label_key])
+                edge_label_raw = edge[label_key]
+                edge_title_plc = str(edge_label_raw)
                 edge_title, edge_label = self.strip_and_truncate_label_and_title(edge_title_plc,
                                                                                  self.edge_label_max_length)
             else:
-                edge_title_plc = ''
+                edge_label_raw = ''
             for k in edge:
-                if str(k) in [T_ID, 'id']:
+                if str(k) in [T_ID, 'id', '~id']:
                     edge_id = str(edge[k])
 
                 if isinstance(edge[k], dict):  # Handle Direction properties, where the value is a map
@@ -630,8 +650,8 @@ class GremlinNetwork(EventfulNetwork):
                 else:
                     properties[k] = edge[k]
 
-                if self.edge_display_property not in [T_LABEL, 'label'] and not display_is_set:
-                    label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
+                if not display_is_set:
+                    label_property_raw_value = self.get_dict_element_property_value(edge, k, edge_label_raw,
                                                                                     self.edge_display_property)
                     if label_property_raw_value:
                         edge_label_full, edge_label = self.strip_and_truncate_label_and_title(
@@ -639,8 +659,9 @@ class GremlinNetwork(EventfulNetwork):
                         if not using_custom_tooltip:
                             edge_title = edge_label_full
                         display_is_set = True
+
                 if not tooltip_display_is_set:
-                    tooltip_property_raw_value = self.get_dict_element_property_value(edge, k, edge_title_plc,
+                    tooltip_property_raw_value = self.get_dict_element_property_value(edge, k, edge_label_raw,
                                                                                       self.edge_tooltip_property)
                     if tooltip_property_raw_value:
                         edge_title, label_plc = self.strip_and_truncate_label_and_title(tooltip_property_raw_value,

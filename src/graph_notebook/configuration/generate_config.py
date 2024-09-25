@@ -17,6 +17,7 @@ from graph_notebook.neptune.client import (SPARQL_ACTION, DEFAULT_PORT, DEFAULT_
                                            GRAPHBINARYV1, GREMLIN_SERIALIZERS_HTTP, GREMLIN_SERIALIZERS_WS,
                                            GREMLIN_SERIALIZERS_ALL, NEPTUNE_GREMLIN_SERIALIZERS_HTTP,
                                            DEFAULT_GREMLIN_WS_SERIALIZER, DEFAULT_GREMLIN_HTTP_SERIALIZER,
+                                           NEPTUNE_GREMLIN_SERIALIZERS_HTTP_NEXT, DEFAULT_GREMLIN_HTTP_SERIALIZER_NEXT,
                                            NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME,
                                            normalize_service_name, normalize_protocol_name,
                                            normalize_serializer_class_name)
@@ -93,16 +94,16 @@ class GremlinSection(object):
                         print(f"Enforcing HTTP protocol.")
                     connection_protocol = DEFAULT_HTTP_PROTOCOL
                 # temporary restriction until GraphSON-typed and GraphBinary results are supported
-                if message_serializer not in NEPTUNE_GREMLIN_SERIALIZERS_HTTP:
+                if message_serializer not in NEPTUNE_GREMLIN_SERIALIZERS_HTTP_NEXT:
                     if message_serializer not in GREMLIN_SERIALIZERS_ALL:
                         if invalid_serializer_input:
-                            print(f"Invalid serializer specified, defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
-                                  f"Valid serializers: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
+                            print(f"Invalid serializer specified, defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER_NEXT}. "
+                                  f"Valid serializers: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP_NEXT}")
                     else:
                         print(f"{message_serializer} is not currently supported for HTTP connections, "
-                              f"defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER}. "
-                              f"Please use one of: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP}")
-                    message_serializer = DEFAULT_GREMLIN_HTTP_SERIALIZER
+                              f"defaulting to {DEFAULT_GREMLIN_HTTP_SERIALIZER_NEXT}. "
+                              f"Please use one of: {NEPTUNE_GREMLIN_SERIALIZERS_HTTP_NEXT}")
+                    message_serializer = DEFAULT_GREMLIN_HTTP_SERIALIZER_NEXT
             else:
                 if connection_protocol not in [DEFAULT_WS_PROTOCOL, DEFAULT_HTTP_PROTOCOL]:
                     if invalid_protocol_input:
@@ -342,7 +343,7 @@ if __name__ == "__main__":
     parser.add_argument("--gremlin_password", help="the password to use when creating Gremlin connections", default='')
     parser.add_argument("--gremlin_serializer",
                         help="the serializer to use as the encoding format when creating Gremlin connections",
-                        default=DEFAULT_GREMLIN_SERIALIZER)
+                        default='')
     parser.add_argument("--gremlin_connection_protocol",
                         help="the connection protocol to use for Gremlin connections",
                         default='')

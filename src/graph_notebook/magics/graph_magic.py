@@ -54,8 +54,8 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
     OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
     normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
-    GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, \
-    GREMLIN_SERIALIZERS_WS, GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP, normalize_protocol_name, generate_snapshot_name)
+    GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, GRAPHSONV4_UNTYPED, \
+    GREMLIN_SERIALIZERS_WS, get_gremlin_serializer_mime, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
@@ -1091,6 +1091,9 @@ class Graph(Magics):
                                  f'If not specified, defaults to the value of the gremlin.connection_protocol field '
                                  f'in %%graph_notebook_config. Please note that this option has no effect on the '
                                  f'Profile and Explain modes, which must use HTTP.')
+        parser.add_argument('-qp', '--query-parameters', type=str, default='',
+                            help='Parameter definitions to apply to the query. This option can accept a local variable '
+                                 'name, or a string representation of the map.')
         parser.add_argument('--explain-type', type=str.lower, default='dynamic',
                             help=f'Explain mode to use when using the explain query mode. '
                                  f'Accepted values: {GREMLIN_EXPLAIN_MODES}')
@@ -1160,6 +1163,21 @@ class Graph(Magics):
         logger.debug(f'Arguments {args}')
         results_df = None
 
+        query_params = None
+        if args.query_parameters:
+            if args.query_parameters in local_ns:
+                query_params_input = local_ns[args.query_parameters]
+            else:
+                query_params_input = args.query_parameters
+            if isinstance(query_params_input, dict):
+                query_params = json.dumps(query_params_input)
+            else:
+                try:
+                    query_params_dict = json.loads(query_params_input.replace("'", '"'))
+                    query_params = json.dumps(query_params_dict)
+                except Exception as e:
+                    print(f"Invalid query parameter input, ignoring.")
+
         if args.no_scroll:
             gremlin_layout = UNRESTRICTED_LAYOUT
             gremlin_scrollY = True
@@ -1184,8 +1202,13 @@ class Graph(Magics):
 
         if mode == QueryMode.EXPLAIN:
             try:
+                explain_args = {}
+                if args.explain_type:
+                    explain_args['explain.mode'] = args.explain_type
+                if self.client.is_analytics_domain() and query_params:
+                    explain_args['parameters'] = query_params
                 res = self.client.gremlin_explain(cell,
-                                                  args={'explain.mode': args.explain_type} if args.explain_type else {})
+                                                  args=explain_args)
                 res.raise_for_status()
             except Exception as e:
                 if self.client.is_analytics_domain():
@@ -1219,6 +1242,8 @@ class Graph(Magics):
                             "profile.serializer": serializer,
                             "profile.indexOps": args.profile_indexOps,
                             "profile.debug": args.profile_debug}
+            if self.client.is_analytics_domain() and query_params:
+                profile_args['parameters'] = query_params
             try:
                 profile_misc_args_dict = json.loads(args.profile_misc_args)
                 profile_args.update(profile_misc_args_dict)
@@ -1269,17 +1294,29 @@ class Graph(Magics):
                 try:
                     if connection_protocol == DEFAULT_HTTP_PROTOCOL:
                         using_http = True
+                        headers = {}
                         message_serializer = self.graph_notebook_config.gremlin.message_serializer
-                        message_serializer_mime = GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[message_serializer]
-                        query_res_http = self.client.gremlin_http_query(cell, headers={
-                            'Accept': message_serializer_mime})
+                        message_serializer_mime = get_gremlin_serializer_mime(message_serializer, DEFAULT_HTTP_PROTOCOL)
+                        if message_serializer_mime != GRAPHSONV4_UNTYPED:
+                            headers['Accept'] = message_serializer_mime
+                        passed_params = query_params if self.client.is_analytics_domain() else None
+                        query_res_http = self.client.gremlin_http_query(cell,
+                                                                        headers=headers,
+                                                                        query_params=passed_params)
                         query_res_http.raise_for_status()
                         try:
                             query_res_http_json = query_res_http.json()
                         except JSONDecodeError:
                             query_res_fixed = repair_json(query_res_http.text)
                             query_res_http_json = json.loads(query_res_fixed)
-                        query_res = query_res_http_json['result']['data']
+                        if 'result' in query_res_http_json:
+                            query_res = query_res_http_json['result']['data']
+                        else:
+                            if 'reason' in query_res_http_json:
+                                logger.debug('Query failed with internal error, see response.')
+                            else:
+                                logger.debug('Received unexpected response format, outputting as single entry.')
+                            query_res = [query_res_http_json]
                     else:
                         query_res = self.client.gremlin_query(cell, transport_args=transport_args)
                 except Exception as e:
@@ -1317,7 +1354,7 @@ class Graph(Magics):
                                         ignore_groups=args.ignore_groups,
                                         using_http=using_http)
 
-                    if using_http and 'path()' in cell and query_res:
+                    if using_http and 'path()' in cell and query_res and isinstance(query_res, list):
                         first_path = query_res[0]
                         if isinstance(first_path, dict) and first_path.keys() == {'labels', 'objects'}:
                             query_res_to_path_type = []
@@ -2844,8 +2881,8 @@ class Graph(Magics):
 
         if self.client.is_analytics_domain():
             model_options = SEED_MODEL_OPTIONS_PG
-            custom_language_options = SEED_LANGUAGE_OPTIONS_OC
-            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_OC
+            custom_language_options = SEED_LANGUAGE_OPTIONS_PG
+            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_PG
         else:
             model_options = SEED_MODEL_OPTIONS
             custom_language_options = SEED_LANGUAGE_OPTIONS
@@ -3121,7 +3158,11 @@ class Graph(Magics):
                 logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                 return 0
             try:
-                self.client.gremlin_query(query_line)
+                if self.client.is_neptune_domain() and self.client.is_analytics_domain() and \
+                    self.graph_notebook_config.gremlin.connection_protocol == DEFAULT_HTTP_PROTOCOL:
+                    self.client.gremlin_http_query(query_line)
+                else:
+                    self.client.gremlin_query(query_line)
                 return 0
             except GremlinServerError as gremlinEx:
                 try:
