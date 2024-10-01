@@ -541,23 +541,31 @@ class Client(object):
         if headers is None:
             headers = {}
 
-        url = f'{self._http_protocol}://{self.host}:{self.port}/'
+        url = f'{self._http_protocol}://{self.host}'
 
         if self.is_neptune_domain():
-            if 'content-type' not in headers:
-                headers['content-type'] = 'application/x-www-form-urlencoded'
-            url += 'openCypher'
             data = {}
+            if self.is_analytics_domain():
+                url += f'/queries'
+                data['language'] = 'opencypher'
+            else:
+                if 'content-type' not in headers:
+                    headers['content-type'] = 'application/x-www-form-urlencoded'
+                url += f':{self.port}/openCypher'
             if plan_cache:
                 if plan_cache not in OPENCYPHER_PLAN_CACHE_MODES:
                     print('Invalid --plan-cache mode specified, defaulting to auto.')
                 else:
-                    if self.is_analytics_domain():
-                        data['planCache'] = plan_cache
-                    elif plan_cache != 'auto':
-                        query = set_plan_cache_hint(query, plan_cache)
+                    if plan_cache != 'auto':
+                        if self.is_analytics_domain():
+                            data['planCache'] = plan_cache
+                        else:
+                            query = set_plan_cache_hint(query, plan_cache)
             data['query'] = query
             if explain:
+                if self.is_analytics_domain():
+                    data['explain.mode'] = explain
+                    data['explain-mode'] = explain
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
             if query_params:
