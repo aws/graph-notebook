@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+- Updated `%%oc` to use the `/queries` endpoint for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/705))
 - Added experimental TinkerPop 4.0 support ([Link to PR](https://github.com/aws/graph-notebook/pull/704))
 - Added documentation for group keys in `%%graph_notebook_vis_options` ([Link to PR](https://github.com/aws/graph-notebook/pull/703))
 - Enabled `--query-timeout` on `%%oc explain` for Neptune Analytics ([Link to PR](https://github.com/aws/graph-notebook/pull/701))
