@@ -205,7 +205,7 @@ class TestGenerateConfigurationMain(unittest.TestCase):
         self.assertEqual(0, result)
         config = get_config(self.test_file_path)
         config_dict = config.to_dict()
-        self.assertEqual('GraphSONUntypedMessageSerializerV3', config_dict['gremlin']['message_serializer'])
+        self.assertEqual('GraphSONUntypedMessageSerializerV4', config_dict['gremlin']['message_serializer'])
 
     def test_generate_configuration_main_empty_args_custom(self):
         expected_config = Configuration(self.neptune_host_custom, self.port, neptune_hosts=self.custom_hosts_list)

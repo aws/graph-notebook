@@ -696,7 +696,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV4')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_analytics_override_ws_protocol(self):
@@ -710,7 +710,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV4')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_analytics_override_serializer(self):
@@ -738,7 +738,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV4')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_analytics_override_serializer_not_graphson_untyped(self):
@@ -752,7 +752,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV4')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_neptune_analytics_override_http_protocol(self):
@@ -766,7 +766,7 @@ class TestGenerateConfiguration(unittest.TestCase):
         self.assertEqual(config.gremlin.traversal_source, 'g')
         self.assertEqual(config.gremlin.username, '')
         self.assertEqual(config.gremlin.password, '')
-        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV3')
+        self.assertEqual(config.gremlin.message_serializer, 'GraphSONUntypedMessageSerializerV4')
         self.assertEqual(config.gremlin.connection_protocol, DEFAULT_HTTP_PROTOCOL)
 
     def test_configuration_gremlinsection_protocol_neptune_default_with_proxy(self):

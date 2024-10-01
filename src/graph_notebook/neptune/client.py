@@ -122,27 +122,34 @@ false_str_variants = [False, 'False', 'false', 'FALSE']
 GRAPHSONV1 = 'GraphSONMessageSerializerGremlinV1'
 GRAPHSONV2 = 'GraphSONMessageSerializerV2'
 GRAPHSONV3 = 'GraphSONMessageSerializerV3'
+GRAPHSONV4 = 'GraphSONMessageSerializerV4'
 GRAPHSONV1_UNTYPED = 'GraphSONUntypedMessageSerializerV1'
 GRAPHSONV2_UNTYPED = 'GraphSONUntypedMessageSerializerV2'
 GRAPHSONV3_UNTYPED = 'GraphSONUntypedMessageSerializerV3'
+GRAPHSONV4_UNTYPED = 'GraphSONUntypedMessageSerializerV4'
 GRAPHBINARYV1 = 'GraphBinaryMessageSerializerV1'
 
 GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP = {
     GRAPHSONV1: 'application/vnd.gremlin-v1.0+json',
     GRAPHSONV2: 'application/vnd.gremlin-v2.0+json',
     GRAPHSONV3: 'application/vnd.gremlin-v3.0+json',
+    GRAPHSONV4: 'application/vnd.gremlin-v4.0+json',
     GRAPHSONV1_UNTYPED: 'application/vnd.gremlin-v1.0+json;types=false',
     GRAPHSONV2_UNTYPED: 'application/vnd.gremlin-v2.0+json;types=false',
     GRAPHSONV3_UNTYPED: 'application/vnd.gremlin-v3.0+json;types=false',
+    GRAPHSONV4_UNTYPED: 'application/vnd.gremlin-v4.0+json;types=false',
     GRAPHBINARYV1: 'application/vnd.graphbinary-v1.0'
 }
 
 GREMLIN_SERIALIZERS_WS = [GRAPHSONV2, GRAPHSONV3, GRAPHBINARYV1]
 GREMLIN_SERIALIZERS_HTTP = [GRAPHSONV1, GRAPHSONV1_UNTYPED, GRAPHSONV2_UNTYPED, GRAPHSONV3_UNTYPED]
-GREMLIN_SERIALIZERS_ALL = GREMLIN_SERIALIZERS_WS + GREMLIN_SERIALIZERS_HTTP
+GREMLIN_SERIALIZERS_HTTP_NEXT = [GRAPHSONV4, GRAPHSONV4_UNTYPED]
+GREMLIN_SERIALIZERS_ALL = GREMLIN_SERIALIZERS_WS + GREMLIN_SERIALIZERS_HTTP + GREMLIN_SERIALIZERS_HTTP_NEXT
 NEPTUNE_GREMLIN_SERIALIZERS_HTTP = [GRAPHSONV1_UNTYPED, GRAPHSONV2_UNTYPED, GRAPHSONV3_UNTYPED]
+NEPTUNE_GREMLIN_SERIALIZERS_HTTP_NEXT = NEPTUNE_GREMLIN_SERIALIZERS_HTTP + [GRAPHSONV4_UNTYPED]
 DEFAULT_GREMLIN_WS_SERIALIZER = GRAPHSONV3
 DEFAULT_GREMLIN_HTTP_SERIALIZER = GRAPHSONV3_UNTYPED
+DEFAULT_GREMLIN_HTTP_SERIALIZER_NEXT = GRAPHSONV4_UNTYPED
 DEFAULT_GREMLIN_SERIALIZER = GRAPHSONV3_UNTYPED
 
 DEFAULT_WS_PROTOCOL = "websockets"
@@ -184,11 +191,14 @@ def get_gremlin_serializer_driver_class(serializer_str: str):
         return serializer.GraphSONSerializersV3d0()
 
 
-def get_gremlin_serializer_mime(serializer_str: str):
+def get_gremlin_serializer_mime(serializer_str: str, protocol: str = DEFAULT_GREMLIN_PROTOCOL):
     if serializer_str in GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP.keys():
         return GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[serializer_str]
     else:
-        return GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[GRAPHSONV1_UNTYPED]
+        default_serializer_for_protocol = DEFAULT_GREMLIN_HTTP_SERIALIZER if protocol == DEFAULT_HTTP_PROTOCOL \
+            else DEFAULT_GREMLIN_WS_SERIALIZER
+        print(f"Invalid serializer, defaulting to {default_serializer_for_protocol}")
+        return GREMLIN_SERIALIZERS_CLASS_TO_MIME_MAP[default_serializer_for_protocol]
 
 
 def normalize_protocol_name(protocol: str):
@@ -218,8 +228,10 @@ def normalize_serializer_class_name(serializer: str):
                 message_serializer += 'MessageSerializerGremlinV1'
         elif 'v2' in serializer_lower:
             message_serializer += 'MessageSerializerV2'
-        else:
+        elif 'v3' in serializer_lower:
             message_serializer += 'MessageSerializerV3'
+        else:
+            message_serializer += 'MessageSerializerV4'
     elif 'graphbinary' in serializer_lower:
         message_serializer = GRAPHBINARYV1
     else:
@@ -454,7 +466,7 @@ class Client(object):
             c.close()
             raise e
 
-    def gremlin_http_query(self, query, headers=None) -> requests.Response:
+    def gremlin_http_query(self, query, headers=None, query_params: dict = None) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -465,6 +477,8 @@ class Client(object):
             data['query'] = query
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
+            if query_params:
+                data['parameters'] = str(query_params).replace("'", '"')
         else:
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
             data['gremlin'] = query
@@ -499,6 +513,9 @@ class Client(object):
             data['query'] = query
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
+            if 'parameters' in args:
+                query_params = args.pop('parameters')
+                data['parameters'] = str(query_params).replace("'", '"')
             if plan_type == 'explain':
                 # Remove explain.mode once HTTP is changed
                 explain_mode = args.pop('explain.mode')
