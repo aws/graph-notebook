@@ -2881,8 +2881,8 @@ class Graph(Magics):
 
         if self.client.is_analytics_domain():
             model_options = SEED_MODEL_OPTIONS_PG
-            custom_language_options = SEED_LANGUAGE_OPTIONS_PG
-            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_PG
+            custom_language_options = SEED_LANGUAGE_OPTIONS_OC
+            samples_pg_language_options = SEED_LANGUAGE_OPTIONS_OC
         else:
             model_options = SEED_MODEL_OPTIONS
             custom_language_options = SEED_LANGUAGE_OPTIONS
@@ -3158,11 +3158,7 @@ class Graph(Magics):
                 logger.debug(f"Skipped blank query at line {line_index + 1} in seed file {q['name']}")
                 return 0
             try:
-                if self.client.is_neptune_domain() and self.client.is_analytics_domain() and \
-                    self.graph_notebook_config.gremlin.connection_protocol == DEFAULT_HTTP_PROTOCOL:
-                    self.client.gremlin_http_query(query_line)
-                else:
-                    self.client.gremlin_query(query_line)
+                self.client.gremlin_query(query_line)
                 return 0
             except GremlinServerError as gremlinEx:
                 try:
