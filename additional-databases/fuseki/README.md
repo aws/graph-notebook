@@ -14,7 +14,7 @@ like in the following example that connects to `http://localhost:3030/ds/sparql`
   "port": 3030,
   "ssl": false,
   "sparql": {
-    "path": "ds/sparql"
+    "path": "ds"
   }
 }
 ```
