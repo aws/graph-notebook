@@ -1139,6 +1139,9 @@ class Graph(Magics):
                             help='Enable debug mode.')
         parser.add_argument('--profile-misc-args', type=str, default='{}',
                             help='Additional profile options, passed in as a map.')
+        parser.add_argument('--use-port', action='store_true', default=False,
+                            help='Includes the port in the URI for applicable Neptune HTTP requests where it is '
+                                 'excluded by default.')
         parser.add_argument('-sp', '--stop-physics', action='store_true', default=False,
                             help="Disable visualization physics after the initial simulation stabilizes.")
         parser.add_argument('-sd', '--simulation-duration', type=int, default=1500,
@@ -1208,7 +1211,8 @@ class Graph(Magics):
                 if self.client.is_analytics_domain() and query_params:
                     explain_args['parameters'] = query_params
                 res = self.client.gremlin_explain(cell,
-                                                  args=explain_args)
+                                                  args=explain_args,
+                                                  use_port=args.use_port)
                 res.raise_for_status()
             except Exception as e:
                 if self.client.is_analytics_domain():
@@ -1251,7 +1255,9 @@ class Graph(Magics):
                 print('--profile-misc-args received invalid input, please check that you are passing in a valid '
                       'string representation of a map, ex. "{\'profile.x\':\'true\'}"')
             try:
-                res = self.client.gremlin_profile(query=cell, args=profile_args)
+                res = self.client.gremlin_profile(query=cell,
+                                                  args=profile_args,
+                                                  use_port=args.use_port)
                 res.raise_for_status()
             except Exception as e:
                 if self.client.is_analytics_domain():
@@ -1302,7 +1308,8 @@ class Graph(Magics):
                         passed_params = query_params if self.client.is_analytics_domain() else None
                         query_res_http = self.client.gremlin_http_query(cell,
                                                                         headers=headers,
-                                                                        query_params=passed_params)
+                                                                        query_params=passed_params,
+                                                                        use_port=args.use_port)
                         query_res_http.raise_for_status()
                         try:
                             query_res_http_json = query_res_http.json()
@@ -3550,6 +3557,9 @@ class Graph(Magics):
         parser.add_argument('-qp', '--query-parameters', type=str, default='',
                             help='Parameter definitions to apply to the query. This option can accept a local variable '
                                  'name, or a string representation of the map.')
+        parser.add_argument('--use-port', action='store_true', default=False,
+                            help='Includes the port in the URI for applicable Neptune HTTP requests where it is '
+                                 'excluded by default.')
         parser.add_argument('-g', '--group-by', type=str, default='~labels',
                             help='Property used to group nodes (e.g. code, ~id) default is ~labels')
         parser.add_argument('-gd', '--group-by-depth', action='store_true', default=False,
@@ -3638,7 +3648,8 @@ class Graph(Magics):
                                               explain=args.explain_type,
                                               query_params=query_params,
                                               plan_cache=args.plan_cache,
-                                              query_timeout=args.query_timeout)
+                                              query_timeout=args.query_timeout,
+                                              use_port=args.use_port)
             query_time = time.time() * 1000 - query_start
             res_replace_chars = res.content.replace(b'$', b'\&#36;')
             explain = res_replace_chars.decode("utf-8")
@@ -3660,7 +3671,8 @@ class Graph(Magics):
             oc_http = self.client.opencypher_http(cell,
                                                   query_params=query_params,
                                                   plan_cache=args.plan_cache,
-                                                  query_timeout=args.query_timeout)
+                                                  query_timeout=args.query_timeout,
+                                                  use_port=args.use_port)
             query_time = time.time() * 1000 - query_start
             if oc_http.status_code == 400 and not self.client.is_analytics_domain() and args.plan_cache != "auto":
                 try:

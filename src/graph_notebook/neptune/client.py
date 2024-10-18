@@ -466,14 +466,15 @@ class Client(object):
             c.close()
             raise e
 
-    def gremlin_http_query(self, query, headers=None, query_params: dict = None) -> requests.Response:
+    def gremlin_http_query(self, query, headers=None, query_params: dict = None,
+                           use_port: bool = False) -> requests.Response:
         if headers is None:
             headers = {}
 
         data = {}
         use_proxy = True if self.proxy_host != '' else False
         if self.is_analytics_domain():
-            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=False)}/queries'
+            uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy, include_port=use_port)}/queries'
             data['query'] = query
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
@@ -498,17 +499,20 @@ class Client(object):
             raise ValueError('query_id must be a non-empty string')
         return self._query_status('gremlin', query_id=query_id, cancelQuery=True)
 
-    def gremlin_explain(self, query: str, args={}) -> requests.Response:
-        return self._gremlin_query_plan(query=query, plan_type='explain', args=args)
+    def gremlin_explain(self, query: str, use_port: bool = False, args={}) -> requests.Response:
+        return self._gremlin_query_plan(query=query, plan_type='explain', args=args, use_port=use_port)
 
-    def gremlin_profile(self, query: str, args={}) -> requests.Response:
-        return self._gremlin_query_plan(query=query, plan_type='profile', args=args)
+    def gremlin_profile(self, query: str, use_port: bool = False, args={}) -> requests.Response:
+        return self._gremlin_query_plan(query=query, plan_type='profile', args=args, use_port=use_port)
 
-    def _gremlin_query_plan(self, query: str, plan_type: str, args: dict, ) -> requests.Response:
+    def _gremlin_query_plan(self, query: str, plan_type: str, args: dict,
+                            use_port: bool = False) -> requests.Response:
         data = {}
         headers = {}
         url = f'{self._http_protocol}://{self.host}'
         if self.is_analytics_domain():
+            if use_port:
+                url += f':{self.port}'
             url += '/queries'
             data['query'] = query
             data['language'] = 'gremlin'
@@ -537,7 +541,8 @@ class Client(object):
     def opencypher_http(self, query: str, headers: dict = None, explain: str = None,
                         query_params: dict = None,
                         plan_cache: str = None,
-                        query_timeout: int = None) -> requests.Response:
+                        query_timeout: int = None,
+                        use_port: bool = False) -> requests.Response:
         if headers is None:
             headers = {}
 
@@ -546,6 +551,8 @@ class Client(object):
         if self.is_neptune_domain():
             data = {}
             if self.is_analytics_domain():
+                if use_port:
+                    url += f':{self.port}'
                 url += f'/queries'
                 data['language'] = 'opencypher'
             else:
