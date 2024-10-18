@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added Neptune `--use-port` option to `%%gremlin` and `%%oc` ([Link to PR](https://github.com/aws/graph-notebook/pull/712))
 
 ## Release 4.6.1 (October 1, 2024)
 
