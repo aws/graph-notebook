@@ -34,7 +34,7 @@ export class VisNode implements Node, DynamicObject {
 
   [key: string]: any;
 
-  constructor(readonly id: string) {
+  constructor(id: string) {
     this.id = id;
   }
 
@@ -88,9 +88,9 @@ export class VisEdge implements Edge {
   [key: string]: any;
 
   constructor(
-    readonly from: string,
-    readonly to: string,
-    readonly id: string,
+    from: string,
+    to: string,
+    id: string,
     label: string
   ) {
     this.from = from;
@@ -184,7 +184,7 @@ export class IdentifiableDynamicObject extends DynamicObject {
 
   [key: string]: any;
 
-  constructor(readonly id: string) {
+  constructor(id: string) {
     super();
     this.id = id;
   }
