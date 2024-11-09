@@ -70,7 +70,7 @@ setup(
         'SPARQLWrapper==2.0.0',
         'requests>=2.32.0,<=2.32.2',
         'ipywidgets==7.7.2',
-        'jupyterlab_widgets>=1.0.0,<3.0.0',
+        'jupyterlab_widgets>=1.0.0,<=1.1.10',
         'networkx==2.4',
         'Jinja2>=3.0.3,<=3.1.4',
         'notebook>=6.1.5,<7.0.0',
