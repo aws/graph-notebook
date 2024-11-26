@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+
+## Release 4.6.2 (November 26, 2024)
 - Added Neptune `--use-port` option to `%%gremlin` and `%%oc` ([Link to PR](https://github.com/aws/graph-notebook/pull/712))
 - Fixed SPARQL path in example Fuseki configuration ([Link to PR](https://github.com/aws/graph-notebook/pull/713))
 - Mitigated visualizer crash on newer `jupyterlab-widgets` versions ([Link to PR](https://github.com/aws/graph-notebook/pull/716))
