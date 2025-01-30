@@ -25,7 +25,9 @@ const rules = [
 ];
 
 // Packages that shouldn't be bundled but loaded at runtime
-const externals = "@jupyter-widgets/base";
+const externals = {
+  "@jupyter-widgets/base": "@jupyter-widgets/base",
+};
 
 const resolve = {
   modules: ["node_modules", path.resolve(__dirname, "src")],
@@ -36,16 +38,23 @@ const resolve = {
 const mode = "production";
 
 const plugins = [
-  new webpack.WatchIgnorePlugin([
-    /dist\//,
-    /docs\//,
-    /lib\//,
-    /labextension\//,
-    /nbextension\//,
-    /node_modules\//,
-    /\.d\.ts$/,
-  ]),
+  // Replace WatchIgnorePlugin with IgnorePlugin for resources that should be ignored during build
+  new webpack.IgnorePlugin({
+    resourceRegExp: /\.d\.ts$/, // Ignore declaration files
+  }),
 ];
+
+const watchOptions = {
+  ignored: [
+    "dist/**",
+    "docs/**",
+    "lib/**",
+    "labextension/**",
+    "nbextension/**",
+    "node_modules/**",
+  ],
+};
+
 
 module.exports = [
   /**
@@ -58,7 +67,10 @@ module.exports = [
     output: {
       filename: "extension.js",
       path: path.resolve(__dirname, "nbextension"),
-      libraryTarget: "var",
+      library: {
+        name: "graph_notebook_widgets",
+        type: "var",
+      },
     },
     module: {
       rules: rules,
@@ -67,6 +79,7 @@ module.exports = [
     externals: externals,
     resolve: resolve,
     plugins: plugins,
+    watchOptions: watchOptions,
   },
 
   /**
@@ -83,7 +96,10 @@ module.exports = [
       path: path.resolve(__dirname, "nbextension"),
       // Using amd target without giving a library name requires the module being loaded by a RequireJS module loader.
       // See https://webpack.js.org/configuration/output/#outputlibrary and src/extension.js.
-      libraryTarget: "amd",
+      library: {
+        name: "graph_notebook_widgets",
+        type: "amd",
+      },
     },
     module: {
       rules: rules,
@@ -92,6 +108,7 @@ module.exports = [
     externals: externals,
     resolve: resolve,
     plugins: plugins,
+    watchOptions: watchOptions,
   },
 
   /**
@@ -110,10 +127,12 @@ module.exports = [
     output: {
       filename: "index.js",
       path: path.resolve(__dirname, "dist"),
-      libraryTarget: "amd",
-      library: "graph_notebook_widgets",
+      library: {
+        name: "graph_notebook_widgets",
+        type: "amd",
+      },
       publicPath:
-        "https://unpkg.com/graph_notebook_widget@" + version + "/dist/",
+        `https://unpkg.com/graph_notebook_widget@${version}/dist/`,
     },
     devtool: "source-map",
     module: {
@@ -122,6 +141,7 @@ module.exports = [
     externals: externals,
     resolve: resolve,
     plugins: plugins,
+    watchOptions: watchOptions,
   },
 
   /**
@@ -135,8 +155,10 @@ module.exports = [
     output: {
       filename: "embed-bundle.js",
       path: path.resolve(__dirname, "docs", "source", "_static"),
-      library: "graph_notebook_widgets",
-      libraryTarget: "amd",
+      library: {
+        name: "graph_notebook_widgets",
+        type: "amd",
+      },
     },
     module: {
       rules: rules,
@@ -145,5 +167,6 @@ module.exports = [
     externals: externals,
     resolve: resolve,
     plugins: plugins,
+    watchOptions: watchOptions,
   },
 ];
