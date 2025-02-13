@@ -8,6 +8,10 @@ from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED
 from traitlets import Unicode, Dict, Instance
 from ipywidgets import DOMWidget, register
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 MAX_LABEL_LENGTH = 10
 
 
@@ -57,14 +61,9 @@ class Force(DOMWidget):
 
     # Name of the front-end module containing widget view
     _view_module = Unicode('graph_notebook_widgets').tag(sync=True)
-
-    # Name of the front-end module containing widget model
-    _model_module = Unicode('graph_notebook_widgets').tag(sync=True)
-
-    # Version of the front-end module containing widget view
-    _view_module_version = Unicode(graph_notebook.__version__).tag(sync=True)
-    # Version of the front-end module containing widget model
-    _model_module_version = Unicode(graph_notebook.__version__).tag(sync=True)
+    _model_module = Unicode('graph_notebook_widgets').tag(sync=True)  # Must match
+    _view_module_version = Unicode('4.6.2').tag(sync=True)  # Must match
+    _model_module_version = Unicode('4.6.2').tag(sync=True)  # Must match
 
     options = Dict().tag(sync=True)
     message = Unicode().tag(sync=True)
@@ -72,10 +71,19 @@ class Force(DOMWidget):
 
     def __init__(self, network: EventfulNetwork = EventfulNetwork(), options: dict = OPTIONS_DEFAULT_DIRECTED,
                  with_callback: bool = True, **kwargs):
+        logger.debug(f"Initializing Force widget")
         if with_callback:
             network.register_universal_callback(self.eventful_network_callback)
 
+        logger.debug(f"Widget configuration:")
+        logger.debug(f"View module: {self._view_module}")
+        logger.debug(f"Model module: {self._model_module}")
+        logger.debug(f"View version: {self._view_module_version}")
+        logger.debug(f"Model version: {self._model_module_version}")
+
         super().__init__(network=network, options=options, **kwargs)
+
+        logger.debug("Force widget initialization complete")
 
     def eventful_network_callback(self, network, event_name, data):
         pass

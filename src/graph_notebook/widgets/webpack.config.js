@@ -1,16 +1,10 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-SPDX-License-Identifier: Apache-2.0
- */
-
 const path = require("path");
 const webpack = require("webpack");
 const version = require("./package.json").version;
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 
-// Custom webpack rules are generally the same for all webpack bundles, hence
-// stored in a separate local variable.
+
 const rules = [
-  // {test: /\.tsx?$/, enforce: 'pre', exclude: /node_modules/, use: [{ loader: 'eslint-loader', options: { emitWarning: true }}]},
   {
     test: /\.tsx?$/,
     exclude: /node_modules/,
@@ -24,126 +18,143 @@ const rules = [
   },
 ];
 
-// Packages that shouldn't be bundled but loaded at runtime
-const externals = "@jupyter-widgets/base";
+// Update externals configuration
+const externals = ['@jupyter-widgets/base'];
 
 const resolve = {
   modules: ["node_modules", path.resolve(__dirname, "src")],
-  // Add '.ts' and '.tsx' as resolvable extensions.
   extensions: [".ts", ".tsx", ".js", ".jsx"],
 };
 
 const mode = "production";
 
-const plugins = [
-  new webpack.WatchIgnorePlugin([
-    /dist\//,
-    /docs\//,
-    /lib\//,
-    /labextension\//,
-    /nbextension\//,
-    /node_modules\//,
-    /\.d\.ts$/,
-  ]),
+// Separate plugin configurations for different targets
+const basePlugins = [
+  new webpack.IgnorePlugin({
+    resourceRegExp: /\.d\.ts$/,
+  }),
 ];
 
-module.exports = [
-  /**
-   * Loader for the Notebook extension amd module
-   */
+const labPlugins = [
+  ...basePlugins,
+  new ModuleFederationPlugin({
+    name: 'graph_notebook_widgets',
+    library: { type: 'amd' },
+    filename: 'remoteEntry.js',
+    exposes: {
+      './index': './src/index',
+      './extension': './src/plugin'
+    },
+    shared: {
+      '@jupyter-widgets/base': { singleton: true }
+    }
+  })
+];
 
+const watchOptions = {
+  ignored: [
+    "dist/**",
+    "docs/**",
+    "lib/**",
+    "labextension/**",
+    "nbextension/**",
+    "node_modules/**",
+  ],
+};
+
+module.exports = [
+  // Notebook extension AMD module
   {
-    mode: mode,
+    mode,
     entry: "./src/extension.js",
     output: {
       filename: "extension.js",
       path: path.resolve(__dirname, "nbextension"),
-      libraryTarget: "var",
+      libraryTarget: "amd",
     },
-    module: {
-      rules: rules,
-    },
+    module: { rules },
     devtool: "source-map",
-    externals: externals,
-    resolve: resolve,
-    plugins: plugins,
+    externals,
+    resolve,
+    plugins: basePlugins,
+    watchOptions,
   },
 
-  /**
-   * Notebook extension
-   *
-   * This bundle only contains the part of the JavaScript that is run on load of
-   * the notebook.
-   */
+  // Notebook extension
   {
-    mode: mode,
+    mode,
     entry: "./src/extension.ts",
     output: {
       filename: "index.js",
       path: path.resolve(__dirname, "nbextension"),
-      // Using amd target without giving a library name requires the module being loaded by a RequireJS module loader.
-      // See https://webpack.js.org/configuration/output/#outputlibrary and src/extension.js.
       libraryTarget: "amd",
     },
-    module: {
-      rules: rules,
-    },
+    module: { rules },
     devtool: "source-map",
-    externals: externals,
-    resolve: resolve,
-    plugins: plugins,
+    externals,
+    resolve,
+    plugins: basePlugins,
+    watchOptions,
   },
 
-  /**
-   * Embeddable graph_notebook_widget bundle
-   *
-   * This bundle is almost identical to the notebook extension bundle. The only
-   * difference is in the configuration of the webpack public path for the
-   * static assets.
-   *
-   * The target bundle is always `dist/index.js`, which is the path required by
-   * the custom widget embedder.
-   */
+  // Lab extension
+// In your webpack.config.js - update the lab extension configuration:
   {
-    mode: mode,
+    mode,
     entry: "./src/index.ts",
     output: {
-      filename: "index.js",
-      path: path.resolve(__dirname, "dist"),
-      libraryTarget: "amd",
-      library: "graph_notebook_widgets",
-      publicPath:
-        "https://unpkg.com/graph_notebook_widget@" + version + "/dist/",
+      filename: '[name].js',
+      chunkFilename: '[name].[contenthash].js', // For other chunks
+      path: path.resolve(__dirname, 'labextension/static'),
+      publicPath: 'static/',
+      libraryTarget: 'amd'
     },
     devtool: "source-map",
-    module: {
-      rules: rules,
+    module: { rules },
+    externals: {
+      ...externals,
+      'jquery': 'jQuery'  // Add this
     },
-    externals: externals,
-    resolve: resolve,
-    plugins: plugins,
+    resolve,
+    plugins: [
+      ...basePlugins,
+      new ModuleFederationPlugin({
+        name: 'graph_notebook_widgets',
+        library: { type: 'amd' },
+        filename: 'remoteEntry.js',
+        exposes: {
+          './extension': './src/plugin',
+          './index': './src/index'
+        },
+        shared: {
+          '@jupyter-widgets/base': { 
+            singleton: true,
+            requiredVersion: '^6.0.4'
+          }
+        }
+      }),
+    // Add webpack.DefinePlugin to help with debugging
+    new webpack.DefinePlugin({
+      'process.env.DEBUG': JSON.stringify(true)
+    }),
+    ],
+    watchOptions
   },
 
-  /**
-   * Documentation widget bundle
-   *
-   * This bundle is used to embed widgets in the package documentation.
-   */
+  // Documentation widget bundle
   {
-    mode: mode,
+    mode,
     entry: "./src/index.ts",
     output: {
       filename: "embed-bundle.js",
       path: path.resolve(__dirname, "docs", "source", "_static"),
-      library: "graph_notebook_widgets",
       libraryTarget: "amd",
     },
-    module: {
-      rules: rules,
-    },
+    module: { rules },
     devtool: "source-map",
-    externals: externals,
-    resolve: resolve,
-    plugins: plugins,
-  },
+    externals,
+    resolve,
+    plugins: basePlugins,
+    watchOptions,
+  }
 ];

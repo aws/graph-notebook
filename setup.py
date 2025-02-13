@@ -3,40 +3,142 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import os
 from os.path import join as pjoin
 from setuptools import setup, find_packages
-from setupbase import (
-    create_cmdclass, install_npm, ensure_targets,
-    combine_commands, HERE, widgets_root
-)
 
-nb_path = pjoin(widgets_root, 'nbextension')
-lab_path = pjoin(widgets_root, 'labextension')
 
-js_targets = [
-    pjoin(nb_path, 'index.js'),
-    pjoin(lab_path, 'package.json')
-]
+print("Current working directory:", os.getcwd())
 
-package_data_spec = {
-    'graph_notebook_widgets': [
-        'nbextension/**js*',
-        'labextension/**'
-    ]
+# Define base paths
+WIDGET_DIR = 'src/graph_notebook/widgets'
+
+def make_relative(path):
+    """Ensure path is relative and uses forward slashes"""
+    if os.path.isabs(path):
+        try:
+            path = os.path.relpath(path)
+        except ValueError:
+            raise ValueError(f"Cannot make path relative: {path}")
+
+    return path.replace(os.sep, '/')
+
+def get_data_files():
+    files = []
+    
+    # First build the lists of files that actually exist
+    lab_static_dir = os.path.join(WIDGET_DIR, 'labextension/static')
+    if os.path.exists(lab_static_dir):
+        # Get all JS files from static directory
+        static_files = []
+        for file in os.listdir(lab_static_dir):
+            if file.endswith('.js'):
+                full_path = os.path.join(lab_static_dir, file)
+                if os.path.isfile(full_path):
+                    static_files.append(file)
+                    print(f"Found static file: {file}")
+        
+        # Create lab extension file mappings
+        lab_files = []
+        
+        # Add package.json
+        pkg_json = os.path.join(WIDGET_DIR, 'labextension/package.json')
+        if os.path.exists(pkg_json):
+            lab_files.append((pkg_json, 'share/jupyter/labextensions/graph_notebook_widgets'))
+            print(f"Found package.json")
+        
+        # Add all static files
+        for static_file in static_files:
+            src_path = os.path.join(lab_static_dir, static_file)
+            lab_files.append((
+                src_path,
+                'share/jupyter/labextensions/graph_notebook_widgets/static'
+            ))
+            print(f"Adding static file: {static_file}")
+    
+    # Notebook extension files
+    nb_files = []
+    for file in ['extension.js', 'index.js']:
+        src_path = os.path.join(WIDGET_DIR, 'nbextension', file)
+        if os.path.exists(src_path):
+            nb_files.append((
+                src_path,
+                'share/jupyter/nbextensions/graph_notebook_widgets'
+            ))
+            print(f"Found nbextension file: {file}")
+    
+    # Add notebook config
+    config_file = os.path.join(WIDGET_DIR, 'graph_notebook_widgets.json')
+    if os.path.exists(config_file):
+        nb_files.append((
+            config_file,
+            'etc/jupyter/nbconfig/notebook.d'
+        ))
+        print(f"Found config file")
+    
+    # Combine and group files
+    all_files = lab_files + nb_files
+    grouped_files = {}
+    for src, dest in all_files:
+        src = make_relative(src)
+        if os.path.exists(src):
+            if dest not in grouped_files:
+                grouped_files[dest] = []
+            grouped_files[dest].append(src)
+            print(f"Adding file: {src} -> {dest}")
+        else:
+            print(f"Warning: File does not exist: {src}")
+    
+    return [(k, v) for k, v in grouped_files.items()]
+
+
+
+# def get_data_files():
+#     files = []
+    
+#     # Lab extension (only package.json and style.js needed)
+#     lab_files = [
+#         (WIDGET_DIR + '/labextension/package.json', 'share/jupyter/labextensions/graph_notebook_widgets'),
+#         (WIDGET_DIR + '/labextension/static/style.js', 'share/jupyter/labextensions/graph_notebook_widgets/static'),
+#          (WIDGET_DIR + '/labextension/static/remoteEntry.js', 'share/jupyter/labextensions/graph_notebook_widgets/static'),
+#          (WIDGET_DIR + '/labextension/static/index.js', 'share/jupyter/labextensions/graph_notebook_widgets/static'),
+#     ]
+    
+#     # Notebook extension (needs both JS files)
+#     nb_files = [
+#         (WIDGET_DIR + '/nbextension/extension.js', 'share/jupyter/nbextensions/graph_notebook_widgets'),
+#         (WIDGET_DIR + '/nbextension/index.js', 'share/jupyter/nbextensions/graph_notebook_widgets'),
+#         (WIDGET_DIR + '/graph_notebook_widgets.json', 'etc/jupyter/nbconfig/notebook.d'),
+#     ]
+    
+
+    
+#     # Group files by destination
+#     grouped_files = {}
+#     for src, dest in lab_files + nb_files:
+#         src = make_relative(src)
+#         if os.path.exists(src):  # Only add files that exist
+#             if dest not in grouped_files:
+#                 grouped_files[dest] = []
+#             grouped_files[dest].append(src)
+#             print(f"Adding file: {src} -> {dest}")
+#         else:
+#             print(f"Warning: File does not exist: {src}")
+    
+#     # Convert to data_files format
+#     return [(k, v) for k, v in grouped_files.items()]
+
+data_files = get_data_files()
+
+
+package_data={
+    'graph_notebook': [
+        'widgets/nbextension/**/*',
+        'widgets/labextension/**/*',
+        'widgets/labextension/static/**/*'
+    ],
+    '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.yaml', '*.md', '*.tgz']
 }
-
-data_files_spec = [
-    ('share/jupyter/nbextensions/graph_notebook_widgets', nb_path, '**'),
-    ('share/jupyter/labextensions/graph_notebook_widgets', lab_path, '**'),
-    ('share/jupyter/labextensions/graph_notebook_widgets', HERE, 'install.json'),
-    ('etc/jupyter/nbconfig/notebook.d', HERE, 'graph_notebook_widgets.json')
-]
-
-cmd_class = create_cmdclass('jsdeps', package_data_spec=package_data_spec, data_files_spec=data_files_spec)
-cmd_class['jsdeps'] = combine_commands(
-    install_npm(widgets_root, build_cmd='build:prod'),
-    ensure_targets(js_targets),
-)
 
 
 def get_version():
@@ -62,28 +164,34 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/aws/graph-notebook',
     version=get_version(),
-    packages=find_packages(where='src', exclude=('test',)),
+    packages=find_packages(where='src', exclude=['test*']) + [
+    'graph_notebook.widgets.docs.source._static',
+    'graph_notebook.widgets.labextension',
+    'graph_notebook.widgets.labextension.static',
+    'graph_notebook.widgets.lib',
+    'graph_notebook.widgets.nbextension'
+    ],
     package_dir={'': 'src'},
+    data_files=data_files,
     include_package_data=True,
     install_requires=[
         'gremlinpython>=3.5.1,<=3.7.2',
         'SPARQLWrapper==2.0.0',
         'requests>=2.32.0,<=2.32.2',
-        'ipywidgets==7.7.2',
-        'jupyterlab_widgets>=1.0.0,<=1.1.10',
+        'ipywidgets>=8.0.0,<9.0.0',
+        'jupyterlab==4.2.6',
+        'jupyterlab_widgets>=3.0.0',
         'networkx==2.4',
         'Jinja2>=3.0.3,<=3.1.4',
         'notebook>=6.1.5,<7.0.0',
         'nbclient<=0.7.3',
         'jupyter-contrib-nbextensions<=0.7.0',
-        'widgetsnbextension<=3.6.1',
-        'jupyter==1.0.0',
         'botocore>=1.34.74',
         'boto3>=1.34.74',
         'ipython>=7.16.1,<=8.10.0',
         'neo4j>=5.0.0,<=5.23.1',
         'rdflib==7.0.0',
-        'ipykernel==5.3.4',
+        'ipykernel>=6.5.0',
         'ipyfilechooser==0.6.0',
         'nbconvert>=6.3.0,<=7.2.8',
         'jedi>=0.18.1,<=0.18.2',
@@ -94,12 +202,7 @@ setup(
         'async-timeout>=4.0,<5.0',
         'json-repair==0.29.2'
     ],
-    package_data={
-        'graph_notebook': ['graph_notebook/widgets/nbextensions/**',
-                           'graph_notebook/widgets/labextension/**'],
-        '': ['*.ipynb', '*.html', '*.css', '*.js', '*.txt', '*.json', '*.ts', '*.css', '*.yaml', '*.md', '*.tgz']
-    },
-    cmdclass=cmd_class,
+    package_data=package_data,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.10',
@@ -110,5 +213,7 @@ setup(
         'test': [
             'pytest==6.2.5'
             ],
-    }
+    },
+    zip_safe=False,
+    python_requires=">=3.8"
 )
