@@ -3,9 +3,9 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
  */
 
-import { Application, IPlugin } from "@phosphor/application";
+import { Application, IPlugin } from '@lumino/application';
 
-import { Widget } from "@phosphor/widgets";
+import { Widget } from '@lumino/widgets';
 
 import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
 
@@ -25,7 +25,7 @@ function activateWidgetExtension(
   registry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,
-    exports: { ForceModel: ForceModel, ForceView: ForceView },
+    exports: { ForceModel, ForceView }
   });
 }
 
