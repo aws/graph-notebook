@@ -271,6 +271,7 @@ export class ForceView extends DOMWidgetView {
    * fashion.
    */
   interceptCustom(msg: Message): void {
+    console.log("Received custom message:", msg);
     const msgData = msg["data"];
     switch (msg["method"]) {
       case "add_node":
@@ -605,6 +606,7 @@ export class ForceView extends DOMWidgetView {
    * @param data - a node or edge
    */
   buildGraphPropertiesTable(data: VisNode | VisEdge): void {
+    console.log("Building properties table for data:", data);
     const graphTable = $(this.graphPropertiesTable);
     let rows: Array<HTMLElement>;
     if (data.hasOwnProperty("properties")) {

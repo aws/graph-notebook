@@ -27,7 +27,12 @@ rm -rf .eggs/
 rm -rf .tox/
 rm -f MANIFEST
 
-pip uninstall -y jupyterlab jupyterlab-server graph_notebook
+
+# uninstall everything
+#pip freeze | xargs pip uninstall -y
+#pip freeze | grep -v "@" | xargs pip uninstall -y
+
+#pip uninstall -y jupyterlab jupyterlab-server graph_notebook notebook jupyterlab_widgets
 pip install jupyterlab==4.2.6
 
 pip install setuptools wheel twine

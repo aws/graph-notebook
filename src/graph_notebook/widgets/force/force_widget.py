@@ -15,8 +15,28 @@ logger = logging.getLogger(__name__)
 MAX_LABEL_LENGTH = 10
 
 
+# def graph_to_json(network: EventfulNetwork, trait):
+#     return network.to_json()
+
+def convert_to_json_safe(data):
+    if isinstance(data, dict):
+        return {
+            str(k) if hasattr(k, '__class__') else k: convert_to_json_safe(v)
+            for k, v in data.items()
+        }
+    elif isinstance(data, list):
+        return [convert_to_json_safe(item) for item in data]
+    elif hasattr(data, '__class__') and not isinstance(data, (str, int, float, bool)):
+        return str(data)
+    return data
+
 def graph_to_json(network: EventfulNetwork, trait):
-    return network.to_json()
+    print("Debug: Converting network to JSON")  # Debug log
+    json_data = network.to_json()
+    print(f"Debug: Original network data: {json_data}")  # Debug log
+    converted_data = convert_to_json_safe(json_data)
+    print(f"Debug: Converted network data: {converted_data}")  # Debug log
+    return converted_data
 
 
 @register
