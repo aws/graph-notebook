@@ -4,7 +4,6 @@ SPDX-License-Identifier: Apache-2.0
  */
 
 /* eslint-disable @typescript-eslint/camelcase */
-// TODO: Upgrade to newest version of jupyter-widgets/base
 import {
   DOMWidgetModel,
   DOMWidgetView,
@@ -49,6 +48,12 @@ on the DOM, it extends widget.DOMWidgetView, and must provide an implementation 
 export class ForceModel extends DOMWidgetModel {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   defaults() {
+    console.warn('ForceModel defaults being set:', {
+      model_name: ForceModel.model_name,
+      model_module: ForceModel.model_module,
+      model_module_version: ForceModel.model_module_version
+    });
+
     return {
       ...super.defaults(),
       _model_name: ForceModel.model_name,
@@ -116,6 +121,24 @@ export class ForceView extends DOMWidgetView {
   private physicsBtn = document.createElement("button");
 
   render(): void {
+
+    console.warn('ForceView render starting', {
+      model: this.model,
+      el: this.el
+    });
+
+    // Add jQuery UI CSS via CDN
+    const jqueryUICss = document.createElement('link');
+    jqueryUICss.rel = 'stylesheet';
+    jqueryUICss.href = 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css';
+    document.head.appendChild(jqueryUICss);
+
+    // Check jQuery availability
+    if (!$) {
+        console.error('jQuery not initialized');
+        return;
+    }
+
     this.networkDiv.classList.add("network-div");
     this.canvasDiv.style.height = "600px";
     this.canvasDiv.style.width = "100%";
@@ -140,6 +163,10 @@ export class ForceView extends DOMWidgetView {
 
     const network = this.model.get("network");
     this.visOptions = this.model.get("options");
+
+    console.warn('Network data received:', network);
+    console.warn('Vis options:', this.visOptions);
+
     this.populateDatasets(network);
     const dataset = {
       nodes: this.nodeDataset,
@@ -157,22 +184,35 @@ export class ForceView extends DOMWidgetView {
     }, this.visOptions.physics.simulationDuration);
 
     /*
-            To listen to messages sent from the kernel, you can register callback methods in the view class,
-            this can be done using the "this.listenTo" method.
+      To listen to messages sent from the kernel, you can register callback methods in the view class,
+      this can be done using the "this.listenTo" method.
 
-            For our purposes, the first param will always be 'this.model'. The second param is the message name which we
-            are subscribing to. For messages triggered by a kernel trait changing its state, the message name will be
-            'change:trait_name'. The third param is a reference to the callback function to be invoked when the given
-            message occurs. This callback can receive the payload of the message if it would like to. The fourth and final
-            parameter is used to keep a way to reference 'this' in the scope of the ForceView class.
-            */
+      For our purposes, the first param will always be 'this.model'. The second param is the message name which we
+      are subscribing to. For messages triggered by a kernel trait changing its state, the message name will be
+      'change:trait_name'. The third param is a reference to the callback function to be invoked when the given
+      message occurs. This callback can receive the payload of the message if it would like to. The fourth and final
+      parameter is used to keep a way to reference 'this' in the scope of the ForceView class.
+    */
     this.listenTo(this.model, "msg:custom", this.interceptCustom);
     this.listenTo(this.model, "change:network", this.changeNetwork);
     this.listenTo(this.model, "change:options", this.changeOptions);
 
-    this.buildActions();
-    this.registerVisEvents();
-    this.registerWidgetEvents();
+    // Wait for jQuery UI CSS to load before building actions
+    jqueryUICss.onload = () => {
+      console.warn('jQuery UI CSS loaded, initializing actions');
+      this.buildActions();
+      this.registerVisEvents();
+      this.registerWidgetEvents();
+    };
+
+    // Fallback if CSS fails to load
+    jqueryUICss.onerror = () => {
+      console.error('Failed to load jQuery UI CSS, continuing without styles');
+      this.buildActions();
+      this.registerVisEvents();
+      this.registerWidgetEvents();
+    };
+
   }
 
   /**
@@ -958,14 +998,16 @@ export class ForceView extends DOMWidgetView {
     const dragOptions: DraggableOptions = new ForceDraggableOptions();
     dragOptions.handle = ".details-header";
     dragOptions.containment = "parent";
-    $(this.detailsPanel).draggable(dragOptions);
 
+    $(this.detailsPanel).draggable(dragOptions);
+    
     const resizeOptions: ResizableOptions = new ForceResizableOptions();
     resizeOptions.handles = "s, e, w, se, sw";
     resizeOptions.resize = (event, ui): void => {
       this.detailsContainer.style.height = ui.size.height.toString() + "px";
       this.detailsContainer.style.width = ui.size.width.toString() + "px";
     };
+    
     $(this.detailsPanel).resizable(resizeOptions);
 
     const zoomInDiv = document.createElement("div");

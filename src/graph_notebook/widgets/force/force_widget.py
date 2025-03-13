@@ -11,8 +11,34 @@ from ipywidgets import DOMWidget, register
 MAX_LABEL_LENGTH = 10
 
 
+
+def convert_to_json_safe(data):
+    """
+    Converts data structures to JSON-compliant format by ensuring all dictionary keys and values 
+    meet Jupiter client's serialization requirements. As per Jupyter protocol, dictionary keys 
+    must be one of: str, int, float, bool, or None.
+    
+    Any custom types (like enum T) or complex objects that aren't JSON-serializable are 
+    converted to their string representation using str(). This handles cases where graph data 
+    contains non-standard types like custom classes or enums that would otherwise cause 
+    serialization failures.
+    """
+    if isinstance(data, dict):
+        return {
+            str(k) if hasattr(k, '__class__') else k: convert_to_json_safe(v)
+            for k, v in data.items()
+        }
+    elif isinstance(data, list):
+        return [convert_to_json_safe(item) for item in data]
+    elif hasattr(data, '__class__') and not isinstance(data, (str, int, float, bool)):
+        return str(data)
+    return data
+
 def graph_to_json(network: EventfulNetwork, trait):
-    return network.to_json()
+    json_data = network.to_json()
+    converted_data = convert_to_json_safe(json_data)
+    return converted_data
+
 
 
 @register

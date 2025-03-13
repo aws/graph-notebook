@@ -5,6 +5,12 @@ SPDX-License-Identifier: Apache-2.0
 
 const data = require("../package.json");
 
+console.warn('📦 Loading version information:', {
+    version: data.version,
+    name: data.name
+  });
+
+  
 /**
  * The _model_module_version/_view_module_version this package implements.
  *

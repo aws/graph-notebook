@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "composite": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./lib/.tsbuildinfo" ,
     "esModuleInterop": true,
-    "lib": ["es2015", "dom"],
+    "lib": ["ES2022", "DOM"],
     "module": "commonjs",
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -13,8 +16,9 @@
     "skipLibCheck": true,
     "sourceMap": false,
     "strict": true,
-    "target": "es2015",
-    "noImplicitAny": false // to allow feather-icons
+    "target": "ES2022",
+    "noImplicitAny": false // to allow feather-icons,
+    
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules"]

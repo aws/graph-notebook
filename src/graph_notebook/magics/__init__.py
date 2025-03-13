@@ -8,5 +8,7 @@ from .graph_magic import Graph
 
 
 def load_ipython_extension(ipython):
+    print("Registering graph_notebook magics and completions...")
     ipython.set_hook('complete_command', get_completion_options, re_key=".*")
     ipython.register_magics(Graph)
+    print("graph_notebook extension loaded successfully")
