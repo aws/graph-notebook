@@ -1,10 +1,140 @@
-import { Application, IPlugin } from "@lumino/application";
-import { Widget } from "@lumino/widgets";
+/*
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+ */
+
+import { Application, IPlugin } from '@lumino/application';
+
+import { Widget } from '@lumino/widgets';
+
 import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
 
-
 import { ForceModel, ForceView } from "./force_widget";
-// import { MODULE_NAME, MODULE_VERSION } from "./version"; // Uncomment this
+
+// import { MODULE_NAME, MODULE_VERSION } from "./version";
+
+// const EXTENSION_ID = "graph_notebook_widgets:plugin";
+
+// At the top of plugin.ts
+console.warn('🔄 graph_notebook_widgets plugin file loaded');
+
+window.addEventListener('error', (event) => {
+  console.error('Global error in graph_notebook_widgets:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection in graph_notebook_widgets:', event.reason);
+});
+
+// function activateWidgetExtension(
+//   app: Application<Widget>,
+//   registry: IJupyterWidgetRegistry
+// ): void {
+//   console.warn('🔵 Plugin activation start:', {
+//     moduleName: MODULE_NAME,
+//     moduleVersion: MODULE_VERSION,
+//     hasRegistry: !!registry
+//   });
+
+//   if (!registry) {
+//     console.error('❌ Widget registry not available');
+//     return;
+//   }
+
+//   try {
+//     console.warn('📦 Registering widget model:', {
+//       name: ForceModel.model_name,
+//       module: ForceModel.model_module,
+//       version: ForceModel.model_module_version
+//     });
+
+//     registry.registerWidget({
+//       name: MODULE_NAME,
+//       version: MODULE_VERSION,
+//       exports: {
+//         ForceModel: ForceModel,
+//         ForceView: ForceView
+//       }
+//     });
+
+//     console.warn('✅ Widget registration successful');
+    
+//     // Verify registration without using resolve
+//     console.warn('📦 Registration details:', {
+//       modelName: ForceModel.model_name,
+//       modelModule: ForceModel.model_module,
+//       modelVersion: ForceModel.model_module_version,
+//       viewName: ForceModel.view_name,
+//       viewModule: ForceModel.view_module,
+//       viewVersion: ForceModel.view_module_version
+//     });
+
+//   } catch (error) {
+//     console.error('❌ Registration failed:', error);
+//     console.error('Debug info:', {
+//       ForceModel: !!ForceModel,
+//       ForceView: !!ForceView,
+//       modelProps: Object.keys(ForceModel),
+//       viewProps: Object.keys(ForceView)
+//     });
+//   }
+
+//   console.warn('🔵 Plugin activation complete');
+// }
+
+
+
+
+
+
+
+// function activateWidgetExtension(
+//   app: Application<Widget>,
+//   registry: IJupyterWidgetRegistry
+// ): void {
+//   console.warn('🔵 Plugin activation start:', {
+//     moduleName: MODULE_NAME,
+//     moduleVersion: MODULE_VERSION,
+//     hasRegistry: !!registry,
+//     registryType: registry ? registry.constructor.name : 'undefined'
+//   });
+
+//   if (!registry) {
+//     console.error('❌ Widget registry not available');
+//     return;
+//   }
+
+//   try {
+//     // Log model info before registration
+//     console.warn('📦 Model info:', {
+//       modelName: ForceModel.model_name,
+//       modelModule: ForceModel.model_module,
+//       modelVersion: ForceModel.model_module_version,
+//       modelClass: ForceModel.name
+//     });
+
+//     registry.registerWidget({
+//       name: MODULE_NAME,
+//       version: MODULE_VERSION,
+//       exports: {
+//         ForceModel: ForceModel,
+//         ForceView: ForceView
+//       }
+//     });
+
+//     // Verify registration was successful
+//     const registered = registry['_models']?.get(MODULE_NAME);
+//     console.warn('✅ Registration result:', {
+//       success: !!registered,
+//       registeredName: registered?.name,
+//       registeredVersion: registered?.version
+//     });
+
+//   } catch (error) {
+//     console.error('❌ Registration failed:', error);
+//     throw error;  // Re-throw to ensure error is visible
+//   }
+// }
 
 
 
@@ -12,88 +142,74 @@ function activateWidgetExtension(
   app: Application<Widget>,
   registry: IJupyterWidgetRegistry
 ): void {
-  console.warn('🛠 Checking widget_manager:', registry['widget_manager']);
-  if (!registry['widget_manager']) {
-    console.error("🚨 widget_manager is missing! Check Jupyter widgets setup.");
-  }
-  
+  console.warn('🔄 Starting widget registration:', {
+    registry: !!registry,
+    registryType: registry?.constructor.name
+  });
 
-
-  // Log initial state
-  console.warn('🔄 Initial Registry State:', {
-    registryExists: !!registry,
-    registryType: registry?.constructor.name,
-    registryKeys: Object.keys(registry),
-    registryMethods: Object.getOwnPropertyNames(Object.getPrototypeOf(registry))
+  // Log the ForceModel details before registration
+  console.warn('📦 ForceModel details:', {
+    modelName: ForceModel.model_name,
+    modelModule: ForceModel.model_module,
+    modelVersion: ForceModel.model_module_version
   });
 
   try {
-    // Log ForceModel configuration
-    console.warn('🔧 ForceModel Configuration:', {
-      defaults: new ForceModel().defaults(),
-      staticProps: {
-        model_name: ForceModel.model_name,
-        model_module: ForceModel.model_module,
-        model_module_version: ForceModel.model_module_version,
-        view_name: ForceModel.view_name,
-        view_module: ForceModel.view_module,
-        view_module_version: ForceModel.view_module_version
-      }
-    });
+    // Register with minimal configuration
+    // const result = registry.registerWidget({
+    //   name: ForceModel.model_module,
+    //   version: ForceModel.model_module_version,
+    //   exports: {
+    //     ForceModel: ForceModel,
+    //     ForceView: ForceView
+    //   }
+    // });
 
-    // Register widget with correct interface
     const result = registry.registerWidget({
-      name: ForceModel.model_module,
-      version: ForceModel.model_module_version,
+      name: 'graph_notebook_widgets',  // Must match Python _model_module
+      version: '4.6.2',                // Must match Python _model_module_version
       exports: {
         ForceModel: ForceModel,
         ForceView: ForceView
       }
     });
 
-    // Check registration details
-    console.warn('✅ Registration Details:', {
+    console.warn('✅ Registration attempt complete:', {
       result,
-      registry: {
-        models: registry['_models'] ? [...registry['_models'].entries()].map(([k,v]) => k) : [],
-        types: registry['_widget_types'] ? Object.keys(registry['_widget_types']) : []
-      },
-      modelLookup: {
-        byModule: registry['_models']?.has(ForceModel.model_module),
-        byName: registry['_models']?.has(ForceModel.model_name),
-        byFullPath: registry['_models']?.has(`${ForceModel.model_module}@${ForceModel.model_module_version}`)
-      }
+      registryModels: registry['_models'] ? [...registry['_models'].keys()] : [],
+      hasModel: !!registry['_models']?.get(ForceModel.model_module)
     });
 
   } catch (error) {
-    console.error('❌ Registration failed:', {
-      error,
-      modelModule: ForceModel.model_module,
-      moduleVersion: ForceModel.model_module_version
-    });
+    console.error('❌ Registration failed:', error);
   }
-
-  // Add a delayed check
-  setTimeout(() => {
-    console.warn('Delayed Registry Check:', {
-      models: registry['_models'] ? [...registry['_models'].keys()] : [],
-      widgetTypes: registry['_widget_types'] ? Object.keys(registry['_widget_types']) : [],
-      hasModel: registry['_models']?.has(ForceModel.model_module)
-    });
-  }, 1000);
 }
 
-  
 
 export default {
   id: 'graph_notebook_widgets:plugin',
   requires: [IJupyterWidgetRegistry],
-  activate: (app: Application<Widget>, registry: IJupyterWidgetRegistry | null) => {
-    if (!registry) {
-      console.error("❌ IJupyterWidgetRegistry is not available!");
-      return;
-    }
-    activateWidgetExtension(app, registry);
-  },
+  activate: activateWidgetExtension,
   autoStart: true
 } as IPlugin<Application<Widget>, void>;
+
+
+// const plugin: IPlugin<Application<Widget>, void> = {
+//   id: 'graph_notebook_widgets:plugin',
+//   autoStart: true,
+//   requires: [IJupyterWidgetRegistry],
+//   activate: (app: Application<Widget>, registry: IJupyterWidgetRegistry) => {
+//     registry.registerWidget({
+//       name: MODULE_NAME,
+//       version: MODULE_VERSION,
+//       exports: {
+//         ForceModel,
+//         ForceView
+//       }
+//     });
+//   }
+// };
+
+// export default plugin;
+
+    

@@ -4,8 +4,7 @@
   "author": "amazon",
   "description": "A Custom Jupyter Library for rendering NetworkX MultiDiGraphs using vis-network",
   "dependencies": {
-    "@jupyter-widgets/base": "^6.0.10",
-    "@jupyter-widgets/jupyterlab-manager": "^5.0.0",
+    "@jupyter-widgets/base": "^6.0.4",
     "feather-icons": "4.28.0",
     "jquery": "^3.6.0",
     "jquery-ui": "^1.13.2",
@@ -63,7 +62,8 @@
     "typescript": "~5.0.4", 
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
+    "webpack-dev-server": "^4.15.1",
+    "@types/backbone": "^1.4.15"
   },
   "files": [
     "lib/**/*.js",
@@ -77,8 +77,8 @@
       "@jupyter-widgets/base": {
         "bundled": false,
         "singleton": true,
-        "version": "^6.0.10",
-        "requiredVersion": "^6.0.10"
+        "version": "^6.0.4",
+        "requiredVersion": "^6.0.4"
       },
       "@jupyterlab/application": {          
         "bundled": false,
@@ -122,24 +122,23 @@
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "engines": {
-    "node": ">=20.11.0",
-    "npm": ">=10.8.0"
-  },
+  "engines": { 
+    "node": "20.18.3",
+    "npm": "10.8.2"
+  },   
   "scripts": {
     "build:prod": "npm run clean && npm run build:lib && npm run build:nbextension && npm run build:labextension",
     "build:labextension": "jupyter labextension build --development False .",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc",
     "build:nbextension": "webpack",
-    "clean": "npm run clean:lib && npm run clean:lib && npm run clean:nbextension && npm run clean:labextension",
+    "clean": "npm run clean:lib && npm run clean:nbextension && npm run clean:labextension",
     "clean:lib": "rimraf lib",
-    "clean:inc": "rimraf tsconfig.tsbuildinfo",
     "clean:labextension": "rimraf labextension",
     "clean:nbextension": "rimraf nbextension",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:check": "eslint . --ext .ts,.tsx",
-    "prepack": "npm run build:lib",
+    "prepack": "npm install && npm run build:lib",
     "test": "jest",
     "watch": "npm-run-all -p watch:*",
     "watch:lib": "tsc -w",

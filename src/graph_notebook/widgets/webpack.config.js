@@ -1,26 +1,16 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-SPDX-License-Identifier: Apache-2.0
- */
-
 const path = require("path");
 const webpack = require("webpack");
 const version = require("./package.json").version;
 const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 
 
-// Custom webpack rules are generally the same for all webpack bundles, hence
-// stored in a separate local variable.
 const rules = [
   {
     test: /\.tsx?$/,
     exclude: /node_modules/,
     use: ["ts-loader", "source-map-loader"],
   },
-  { test: /\.jsx?$/, 
-    exclude: /node_modules/, 
-    use: "source-map-loader" 
-  },
+  { test: /\.jsx?$/, exclude: /node_modules/, use: "source-map-loader" },
   {
     test: /\.css$/,
     exclude: /node_modules/,
@@ -28,21 +18,41 @@ const rules = [
   },
 ];
 
-// Packages that shouldn't be bundled but loaded at runtime
+// Update externals configuration
 const externals = ['@jupyter-widgets/base'];
 
 const resolve = {
   modules: ["node_modules", path.resolve(__dirname, "src")],
-  // Add '.ts' and '.tsx' as resolvable extensions.
   extensions: [".ts", ".tsx", ".js", ".jsx"],
+  alias: {
+    '@types': path.resolve(__dirname, 'node_modules/@types'),
+    '@jupyter-widgets': path.resolve(__dirname, 'node_modules/@jupyter-widgets')
+  }
 };
 
 const mode = "production";
 
+// Separate plugin configurations for different targets
 const basePlugins = [
   new webpack.IgnorePlugin({
     resourceRegExp: /\.d\.ts$/,
   }),
+];
+
+const labPlugins = [
+  ...basePlugins,
+  new ModuleFederationPlugin({
+    name: 'graph_notebook_widgets',
+    library: { type: 'amd' },
+    filename: 'remoteEntry.js',
+    exposes: {
+      './index': './src/index',
+      './extension': './src/plugin'
+    },
+    shared: {
+      '@jupyter-widgets/base': { singleton: true }
+    }
+  })
 ];
 
 const watchOptions = {
@@ -91,7 +101,8 @@ module.exports = [
     watchOptions,
   },
 
-  // Lab extension (main widget bundle)
+  // Lab extension
+// In your webpack.config.js - update the lab extension configuration:
   {
     mode,
     entry: "./src/index.ts",
@@ -100,14 +111,14 @@ module.exports = [
       chunkFilename: '[name].[contenthash].js', // For other chunks
       path: path.resolve(__dirname, 'labextension/static'),
       publicPath: 'static/',
-      libraryTarget: 'amd',
-      clean: true
+      libraryTarget: 'amd'
     },
     devtool: "source-map",
     module: { rules },
     externals: {
       ...externals,
-      'jquery': 'jQuery'
+      'jquery': 'jQuery',
+      'jquery-ui': 'jquery-ui'
     },
     resolve,
     plugins: [
@@ -123,18 +134,14 @@ module.exports = [
         shared: {
           '@jupyter-widgets/base': { 
             singleton: true,
-            requiredVersion: '^6.0.4',
-            eager: true  // Add this
-          },
-          '@jupyter-widgets/jupyterlab-manager': { 
-            singleton: true,
-            requiredVersion: '^5.0.0',
-            eager: true  // Add this
+            requiredVersion: '^6.0.4'
           }
         }
-        
-            
       }),
+    // Add webpack.DefinePlugin to help with debugging
+    new webpack.DefinePlugin({
+      'process.env.DEBUG': JSON.stringify(true)
+    }),
     ],
     watchOptions
   },

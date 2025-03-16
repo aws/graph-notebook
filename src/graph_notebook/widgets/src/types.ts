@@ -5,8 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 import { DataSet, Edge, Node } from "vis-network/standalone";
 import { clone, merge } from "lodash";
-import DraggableOptions = JQueryUI.DraggableOptions;
-import ResizableOptions = JQueryUI.ResizableOptions;
+import { DraggableOptions, ResizableOptions } from 'jquery-ui';
+// import DraggableOptions = JQueryUI.DraggableOptions;
+// import ResizableOptions = JQueryUI.ResizableOptions;
 
 /**
  * Operates as a dictionary which we can add any key-value pair

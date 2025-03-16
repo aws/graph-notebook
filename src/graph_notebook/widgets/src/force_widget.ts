@@ -29,11 +29,24 @@ import feather from "feather-icons";
 import $ from "jquery";
 import "jquery-ui/ui/widgets/draggable";
 import "jquery-ui/ui/widgets/resizable";
+import { DraggableOptions, ResizableOptions } from 'jquery-ui';
+// import * as Backbone from '@types/backbone';
+
+
 
 // Import the CSS
 import "../css/widget.css";
-import DraggableOptions = JQueryUI.DraggableOptions;
-import ResizableOptions = JQueryUI.ResizableOptions;
+// import DraggableOptions = JQueryUI.DraggableOptions;
+// import ResizableOptions = JQueryUI.ResizableOptions;
+
+declare global {
+  interface JQuery {
+      draggable(options?: DraggableOptions): JQuery;
+      resizable(options?: ResizableOptions): JQuery;
+  }
+}
+
+ 
 
 feather.replace();
 
@@ -79,6 +92,10 @@ export class ForceModel extends DOMWidgetModel {
 }
 
 export class ForceView extends DOMWidgetView {
+  declare model: ForceModel;  // Add this
+  declare el: HTMLElement;    // Add this
+  
+
   private networkDiv: HTMLDivElement = document.createElement("div");
   private canvasDiv: HTMLDivElement = document.createElement("div");
   private menu: HTMLDivElement = document.createElement("div");
