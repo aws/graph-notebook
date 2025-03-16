@@ -79,30 +79,57 @@ build_dir = "src/graph_notebook/widgets/lib"
 
 
 [tool.hatch.build]
+#packages = ["graph_notebook"]
 include = [
-"src/graph_notebook/widgets/package.json",
-"src/graph_notebook/widgets/tsconfig.json",
-"src/graph_notebook/widgets/webpack.config.js",
-"src/graph_notebook/widgets/src/",
-"src/graph_notebook/widgets/css/"
+    # Widget files
+    "src/graph_notebook/widgets/package.json",
+    "src/graph_notebook/widgets/tsconfig.json",
+    "src/graph_notebook/widgets/webpack.config.js",
+    "src/graph_notebook/widgets/src/",
+    "src/graph_notebook/widgets/css/"
 ]
-
 
 [tool.hatch.build.targets.wheel]
 packages = ["graph_notebook"]
 sources = ["src"]
+include-package-data = true
+# Add artifacts for wheel as well
+artifacts = [
+    "src/graph_notebook/**/*.py",
+    "src/graph_notebook/magics/**/*",
+    "src/graph_notebook/notebooks/**/*",
+    "src/graph_notebook/static_resources/**/*",
+    "src/graph_notebook/configuration/**/*",
+    "src/graph_notebook/seed/**/*",
+    "src/graph_notebook/visualization/**/*",
+    "src/graph_notebook/neptune/**/*",
+    "src/graph_notebook/network/**/*",
+    "src/graph_notebook/options/**/*"
+]
 
-
-include = ["graph_notebook"]
+[tool.hatch.build.targets.sdist]
+# Same artifacts for sdist
+artifacts = [
+    "src/graph_notebook/**/*.py",
+    "src/graph_notebook/magics/**/*",
+    "src/graph_notebook/notebooks/**/*",
+    "src/graph_notebook/static_resources/**/*",
+    "src/graph_notebook/configuration/**/*",
+    "src/graph_notebook/seed/**/*",
+    "src/graph_notebook/visualization/**/*",
+    "src/graph_notebook/neptune/**/*",
+    "src/graph_notebook/network/**/*",
+    "src/graph_notebook/options/**/*"
+]
 
 [tool.hatch.build.targets.wheel.force-include]
+"src/graph_notebook" = "graph_notebook"
 "src/graph_notebook/widgets/labextension" = "graph_notebook/widgets/labextension"
 "src/graph_notebook/widgets/nbextension" = "graph_notebook/widgets/nbextension"
 "src/graph_notebook/widgets/lib" = "graph_notebook/widgets/lib"
 
-
 [tool.hatch.build.targets.wheel.shared-data]
 "src/graph_notebook/widgets/labextension/package.json" = "share/jupyter/labextensions/graph_notebook_widgets/package.json"
-"src/graph_notebook/widgets/labextension/static/" = "share/jupyter/labextensions/graph_notebook_widgets/static/"  # Note the trailing slashes
+"src/graph_notebook/widgets/labextension/static/" = "share/jupyter/labextensions/graph_notebook_widgets/static/"
 "src/graph_notebook/widgets/nbextension/" = "share/jupyter/nbextensions/graph_notebook_widgets/"
 "src/graph_notebook/widgets/graph_notebook_widgets.json" = "etc/jupyter/nbconfig/notebook.d/graph_notebook_widgets.json"
