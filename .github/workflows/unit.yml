@@ -19,7 +19,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.18.3'
-          npm: '10.8.2'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
