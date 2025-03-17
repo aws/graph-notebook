@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-"hatchling>=1.5.0",
-"jupyterlab>=4.0.0,<5.0.0",
-"hatch-nodejs-version",
-"hatch-jupyter-builder>=0.5"
+    "hatchling>=1.5.0",
+    "jupyterlab>=4.0.0,<5.0.0",
+    "hatch-nodejs-version",
+    "hatch-jupyter-builder>=0.5"
 ]
 build-backend = "hatchling.build"
 
@@ -15,44 +15,44 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
 authors = [
-{ name = "amazon-neptune", email = "amazon-neptune-pypi@amazon.com" },
+    { name = "amazon-neptune", email = "amazon-neptune-pypi@amazon.com" },
 ]
 dependencies = [
-'gremlinpython>=3.5.1,<=3.7.2',
-'SPARQLWrapper==2.0.0',
-'requests>=2.32.0,<=2.32.2',
-'ipywidgets>=8.0.0,<9.0.0',
-'jupyterlab>=4.3.5,<5.0.0',
-'jupyterlab-widgets>=3.0.0,<4.0.0',
-'jupyter_client>=8.0.0,<9.0.0',
-'networkx==2.4',
-'Jinja2>=3.0.3,<=3.1.4',
-'jupyter-server-proxy>=4.0.0,<5.0.0',
-'notebook>=7.0.0,<8.0.0',
-'nbclient>=0.7.3',
-'botocore>=1.34.74',
-'boto3>=1.34.74',
-'ipython>=7.16.1,<=8.10.0',
-'neo4j>=5.0.0,<=5.23.1',
-'rdflib==7.0.0',
-'ipykernel>=6.5.0',
-'ipyfilechooser==0.6.0',
-'nbconvert>=6.3.0,<=7.2.8',
-'jedi>=0.18.1,<=0.18.2',
-'itables>=2.0.0,<=2.1.0',
-'pandas>=2.1.0,<=2.2.2',
-'numpy>=1.23.5,<1.24.0',
-'nest_asyncio>=1.5.5,<=1.6.0',
-'async-timeout>=4.0,<5.0',
-'json-repair==0.29.2',
-'jupyter-lsp>=2.0.0',
-'python-lsp-server>=1.7.0',
-'jupyterlab-lsp>=5.0.0'
+    'gremlinpython>=3.5.1,<=3.7.2',
+    'SPARQLWrapper==2.0.0',
+    'requests>=2.32.0,<=2.32.2',
+    'ipywidgets>=8.0.0,<9.0.0',
+    'jupyterlab>=4.3.5,<5.0.0',
+    'jupyterlab-widgets>=3.0.0,<4.0.0',
+    'jupyter_client>=8.0.0,<9.0.0',
+    'networkx==2.4',
+    'Jinja2>=3.0.3,<=3.1.4',
+    'jupyter-server-proxy>=4.0.0,<5.0.0',
+    'notebook>=7.0.0,<8.0.0',
+    'nbclient>=0.7.3',
+    'botocore>=1.34.74',
+    'boto3>=1.34.74',
+    'ipython>=7.16.1,<=8.10.0',
+    'neo4j>=5.0.0,<=5.23.1',
+    'rdflib==7.0.0',
+    'ipykernel>=6.5.0',
+    'ipyfilechooser==0.6.0',
+    'nbconvert>=6.3.0,<=7.2.8',
+    'jedi>=0.18.1,<=0.18.2',
+    'itables>=2.0.0,<=2.1.0',
+    'pandas>=2.1.0,<=2.2.2',
+    'numpy>=1.23.5,<1.24.0',
+    'nest_asyncio>=1.5.5,<=1.6.0',
+    'async-timeout>=4.0,<5.0',
+    'json-repair==0.29.2',
+    'jupyter-lsp>=2.0.0',
+    'python-lsp-server>=1.7.0',
+    'jupyterlab-lsp>=5.0.0'
 ]
 
 [project.optional-dependencies]
 test = [
-"pytest==6.2.5"
+    "pytest==6.2.5"
 ]
 
 [project.entry-points]
@@ -60,16 +60,15 @@ test = [
 "jupyter_server.extensions" = { "graph_notebook" = "graph_notebook:_jupyter_server_extension_paths" }
 "notebook.extensions" = { "graph_notebook" = "graph_notebook:_jupyter_nbextension_paths" }
 
-
 [tool.hatch.build.hooks.jupyter-builder]
 dependencies = ["hatch-jupyter-builder>=0.5"]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
-"src/graph_notebook/widgets/labextension/package.json",
-"src/graph_notebook/widgets/labextension/static",  # Check directory exists
-"src/graph_notebook/widgets/nbextension/index.js",
-"src/graph_notebook/widgets/lib/index.js"
+    "src/graph_notebook/widgets/labextension/package.json",
+    "src/graph_notebook/widgets/labextension/static/style.js",
+    "src/graph_notebook/widgets/nbextension/index.js",
 ]
+skip-if-exists = ["src/graph_notebook/widgets/labextension/static/style.js"]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
 build_cmd = "build:prod"
@@ -77,59 +76,34 @@ npm = ["npm", "--prefix", "src/graph_notebook/widgets"]
 source_dir = "src/graph_notebook/widgets"
 build_dir = "src/graph_notebook/widgets/lib"
 
-
 [tool.hatch.build]
-#packages = ["graph_notebook"]
-include = [
-    # Widget files
-    "src/graph_notebook/widgets/package.json",
-    "src/graph_notebook/widgets/tsconfig.json",
-    "src/graph_notebook/widgets/webpack.config.js",
-    "src/graph_notebook/widgets/src/",
-    "src/graph_notebook/widgets/css/"
+artifacts = [
+    "src/graph_notebook/widgets/labextension",
+    "src/graph_notebook/widgets/nbextension",
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"src/graph_notebook/widgets/labextension" = "share/jupyter/labextensions/graph_notebook_widgets"
+"src/graph_notebook/widgets/nbextension" = "share/jupyter/nbextensions/graph_notebook_widgets"
+"src/graph_notebook/widgets/graph_notebook_widgets.json" = "etc/jupyter/nbconfig/notebook.d/graph_notebook_widgets.json"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/docs",
+    "node_modules",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["graph_notebook"]
-sources = ["src"]
-include-package-data = true
-# Add artifacts for wheel as well
-artifacts = [
+packages = ["src/graph_notebook"]
+include = [
     "src/graph_notebook/**/*.py",
-    "src/graph_notebook/magics/**/*",
-    "src/graph_notebook/notebooks/**/*",
-    "src/graph_notebook/static_resources/**/*",
-    "src/graph_notebook/configuration/**/*",
-    "src/graph_notebook/seed/**/*",
-    "src/graph_notebook/visualization/**/*",
-    "src/graph_notebook/neptune/**/*",
-    "src/graph_notebook/network/**/*",
-    "src/graph_notebook/options/**/*"
+    "src/graph_notebook/**/*.ipynb",
+    "src/graph_notebook/**/*.json",
+    "src/graph_notebook/**/*.txt",
+    "src/graph_notebook/**/*.html",
+    "src/graph_notebook/**/*.css",
+    "src/graph_notebook/**/*.js",
+    "src/graph_notebook/**/*.yaml",
+    "src/graph_notebook/**/*.csv"
 ]
-
-[tool.hatch.build.targets.sdist]
-# Same artifacts for sdist
-artifacts = [
-    "src/graph_notebook/**/*.py",
-    "src/graph_notebook/magics/**/*",
-    "src/graph_notebook/notebooks/**/*",
-    "src/graph_notebook/static_resources/**/*",
-    "src/graph_notebook/configuration/**/*",
-    "src/graph_notebook/seed/**/*",
-    "src/graph_notebook/visualization/**/*",
-    "src/graph_notebook/neptune/**/*",
-    "src/graph_notebook/network/**/*",
-    "src/graph_notebook/options/**/*"
-]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/graph_notebook" = "graph_notebook"
-"src/graph_notebook/widgets/labextension" = "graph_notebook/widgets/labextension"
-"src/graph_notebook/widgets/nbextension" = "graph_notebook/widgets/nbextension"
-"src/graph_notebook/widgets/lib" = "graph_notebook/widgets/lib"
-
-[tool.hatch.build.targets.wheel.shared-data]
-"src/graph_notebook/widgets/labextension/package.json" = "share/jupyter/labextensions/graph_notebook_widgets/package.json"
-"src/graph_notebook/widgets/labextension/static/" = "share/jupyter/labextensions/graph_notebook_widgets/static/"
-"src/graph_notebook/widgets/nbextension/" = "share/jupyter/nbextensions/graph_notebook_widgets/"
-"src/graph_notebook/widgets/graph_notebook_widgets.json" = "etc/jupyter/nbconfig/notebook.d/graph_notebook_widgets.json"

@@ -123,8 +123,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "engines": { 
-    "node": "20.18.3",
-    "npm": "10.8.2"
+    "node": ">=20.18.3",
+    "npm": ">=10.8.2"
   },   
   "scripts": {
     "build:prod": "npm run clean && npm run build:lib && npm run build:nbextension && npm run build:labextension",
