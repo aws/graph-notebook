@@ -37,10 +37,19 @@ jobs:
           pip install ./dist/graph_notebook-*-py3-none-any.whl
       - name: Post-install commands
         run: |
-          jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
+          jupyter labextension develop --overwrite .
+          jupyter server extension enable graph_notebook
+          
+          # Install static resources and notebooks
           python -m graph_notebook.static_resources.install
-          python -m graph_notebook.nbextensions.install
           python -m graph_notebook.notebooks.install
+          
+          # Build the extension assets
+          jupyter labextension build .
+          
+          # List installed extensions to verify
+          jupyter labextension list
+          jupyter server extension list
       - name: Test with pytest
         run: |
           pytest test/unit
