@@ -23,9 +23,16 @@ def main():
 
     args = parser.parse_args()
     plugin_name = 'graph_notebook.nbextensions' if args.plugin_name == '' else args.plugin_name
-    os.system(f'''jupyter nbextension install --py {plugin_name} --sys-prefix --overwrite''')
-    os.system(f'''jupyter nbextension enable --py {plugin_name} --sys-prefix''')
 
+    # JupyterLab 4 and Notebook 7+ use a different extension system with Prebuilt extensions instead of nbextensions
+    # Therefore, we need to install as a labextension for modern environments
+    # NOTE: Our custom extension plugins defined here will not work in notebook 7+ yet
+    os.system(f'jupyter labextension install {plugin_name}')
+
+    # For classic notebook features, We still need nbclassic for traditional nbextension support
+    if os.system('jupyter nbclassic --version') == 0:  # Check if nbclassic is available
+        os.system(f'jupyter nbclassic-extension install --py {plugin_name} --sys-prefix')
+        os.system(f'jupyter nbclassic-extension enable --py {plugin_name} --sys-prefix')
 
 if __name__ == '__main__':
     main()

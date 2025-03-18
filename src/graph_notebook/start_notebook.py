@@ -68,9 +68,12 @@ def main():
     patch_cm_cypher_config()
     patch_customjs()
 
+    # Starting with Notebook 7.0+, the classic notebook interface was rewritten to use JupyterLab's architecture.
+    # This means traditional nbextensions (which rely on requirejs and jQuery) are not directly supported.
+    # We use nbclassic package to maintain compatibility 
     kernel_manager_option = "--NotebookApp.kernel_manager_class=notebook.services.kernels.kernelmanager.AsyncMappingKernelManager"
     notebooks_dir = '~/notebook/destination/dir' if args.notebooks_dir == '' else args.notebooks_dir
-    os.system(f'''jupyter notebook {kernel_manager_option} {notebooks_dir}''')
+    os.system(f'''jupyter nbclassic {kernel_manager_option} {notebooks_dir}''')
 
 
 if __name__ == '__main__':

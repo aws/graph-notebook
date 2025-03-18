@@ -35,7 +35,16 @@ def _jupyter_nbextension_paths():
     """
     return [{
         'section': 'notebook',
-        'src': 'nbextension/static',
+        'src': 'nbextension',
         'dest': 'graph_notebook_widgets',
         'require': 'graph_notebook_widgets/extension'
+    }]
+
+def _jupyter_labextension_paths():
+    """Called by Jupyter Lab Server to detect if it is a valid labextension and
+    to install the widget
+    """
+    return [{
+        'src': 'labextension',
+        'dest': 'graph_notebook_widgets'
     }]

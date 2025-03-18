@@ -24,7 +24,7 @@ define([
             })
             .appendTo('head');
     };
-
+    
     var load_ipython_extension = function () {
         return Jupyter.notebook.config.loaded.then(initialize);
     };
