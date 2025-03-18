@@ -15,16 +15,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Node.js 14.x
+      - name: Set up Node.js 20.x
         uses: actions/setup-node@v3
         with:
-          node-version: 14.17.4
+          node-version: '20.18.3'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
+          pip install build hatch hatch-jupyter-builder
           pip install flake8 pytest
-          pip install "jupyterlab>=3,<4"
+          pip install "jupyterlab>=4.3.5,<5"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with flake8
         run: |
@@ -33,7 +33,7 @@ jobs:
           flake8 ./test --max-complexity 10 --ignore E501,C901,W291 --show-source --statistics
       - name: Install
         run: |
-          python setup.py bdist_wheel
+          python  -m build .
           pip install ./dist/graph_notebook-*-py3-none-any.whl
       - name: Post-install commands
         run: |

@@ -19,17 +19,6 @@ python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 
 echo "installing python dependencies..."
 pip uninstall NeptuneGraphNotebook -y # legacy uninstall when we used to install from source in s3
 
-pip install "jupyter_core<=5.3.2"
-pip install "jupyter_server<=2.7.3"
-pip install "jupyter-console<=6.4.0"
-pip install "jupyter-client<=6.1.12"
-pip install "ipywidgets==7.7.2"
-pip install "jupyterlab_widgets==1.1.1"
-pip install "notebook==6.4.12"
-pip install "nbclient<=0.7.0"
-pip install "itables<=1.4.2"
-pip install awswrangler
-
 if [[ ${NOTEBOOK_VERSION} == "" ]]; then
   pip install --upgrade graph-notebook
 else
@@ -47,11 +36,14 @@ if [[ ${NOTEBOOK_VERSION//./} < 330 ]] && [[ ${NOTEBOOK_VERSION} != "" ]]; then
   jupyter nbextension install --py --sys-prefix graph_notebook.widgets
 fi
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
+echo "enabled visualization..."
 
+echo "Copying starter notebooks..."
 mkdir -p ~/SageMaker/Neptune
 cd ~/SageMaker/Neptune || exit
 python -m graph_notebook.notebooks.install
 chmod -R a+rw ~/SageMaker/Neptune/*
+echo "Copied starter notebooks..."
 
 source ~/.bashrc || exit
 HOST=${GRAPH_NOTEBOOK_HOST}
@@ -89,7 +81,9 @@ else
   echo "Skipping, unsupported on graph-notebook<=3.4.1"
 fi
 
-conda /home/ec2-user/anaconda3/bin/deactivate
+echo "graph-notebook installation complete."
+
+conda deactivate || echo "Already deactivated or not in an environment."
 echo "done."
 
 EOF

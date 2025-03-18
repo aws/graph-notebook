@@ -96,7 +96,9 @@ It is recommended to check the [ChangeLog.md](ChangeLog.md) file periodically to
 
 You will need:
 
-* [Python](https://www.python.org/downloads/) 3.9.x-3.10.14
+* [Python](https://www.python.org/downloads/) 
+  * For JupyterLab 4x Version: 3.9.x-3.11.x
+  * For JupyterLab 3x Version: 3.9.x-3.10.14 
 * A graph database that provides one or more of:
   * A SPARQL 1.1 endpoint
   * An Apache TinkerPop Gremlin Server compatible endpoint
@@ -104,16 +106,14 @@ You will need:
   
 ## Installation
 
-Begin by installing `graph-notebook` and its prerequisites, then follow the remaining instructions for either Jupyter Classic Notebook or JupyterLab.
+Follow the instructions for either Jupyter Classic Notebook or JupyterLab based on your requirements.
 
-``` bash
-# install the package
-pip install graph-notebook
-```
 
 ### Jupyter Classic Notebook
 
 ``` bash
+pip install graph-notebook
+
 # Enable the visualization widget
 jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
 
@@ -132,11 +132,38 @@ touch ~/.jupyter/nbconfig/notebook.json
 python -m graph_notebook.start_notebook --notebooks-dir ~/notebook/destination/dir
 ```
 
-### JupyterLab 3.x
+### Jupyter Lab
+
+Graph-notebook has been upgraded to support JupyterLab 4.x since version 5.0.0, featuring a modernized widget architecture and improved compatibility.
+
+Choose your installation based on your JupyterLab version requirements.
+
+
+### JupyterLab 4.x (Recommended)
 
 ``` bash
 # install jupyterlab
+pip install "jupyterlab>=4.3.5,<5"
+
+# Install the latest version with JupyterLab 4.x support
+pip install graph-notebook
+
+# copy premade starter notebooks
+python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
+
+# start jupyterlab
+python -m graph_notebook.start_jupyterlab --jupyter-dir ~/notebook/destination/dir
+```
+
+### JupyterLab 3.x (Legacy)
+
+``` bash
+
+# install jupyterlab
 pip install "jupyterlab>=3,<4"
+
+# Install legacy version for JupyterLab 3.x compatibility
+pip install "graph-notebook<5.0.0"
 
 # copy premade starter notebooks
 python -m graph_notebook.notebooks.install --destination ~/notebook/destination/dir
@@ -378,26 +405,31 @@ cd graph-notebook
 # 2) Create a new virtual environment
 
 # 2a) Option 1 - pyenv
+# install pyenv - https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
+# install pyenv-virtualenv - https://github.com/pyenv/pyenv-virtualenv?tab=readme-ov-file#installation
 pyenv install 3.10.13  # Only if not already installed; this can be any supported Python 3 version in Prerequisites
 pyenv virtualenv 3.10.13 build-graph-notebook
 pyenv local build-graph-notebook
 
 # 2b) Option 2 - venv
+deactivate 
+conda deactivate
 rm -rf /tmp/venv
-python3 -m venv /tmp/venv
+python3 -m venv --clear /tmp/venv
 source /tmp/venv/bin/activate
 
+
 # 3) Install build dependencies
-pip install --upgrade pip setuptools wheel twine
-pip install "jupyterlab>=3,<4"
+pip install --upgrade build hatch hatch-jupyter-builder
+pip install "jupyterlab>=4.3.5,<5"
 
 # 4) Build the distribution
-python3 setup.py bdist_wheel
+python3 -m build .
 ```
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-4.6.2-py3-none-any.whl`
+`./dist/graph_notebook-5.0.0-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -408,7 +440,7 @@ pip install graph-notebook
 with
 
 ``` python
-pip install ./dist/graph_notebook-4.6.2-py3-none-any.whl
+pip install ./dist/graph_notebook-5.0.0-py3-none-any.whl --force-reinstall
 ```
 
 ## Contributing Guidelines
