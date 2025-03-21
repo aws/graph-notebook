@@ -3920,3 +3920,55 @@ class Graph(Magics):
             store_to_ns(args.store_to, js, local_ns)
             if not args.silent:
                 print(json.dumps(js, indent=2))
+
+
+
+         
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def graph_schema(self, line='', local_ns: dict = None):
+        logger.info(f'calling for status on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        try:
+            if not args.silent:
+                tab = widgets.Tab()
+                titles = []
+                children = []
+
+            res = self.client.opencypher_http("CALL neptune.graph.pg_schema()")
+            schema = res.json()
+            if not args.silent:
+                # Display GRAPH tab
+                gn = OCNetwork()
+                gn.create_schema_network(schema)
+                if len(gn.graph.nodes) > 0:
+                    force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                    titles.append('Schema')
+                    children.append(force_graph_output)
+                
+                # Display JSON tab
+                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                with json_output:
+                    print(json.dumps(schema['results'][0], indent=2))
+                children.append(json_output)
+                titles.append('JSON')
+
+                tab.children = children
+                
+                for i in range(len(titles)):
+                    tab.set_title(i, titles[i])
+                display(tab)
+                
+            store_to_ns(args.store_to, res, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to retrieve graph schema:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
