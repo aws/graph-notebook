@@ -8,19 +8,20 @@ import {
   DOMWidgetView,
   ISerializers,
 } from "@jupyter-widgets/base";
-import { Network } from "vis-network/standalone";
+// import { Network } from "vis-network/standalone";
+import ForceGraph from 'force-graph';
+
+import * as d3 from 'd3-force-3d';
+
 
 import {
   DynamicObject,
-  EdgeDataSet,
   ForceDraggableOptions,
   ForceNetwork,
   ForceResizableOptions,
-  Link,
+  // GraphNode,
+  // GraphLink,
   Message,
-  NodeDataSet,
-  VisEdge,
-  VisNode,
 } from "./types";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
@@ -80,10 +81,28 @@ export class ForceView extends DOMWidgetView {
   private resetDiv: HTMLDivElement = document.createElement("div");
   private detailsDiv: HTMLDivElement = document.createElement("div");
   private physicsDiv: HTMLDivElement = document.createElement("div");
-  private nodeDataset: NodeDataSet = new NodeDataSet(new Array<VisNode>(), {});
-  private edgeDataset: EdgeDataSet = new EdgeDataSet(new Array<VisEdge>(), {});
+  // private nodeDataset: NodeDataSet = new NodeDataSet(new Array<VisNode>(), {});
+  // private edgeDataset: EdgeDataSet = new EdgeDataSet(new Array<VisEdge>(), {});
+  // private vis: Network | null = null;
+
+  private graph: any = null;
+  private graphData: {
+    nodes: any[];
+    links: any[];
+  } = {
+    nodes: [],
+    links: []
+  };
+
+  private handleResize = () => {
+    if (this.graph) {
+      this.graph
+        .width(this.canvasDiv.clientWidth)
+        .height(this.canvasDiv.clientHeight);
+    }
+  };
+
   private visOptions: DynamicObject = {};
-  private vis: Network | null = null;
   private detailsPanel = document.createElement("div");
   private detailsHeader = document.createElement("div");
   private graphPropertiesTable = document.createElement("table");
@@ -95,8 +114,6 @@ export class ForceView extends DOMWidgetView {
   private noElementSelectedMessage =
     "Select a single node or edge to see more.";
   private expandBtn = document.createElement("button");
-  private nodeIDSearchMatches = new Array<string | number>();
-  private edgeIDSearchMatches = new Array<string | number>();
   private excludeIDsFromSearch = false;
   private closeButton = document.createElement("button");
   private detailsText = document.createElement("p");
@@ -107,10 +124,18 @@ export class ForceView extends DOMWidgetView {
     border: "#0978D1",
   };
   private resetBtn = document.createElement("button");
-  private doingReset = false;
+  // private doingReset = false;
   private detailsBtn = document.createElement("button");
   private selectedNodeID: string | number = "";
   private physicsBtn = document.createElement("button");
+
+  dispose(): void {
+    window.removeEventListener('resize', this.handleResize);
+    if (this.graph) {
+      // @ts-ignore
+      this.graph._destructor();
+    }
+  }
 
   render(): void {
     // Add jQuery UI CSS via CDN
@@ -147,23 +172,64 @@ export class ForceView extends DOMWidgetView {
     returned, not json.
      */
 
-    const network = this.model.get("network");
+    // const network = this.model.get("network");
     this.visOptions = this.model.get("options");
-    this.populateDatasets(network);
-    const dataset = {
-      nodes: this.nodeDataset,
-      edges: this.edgeDataset,
-    };
+    // this.populateDatasets(network);
+    // const dataset = {
+    //   nodes: this.nodeDataset,
+    //   edges: this.edgeDataset,
+    // };
 
-    this.vis = new Network(
-      this.canvasDiv,
-      dataset,
-      this.stripCustomPhysicsOptions()
-    );
+    // this.vis = new Network(
+    //   this.canvasDiv,
+    //   dataset,
+    //   this.stripCustomPhysicsOptions()
+    // );
 
-    setTimeout(() => {
-      this.vis?.stopSimulation();
-    }, this.visOptions.physics.simulationDuration);
+    
+    this.graph = new ForceGraph(this.canvasDiv)
+    .nodeId('id')
+    .nodeLabel('label')
+    .nodeColor('color')
+    .linkSource('source')
+    .linkTarget('target')
+    .linkLabel('label')
+    .backgroundColor('#ffffff')
+    // Add warmup/cooldown settings
+    .cooldownTicks(100)
+    .warmupTicks(50)
+    // Add force configurations
+    .d3Force('charge', d3.forceManyBody().strength(-300))
+    .d3Force('link', d3.forceLink().id((d: any) => d.id).distance(100))
+    .d3Force('center', d3.forceCenter());
+  
+  
+
+
+    window.addEventListener('resize', this.handleResize);
+
+  // Update data handling
+  const network = this.model.get("network");
+  this.updateGraphData(network);
+
+  this.graph
+  .onNodeDragEnd(node => {
+    node.fx = node.x;
+    node.fy = node.y;
+  })
+  .onBackgroundClick(() => this.handleEmptyClick())
+  .onLinkClick(link => this.handleEdgeClick(link))
+  .enableNodeDrag(true)
+  .enableZoom(true)
+  .enablePanInteraction(true);
+
+this.updateForceGraphOptions();
+
+
+setTimeout(() => {
+  this.graph?.pauseAnimation();
+}, this.visOptions.physics.simulationDuration);
+
 
     /*
       To listen to messages sent from the kernel, you can register callback methods in the view class,
@@ -206,11 +272,45 @@ export class ForceView extends DOMWidgetView {
    *
    * @param network - The network to update this ForceView's datasets
    */
-  populateDatasets(network: ForceNetwork): void {
-    const edges = this.linksToEdges(network.graph.links);
-    this.nodeDataset.update(network.graph.nodes);
-    this.edgeDataset.update(edges);
+  // populateDatasets(network: ForceNetwork): void {
+  //   const edges = this.linksToEdges(network.graph.links);
+  //   this.nodeDataset.update(network.graph.nodes);
+  //   this.edgeDataset.update(edges);
+  // }
+
+  // Add these methods for force-graph specific functionality
+private updateForceGraphOptions(): void {
+  if (!this.graph) return;
+  
+  this.graph
+    .d3Force('charge', d3.forceManyBody().strength(-300))
+    .d3Force('link', d3.forceLink().id((d: any) => d.id).distance(100))
+    .d3Force('center', d3.forceCenter())
+    .cooldownTime(this.visOptions.physics?.stabilization?.timeToActivate || 1000)
+    .warmupTicks(this.visOptions.physics?.stabilization?.iterations || 50);
+
+}
+
+  // In updateGraphData
+  updateGraphData(network: ForceNetwork): void {
+    this.graphData = {
+      nodes: network.graph.nodes.map(node => ({
+        ...node,
+        label: node.label || node.id,
+        color: node.color || '#1f77b4'
+      })),
+      links: network.graph.links.map(link => ({
+        ...link,
+        label: link.label
+      }))
+    };
+    
+    if (this.graph) {
+      this.graph.graphData(this.graphData);
+    }
   }
+  
+
 
   /**
    * Triggered when the network traitlet on the Kernel-side is overridden. In this case,
@@ -218,8 +318,9 @@ export class ForceView extends DOMWidgetView {
    */
   changeNetwork(): void {
     const network = this.model.get("network");
-    this.populateDatasets(network);
+    this.updateGraphData(network);
   }
+  
 
   /**
    * Triggered when the options traitlet is overridden on the Kernel-side. This will trigger updating the
@@ -227,28 +328,46 @@ export class ForceView extends DOMWidgetView {
    */
   changeOptions(): void {
     this.visOptions = this.model.get("options");
-    if (this.vis == null) {
-      return;
+    if (!this.graph) return;
+    
+    // Convert vis.js options to force-graph options
+    const forceOptions = {
+      nodeColor: this.visOptions.nodes?.color || '#1f77b4',
+      linkColor: this.visOptions.edges?.color || '#999',
+      nodeRelSize: this.visOptions.nodes?.size || 6,
+      linkWidth: this.visOptions.edges?.width || 1,
+      linkDirectionalArrowLength: this.visOptions.edges?.arrows?.to ? 3.5 : 0
+    };
+    
+    Object.entries(forceOptions).forEach(([key, value]) => {
+      this.graph[key](value);
+    });
+    
+    // Handle physics options
+    if (this.visOptions.physics?.enabled === false) {
+      this.graph.pauseAnimation();
+    } else {
+      this.graph.resumeAnimation();
     }
-
-    this.vis.setOptions(this.stripCustomPhysicsOptions());
+    
+    this.updateForceGraphOptions();
   }
 
   /**
    * Returns a modified visOptions, with the custom simulationDuration and disablePhysicsAfterInitialSimulation physics
    * options removed. This prevents an error from being thrown when VisJS parses visOptions.
    */
-  stripCustomPhysicsOptions() {
-    const visOptionsNoCustomPhysics = Object.assign(
-      {},
-      JSON.parse(JSON.stringify(this.visOptions))
-    );
-    delete visOptionsNoCustomPhysics["physics"]["simulationDuration"];
-    delete visOptionsNoCustomPhysics["physics"][
-      "disablePhysicsAfterInitialSimulation"
-    ];
-    return visOptionsNoCustomPhysics;
-  }
+  // stripCustomPhysicsOptions() {
+  //   const visOptionsNoCustomPhysics = Object.assign(
+  //     {},
+  //     JSON.parse(JSON.stringify(this.visOptions))
+  //   );
+  //   delete visOptionsNoCustomPhysics["physics"]["simulationDuration"];
+  //   delete visOptionsNoCustomPhysics["physics"][
+  //     "disablePhysicsAfterInitialSimulation"
+  //   ];
+  //   return visOptionsNoCustomPhysics;
+  // }
 
   /**
    * Take custom messages from the kernel and route them to the appropriate handler.
@@ -298,30 +417,27 @@ export class ForceView extends DOMWidgetView {
           }
         }
      */
-  addNode(msgData: DynamicObject): void {
-    if (!msgData.hasOwnProperty("node_id")) {
-      // message data must have an id to add a node
-      return;
-    }
-
-    const id: string = msgData["node_id"];
-    let node = this.nodeDataset.get(id);
-    if (node === null) {
-      // node with given id was not found...
-      // The node does not exist, we can convert this object to one and add it.
-      node = VisNode.fromObject({ id: id, ...msgData["data"] });
-    } else {
-      // The node exists, we need to merge the msg data to it and update the dataset
-      node = VisNode.mergeObject(node, msgData["data"]);
-    }
-
-    if (!node.hasOwnProperty("label")) {
-      // no label found, using node id
-      node["label"] = id;
-    }
-    this.nodeDataset.update([node]);
-    return;
-  }
+        addNode(msgData: DynamicObject): void {
+          if (!msgData.hasOwnProperty("node_id")) return;
+        
+          const id: string = msgData["node_id"];
+          const nodeIndex = this.graphData.nodes.findIndex(n => n.id === id);
+          const nodeData = {
+            id: id,
+            label: msgData.data?.label || id,
+            ...msgData.data
+          };
+        
+          if (nodeIndex === -1) {
+            this.graphData.nodes.push(nodeData);
+          } else {
+            this.graphData.nodes[nodeIndex] = {...this.graphData.nodes[nodeIndex], ...nodeData};
+          }
+        
+          if (this.graph) {
+            this.graph.graphData(this.graphData);
+          }
+        }
 
   /**
      * Handler to add new data to a node. The input to this is the same as the input to
@@ -397,45 +513,31 @@ export class ForceView extends DOMWidgetView {
           }
      }
      */
-  addEdge(msgData: DynamicObject): void {
-    // To be able to add an edge, we require the message to have:
-    // 'from_id', 'to_id', and 'edge_id'
-    if (
-      !msgData.hasOwnProperty("from_id") ||
-      !msgData.hasOwnProperty("to_id") ||
-      !msgData.hasOwnProperty("edge_id")
-    ) {
-      return;
+     addEdge(msgData: DynamicObject): void {
+      if (!msgData.hasOwnProperty("from_id") || 
+          !msgData.hasOwnProperty("to_id") || 
+          !msgData.hasOwnProperty("edge_id")) return;
+    
+      const edgeID = `${msgData["from_id"]}:${msgData["to_id"]}:${msgData["edge_id"]}`;
+      const linkIndex = this.graphData.links.findIndex(l => l.id === edgeID);
+      const linkData = {
+        id: edgeID,
+        source: msgData["from_id"],
+        target: msgData["to_id"],
+        label: msgData.label || msgData["edge_id"],
+        ...msgData.data
+      };
+    
+      if (linkIndex === -1) {
+        this.graphData.links.push(linkData);
+      } else {
+        this.graphData.links[linkIndex] = {...this.graphData.links[linkIndex], ...linkData};
+      }
+    
+      if (this.graph) {
+        this.graph.graphData(this.graphData);
+      }
     }
-
-    // check if we have a label. if we do not, use the edge id.
-    const label = msgData.hasOwnProperty("label")
-      ? msgData["label"]
-      : msgData["edge_id"];
-    const innerData = msgData.hasOwnProperty("data") ? msgData["data"] : {};
-
-    const edgeID =
-      msgData["from_id"] + ":" + msgData["to_id"] + ":" + msgData["edge_id"];
-
-    // rearrange the data to add to a node to ensure it conforms to the format of a vis-edge.
-    // More info found here: https://github.com/visjs/vis-network
-    const copiedData = {
-      from: msgData["from_id"],
-      to: msgData["to_id"],
-      id: edgeID,
-      label: label,
-      ...innerData,
-    };
-    let edge = this.edgeDataset.get(edgeID);
-    if (edge === null) {
-      // edge does not exist, we need to create a new one from this payload
-      edge = VisEdge.fromObject(copiedData);
-    } else {
-      edge = VisEdge.mergeObject(edge, copiedData);
-    }
-
-    this.edgeDataset.update([edge]);
-  }
 
   /**
    * Handler to add more data to an edge. The received payload is identical to
@@ -445,100 +547,22 @@ export class ForceView extends DOMWidgetView {
     this.addEdge(data);
   }
 
-  /**
-   * Convert networkx links to Edges. To do this, we want to convert
-   * "source" into "from"
-   * "target" into "to"
-   * and "key" into "id"
-   *
-   * @remarks
-   * This is performed anytime we override the network which is backing this visualization.
-   */
-  linksToEdges(links: Array<Link>): Array<VisEdge> {
-    const edges = new Array<VisEdge>();
-    const propsToSkip = ["source", "target", "key"];
-    links.forEach(function (link) {
-      const edge = new VisEdge(link.source, link.target, link.key, link.label);
-      // get all other properties on the link and add them to the edge.
-      for (const propName in link) {
-        if (!(propName in propsToSkip)) {
-          edge[propName] = link[propName];
-        }
-      }
-      edges.push(edge);
-    });
-
-    return edges;
-  }
 
   /**
    * Handler to route events observed on the vis network.
    */
   registerVisEvents(): void {
-    this.vis?.on("click", (properties) => {
-      if (properties.nodes.length === 0 && properties.edges.length === 1) {
-        this.handleEdgeClick(properties.edges[0]);
-      } else if (
-        properties.nodes.length === 0 &&
-        properties.edges.length === 0
-      ) {
-        this.handleEmptyClick();
-      }
-    });
+    if (!this.graph) return;
 
-    this.vis?.on("selectNode", (params) => {
-      this.handleNodeClick(params.nodes[0]);
-    });
-
-    this.vis?.on("deselectNode", (params) => {
-      console.log("deselect");
-      params.previousSelection.nodes.forEach((value) => {
-        this.handleDeselectNode(value);
+    this.graph
+      .onNodeClick(node => {
+        this.handleNodeClick(node.id);
+      })
+      .onLinkClick(link => {
+        this.handleEdgeClick(link.id);
       });
-    });
-
-    this.vis?.on("dragStart", (params) => {
-      const nodeIDs = {};
-      params.nodes.forEach((value) => {
-        nodeIDs[value] = true;
-      });
-
-      if (
-        !nodeIDs.hasOwnProperty(this.selectedNodeID) &&
-        params.nodes.length > 0
-      ) {
-        this.handleDeselectNode(this.selectedNodeID);
-      }
-      this.handleNodeClick(params.nodes[0]);
-    });
-
-    this.vis?.on("startStabilizing", () => {
-      setTimeout(() => {
-        this.vis?.stopSimulation();
-      }, this.visOptions.physics.simulationDuration);
-    });
-
-    this.vis?.on("selectEdge", (params) => {
-      params.edges.forEach((value) => {
-        this.handleEdgeClick(params.edges[0]);
-      });
-    });
-
-    this.vis?.on("stabilized", () => {
-      if (
-        this.visOptions.physics.disablePhysicsAfterInitialSimulation == true
-      ) {
-        this.visOptions.physics.enabled = false;
-        this.changeOptions();
-      }
-      if (this.doingReset) {
-        this.vis?.fit({
-          animation: true,
-        });
-        this.doingReset = false;
-      }
-    });
   }
+
 
   /**
    * handle deselecting any number of nodes, ensuring the a node which was selected and is a current valid
@@ -547,22 +571,24 @@ export class ForceView extends DOMWidgetView {
    */
   handleDeselectNode(nodeID: string | number): void {
     console.log("handle deselect");
-    const node = this.nodeDataset.get(nodeID);
-    if (node === null) {
+    
+    const node = this.graphData.nodes.find(n => n.id === nodeID);
+    if (!node) {
       return;
     }
-
+  
     if (nodeID !== undefined && nodeID !== null && node.id === nodeID) {
       if (!node.group) {
         node.color = this.searchMatchColorNode;
-        node.font = { color: "black" };
       }
     } else {
       node.color = this.visOptions.nodes.color;
     }
-    node.borderWidth = 0;
-    this.nodeDataset.update(node);
-    this.vis?.stopSimulation();
+    
+    if (this.graph) {
+      this.graph.nodeColor(n => n.color);
+      this.graph.pauseAnimation();
+    }
     this.selectedNodeID = "";
   }
 
@@ -593,7 +619,7 @@ export class ForceView extends DOMWidgetView {
    *
    * @param data - a node or edge
    */
-  buildGraphPropertiesTable(data: VisNode | VisEdge): void {
+  buildGraphPropertiesTable(data: any): void {
     const graphTable = $(this.graphPropertiesTable);
     let rows: Array<HTMLElement>;
     if (data.hasOwnProperty("properties")) {
@@ -659,6 +685,7 @@ export class ForceView extends DOMWidgetView {
     return rows;
   }
 
+
   /**
    * Handle a single node being clicked. This will build details tables for all
    * key-value pairs which are on the edge. all key-value pairs which appear under the
@@ -668,31 +695,23 @@ export class ForceView extends DOMWidgetView {
    * @param nodeID - the id of the edge as represented by this.vis
    */
   handleNodeClick(nodeID: string | number): void {
-    if (nodeID === undefined) {
-      return;
-    }
+    const node = this.graphData.nodes.find(n => n.id === nodeID);
+    if (!node) return;
     this.handleDeselectNode(this.selectedNodeID);
-
-    const node = this.nodeDataset.get(nodeID);
-    if (node === null) {
-      return;
-    }
+    
     if (node.label !== undefined && node.label !== "") {
-      this.detailsText.innerText = "Details - " + node.title;
+      this.detailsText.innerText = "Details - " + node.label;
     } else {
       this.detailsText.innerText = "Details";
     }
-
+  
     this.buildGraphPropertiesTable(node);
-    if (node.group) {
-      node.font = { bold: true };
-      node.opacity = 1;
-      node.borderWidth = 3;
-    } else {
-      node.font = { color: "white" };
-    }
-    this.nodeDataset.update(node);
-    this.vis?.stopSimulation();
+    
+    // Highlight selected node
+    this.graph
+      .nodeColor(n => n.id === nodeID ? '#ff0000' : this.visOptions.nodes?.color || '#1f77b4')
+      .linkWidth(link => (link.source.id === nodeID || link.target.id === nodeID) ? 2 : 1);
+      
     this.selectedNodeID = nodeID;
   }
 
@@ -704,18 +723,17 @@ export class ForceView extends DOMWidgetView {
    *
    * @param edgeID - the id of the edge as represented by this.vis
    */
-  handleEdgeClick(edgeID: string | number): void {
-    const edge = this.edgeDataset.get(edgeID);
-    if (edge === null) {
-      return;
-    }
-    if (edge.title !== undefined && edge.title !== "") {
-      this.detailsText.innerText = "Details - " + edge.title;
+  handleEdgeClick(linkID: string | number): void {
+    const linkData = this.graphData.links.find(l => l.id === linkID);
+    if (!linkData) return;
+  
+    if (linkData.title !== undefined && linkData.title !== "") {
+      this.detailsText.innerText = "Details - " + linkData.title;
     } else {
       this.detailsText.innerText = "Details";
     }
-
-    this.buildGraphPropertiesTable(edge);
+  
+    this.buildGraphPropertiesTable(linkData);
   }
 
   /**
@@ -726,115 +744,29 @@ export class ForceView extends DOMWidgetView {
    * @param text - The content to search for
    */
   handleSearchInput(text: string): void {
-    const nodeUpdate: Array<DynamicObject> = [];
-    const edgeUpdate: Array<DynamicObject> = [];
-    const nodeIDs: DynamicObject = {};
-    const edgeIDs: DynamicObject = {};
-
-    const selectedNodes = {};
-    this.vis?.getSelectedNodes().forEach((nodeID) => {
-      selectedNodes[nodeID] = true;
-    });
-
-    const selectedEdges = {};
-    this.vis?.getSelectedEdges().forEach((edgeID) => {
-      selectedEdges[edgeID] = true;
-    });
-
-    if (text !== "") {
-      // all matched nodes should be colors a light blue
-      this.nodeDataset.forEach((item, id) => {
-        const searchFound = this.search(
-          text,
-          item,
-          0,
-          this.excludeIDsFromSearch
-        );
-        if (searchFound) {
-          const nodeID = id.toString();
-          nodeUpdate.push({
-            id: nodeID,
-            borderWidth: 3,
-          });
-          nodeIDs[id.toString()] = true;
-        }
-      });
-
-      // all matched edges should be colored a light blue
-      this.edgeDataset.forEach((item, id) => {
-        const searchFound = this.search(
-          text,
-          item,
-          0,
-          this.excludeIDsFromSearch
-        );
-        if (searchFound) {
-          edgeUpdate.push({
-            id: id.toString(),
-            width: 3,
-            color: this.searchMatchColorEdge,
-          });
-          edgeIDs[id.toString()] = true;
-        }
-      });
-    } else {
-      //Reset the opacity and border width
-      this.nodeDataset.forEach((item, id) => {
-        const nodeID = id.toString();
-        nodeUpdate.push({
-          id: nodeID,
-          opacity: 1,
-          borderWidth: 0,
-        });
-        nodeIDs[id.toString()] = true;
-      });
+    if (!this.graph) return;
+  
+    if (text === "") {
+      // Reset all nodes and links to default appearance
+      this.graph
+        .nodeColor(this.visOptions.nodes?.color || '#1f77b4')
+        .linkColor(this.visOptions.edges?.color || '#999')
+        .nodeRelSize(6);
+      return;
     }
-
-    // check current matched nodes and clear all nodes which are no longer matches
-    this.nodeIDSearchMatches.forEach((value) => {
-      if (nodeIDs.hasOwnProperty(value.toString())) {
-        return;
-      } else {
-        const selected = selectedNodes.hasOwnProperty(value.toString());
-        nodeUpdate.push({
-          id: value.toString(),
-          borderWidth: selected
-            ? this.visOptions["nodes"]["borderWidthSelected"]
-            : 0,
-          opacity: 0.35,
-        });
-      }
-    });
-
-    // check current matched edges and clear all nodes which are no longer matches
-    this.edgeIDSearchMatches.forEach((value) => {
-      if (edgeIDs.hasOwnProperty(value.toString())) {
-        return;
-      } else {
-        edgeUpdate.push({
-          id: value.toString(),
-          width: 1,
-          color: this.visOptions["edges"]["color"],
-        });
-      }
-    });
-
-    // check if physics have been manually disabled/enabled, set flag to indicate that this setting shouldn't be changed
-    let re_enable_physics = false;
-    if (this.visOptions.physics.enabled == true) {
-      this.vis?.setOptions({ physics: false });
-      re_enable_physics = true;
-    }
-    this.nodeDataset.update(nodeUpdate);
-    this.edgeDataset.update(edgeUpdate);
-
-    if (re_enable_physics) {
-      this.vis?.setOptions({ physics: true });
-      this.vis?.stopSimulation();
-    }
-    this.nodeIDSearchMatches = Object.keys(nodeIDs);
-    this.edgeIDSearchMatches = Object.keys(edgeIDs);
+  
+    // Highlight matching nodes and their links
+    this.graph
+      .nodeColor(node => {
+        const matches = this.search(text, node, 0, this.excludeIDsFromSearch);
+        return matches ? this.searchMatchColorNode.background : this.visOptions.nodes?.color || '#1f77b4';
+      })
+      .linkColor(link => {
+        const matches = this.search(text, link, 0, this.excludeIDsFromSearch);
+        return matches ? this.searchMatchColorEdge : this.visOptions.edges?.color || '#999';
+      });
   }
+  
 
   /**
    * Builds the side panel of actions and any other elements that they rely on.
@@ -883,12 +815,11 @@ export class ForceView extends DOMWidgetView {
     this.resetDiv.appendChild(this.resetBtn);
     rightActions.append(this.resetDiv);
     this.resetBtn.onclick = (): void => {
-      this.visOptions.physics.enabled = true;
-      this.changeOptions();
-      this.physicsBtn.innerHTML = feather.icons["unlock"].toSvg();
-      this.doingReset = true;
+      if (this.graph) {
+        this.graph.zoomToFit(400);
+        this.graph.resumeAnimation();
+      }
     };
-
     this.physicsBtn.title = "Enable/Disable Graph Physics";
     if (
       this.visOptions.physics.enabled == true &&
@@ -996,25 +927,20 @@ export class ForceView extends DOMWidgetView {
     const zoomInButton = document.createElement("button");
     zoomInButton.title = "Zoom In";
     zoomInButton.onclick = () => {
-      this.vis?.moveTo({
-        scale: this.vis?.getScale() * 2,
-        animation: true,
-      });
+      const currentZoom = this.graph.zoom();
+      this.graph.zoom(currentZoom * 1.2, 400);
     };
+
     const zoomOutButton = document.createElement("button");
     zoomOutButton.title = "Zoom Out";
     zoomOutButton.onclick = () => {
-      this.vis?.moveTo({
-        scale: this.vis?.getScale() * 0.5,
-        animation: true,
-      });
+      const currentZoom = this.graph.zoom();
+      this.graph.zoom(currentZoom * 0.8, 400);
     };
     const zoomResetButton = document.createElement("button");
     zoomResetButton.title = "Reset Zoom to Fit";
     zoomResetButton.onclick = () => {
-      this.vis?.fit({
-        animation: true,
-      });
+      this.graph.zoomToFit(400, 40);
     };
 
     zoomInButton.innerHTML = feather.icons["zoom-in"].toSvg();
@@ -1190,12 +1116,6 @@ export class ForceView extends DOMWidgetView {
    * Register any needed events to this.el, the containing element for this widget
    */
   registerWidgetEvents(): void {
-    /*
-    Use the MutationObserver to find when this widget is first given width. Once this event is seen,
-    fit the vis network onto the canvas and then disconnect the observer so that it is not done again.
-    This will prevent the graph from being rendered in such a way that the user cannot see it if
-    the initial state of the widget is hidden.
-     */
     const observerConfig = {
       attributes: true,
       childList: false,
@@ -1212,14 +1132,13 @@ export class ForceView extends DOMWidgetView {
             mutation.target[mutation.attributeName] !== undefined &&
             mutation.target[mutation.attributeName] > 0
           ) {
-            this.vis?.fit();
+            this.graph?.zoomToFit(400);
             observer.disconnect();
           }
         }
       }
     };
-
-    // eslint-disable-next-line prefer-const
+  
     observer = new MutationObserver(observerCallback);
     observer.observe(this.el, observerConfig);
   }

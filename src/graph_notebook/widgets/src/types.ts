@@ -3,8 +3,8 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
  */
 
-import { DataSet, Edge, Node } from "vis-network/standalone";
-import { clone, merge } from "lodash";
+// import { DataSet, Edge, Node } from "vis-network/standalone";
+// import { clone, merge } from "lodash";
 import DraggableOptions = JQueryUI.DraggableOptions;
 import ResizableOptions = JQueryUI.ResizableOptions;
 
@@ -29,125 +29,125 @@ export class VisSelection {
 /**
  * Meant to be added to our Node datasets which requires an id.
  */
-export class VisNode implements Node, DynamicObject {
-  public readonly id: string;
+// export class VisNode implements Node, DynamicObject {
+//   public readonly id: string;
 
-  [key: string]: any;
+//   [key: string]: any;
 
-  constructor(id: string) {
-    this.id = id;
-  }
+//   constructor(id: string) {
+//     this.id = id;
+//   }
 
-  /**
-   * Attempt to translate an IdentifiableDynamicObject into a VisNode.
-   * Because an id is guaranteed, we will create a node only with that ID,
-   * and then merge the remaining data in the object into the node afterwards.
-   *
-   * @remarks
-   * lodash's merge functionality is used for this. You can find more information about
-   * that here: https://lodash.com/docs/4.17.15#merge
-   *
-   * @param obj - An IdentifiableDynamicObject to turn into a node, with the obj.id being used for the node's id
-   * @returns a VisNode whose id is obj.id
-   */
-  static fromObject(obj: IdentifiableDynamicObject): VisNode {
-    let node = new VisNode(obj.id);
-    node = merge({}, obj, node);
-    return node as VisNode;
-  }
+//   /**
+//    * Attempt to translate an IdentifiableDynamicObject into a VisNode.
+//    * Because an id is guaranteed, we will create a node only with that ID,
+//    * and then merge the remaining data in the object into the node afterwards.
+//    *
+//    * @remarks
+//    * lodash's merge functionality is used for this. You can find more information about
+//    * that here: https://lodash.com/docs/4.17.15#merge
+//    *
+//    * @param obj - An IdentifiableDynamicObject to turn into a node, with the obj.id being used for the node's id
+//    * @returns a VisNode whose id is obj.id
+//    */
+//   static fromObject(obj: IdentifiableDynamicObject): VisNode {
+//     let node = new VisNode(obj.id);
+//     node = merge({}, obj, node);
+//     return node as VisNode;
+//   }
 
-  /**
-   *
-   * Takes an existing node and a DynamicObject, and merges the two,
-   * taking the values of the DynamicObject as sources of truth.
-   * @remarks
-   * Note that this method will do a deep merge, meaning that if you have two
-   * top-level properties whose key is "foo" and values are objects, those two
-   * objects will be merged into the new value of "foo".
-   */
-  static mergeObject(node: VisNode, obj: DynamicObject): VisNode {
-    if (obj === null || obj === undefined) {
-      obj = {};
-    }
+//   /**
+//    *
+//    * Takes an existing node and a DynamicObject, and merges the two,
+//    * taking the values of the DynamicObject as sources of truth.
+//    * @remarks
+//    * Note that this method will do a deep merge, meaning that if you have two
+//    * top-level properties whose key is "foo" and values are objects, those two
+//    * objects will be merged into the new value of "foo".
+//    */
+//   static mergeObject(node: VisNode, obj: DynamicObject): VisNode {
+//     if (obj === null || obj === undefined) {
+//       obj = {};
+//     }
 
-    const copy = clone(node);
-    return merge({}, copy, obj);
-  }
-}
+//     const copy = clone(node);
+//     return merge({}, copy, obj);
+//   }
+// }
 
 /**
  * A VisEdge is meant to be added to a network's dataset containing edges.
  * We want to guarantee that each edge has a label for the purposes of displaying it.
  */
-export class VisEdge implements Edge {
-  public readonly from: string;
-  public readonly to: string;
-  public readonly id: string;
-  public label: string;
+// export class VisEdge implements Edge {
+//   public readonly from: string;
+//   public readonly to: string;
+//   public readonly id: string;
+//   public label: string;
 
-  [key: string]: any;
+//   [key: string]: any;
 
-  constructor(
-    from: string,
-    to: string,
-    id: string,
-    label: string
-  ) {
-    this.from = from;
-    this.to = to;
-    // make the edge id as unique as possible, while still being able to look it up.
-    // visjs does not give us a mechanism to lookup an edge by its (from, to, id) tuple
-    // so we combine them
-    this.id = from + ":" + to + ":" + id;
-    this.label = label;
-  }
+//   constructor(
+//     from: string,
+//     to: string,
+//     id: string,
+//     label: string
+//   ) {
+//     this.from = from;
+//     this.to = to;
+//     // make the edge id as unique as possible, while still being able to look it up.
+//     // visjs does not give us a mechanism to lookup an edge by its (from, to, id) tuple
+//     // so we combine them
+//     this.id = from + ":" + to + ":" + id;
+//     this.label = label;
+//   }
 
-  /**
-   * Attempt to translate a Dynamic object into a VisEdge.
-   * For each required param a VisEdge must have, we will
-   * look for that value and use it in the Edge, and then
-   * merge the obj into the edge to grab and extra data it contains
-   *
-   * @remarks
-   * lodash's merge functionality is used for this. You can find more information about
-   * that here: https://lodash.com/docs/4.17.15#merge
-   *
-   * @param obj - an IdentifiableDynamicObject which is guaranteed to have an id
-   * @returns a VisEdge whose 'from' 'to' and 'label' fields are picked up from the source object
-   */
-  static fromObject(obj: IdentifiableDynamicObject): VisEdge {
-    const from = obj.hasOwnProperty("from") ? obj["from"] : "";
-    const to = obj.hasOwnProperty("to") ? obj["to"] : "";
-    const label = obj.hasOwnProperty("label") ? obj["label"] : obj.id;
+//   /**
+//    * Attempt to translate a Dynamic object into a VisEdge.
+//    * For each required param a VisEdge must have, we will
+//    * look for that value and use it in the Edge, and then
+//    * merge the obj into the edge to grab and extra data it contains
+//    *
+//    * @remarks
+//    * lodash's merge functionality is used for this. You can find more information about
+//    * that here: https://lodash.com/docs/4.17.15#merge
+//    *
+//    * @param obj - an IdentifiableDynamicObject which is guaranteed to have an id
+//    * @returns a VisEdge whose 'from' 'to' and 'label' fields are picked up from the source object
+//    */
+//   static fromObject(obj: IdentifiableDynamicObject): VisEdge {
+//     const from = obj.hasOwnProperty("from") ? obj["from"] : "";
+//     const to = obj.hasOwnProperty("to") ? obj["to"] : "";
+//     const label = obj.hasOwnProperty("label") ? obj["label"] : obj.id;
 
-    let edge = new VisEdge(from, to, obj.id, label);
-    edge = merge({}, obj, edge);
-    return edge;
-  }
+//     let edge = new VisEdge(from, to, obj.id, label);
+//     edge = merge({}, obj, edge);
+//     return edge;
+//   }
 
-  /**
-   * Takes an existing edge and a DynamicObject, and merges the two,
-   * taking the values of the DynamicObject as sources of truth.
-   * @remarks
-   * Note that this method will do a deep merge, meaning that if you have two
-   * top-level properties whose key is "foo" and values are objects, those two
-   * objects will be merged into the new value of "foo".
-   *
-   * @param edge - The existing edge whose values will be overridden if there are conflicts.
-   * @param obj - The DynamicObject to merge into the existing edge.
-   *
-   * @returns a new VisEdge whose values are combination of the original edge and obj, treating values in obj
-   * as the new values of the edge.
-   */
-  static mergeObject(edge: VisEdge, obj: DynamicObject): VisEdge {
-    if (obj === null || obj === undefined) {
-      obj = {};
-    }
+//   /**
+//    * Takes an existing edge and a DynamicObject, and merges the two,
+//    * taking the values of the DynamicObject as sources of truth.
+//    * @remarks
+//    * Note that this method will do a deep merge, meaning that if you have two
+//    * top-level properties whose key is "foo" and values are objects, those two
+//    * objects will be merged into the new value of "foo".
+//    *
+//    * @param edge - The existing edge whose values will be overridden if there are conflicts.
+//    * @param obj - The DynamicObject to merge into the existing edge.
+//    *
+//    * @returns a new VisEdge whose values are combination of the original edge and obj, treating values in obj
+//    * as the new values of the edge.
+//    */
+//   static mergeObject(edge: VisEdge, obj: DynamicObject): VisEdge {
+//     if (obj === null || obj === undefined) {
+//       obj = {};
+//     }
 
-    const copy = clone(edge);
-    return merge({}, copy, obj);
-  }
-}
+//     const copy = clone(edge);
+//     return merge({}, copy, obj);
+//   }
+// }
 
 /**
  * Transmitted by the EventfulNetwork in the kernel.
@@ -214,46 +214,70 @@ export class Link {
   }
 }
 
-/**
- * A vis-network Dataset based on a VisNode, whose identifying field is the "id"
- */
-export class NodeDataSet extends DataSet<VisNode, "id"> {
+export interface GraphNode {
+  id: string;
+  label?: string;
+  color?: string;
   [key: string]: any;
 }
 
-/**
- * A vis-network Dataset based on a VisEdge, whose identifying field is the "id"
- */
-export class EdgeDataSet extends DataSet<VisEdge, "id"> {
+export interface GraphLink {
+  source: string;
+  target: string;
+  label?: string;
   [key: string]: any;
 }
+
+export interface ForceNetwork {
+  graph: {
+    nodes: GraphNode[];
+    links: GraphLink[];
+  };
+}
+
+
+    
+
+/**
+ * A vis-network Dataset based on a VisNode, whose identifying field is the "id"
+ */
+// export class NodeDataSet extends DataSet<VisNode, "id"> {
+//   [key: string]: any;
+// }
+
+// /**
+//  * A vis-network Dataset based on a VisEdge, whose identifying field is the "id"
+//  */
+// export class EdgeDataSet extends DataSet<VisEdge, "id"> {
+//   [key: string]: any;
+// }
 
 /**
  * Inner structure of the ForceWidget's network traitlet, carried by the EventfulNetwork on the kernel which
  * serializes its MultiDiGraph into json. A graph is guaranteed to have an array of nodes
  * and an array of edges, either of which can be of 0 length.
  */
-export class Graph {
-  public nodes: VisNode[];
-  public links: Link[];
+// export class Graph {
+//   public nodes: VisNode[];
+//   public links: Link[];
 
-  constructor(nodes: VisNode[], links: Link[]) {
-    this.nodes = nodes;
-    this.links = links;
-  }
-}
+//   constructor(nodes: VisNode[], links: Link[]) {
+//     this.nodes = nodes;
+//     this.links = links;
+//   }
+// }
 
 /**
  * The containing object for our graph which is used to convert between the ForceWidget's network traitlet
  * and json for use on the client-side.
  */
-export class ForceNetwork {
-  public graph: Graph;
+// export class ForceNetwork {
+//   public graph: Graph;
 
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-}
+//   constructor(graph: Graph) {
+//     this.graph = graph;
+//   }
+// }
 
 export class ForceDraggableOptions implements DraggableOptions {}
 export class ForceResizableOptions implements ResizableOptions {}
