@@ -3,8 +3,6 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
  */
 
-/* eslint-disable @typescript-eslint/camelcase */
-// TODO: Upgrade to newest version of jupyter-widgets/base
 import {
   DOMWidgetModel,
   DOMWidgetView,
@@ -28,13 +26,12 @@ import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 import feather from "feather-icons";
 import $ from "jquery";
-import "jquery-ui/ui/widgets/draggable";
-import "jquery-ui/ui/widgets/resizable";
+import 'jquery-ui/ui/widgets/draggable';
+import 'jquery-ui/ui/widgets/resizable';
+import { DraggableOptions, ResizableOptions } from 'jquery-ui';
 
 // Import the CSS
 import "../css/widget.css";
-import DraggableOptions = JQueryUI.DraggableOptions;
-import ResizableOptions = JQueryUI.ResizableOptions;
 
 feather.replace();
 
@@ -116,6 +113,18 @@ export class ForceView extends DOMWidgetView {
   private physicsBtn = document.createElement("button");
 
   render(): void {
+    // Add jQuery UI CSS via CDN
+    const jqueryUICss = document.createElement('link');
+    jqueryUICss.rel = 'stylesheet';
+    jqueryUICss.href = 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css';
+    document.head.appendChild(jqueryUICss);
+
+    // Check jQuery availability
+    if (!$) {
+        console.error('jQuery not initialized');
+        return;
+    }
+
     this.networkDiv.classList.add("network-div");
     this.canvasDiv.style.height = "600px";
     this.canvasDiv.style.width = "100%";
@@ -157,22 +166,34 @@ export class ForceView extends DOMWidgetView {
     }, this.visOptions.physics.simulationDuration);
 
     /*
-            To listen to messages sent from the kernel, you can register callback methods in the view class,
-            this can be done using the "this.listenTo" method.
+      To listen to messages sent from the kernel, you can register callback methods in the view class,
+      this can be done using the "this.listenTo" method.
 
-            For our purposes, the first param will always be 'this.model'. The second param is the message name which we
-            are subscribing to. For messages triggered by a kernel trait changing its state, the message name will be
-            'change:trait_name'. The third param is a reference to the callback function to be invoked when the given
-            message occurs. This callback can receive the payload of the message if it would like to. The fourth and final
-            parameter is used to keep a way to reference 'this' in the scope of the ForceView class.
-            */
+      For our purposes, the first param will always be 'this.model'. The second param is the message name which we
+      are subscribing to. For messages triggered by a kernel trait changing its state, the message name will be
+      'change:trait_name'. The third param is a reference to the callback function to be invoked when the given
+      message occurs. This callback can receive the payload of the message if it would like to. The fourth and final
+      parameter is used to keep a way to reference 'this' in the scope of the ForceView class.
+    */
     this.listenTo(this.model, "msg:custom", this.interceptCustom);
     this.listenTo(this.model, "change:network", this.changeNetwork);
     this.listenTo(this.model, "change:options", this.changeOptions);
 
-    this.buildActions();
-    this.registerVisEvents();
-    this.registerWidgetEvents();
+    // Wait for jQuery UI CSS to load before building actions
+    jqueryUICss.onload = () => {
+      console.warn('jQuery UI CSS loaded, initializing actions');
+      this.buildActions();
+      this.registerVisEvents();
+      this.registerWidgetEvents();
+    };
+
+    // Fallback if CSS fails to load
+    jqueryUICss.onerror = () => {
+      console.error('Failed to load jQuery UI CSS, continuing without styles');
+      this.buildActions();
+      this.registerVisEvents();
+      this.registerWidgetEvents();
+    };
   }
 
   /**
@@ -959,7 +980,7 @@ export class ForceView extends DOMWidgetView {
     dragOptions.handle = ".details-header";
     dragOptions.containment = "parent";
     $(this.detailsPanel).draggable(dragOptions);
-
+    
     const resizeOptions: ResizableOptions = new ForceResizableOptions();
     resizeOptions.handles = "s, e, w, se, sw";
     resizeOptions.resize = (event, ui): void => {

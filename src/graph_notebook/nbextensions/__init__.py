@@ -32,3 +32,9 @@ def _jupyter_nbextension_paths():
             dest="playable_cells",
             require="playable_cells/main"),
     ]
+
+
+def _jupyter_server_extension_points():
+    return [{
+        "module": "graph_notebook.nbextensions"
+    }]
