@@ -4,6 +4,9 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 
+## Release 5.0.0 (April 8, 2025)
+- Upgrade project to Jupyterlab 4x ([Link to PR](https://github.com/aws/graph-notebook/pull/729))
+- 
 ## Release 4.6.2 (November 26, 2024)
 - Added Neptune `--use-port` option to `%%gremlin` and `%%oc` ([Link to PR](https://github.com/aws/graph-notebook/pull/712))
 - Fixed SPARQL path in example Fuseki configuration ([Link to PR](https://github.com/aws/graph-notebook/pull/713))
