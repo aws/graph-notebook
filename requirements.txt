@@ -36,3 +36,4 @@ Jinja2>=3.0.3,<=3.1.4
 json-repair==0.29.2
 nest_asyncio>=1.5.5,<=1.6.0
 requests>=2.32.0,<=2.32.2
+numba==0.60.0
