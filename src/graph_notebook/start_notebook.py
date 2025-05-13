@@ -71,6 +71,7 @@ def main():
     # Starting with Notebook 7.0+, the classic notebook interface was rewritten to use JupyterLab's architecture.
     # This means traditional nbextensions (which rely on requirejs and jQuery) are not directly supported.
     # We use nbclassic package to maintain compatibility 
+    # Reference: https://jupyter-notebook.readthedocs.io/en/latest/migrating/multiple-interfaces.html#simultaneous-usage-of-different-versions-of-notebook-7-and-the-classic-notebook-ui
     kernel_manager_option = "--NotebookApp.kernel_manager_class=notebook.services.kernels.kernelmanager.AsyncMappingKernelManager"
     notebooks_dir = '~/notebook/destination/dir' if args.notebooks_dir == '' else args.notebooks_dir
     os.system(f'''jupyter nbclassic {kernel_manager_option} {notebooks_dir}''')

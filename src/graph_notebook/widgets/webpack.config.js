@@ -85,14 +85,17 @@ const labModuleFederationConfig = {
 
 // Export array of webpack configurations
 module.exports = [
-  // 1. Notebook extension AMD module
+  // 1. Notebook extension AMD module - Used by NBClassic (Jupyter Notebook < 7.0)
   {
     mode,
     entry: "./src/extension.js",
     output: {
       filename: "extension.js",
       path: path.resolve(__dirname, "nbextension"),
-      libraryTarget: "amd",
+      // libraryTarget: "var" exposes the library by creating a global variable
+      // Example: var graph_notebook_widgets = { ... }
+      // This is the classic way NBClassic loads extensions through RequireJS
+      libraryTarget: "var",
       library: "graph_notebook_widgets",
       publicPath: "nbextensions/graph_notebook_widgets/",
     },
@@ -104,15 +107,22 @@ module.exports = [
     watchOptions,
   },
 
-  // 2. Notebook extension
+  // 2. Notebook extension - Used by NBClassic (Jupyter Notebook < 7.0)
   {
     mode,
     entry: "./src/extension.ts",
     output: {
       filename: "index.js",
       path: path.resolve(__dirname, "nbextension"),
+      // libraryTarget: "amd" creates an AMD module that can be loaded by RequireJS
+      // AMD (Asynchronous Module Definition) allows modules to be loaded asynchronously
+      // Example: define(['dependency'], function(dependency) { ... })
+      // NBClassic uses RequireJS to load extensions in this format
       libraryTarget: "amd",
-      library: "graph_notebook_widgets",
+      // This creates a "named define" module without a global variable
+      // It allows the module to be imported by name in RequireJS
+      // Example: define('graph_notebook_widgets', ['dependency'], function(dependency) { ... })
+      library: undefined,
       publicPath: "nbextensions/graph_notebook_widgets/",
     },
     module: { rules },
@@ -123,7 +133,7 @@ module.exports = [
     watchOptions,
   },
 
-  // 3. Lab extension with Module Federation
+  // 3. Lab extension with Module Federation - Used by JupyterLab 4.x and Notebook 7+
   {
     mode,
     entry: "./src/index.ts",
@@ -132,6 +142,9 @@ module.exports = [
       chunkFilename: '[name].[contenthash].js',
       path: path.resolve(__dirname, 'labextension/static'),
       publicPath: 'static/',
+      // AMD format is used as the base format for JupyterLab extensions
+      // Module Federation builds on top of this to enable dynamic loading
+      // This configuration creates a JupyterLab 4.x compatible extension
       libraryTarget: 'amd'
     },
     devtool: "source-map",
@@ -143,18 +156,21 @@ module.exports = [
     resolve,
     plugins: [
       ...basePlugins,
+      // ModuleFederationPlugin enables the extension to be loaded dynamically
+      // by JupyterLab 4.x and Notebook 7+ which both use this architecture
       new ModuleFederationPlugin(labModuleFederationConfig),
     ],
     watchOptions
   },
 
-  // 4. Documentation widget bundle
+  // 4. Documentation widget bundle - Used for documentation examples
   {
     mode,
     entry: "./src/index.ts",
     output: {
       filename: "embed-bundle.js",
       path: path.resolve(__dirname, "docs", "source", "_static"),
+      // AMD format used for documentation examples to match JupyterLab format
       libraryTarget: "amd",
     },
     module: { rules },
