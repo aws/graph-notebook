@@ -11,7 +11,7 @@ jupyterlab-widgets>=3.0.0,<4.0.0
 nbclient>=0.7.3
 nbconvert>=6.3.0,<=7.2.8
 notebook>=7.0.0,<8.0.0
-nbclassic>=1.0.0
+nbclassic>=1.3.0
 
 # Data processing and visualization
 itables>=2.0.0,<=2.1.0
