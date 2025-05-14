@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Locked numba dependency to 0.60.0 to avoid numpy conflict ([Link to PR](https://github.com/aws/graph-notebook/pull/735))
+- Fixed library target for nbclassic nbextension for graph_notebook_widget ([Link to PR](https://github.com/aws/graph-notebook/pull/739))
   
 ## Release 5.0.0 (April 8, 2025)
 - Upgrade project to Jupyterlab 4x ([Link to PR](https://github.com/aws/graph-notebook/pull/729))
