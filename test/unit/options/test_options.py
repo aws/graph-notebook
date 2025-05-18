@@ -127,8 +127,9 @@ class TestOptions(unittest.TestCase):
                 },
                 'expected': {
                     "nodes": {
-                        "borderWidthSelected": 0,
+                        "borderWidthSelected": 3,
                         "borderWidth": 0,
+                        "chosen": True,
                         "color": {
                             "background": "rgba(210, 229, 255, 1)",
                             "border": "transparent",
@@ -222,8 +223,9 @@ class TestOptions(unittest.TestCase):
                 },
                 'expected': {
                     "nodes": {
-                        "borderWidthSelected": 0,
+                        "borderWidthSelected": 3,
                         "borderWidth": 0,
+                        "chosen": True,
                         "color": {
                             "background": "rgba(210, 229, 255, 1)",
                             "border": "transparent",

@@ -493,7 +493,7 @@ export class ForceView extends DOMWidgetView {
     this.vis?.on("deselectNode", (params) => {
       console.log("deselect");
       params.previousSelection.nodes.forEach((value) => {
-        this.handleDeselectNode(value);
+        this.handleDeselectNode(value.id);
       });
     });
 
