@@ -429,7 +429,7 @@ python3 -m build .
 
 You should now be able to find the built distribution at
 
-`./dist/graph_notebook-5.0.0-py3-none-any.whl`
+`./dist/graph_notebook-5.0.1-py3-none-any.whl`
 
 And use it by following the [installation](https://github.com/aws/graph-notebook#installation) steps, replacing
 
@@ -440,7 +440,7 @@ pip install graph-notebook
 with
 
 ``` python
-pip install ./dist/graph_notebook-5.0.0-py3-none-any.whl --force-reinstall
+pip install ./dist/graph_notebook-5.0.1-py3-none-any.whl --force-reinstall
 ```
 
 ## Contributing Guidelines
