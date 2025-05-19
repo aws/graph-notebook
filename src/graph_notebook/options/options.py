@@ -6,8 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 # Documentation for these options: https://visjs.github.io/vis-network/docs/network
 OPTIONS_DEFAULT_DIRECTED = {
     "nodes": {
-        "borderWidthSelected": 0,
+        "borderWidthSelected": 3,
         "borderWidth": 0,
+        "chosen": True,
         "color": {
             "background": "rgba(210, 229, 255, 1)",
             "border": "transparent",
