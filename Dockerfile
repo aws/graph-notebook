@@ -11,7 +11,7 @@ ENV pipargs=""
 ENV WORKING_DIR="/root"
 ENV NOTEBOOK_DIR="${WORKING_DIR}/notebooks"
 ENV EXAMPLE_NOTEBOOK_DIR="${NOTEBOOK_DIR}/Example Notebooks"
-ENV NODE_VERSION=14
+ENV NODE_VERSION=20.18.3
 ENV PYTHON_VERSION=3.10
 ENV GRAPH_NOTEBOOK_AUTH_MODE="DEFAULT"
 ENV GRAPH_NOTEBOOK_HOST="neptune.cluster-XXXXXXXXXXXX.us-east-1.neptune.amazonaws.com"
@@ -57,9 +57,10 @@ RUN mkdir -p "${WORKING_DIR}" && \
     pip3 install --upgrade pip setuptools wheel && \
     pip3 install twine==3.7.1 && \
     pip3 install -r requirements.txt && \
-    pip3 install "jupyterlab>=3,<4" && \
+    pip3 install "jupyterlab>=4.3.5,<5" && \
+    pip3 install --upgrade build hatch hatch-jupyter-builder && \
     # Build the package
-    python3 setup.py sdist bdist_wheel && \
+    python3 -m build . && \
     # install the copied repo
     pip3 install . && \
     # copy premade starter notebooks
