@@ -66,7 +66,7 @@ RUN mkdir -p "${WORKING_DIR}" && \
     # copy premade starter notebooks
     cd "${WORKING_DIR}/graph-notebook" && \
     python3 -m graph_notebook.notebooks.install --destination "${EXAMPLE_NOTEBOOK_DIR}" && \
-    jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets && \
+    jupyter nbclassic-extension enable  --py --sys-prefix graph_notebook.widgets && \
     # This allows for the `.ipython` to be set
     python -m graph_notebook.start_jupyterlab --jupyter-dir "${NOTEBOOK_DIR}" && \
     deactivate && \
