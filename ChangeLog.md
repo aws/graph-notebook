@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) TODO: add to the specific release below when it's released
 - Locked numba dependency to 0.60.0 to avoid numpy conflict ([Link to PR](https://github.com/aws/graph-notebook/pull/735))
 - Fixed library target for nbclassic nbextension for graph_notebook_widget ([Link to PR](https://github.com/aws/graph-notebook/pull/739))
   
