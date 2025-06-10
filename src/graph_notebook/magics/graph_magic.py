@@ -16,6 +16,12 @@ import uuid
 import ast
 import re
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+import numpy as np
+import matplotlib.pyplot as plt
+
 from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
@@ -53,7 +59,8 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
     OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
-    normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, \
+    normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, TRAVERSAL_DIRECTIONS, \
+    normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, TRAVERSAL_DIRECTIONS, \
     GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, GRAPHSONV4_UNTYPED, \
     GREMLIN_SERIALIZERS_WS, get_gremlin_serializer_mime, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
@@ -3920,3 +3927,409 @@ class Graph(Magics):
             store_to_ns(args.store_to, js, local_ns)
             if not args.silent:
                 print(json.dumps(js, indent=2))
+
+
+
+
+
+    # %degreeDistribution magic command.
+    # It obtains the degree distribution of a graph in the form of a visual histogram in notebook. Histogram simply
+    # shows the number of vertices with a given degree, where degree is shown on the x-axis and the count on y-axis.
+    # It takes traversalDirection [both (default), inbound, outbound], vertexLabels [default is empty list],
+    # edgeLabels parameters [default is empty list], and then gives the histogram for the specified degree
+    # (both/in/out) distribution of the vertices in the graph filtered by the specified vertex labels and edge
+    # labels. Parameters can be defined as command line argument and/or through the dropdown widgets.
+    # Example usages:
+    # > %degreeDistribution
+    # > %degreeDistribution --traversalDirection inbound
+    # > %degreeDistribution --traversalDirection inbound --vertexLabels airport country
+
+    # TODO: Error handling
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    @neptune_graph_only
+    def degreeDistribution(self, line, local_ns: dict = None):
+        if not self.client.is_analytics_domain():
+            print("This command is only supported for Neptune Analytics domains.")
+            return
+    
+        parser = argparse.ArgumentParser()
+
+        # Get the vertexLabels and edgeLabels from graph summary, to be shown in the widgets for selection.
+        try:
+            summary_res = self.client.statistics("propertygraph", True, "detailed", True)
+            summary_res.raise_for_status()
+            summary_res_json = summary_res.json()
+            available_vertex_labels = summary_res_json['graphSummary']['nodeLabels']
+            available_edge_labels = summary_res_json['graphSummary']['edgeLabels']
+        except Exception as e:
+            print(f"Error retrieving graph summary: {e}")
+            return
+
+        # traversalDirection: Type of the degree computed:
+        # - inbound: Counts only the incoming edges for each vertex
+        # - outbound: Counts only the outgoing edges for each vertex
+        # - both [default]: Counts both the incoming and outgoing edges for each vertex.
+        parser.add_argument('--traversalDirection', nargs='?', type=str.lower, default='both',
+                            help=f'Type of the degree for which the distribution is shown. Valid inputs: {TRAVERSAL_DIRECTIONS}. '
+                                 f'Default: both.',
+                            choices=TRAVERSAL_DIRECTIONS)
+        
+        # vertexLabels: List of the vertex labels, space separated, for which the degrees are computed:
+        # - default value is empty list, which means the degrees are computed for any vertex label.
+        parser.add_argument('--vertexLabels', nargs='*', default=[],
+                            help="The vertex labels for which the induced graph is considered and the degree distribution is shown. "
+                                 "If not supplied, we will default to using all the vertex labels.")
+        
+        # edgeLabels: List of the edge labels, space separated, for which the degrees are computed:
+        # - default value is empty list, which means the degrees are computed for any edge label.
+        parser.add_argument('--edgeLabels', nargs='*', default=[],
+                            help="The edge labels for which the degree distribution is shown. If not supplied, "
+                                 "we will default to using all the edge labels.")
+        
+
+        # TODO: Additional parameter for saving the visualization?
+        # parser.add_argument('--export-to', type=str, default='',
+        #                     help='Export the degree distribution results to the provided file path.')
+        
+        args = parser.parse_args(line.split())
+        
+        # If the traversalDirection parameter selection is specified on the command line, it is shown as the default
+        # in the dropdown menu. Othweise, the default in the dropdown is 'both'
+        td_val = args.traversalDirection
+        td_val = td_val.lower() if td_val else 'both' 
+
+        td_dropdown = widgets.Dropdown(
+            options=TRAVERSAL_DIRECTIONS,
+            description='Traversal direction:',
+            disabled=False,
+            style=SEED_WIDGET_STYLE,
+            value = td_val
+        )
+
+        # Existing vertex labels in the graph are shown in the dropdown menu. If any vertex label is specified on
+        # the command line, they are shown to be selected in the dropdown menu. Otherwise, no label is selected
+        # in the dropdown menu, which means any label and all the labels are considered in the computation.
+        available_vertex_labels = sorted(available_vertex_labels)
+        selected_vlabels = args.vertexLabels if args.vertexLabels else []
+        vertex_labels_select = widgets.SelectMultiple(
+            options=available_vertex_labels,
+            description='Vertex labels:',
+            disabled=False,
+            style=SEED_WIDGET_STYLE,
+            value = selected_vlabels
+        )
+
+        # Existing edge labels in the graph are shown in the dropdown menu. If any edge label is specified on
+        # the command line, they are shown to be selected in the dropdown menu. Otherwise, no label is selected
+        # in the dropdown menu, which means any label and all the labels are considered in the computation.
+        available_edge_labels = sorted(available_edge_labels)
+        selected_elabels = args.edgeLabels if args.edgeLabels else []
+        edge_labels_select = widgets.SelectMultiple(
+            options=available_edge_labels,
+            description='Edge labels:',
+            disabled=False,
+            style=SEED_WIDGET_STYLE,
+            value = selected_elabels
+        )
+
+        submit_button = widgets.Button(description="Submit")
+        output = widgets.Output()
+        
+        # Display widgets
+        display(td_dropdown, vertex_labels_select, edge_labels_select, submit_button, output)
+        
+        def on_button_clicked(b):
+            # Get the selected parameters
+            td = td_dropdown.value
+            vlabels = list(vertex_labels_select.value)
+            elabels = list(edge_labels_select.value)
+
+            # Clear the output widget before displaying new content
+            output.clear_output(wait=True)
+            
+            # Call the function with the selected parameters
+            with output:
+                res = self.execute_degree_distribution_query(td, vlabels, elabels, local_ns)
+                
+                # Retrieve the distribution
+                pairs = np.array(res['results'][0]['output']['distribution'])
+                keys = pairs[:,0]
+                values = pairs[:,1]
+
+                # Retrieve some statistics
+                max_deg = res['results'][0]['output']['statistics']['maxDeg']
+                median_deg = res['results'][0]['output']['statistics']['p50']
+                mean_deg = res['results'][0]['output']['statistics']['mean']
+
+                # Create the interactive visualization
+                self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg)
+        
+        submit_button.on_click(on_button_clicked)
+
+    def execute_degree_distribution_query (self, td, vlabels, elabels, local_ns):
+        query_parts = [f'traversalDirection: "{td}"']
+        
+        if vlabels:
+            vertex_str = ", ".join([f'"{v}"' for v in vlabels])
+            query_parts.append(f'vertexLabels: [{vertex_str}]')
+            
+        if elabels:
+            edge_str = ", ".join([f'"{e}"' for e in elabels])
+            query_parts.append(f'edgeLabels: [{edge_str}]')
+            
+        # Construct the query
+        line = "CALL neptune.algo.degreeDistribution({" + ", ".join(query_parts) + "}) YIELD output RETURN output"
+
+        oc_rebuild_args = (f"{f'--store-to js --silent'}")
+        
+        self.handle_opencypher_query(oc_rebuild_args, line, local_ns)
+        
+        return local_ns['js']
+
+
+    def plot_interactive_degree_distribution(self, unique_degrees, counts, max_deg, median_deg, mean_deg):
+
+        min_deg = 0
+
+        def update_plot(scale_type, bin_type, bin_width, y_max, x_range, show_mindeg, show_maxdeg):
+            # Start timing
+            start_time = time.time()
+            
+            alpha = 1
+            plt.clf()
+                        
+            # Get zero degree count
+            zero_idx = np.where(unique_degrees == 0)[0]
+            zero_degree_count = counts[zero_idx[0]] if len(zero_idx) > 0 else 0
+
+            isolateds_exist = zero_degree_count > 0
+            # Get non-zero degrees and counts
+            mask = unique_degrees > 0
+            filtered_degrees = unique_degrees[mask]
+            filtered_counts = counts[mask]
+            
+            # Obtain the minimum non-zero degree, unless it's all zero degrees
+            if len(filtered_degrees) == 0:
+                min_deg = 0
+            else:
+                min_deg = np.min(filtered_degrees)                
+
+            n_bins = 1
+            # Create histogram only if there are non-zero degree nodes
+            if len(filtered_degrees) > 0:
+                if bin_type != 'Raw':
+                    # Arrange the bins for a given bin_width
+                    if bin_type == 'Linear':
+                        n_bins = max(1, int((max_deg - min_deg) / bin_width))
+                        bins = np.linspace(min_deg, max_deg, n_bins + 1)
+                    else:  # Logarithmic
+                        min_deg_log = np.log10(min_deg) if min_deg > 0 else 0
+                        max_deg_log = np.log10(max_deg) if max_deg > 0 else 1
+                        n_bins = max(1, int((max_deg_log - min_deg_log) / np.log10(bin_width+0.01)))
+                        bins = np.logspace(min_deg_log, max_deg_log, n_bins + 1)
+                    
+                    all_degrees = np.repeat(filtered_degrees, filtered_counts)
+
+                    plt.hist(all_degrees, bins=bins, density=False, alpha=alpha,
+                            histtype='bar', color='#000080')
+                else:
+                    # For raw data, create bars at each unique degree
+                    plt.bar(filtered_degrees, filtered_counts, alpha=alpha,
+                        label='Raw', color='#000000')
+            
+            # Plot zero degree node count separately
+            if isolateds_exist:
+                # Use a special x position for zero degree nodes in log scale
+                zero_x_pos = 0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 0
+                plt.bar(zero_x_pos, zero_degree_count, color='red', 
+                    label='Isolated', alpha=alpha, width=0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 2)
+
+            plt.xlim(x_range[0], x_range[1])
+
+            if isolateds_exist:
+                plt.xlim(x_range[0], x_range[1])
+
+            # Set scales based on selection
+            if scale_type == 'Log-Log':
+                plt.xscale('log')
+                plt.yscale('log')
+                if isolateds_exist:
+                    plt.xlim(0.05, x_range[1])
+                else:
+                    plt.xlim(x_range[0]+0.05, x_range[1])
+
+            elif scale_type == 'Log(x)-Linear(y)':
+                plt.xscale('log')
+                if isolateds_exist:
+                    plt.xlim(0.05, x_range[1])
+                else:
+                    plt.xlim(x_range[0]+0.05, x_range[1])
+            elif scale_type == 'Linear(x)-Log(y)':
+                plt.yscale('log')
+            
+            plt.gca().set_ylim(top=y_max)
+            
+            # Add vertical dashed lines for min and max degree, if enabled
+            if show_mindeg and min_deg > 0:
+                plt.axvline(x=min_deg, color='darkgreen', linestyle='--', linewidth=2, label=f'Min non-zero degree: {min_deg}')
+            
+            if show_maxdeg:
+                plt.axvline(x=max_deg, color='darkred', linestyle='--', linewidth=2, label=f'Max degree: {max_deg}')
+                
+            plt.grid(True, which="both", ls="-", alpha=0.2)
+            plt.xlabel('Degree')
+            plt.ylabel('Number of nodes')
+            plt.legend()   
+                
+            plt.title(f'Degree Distribution')
+
+            # End timing and display
+            end_time = time.time()
+            runtime = end_time - start_time
+                        
+            # Update statistics
+            with stats_output:
+                stats_output.clear_output(wait=True)
+                total_nodes = sum(counts)
+                total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
+                avg_degree = sum(d * c for d, c in zip(unique_degrees, counts)) / total_nodes
+                
+                print(f"Render time: {runtime:.3f} seconds")
+                print(f"--------------------")
+
+                print(f"Number of nodes: {total_nodes}")
+                print(f"Number of edges: {total_edges}")
+                print(f"Number of isolated nodes: {zero_degree_count}")
+                print(f"Average degree: {mean_deg:.2f}")
+                print(f"Median degree: {median_deg:.2f}")
+                print(f"Max degree: {max_deg}")
+                if min_deg > 0:
+                    print(f"Min non-zero degree: {min_deg}")            
+                if bin_type != 'Raw':
+                    print(f"Number of bins: {n_bins}")
+        
+        
+        max_count = np.max(counts)
+        
+        # Scale widget, four options
+        scale_widget = widgets.Dropdown(
+            options=['Linear-Linear', 'Log-Log', 'Log(x)-Linear(y)', 'Linear(x)-Log(y)'],
+            value='Linear-Linear',
+            description='Scale:'
+        )
+        
+        # Binning widget, three options
+        bin_widget = widgets.Dropdown(
+            options=['Raw', 'Linear', 'Logarithmic'],
+            value='Linear',
+            description='Binning:'
+        )
+        
+        # Define a function to update bin_width_widget based on bin_type
+        def update_bin_width_widget(change):
+            if change['new'] == 'Logarithmic':
+                # For logarithmic binning, use a FloatSlider with smaller values
+                bin_width_widget.min = 1.00
+                bin_width_widget.max = 10.00
+                bin_width_widget.step = 0.01
+                bin_width_widget.value = 1.00
+                bin_width_widget.readout_format = '.2f'
+                bin_width_widget.disabled = False
+            elif change['new'] == 'Raw':
+                # For raw binning, disable the widget
+                bin_width_widget.value = 1
+                bin_width_widget.disabled = True
+            else:
+                # For linear binning, use integer values
+                bin_width_widget.min = 1
+                bin_width_widget.max = (max_deg+2)/10
+                bin_width_widget.step = 1
+                bin_width_widget.value = 1
+                bin_width_widget.readout_format = 'd'
+                bin_width_widget.disabled = False
+
+        def update_y_max_widget(change):
+            if bin_widget.value == 'Raw':
+                # For raw data, use the original max count
+                y_max_widget.max = max_count * 1.1
+                y_max_widget.value = max_count * 1.1
+            elif bin_widget.value == 'Linear':
+                y_max_widget.max = max_count * bin_width_widget.value * 0.5
+                y_max_widget.value = max_count * bin_width_widget.value * 0.5
+            else: # 'Logarithmic'
+                y_max_widget.max = max_count * (10 ** bin_width_widget.value) * 0.5
+                y_max_widget.value = max_count * (10 ** bin_width_widget.value) * 0.5
+                    
+        # Bin width widget, integer options in [1, 1+(max_deg/2)] interval 
+        bin_width_widget = widgets.FloatSlider(
+            value=1,
+            min=1,
+            max=(max_deg+2)/10,
+            step=1,
+            description='Bin width:',
+            tooltip=('For linear binning: actual width\n'
+                    'For log binning: multiplicative factor')
+        )
+
+        # Observe changes to bin_width_widget and bin_widget
+        bin_width_widget.observe(update_y_max_widget, names='value')
+        bin_widget.observe(update_y_max_widget, names='value')
+
+        # Upper limit for y-axis range, enables zooming (lower limit is always zero)
+        y_max_widget = widgets.IntSlider(
+            value=max_count * 1.1,
+            min=1,
+            max=max_count * 1.1,
+            step=1,
+            description='y-max:',
+        )
+
+        # Range slider for x-axis, enables zooming
+        x_range_widget = widgets.FloatRangeSlider(            
+            min=0,
+            max=max_deg * 1.1 + 5,
+            value=[0, max_deg * 1.1 + 5],
+            step=1,
+            description='x-axis range:',
+            disabled=False,
+            continuous_update=True,
+            readout=True,
+            readout_format='.0f',
+        )
+        
+        # Toggle switches for min/max degree lines
+        show_mindeg_widget = widgets.Checkbox(
+            value=True,
+            description='Show Min Degree Line',
+            disabled=False
+        )
+        
+        show_maxdeg_widget = widgets.Checkbox(
+            value=True,
+            description='Show Max Degree Line',
+            disabled=False
+        )
+        
+        # Output widget for statistics
+        stats_output = widgets.Output()
+
+        # Interactive plot
+        interactive_plot = widgets.interactive(
+            update_plot,
+            scale_type=scale_widget,
+            bin_type=bin_widget,
+            bin_width=bin_width_widget,
+            y_max=y_max_widget,
+            x_range=x_range_widget,
+            show_mindeg=show_mindeg_widget,
+            show_maxdeg=show_maxdeg_widget
+        )
+        
+        # Vertical box layout
+        vbox = widgets.VBox([interactive_plot, stats_output])
+        
+        # Display the interactive plot and stats
+        display(vbox)
