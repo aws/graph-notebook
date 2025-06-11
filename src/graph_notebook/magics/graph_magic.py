@@ -2095,6 +2095,8 @@ class Graph(Magics):
         parser.add_argument('--allow-empty-strings', action='store_true', default=False,
                             help='Load empty strings found in node and edge property values.')
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
+        parser.add_argument('--edge-only-load', action='store_true', default=False, 
+                            help='Load the graph edges directly')
 
         args = parser.parse_args(line.split())
         button = widgets.Button(description="Submit")
@@ -2238,6 +2240,13 @@ class Graph(Magics):
             disabled=False,
             layout=widgets.Layout(width=widget_width)
         )
+        
+        edge_only_load = widgets.Dropdown(
+            options=['TRUE', 'FALSE'],
+            value=str(args.edge_only_load).upper(),
+            disabled=False,
+            layout=widgets.Layout(width=widget_width)
+        )
 
         # Create a series of HBox containers that will hold the widgets and labels
         # that make up the %load form. Some of the labels and widgets are created
@@ -2347,6 +2356,13 @@ class Graph(Magics):
                                                                 justify_content="flex-end"))
 
         poll_status_hbox = widgets.HBox([poll_status_label, poll_status])
+        
+        edge_only_load_label = widgets.Label('Edge Only load:',
+                                          layout=widgets.Layout(width=label_width,
+                                                                display="flex",
+                                                                justify_content="flex-end"))
+
+        edge_only_load_hbox = widgets.HBox([edge_only_load_label, edge_only_load])
 
         def update_edge_ids_options(change):
             if change.new.lower() == FORMAT_OPENCYPHER:
@@ -2399,7 +2415,7 @@ class Graph(Magics):
         # load arguments for Neptune bulk load
         bulk_load_boxes = [arn_hbox, mode_hbox, parallelism_hbox, cardinality_hbox,
                            queue_hbox, dep_hbox, ids_hbox, allow_empty_strings_hbox,
-                           named_graph_uri_hbox, base_uri_hbox, poll_status_hbox]
+                           named_graph_uri_hbox, base_uri_hbox, poll_status_hbox, edge_only_load_hbox]
         submit_load_boxes = [button, output]
 
         if load_type == 'incremental':
@@ -2418,6 +2434,7 @@ class Graph(Magics):
             base_uri_hbox.children = (base_uri_hbox_label, base_uri,)
             dep_hbox.children = (dep_hbox_label, dependencies,)
             concurrency_hbox.children = (concurrency_hbox_label, concurrency,)
+            edge_only_load_hbox.children = (edge_only_load_label, edge_only_load,)
 
             validated = True
             validation_label_style = DescriptionStyle(color='red')
@@ -2473,7 +2490,8 @@ class Graph(Magics):
                         'parallelism': parallelism.value,
                         'updateSingleCardinalityProperties': update_single_cardinality.value,
                         'queueRequest': queue_request.value,
-                        'parserConfiguration': {}
+                        'parserConfiguration': {},
+                        'edgeOnlyLoad': edge_only_load.value
                     }
 
                     if dependencies:
@@ -2508,6 +2526,7 @@ class Graph(Magics):
                 named_graph_uri_hbox.close()
                 base_uri_hbox.close()
                 concurrency_hbox.close()
+                edge_only_load_hbox.close()
                 button.close()
 
                 load_submit_status_output = widgets.Output()
