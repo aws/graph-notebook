@@ -2096,7 +2096,7 @@ class Graph(Magics):
                             help='Load empty strings found in node and edge property values.')
         parser.add_argument('-n', '--nopoll', action='store_true', default=False)
         parser.add_argument('--edge-only-load', action='store_true', default=False, 
-                            help='Load the graph edges directly')
+                            help='Assume there are only edge files present - do not scan for vertex files before loading edge files.')
 
         args = parser.parse_args(line.split())
         button = widgets.Button(description="Submit")
