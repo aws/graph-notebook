@@ -19,9 +19,6 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 from ipyfilechooser import FileChooser
 from enum import Enum
 from copy import copy
@@ -3548,9 +3545,10 @@ class Graph(Magics):
         with main_output:
             print(message)
 
-    def handle_opencypher_query(self, line, cell, local_ns):
+    def handle_opencypher_query(self, line, cell, local_ns, return_tabs=False):
         """
-        This method in its own handler so that the magics %%opencypher and %%oc can both call it
+        This method in its own handler so that the magics %%opencypher and %%oc can both call it.
+        return_tabs: If True, return the titles and children lists instead of displaying the tab (which are later displayed by the caller function).
         """
         parser = argparse.ArgumentParser()
         parser.add_argument('-pc', '--plan-cache', type=str.lower, default='auto',
@@ -3773,7 +3771,8 @@ class Graph(Magics):
 
             for i in range(len(titles)):
                 tab.set_title(i, titles[i])
-            display(tab)
+            if not return_tabs:
+                display(tab)
 
             with metadata_output:
                 display(HTML(oc_metadata.to_html()))
@@ -3850,6 +3849,9 @@ class Graph(Magics):
             stored_results = res
 
         store_to_ns(args.store_to, stored_results, local_ns)
+
+        if return_tabs:
+            return {'titles': titles, 'children': children}
 
     def handle_opencypher_status(self, line, local_ns):
         """
@@ -3944,8 +3946,6 @@ class Graph(Magics):
     # > %degreeDistribution --traversalDirection inbound
     # > %degreeDistribution --traversalDirection inbound --vertexLabels airport country
 
-    # TODO: Error handling
-
     @line_magic
     @needs_local_scope
     @display_exceptions
@@ -4036,10 +4036,11 @@ class Graph(Magics):
         )
 
         submit_button = widgets.Button(description="Submit")
+        status_output = widgets.Output()
         output = widgets.Output()
-        
+
         # Display widgets
-        display(td_dropdown, vertex_labels_select, edge_labels_select, submit_button, output)
+        display(td_dropdown, vertex_labels_select, edge_labels_select, submit_button, status_output, output)
         
         def on_button_clicked(b):
             # Get the selected parameters
@@ -4049,287 +4050,441 @@ class Graph(Magics):
 
             # Clear the output widget before displaying new content
             output.clear_output(wait=True)
-            
+            status_output.clear_output(wait=True)
+
             # Call the function with the selected parameters
+            with status_output:
+                display_html(HTML(loading_wheel_html))               
+            
             with output:
-                res = self.execute_degree_distribution_query(td, vlabels, elabels, local_ns)
-                
-                # Retrieve the distribution
-                pairs = np.array(res['results'][0]['output']['distribution'])
-                keys = pairs[:,0]
-                values = pairs[:,1]
+                try:
+                    tabs_data = self.execute_degree_distribution_query(td, vlabels, elabels, local_ns)            
+                    res = local_ns['js']
 
-                # Retrieve some statistics
-                max_deg = res['results'][0]['output']['statistics']['maxDeg']
-                median_deg = res['results'][0]['output']['statistics']['p50']
-                mean_deg = res['results'][0]['output']['statistics']['mean']
+                    # Get the titles and children
+                    titles = tabs_data['titles']
+                    children = tabs_data['children']
 
-                # Create the interactive visualization
-                self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg)
+                    # Clear the wheel display
+                    status_output.close()
+
+                    
+                    # Plot is the first tab
+                    plot_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    titles.insert(0, 'Plot')
+                    children.insert(0, plot_output)
+
+                    # Retrieve the distribution
+                    pairs = np.array(res['results'][0]['output']['distribution'])
+                    keys = pairs[:,0]
+                    values = pairs[:,1]
+
+                    # Retrieve some statistics
+                    max_deg = res['results'][0]['output']['statistics']['maxDeg']
+                    median_deg = res['results'][0]['output']['statistics']['p50']
+                    mean_deg = res['results'][0]['output']['statistics']['mean']
+
+                    # Create the interactive visualization
+                    with plot_output:
+                        self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg)
+
+                    # Set up the tab widget                                       
+                    tab = widgets.Tab()
+                    tab.children = children
+                    for i, title in enumerate(titles):
+                        tab.set_title(i, title)
+                    
+                    display(tab)
+                except KeyError as e:
+                    print(f"Missing expected data in query results: {e}")
+                except IndexError as e:
+                    print(f"Unexpected result format: {e}")
+                except Exception as e:
+                    print(f"Error processing degree distribution: {e}")
         
         submit_button.on_click(on_button_clicked)
 
     def execute_degree_distribution_query (self, td, vlabels, elabels, local_ns):
-        query_parts = [f'traversalDirection: "{td}"']
-        
-        if vlabels:
-            vertex_str = ", ".join([f'"{v}"' for v in vlabels])
-            query_parts.append(f'vertexLabels: [{vertex_str}]')
+        try:
+            query_parts = [f'traversalDirection: "{td}"']
             
-        if elabels:
-            edge_str = ", ".join([f'"{e}"' for e in elabels])
-            query_parts.append(f'edgeLabels: [{edge_str}]')
-            
-        # Construct the query
-        line = "CALL neptune.algo.degreeDistribution({" + ", ".join(query_parts) + "}) YIELD output RETURN output"
+            if vlabels:
+                vertex_str = ", ".join([f'"{v}"' for v in vlabels])
+                query_parts.append(f'vertexLabels: [{vertex_str}]')
+                
+            if elabels:
+                edge_str = ", ".join([f'"{e}"' for e in elabels])
+                query_parts.append(f'edgeLabels: [{edge_str}]')
+                
+            # Construct the query
+            line = "CALL neptune.algo.degreeDistribution({" + ", ".join(query_parts) + "}) YIELD output RETURN output"
 
-        oc_rebuild_args = (f"{f'--store-to js --silent'}")
-        
-        self.handle_opencypher_query(oc_rebuild_args, line, local_ns)
-        
-        return local_ns['js']
+            # oc_rebuild_args = (f"{f'--store-to js --silent'}")
+            oc_rebuild_args = (f"{f'--store-to js'}")
+            tabs_data = self.handle_opencypher_query(oc_rebuild_args, line, local_ns, True)
 
+            if 'js' not in local_ns:
+               raise ValueError("Query execution failed to store results")
+            return tabs_data
+        except Exception as e:
+            print(f"Error executing degree distribution query: {e}")
+            return None
+        
+
+    def suggest_degree_distribution_params (self, n, min_nonzero_count, max_count, min_deg, max_deg):
+
+        degree_spread = max_deg / min_deg
+        count_spread = max_count / min_nonzero_count
+
+        # X-axis scale decision
+        if degree_spread >= 100 and n > 1000:
+            x_scale = 'Log'
+            bin_type = 'Logarithmic'
+            initial_bin_width = (np.log10(max_deg) - np.log10(min_deg)) / 20
+        else:
+            x_scale = 'Linear'
+            bin_type = 'Linear'
+            initial_bin_width = (max_deg - min_deg) / 20 if max_deg - min_deg > 0 else 1
+
+        # Y-axis scale decision
+        if count_spread >= 50 and n > 1000:
+            y_scale = 'Log'
+        else:
+            y_scale = 'Linear'
+
+        # Small graph override
+        if n <= 1000:
+            x_scale = 'Linear'
+            y_scale = 'Linear'
+            bin_type = 'Linear'
+            initial_bin_width = 1
+
+        return {
+            'x_scale': x_scale,
+            'y_scale': y_scale,
+            'bin_type': bin_type,
+            'initial_bin_width': initial_bin_width
+        }
 
     def plot_interactive_degree_distribution(self, unique_degrees, counts, max_deg, median_deg, mean_deg):
-
         min_deg = 0
+        try:
+            if unique_degrees is None or counts is None or len(unique_degrees) == 0:
+                print("No data available to visualize")
+                return
 
-        def update_plot(scale_type, bin_type, bin_width, y_max, x_range, show_mindeg, show_maxdeg):
-            # Start timing
-            start_time = time.time()
+            max_count = max(counts)
+            min_deg = min(unique_degrees)
             
-            alpha = 1
-            plt.clf()
-                        
-            # Get zero degree count
-            zero_idx = np.where(unique_degrees == 0)[0]
-            zero_degree_count = counts[zero_idx[0]] if len(zero_idx) > 0 else 0
-
-            isolateds_exist = zero_degree_count > 0
-            # Get non-zero degrees and counts
-            mask = unique_degrees > 0
-            filtered_degrees = unique_degrees[mask]
-            filtered_counts = counts[mask]
+            # Scale widget, four options
+            scale_widget = widgets.Dropdown(
+                options=['Linear-Linear', 'Log-Log', 'Log(x)-Linear(y)', 'Linear(x)-Log(y)'],
+                value='Linear-Linear',
+                description='Scale:'
+            )
             
-            # Obtain the minimum non-zero degree, unless it's all zero degrees
-            if len(filtered_degrees) == 0:
-                min_deg = 0
-            else:
-                min_deg = np.min(filtered_degrees)                
+            # Binning widget, three options
+            bin_widget = widgets.Dropdown(
+                options=['Raw', 'Linear', 'Logarithmic'],
+                value='Linear',
+                description='Binning:'
+            )
 
-            n_bins = 1
-            # Create histogram only if there are non-zero degree nodes
-            if len(filtered_degrees) > 0:
-                if bin_type != 'Raw':
-                    # Arrange the bins for a given bin_width
-                    if bin_type == 'Linear':
-                        n_bins = max(1, int((max_deg - min_deg) / bin_width))
-                        bins = np.linspace(min_deg, max_deg, n_bins + 1)
-                    else:  # Logarithmic
-                        min_deg_log = np.log10(min_deg) if min_deg > 0 else 0
-                        max_deg_log = np.log10(max_deg) if max_deg > 0 else 1
-                        n_bins = max(1, int((max_deg_log - min_deg_log) / np.log10(bin_width+0.01)))
-                        bins = np.logspace(min_deg_log, max_deg_log, n_bins + 1)
-                    
-                    all_degrees = np.repeat(filtered_degrees, filtered_counts)
+            # Bin width widget, integer options in [1, 1+(max_deg/2)] interval 
+            bin_width_widget = widgets.FloatSlider(
+                min=1,
+                max=(max_deg - min_deg) // 5,
+                step=1,
+                value=1,
+                readout_format = 'd',
+                description='Bin width:',
+                tooltip=('For linear binning: actual width\n'
+                        'For log binning: multiplicative factor')
+            )
 
-                    plt.hist(all_degrees, bins=bins, density=False, alpha=alpha,
-                            histtype='bar', color='#000080')
+            # Upper limit for y-axis range, enables zooming (lower limit is always zero)
+            y_max_widget = widgets.IntSlider(
+                value=max_count * 1.1,
+                min=1,
+                max=max_count * 1.1,
+                step=1,
+                description='y-max:',
+            )
+
+            # Range slider for x-axis, enables zooming
+            x_range_widget = widgets.FloatRangeSlider(            
+                min=0,
+                max=max_deg * 1.1 + 5,
+                value=[0, max_deg * 1.1 + 5],
+                step=1,
+                description='x-axis range:',
+                disabled=False,
+                continuous_update=True,
+                readout=True,
+                readout_format='.0f',
+            )
+            
+            # Toggle switches for min/max degree lines
+            show_mindeg_widget = widgets.Checkbox(
+                value=True,
+                description='Show Min Degree Line',
+                disabled=False
+            )
+            
+            show_maxdeg_widget = widgets.Checkbox(
+                value=True,
+                description='Show Max Degree Line',
+                disabled=False
+            )
+
+            min_nonzero_count = min(counts[counts > 0])
+            min_nonzero_deg = min(unique_degrees[unique_degrees > 0])
+            params = self.suggest_degree_distribution_params (sum(counts), min_nonzero_count, max(counts), min_nonzero_deg, max_deg)
+
+            # Set scale_widget value based on params
+            if params['x_scale'] == 'Log' and params['y_scale'] == 'Log':
+                scale_widget.value = 'Log-Log'
+            elif params['x_scale'] == 'Log' and params['y_scale'] == 'Linear':
+                scale_widget.value = 'Log(x)-Linear(y)'
+            elif params['x_scale'] == 'Linear' and params['y_scale'] == 'Log':
+                scale_widget.value = 'Linear(x)-Log(y)'
+            else:  # Both linear
+                scale_widget.value = 'Linear-Linear'
+
+            # Set bin_widget and bin_widthz_widget based on params
+            bin_widget.value = params['bin_type']          
+            bin_width_widget.value = params['initial_bin_width']
+            if params['bin_type'] == 'Logarithmic':
+                bin_width_widget.step = 0.01
+                bin_width_widget.readout_format = '.2f'
+
+            def update_plot(scale_type, bin_type, bin_width, y_max, x_range, show_mindeg, show_maxdeg):
+                # Start timing
+                start_time = time.time()
+                
+                alpha = 1
+                plt.clf()
+                            
+                # Get zero degree count
+                zero_idx = np.where(unique_degrees == 0)[0]
+                zero_degree_count = counts[zero_idx[0]] if len(zero_idx) > 0 else 0
+
+                isolateds_exist = zero_degree_count > 0
+                # Get non-zero degrees and counts
+                mask = unique_degrees > 0
+                filtered_degrees = unique_degrees[mask]
+                filtered_counts = counts[mask]
+                
+                # Obtain the minimum non-zero degree, unless it's all zero degrees
+                if len(filtered_degrees) == 0:
+                    min_deg = 0
                 else:
-                    # For raw data, create bars at each unique degree
-                    plt.bar(filtered_degrees, filtered_counts, alpha=alpha,
-                        label='Raw', color='#000000')
-            
-            # Plot zero degree node count separately
-            if isolateds_exist:
-                # Use a special x position for zero degree nodes in log scale
-                zero_x_pos = 0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 0
-                plt.bar(zero_x_pos, zero_degree_count, color='red', 
-                    label='Isolated', alpha=alpha, width=0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 2)
+                    min_deg = np.min(filtered_degrees)                
 
-            plt.xlim(x_range[0], x_range[1])
+                n_bins = 1
 
-            if isolateds_exist:
+                # Create histogram only if there are non-zero degree nodes
+                if len(filtered_degrees) > 0:
+                    if bin_type != 'Raw':
+                        # Arrange the bins for a given bin_width
+                        if bin_type == 'Linear':
+                            n_bins = max(1, int((max_deg - min_deg) / bin_width))
+                            bins = np.linspace(min_deg, max_deg, n_bins + 1)
+                        else:  # Logarithmic
+                            min_deg_log = np.log10(min_deg) if min_deg > 0 else 0
+                            max_deg_log = np.log10(max_deg) if max_deg > 0 else 1
+                            n_bins = max(1, int((max_deg_log - min_deg_log) / np.log10(bin_width+0.01)))
+                            bins = np.logspace(min_deg_log, max_deg_log, n_bins + 1)
+                        
+                        # Efficient binning using digitize instead of histogram
+                        bin_indices = np.digitize(filtered_degrees, bins) - 1
+                        
+                        # Create histogram using prefix sum approach
+                        hist_counts = np.zeros(len(bins)-1)
+                        for i, count in zip(bin_indices, filtered_counts):
+                            if 0 <= i < len(hist_counts):  # Ensure index is valid
+                                hist_counts[i] += count
+                        
+                        bin_centers = bins[:-1]
+
+                        # If needed, downsample by averaging neighboring bins
+                        # if len(hist_counts) > 100000:
+                        #     downsample_factor = len(hist_counts) // 500 + 1
+                        #     downsampled_counts = np.zeros(len(hist_counts) // downsample_factor)
+                        #     downsampled_centers = np.zeros(len(hist_counts) // downsample_factor)
+                            
+                        #     for i in range(len(downsampled_counts)):
+                        #         start_idx = i * downsample_factor
+                        #         end_idx = min((i+1) * downsample_factor, len(hist_counts))
+                        #         downsampled_counts[i] = np.mean(hist_counts[start_idx:end_idx])
+                        #         downsampled_centers[i] = bin_centers[start_idx]
+                            
+                        #     plt.plot(downsampled_centers, downsampled_counts, 
+                        #             alpha=alpha, color='#000080', linewidth=1.5)
+
+                        # Create a step plot that looks like bars
+                        # Duplicate x values to create vertical lines
+                        x_steps = np.zeros(2 * len(bin_centers))
+                        x_steps[0::2] = bin_centers
+                        if bin_type == 'Linear':
+                            # For linear bins, use constant width
+                            x_steps[1::2] = bin_centers + (bins[1]-bins[0])
+                        else:  # Logarithmic
+                            # For logarithmic bins, use actual bin edges
+                            x_steps[1::2] = bins[1:]
+                        
+                        # Duplicate y values to create horizontal lines
+                        y_steps = np.zeros(2 * len(hist_counts))
+                        y_steps[0::2] = hist_counts
+                        y_steps[1::2] = hist_counts
+                        
+                        # Plot as a line with steps
+                        plt.plot(x_steps, y_steps, drawstyle='steps-pre', 
+                                alpha=alpha, color='#000080', linewidth=1.5)
+
+                        # Fill the area below the step plot
+                        plt.fill_between(x_steps, y_steps, 0, 
+                                            alpha=alpha*0.5, color='#000080', step='pre')
+
+                        # Costly way of plotting histogram:
+                        # all_degrees = np.repeat(filtered_degrees, filtered_counts)
+                        # plt.hist(all_degrees, bins=bins, density=False, alpha=alpha,
+                        #         histtype='bar', color='#000080')
+                    else:
+                        # For raw data, create bars at each unique degree
+                        plt.bar(filtered_degrees, filtered_counts, alpha=alpha,
+                            label='Raw', color='#000000')
+
+                # Plot zero degree node count separately
+                if isolateds_exist:
+                    # Use a special x position for zero degree nodes in log scale
+                    zero_x_pos = 0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 0
+                    plt.bar(zero_x_pos, zero_degree_count, color='red', 
+                        label='Isolated', alpha=alpha, width=0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 2)
+
                 plt.xlim(x_range[0], x_range[1])
 
-            # Set scales based on selection
-            if scale_type == 'Log-Log':
-                plt.xscale('log')
-                plt.yscale('log')
                 if isolateds_exist:
-                    plt.xlim(0.05, x_range[1])
-                else:
-                    plt.xlim(x_range[0]+0.05, x_range[1])
+                    plt.xlim(max(x_range[0], 0.05), x_range[1])
 
-            elif scale_type == 'Log(x)-Linear(y)':
-                plt.xscale('log')
-                if isolateds_exist:
-                    plt.xlim(0.05, x_range[1])
-                else:
-                    plt.xlim(x_range[0]+0.05, x_range[1])
-            elif scale_type == 'Linear(x)-Log(y)':
-                plt.yscale('log')
-            
-            plt.gca().set_ylim(top=y_max)
-            
-            # Add vertical dashed lines for min and max degree, if enabled
-            if show_mindeg and min_deg > 0:
-                plt.axvline(x=min_deg, color='darkgreen', linestyle='--', linewidth=2, label=f'Min non-zero degree: {min_deg}')
-            
-            if show_maxdeg:
-                plt.axvline(x=max_deg, color='darkred', linestyle='--', linewidth=2, label=f'Max degree: {max_deg}')
+                # Set scales based on selection
+                if scale_type == 'Log-Log':
+                    plt.xscale('log')
+                    plt.yscale('log')
+                    if isolateds_exist:
+                        plt.xlim(max(x_range[0], 0.05), x_range[1])
+                    else:
+                        plt.xlim(x_range[0]+0.05, x_range[1])
+
+                elif scale_type == 'Log(x)-Linear(y)':
+                    plt.xscale('log')
+                    if isolateds_exist:
+                        plt.xlim(max(x_range[0], 0.05), x_range[1])
+                    else:
+                        plt.xlim(x_range[0]+0.05, x_range[1])
+                elif scale_type == 'Linear(x)-Log(y)':
+                    plt.yscale('log')
+
+                plt.gca().set_ylim(top=y_max)
+                            
+                # Add vertical dashed lines for min and max degree, if enabled
+                if show_mindeg and min_deg > 0:
+                    plt.axvline(x=min_deg, color='darkgreen', linestyle='--', linewidth=2, label=f'Min non-zero degree: {min_deg}')
                 
-            plt.grid(True, which="both", ls="-", alpha=0.2)
-            plt.xlabel('Degree')
-            plt.ylabel('Number of nodes')
-            plt.legend()   
-                
-            plt.title(f'Degree Distribution')
+                if show_maxdeg:
+                    plt.axvline(x=max_deg, color='darkred', linestyle='--', linewidth=2, label=f'Max degree: {max_deg}')
 
-            # End timing and display
-            end_time = time.time()
-            runtime = end_time - start_time
-                        
-            # Update statistics
-            with stats_output:
-                stats_output.clear_output(wait=True)
-                total_nodes = sum(counts)
-                total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
-                avg_degree = sum(d * c for d, c in zip(unique_degrees, counts)) / total_nodes
-                
-                print(f"Render time: {runtime:.3f} seconds")
-                print(f"--------------------")
-
-                print(f"Number of nodes: {total_nodes}")
-                print(f"Number of edges: {total_edges}")
-                print(f"Number of isolated nodes: {zero_degree_count}")
-                print(f"Average degree: {mean_deg:.2f}")
-                print(f"Median degree: {median_deg:.2f}")
-                print(f"Max degree: {max_deg}")
-                if min_deg > 0:
-                    print(f"Min non-zero degree: {min_deg}")            
-                if bin_type != 'Raw':
-                    print(f"Number of bins: {n_bins}")
-        
-        
-        max_count = np.max(counts)
-        
-        # Scale widget, four options
-        scale_widget = widgets.Dropdown(
-            options=['Linear-Linear', 'Log-Log', 'Log(x)-Linear(y)', 'Linear(x)-Log(y)'],
-            value='Linear-Linear',
-            description='Scale:'
-        )
-        
-        # Binning widget, three options
-        bin_widget = widgets.Dropdown(
-            options=['Raw', 'Linear', 'Logarithmic'],
-            value='Linear',
-            description='Binning:'
-        )
-        
-        # Define a function to update bin_width_widget based on bin_type
-        def update_bin_width_widget(change):
-            if change['new'] == 'Logarithmic':
-                # For logarithmic binning, use a FloatSlider with smaller values
-                bin_width_widget.min = 1.00
-                bin_width_widget.max = 10.00
-                bin_width_widget.step = 0.01
-                bin_width_widget.value = 1.00
-                bin_width_widget.readout_format = '.2f'
-                bin_width_widget.disabled = False
-            elif change['new'] == 'Raw':
-                # For raw binning, disable the widget
-                bin_width_widget.value = 1
-                bin_width_widget.disabled = True
-            else:
-                # For linear binning, use integer values
-                bin_width_widget.min = 1
-                bin_width_widget.max = (max_deg+2)/10
-                bin_width_widget.step = 1
-                bin_width_widget.value = 1
-                bin_width_widget.readout_format = 'd'
-                bin_width_widget.disabled = False
-
-        def update_y_max_widget(change):
-            if bin_widget.value == 'Raw':
-                # For raw data, use the original max count
-                y_max_widget.max = max_count * 1.1
-                y_max_widget.value = max_count * 1.1
-            elif bin_widget.value == 'Linear':
-                y_max_widget.max = max_count * bin_width_widget.value * 0.5
-                y_max_widget.value = max_count * bin_width_widget.value * 0.5
-            else: # 'Logarithmic'
-                y_max_widget.max = max_count * (10 ** bin_width_widget.value) * 0.5
-                y_max_widget.value = max_count * (10 ** bin_width_widget.value) * 0.5
+                plt.grid(True, which="both", ls="-", alpha=0.2)
+                plt.xlabel('Degree')
+                plt.ylabel('Number of nodes')
+                plt.legend()   
                     
-        # Bin width widget, integer options in [1, 1+(max_deg/2)] interval 
-        bin_width_widget = widgets.FloatSlider(
-            value=1,
-            min=1,
-            max=(max_deg+2)/10,
-            step=1,
-            description='Bin width:',
-            tooltip=('For linear binning: actual width\n'
-                    'For log binning: multiplicative factor')
-        )
+                plt.title(f'Degree Distribution')
 
-        # Observe changes to bin_width_widget and bin_widget
-        bin_width_widget.observe(update_y_max_widget, names='value')
-        bin_widget.observe(update_y_max_widget, names='value')
+                # End timing and display
+                end_time = time.time()
+                runtime = end_time - start_time
 
-        # Upper limit for y-axis range, enables zooming (lower limit is always zero)
-        y_max_widget = widgets.IntSlider(
-            value=max_count * 1.1,
-            min=1,
-            max=max_count * 1.1,
-            step=1,
-            description='y-max:',
-        )
+                # Update statistics
+                with stats_output:
+                    stats_output.clear_output(wait=True)
+                    total_nodes = sum(counts)
+                    total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
+                    print(f"Render time: {runtime:.3f} seconds passed")
+                    print(f"Number of nodes: {total_nodes:,}")
+                    print(f"Number of edges: {total_edges:,}")
+                    print(f"Number of isolated nodes: {zero_degree_count:,}")
+                    print(f"Average degree: {mean_deg:.2f}")
+                    print(f"Median degree: {median_deg:.2f}")
+                    print(f"Max degree: {max_deg:,}")
+                    if min_deg > 0:
+                        print(f"Min non-zero degree: {min_deg:,}")            
+                    if bin_type != 'Raw':
+                        print(f"Number of bins: {n_bins:,}")
+        
+            max_count = np.max(counts)
+            total_nodes = sum(counts) 
+            
+            # Define a function to update bin_width_widget based on bin_type
+            def update_bin_width_widget(change):
+                if change['new'] == 'Logarithmic':
+                    # For logarithmic binning, use a FloatSlider with smaller values
+                    bin_width_widget.value = 1.00
+                    bin_width_widget.min = 1.00
+                    bin_width_widget.max = (np.log10(max_deg) - np.log10(min_deg+0.01)) / 2
+                    bin_width_widget.step = 0.01                    
+                    bin_width_widget.readout_format = '.2f'
+                    bin_width_widget.disabled = False
+                elif change['new'] == 'Raw':
+                    # For raw binning, disable the widget
+                    bin_width_widget.value = 1
+                    bin_width_widget.readout_format = 'd'
+                    bin_width_widget.disabled = True
+                elif change['new'] == 'Linear':
+                    # For linear binning, use integer values
+                    bin_width_widget.value = 1
+                    bin_width_widget.min = 1
+                    bin_width_widget.max = (max_deg - min_deg) // 5
+                    bin_width_widget.step = 1                    
+                    bin_width_widget.readout_format = 'd'
+                    bin_width_widget.disabled = False
 
-        # Range slider for x-axis, enables zooming
-        x_range_widget = widgets.FloatRangeSlider(            
-            min=0,
-            max=max_deg * 1.1 + 5,
-            value=[0, max_deg * 1.1 + 5],
-            step=1,
-            description='x-axis range:',
-            disabled=False,
-            continuous_update=True,
-            readout=True,
-            readout_format='.0f',
-        )
-        
-        # Toggle switches for min/max degree lines
-        show_mindeg_widget = widgets.Checkbox(
-            value=True,
-            description='Show Min Degree Line',
-            disabled=False
-        )
-        
-        show_maxdeg_widget = widgets.Checkbox(
-            value=True,
-            description='Show Max Degree Line',
-            disabled=False
-        )
-        
-        # Output widget for statistics
-        stats_output = widgets.Output()
+            def update_y_max_widget(change):                
+                if bin_widget.value == 'Raw':
+                    # For raw data, use the original max count
+                    y_max_widget.max = y_max_widget.value = 1.1 * max_count
+                elif bin_widget.value == 'Linear':
+                    y_max_widget.max = y_max_widget.value = 1.1 * min (total_nodes, max_count * (bin_width_widget.value ** 0.85))
+                elif bin_widget.value == 'Logarithmic':
+                    y_max_widget.max = y_max_widget.value = 1.1 * min (total_nodes, max_count * (10 ** (bin_width_widget.value ** 0.25)))
 
-        # Interactive plot
-        interactive_plot = widgets.interactive(
-            update_plot,
-            scale_type=scale_widget,
-            bin_type=bin_widget,
-            bin_width=bin_width_widget,
-            y_max=y_max_widget,
-            x_range=x_range_widget,
-            show_mindeg=show_mindeg_widget,
-            show_maxdeg=show_maxdeg_widget
-        )
-        
-        # Vertical box layout
-        vbox = widgets.VBox([interactive_plot, stats_output])
-        
-        # Display the interactive plot and stats
-        display(vbox)
+            # Observe changes to bin_width_widget and bin_widget
+            bin_width_widget.observe(update_y_max_widget, names='value')
+            bin_widget.observe(update_y_max_widget, names='value')
+
+            bin_width_widget.observe(update_bin_width_widget, names='value')
+            bin_widget.observe(update_bin_width_widget, names='value')
+    
+            # Output widget for statistics
+            stats_output = widgets.Output()
+
+            # Interactive plot
+            interactive_plot = widgets.interactive(
+                update_plot,
+                scale_type=scale_widget,
+                bin_type=bin_widget,
+                bin_width=bin_width_widget,
+                y_max=y_max_widget,
+                x_range=x_range_widget,
+                show_mindeg=show_mindeg_widget,
+                show_maxdeg=show_maxdeg_widget
+            )
+            
+            # Vertical box layout
+            vbox = widgets.VBox([interactive_plot, stats_output])
+            
+            # Display the interactive plot and stats
+            display(vbox)
+     
+        except Exception as e:
+            print(f"Error creating visualization: {e}")
