@@ -4088,8 +4088,22 @@ class Graph(Magics):
                     with plot_output:
                         self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg)
 
+                    # Define a larger layout
+                    large_layout = widgets.Layout(
+                        width='100%',
+                        height='1000px',  # Increase the height as needed
+                        overflow='auto'
+                    )
+
+                    # Apply to the tab widget
+                    tab = widgets.Tab(layout=large_layout)
+
+                    # Apply to each output widget
+                    for i in range(len(children)):
+                        children[i].layout = large_layout
+
+                    # Apply to each output widget
                     # Set up the tab widget                                       
-                    tab = widgets.Tab()
                     tab.children = children
                     for i, title in enumerate(titles):
                         tab.set_title(i, title)
