@@ -174,6 +174,7 @@ OPENCYPHER_STATUS_STATE_MODES = ['ALL', 'RUNNING', 'WAITING', 'CANCELLING']
 
 GRAPH_PG_INFO_METRICS = {'numVertices', 'numEdges', 'numVertexProperties', 'numEdgeProperties'}
 
+TRAVERSAL_DIRECTIONS = ['both', 'inbound', 'outbound']
 
 def is_allowed_neptune_host(hostname: str, host_allowlist: list):
     for host_snippet in host_allowlist:
