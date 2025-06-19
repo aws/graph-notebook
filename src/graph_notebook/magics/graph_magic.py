@@ -17,7 +17,10 @@ import ast
 import re
 
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from IPython.display import display
+
 
 from ipyfilechooser import FileChooser
 from enum import Enum
@@ -3946,6 +3949,7 @@ class Graph(Magics):
     # > %degreeDistribution --traversalDirection inbound
     # > %degreeDistribution --traversalDirection inbound --vertexLabels airport country
 
+    # TODO: exit if graph is empty (no nodes)
     @line_magic
     @needs_local_scope
     @display_exceptions
@@ -3989,10 +3993,6 @@ class Graph(Magics):
                             help="The edge labels for which the degree distribution is shown. If not supplied, "
                                  "we will default to using all the edge labels.")
         
-
-        # TODO: Additional parameter for saving the visualization?
-        # parser.add_argument('--export-to', type=str, default='',
-        #                     help='Export the degree distribution results to the provided file path.')
         
         args = parser.parse_args(line.split())
         
@@ -4091,7 +4091,7 @@ class Graph(Magics):
                     # Define a larger layout
                     large_layout = widgets.Layout(
                         width='100%',
-                        height='1000px',  # Increase the height as needed
+                        height='1200px',  # Increase the height as needed
                         overflow='auto'
                     )
 
@@ -4277,7 +4277,10 @@ class Graph(Magics):
                 start_time = time.time()
                 
                 alpha = 1
-                plt.clf()
+
+                fig = go.Figure()    
+                fig.data = []
+                fig.layout = go.Layout()
                             
                 # Get zero degree count
                 zero_idx = np.where(unique_degrees == 0)[0]
@@ -4321,21 +4324,6 @@ class Graph(Magics):
                         
                         bin_centers = bins[:-1]
 
-                        # If needed, downsample by averaging neighboring bins
-                        # if len(hist_counts) > 100000:
-                        #     downsample_factor = len(hist_counts) // 500 + 1
-                        #     downsampled_counts = np.zeros(len(hist_counts) // downsample_factor)
-                        #     downsampled_centers = np.zeros(len(hist_counts) // downsample_factor)
-                            
-                        #     for i in range(len(downsampled_counts)):
-                        #         start_idx = i * downsample_factor
-                        #         end_idx = min((i+1) * downsample_factor, len(hist_counts))
-                        #         downsampled_counts[i] = np.mean(hist_counts[start_idx:end_idx])
-                        #         downsampled_centers[i] = bin_centers[start_idx]
-                            
-                        #     plt.plot(downsampled_centers, downsampled_counts, 
-                        #             alpha=alpha, color='#000080', linewidth=1.5)
-
                         # Create a step plot that looks like bars
                         # Duplicate x values to create vertical lines
                         x_steps = np.zeros(2 * len(bin_centers))
@@ -4353,67 +4341,180 @@ class Graph(Magics):
                         y_steps[1::2] = hist_counts
                         
                         # Plot as a line with steps
-                        plt.plot(x_steps, y_steps, drawstyle='steps-pre', 
-                                alpha=alpha, color='#000080', linewidth=1.5)
+                        fig = go.Figure(data=go.Scatter(
+                            x=x_steps, 
+                            y=y_steps, 
+                            mode='lines', 
+                            line=dict(color='#000080', width=1.5, shape='hv'), 
+                            opacity=alpha,
+                            showlegend=False))
 
                         # Fill the area below the step plot
-                        plt.fill_between(x_steps, y_steps, 0, 
-                                            alpha=alpha*0.5, color='#000080', step='pre')
-
-                        # Costly way of plotting histogram:
-                        # all_degrees = np.repeat(filtered_degrees, filtered_counts)
-                        # plt.hist(all_degrees, bins=bins, density=False, alpha=alpha,
-                        #         histtype='bar', color='#000080')
+                        fig.add_trace(
+                            go.Scatter(
+                                x=x_steps,
+                                y=y_steps,
+                                mode='lines',
+                                line=dict(shape='hv', width=0),
+                                fill='tozeroy',
+                                fillcolor='rgba(0, 0, 128, ' + str(alpha*0.5) + ')',
+                                opacity=alpha,
+                                showlegend=False
+                            ))
                     else:
-                        # For raw data, create bars at each unique degree
-                        plt.bar(filtered_degrees, filtered_counts, alpha=alpha,
-                            label='Raw', color='#000000')
+                    # For raw data, create bars at each unique degree
+                        fig.add_trace(
+                            go.Bar(
+                                x=filtered_degrees,
+                                y=filtered_counts,
+                                name='Raw',
+                                marker_color='#000000',
+                                opacity=alpha,
+                                width=0.1,
+                            ))
 
                 # Plot zero degree node count separately
                 if isolateds_exist:
                     # Use a special x position for zero degree nodes in log scale
                     zero_x_pos = 0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 0
-                    plt.bar(zero_x_pos, zero_degree_count, color='red', 
-                        label='Isolated', alpha=alpha, width=0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 2)
+                    fig.add_trace(
+                        go.Bar(
+                            x=[zero_x_pos],
+                            y=[zero_degree_count],
+                            name='Isolated',
+                            marker_color='red',
+                            opacity=alpha,
+                            width=0.1,
+                        ))
 
-                plt.xlim(x_range[0], x_range[1])
+                fig.update_layout(
+                    # Size
+                    width=1200,
+                    height=600,
+                    # Margins
+                    margin=dict(
+                        l=80,    # left margin
+                        r=50,    # right margin
+                        b=80,    # bottom margin
+                        t=100,   # top margin
+                        pad=4    # padding
+                    ),
+                    xaxis=dict(
+                        showgrid=True,
+                        gridwidth=1,
+                        gridcolor='rgba(0,0,0,0.2)',
+                        minor=dict(
+                            tickmode='auto',
+                            tickcolor='gray',
+                            showgrid=True,
+                            gridwidth=1,
+                            gridcolor='lightgray',
+                            ticks=""
+                        )
+                    ),
+                    yaxis=dict(
+                        showgrid=True,
+                        gridwidth=1,
+                        gridcolor='rgba(0,0,0,0.2)',
+                    ),
+                    yaxis_range=[0.05, y_max],
+                    xaxis_title='Degree',
+                    yaxis_title='Number of nodes',
+                    title={
+                        'text': 'Degree Distribution',
+                        'x': 0.5,
+                        'xanchor': 'center',
+                        'yanchor': 'top'
+                    },    
+                    legend=dict(
+                        orientation="v",  # Horizontal orientation
+                        yanchor="auto", # Anchor legend to its bottom edge
+                        xanchor="auto",  # Anchor legend to its right edge
+                        x=1               # Position to the right of the plot
+                    )
+                )
+
+                x_min = x_range[0]
+                x_max = x_range[1]
 
                 if isolateds_exist:
-                    plt.xlim(max(x_range[0], 0.05), x_range[1])
+                    x_min = max(x_min, 0.05)
 
                 # Set scales based on selection
                 if scale_type == 'Log-Log':
-                    plt.xscale('log')
-                    plt.yscale('log')
+                    fig.update_layout(
+                        xaxis_type="log",  # Set x-axis to log scale
+                        yaxis_type="log",  # Set y-axis to log scale
+                        yaxis_range=[0.05, np.log10(y_max)],
+                        yaxis=dict(                        
+                            exponentformat='power',  # Use × 10ⁿ notation
+                            showexponent='all',
+                        ),
+                        xaxis=dict(                        
+                            exponentformat='power',  # Use × 10ⁿ notation
+                            showexponent='all',
+                        )
+                    )
+                    
                     if isolateds_exist:
-                        plt.xlim(max(x_range[0], 0.05), x_range[1])
+                        x_min = max(x_min, 0.05)
                     else:
-                        plt.xlim(x_range[0]+0.05, x_range[1])
-
+                        x_min = x_min+0.05
+                    x_min = np.log10(x_min)
+                    x_max = np.log10(x_max)
                 elif scale_type == 'Log(x)-Linear(y)':
-                    plt.xscale('log')
+                    fig.update_layout(
+                        xaxis_type="log",  # Set x-axis to log scale
+                        xaxis=dict(                        
+                            exponentformat='power',  # Use × 10ⁿ notation
+                            showexponent='all',
+                        )
+                    )
                     if isolateds_exist:
-                        plt.xlim(max(x_range[0], 0.05), x_range[1])
+                        x_min = max(x_min, 0.05)
                     else:
-                        plt.xlim(x_range[0]+0.05, x_range[1])
+                        x_min = x_min+0.05
+                    x_min = np.log10(x_min)
+                    x_max = np.log10(x_max)
                 elif scale_type == 'Linear(x)-Log(y)':
-                    plt.yscale('log')
+                    fig.update_layout(
+                        yaxis_type="log",  # Set y-axis to log scale
+                        yaxis_range=[0.05, np.log10(y_max)],
+                        yaxis=dict(                        
+                            exponentformat='power',  # Use × 10ⁿ notation
+                            showexponent='all',
+                        )
+                    )                   
 
-                plt.gca().set_ylim(top=y_max)
-                            
+                fig.update_layout(
+                    xaxis_range=[x_min, x_max]
+                )
+
+
                 # Add vertical dashed lines for min and max degree, if enabled
                 if show_mindeg and min_deg > 0:
-                    plt.axvline(x=min_deg, color='darkgreen', linestyle='--', linewidth=2, label=f'Min non-zero degree: {min_deg}')
-                
-                if show_maxdeg:
-                    plt.axvline(x=max_deg, color='darkred', linestyle='--', linewidth=2, label=f'Max degree: {max_deg}')
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[min_deg, min_deg],
+                            y=[0, y_max],
+                            mode='lines',
+                            line=dict(color="darkgreen", width=2, dash="dash"),
+                            name = f'Min non-zero degree:{min_deg}'
+                        )
+                    )
 
-                plt.grid(True, which="both", ls="-", alpha=0.2)
-                plt.xlabel('Degree')
-                plt.ylabel('Number of nodes')
-                plt.legend()   
-                    
-                plt.title(f'Degree Distribution')
+                if show_maxdeg:                    
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[max_deg, max_deg],
+                            y=[0, y_max],
+                            mode='lines',
+                            line=dict(color="darkred", width=2, dash="dash"),
+                            name = f'Max degree:{max_deg}'
+                        )
+                    )
+
+                fig.show()
 
                 # End timing and display
                 end_time = time.time()
@@ -4424,7 +4525,6 @@ class Graph(Magics):
                     stats_output.clear_output(wait=True)
                     total_nodes = sum(counts)
                     total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
-                    print(f"Render time: {runtime:.3f} seconds passed")
                     print(f"Number of nodes: {total_nodes:,}")
                     print(f"Number of edges: {total_edges:,}")
                     print(f"Number of isolated nodes: {zero_degree_count:,}")
@@ -4464,13 +4564,16 @@ class Graph(Magics):
                     bin_width_widget.disabled = False
 
             def update_y_max_widget(change):                
+                factor = 1
                 if bin_widget.value == 'Raw':
                     # For raw data, use the original max count
-                    y_max_widget.max = y_max_widget.value = 1.1 * max_count
+                    factor = max_count
                 elif bin_widget.value == 'Linear':
-                    y_max_widget.max = y_max_widget.value = 1.1 * min (total_nodes, max_count * (bin_width_widget.value ** 0.85))
+                    factor = min (total_nodes, max_count * (bin_width_widget.value ** 0.85))
                 elif bin_widget.value == 'Logarithmic':
-                    y_max_widget.max = y_max_widget.value = 1.1 * min (total_nodes, max_count * (10 ** (bin_width_widget.value ** 0.25)))
+                    factor = min (total_nodes, max_count * (10 ** (bin_width_widget.value ** 0.25)))
+                
+                y_max_widget.max = y_max_widget.value = 1.1 * factor
 
             # Observe changes to bin_width_widget and bin_widget
             bin_width_widget.observe(update_y_max_widget, names='value')
