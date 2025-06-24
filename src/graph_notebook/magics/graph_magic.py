@@ -2461,12 +2461,9 @@ class Graph(Magics):
                 }
 
                 if load_type == 'incremental':
-                    # Required since CALL neptune.load expects the format to be "gremlin_parquet".
-                    # Documented: https://quip-amazon.com/GFppA57aStrq/Findings-Parquet-bulk-load-neptune-graph
-                    format = 'gremlin_parquet' if source_format.value == FORMAT_PARQUET else source_format.value
                     incremental_load_kwargs = {
                         'source': source.value,
-                        'format': format,
+                        'format': source_format.value,
                         'concurrency': concurrency.value
                     }
                     kwargs.update(incremental_load_kwargs)
