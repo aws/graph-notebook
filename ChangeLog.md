@@ -3,6 +3,8 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Support edgeOnlyLoad parameter for neptune database bulk load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/750))
+- Support loading parquet format data for neptune analytics incremental load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/752))
 
 ## Release 5.0.1 (May 19, 2025)
 - Locked numba dependency to 0.60.0 to avoid numpy conflict ([Link to PR](https://github.com/aws/graph-notebook/pull/735))
