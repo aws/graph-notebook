@@ -73,7 +73,7 @@ ANALYTICS_LOAD_TYPES = ['incremental']
 VALID_COMMON_FORMATS = ['', FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE]
 
 # --------------
-# Parquet format is only supported for incremental loads, which are exclusively used with Neptune Analytics.
+# Currently, Parquet format is only supported for incremental loads, which are exclusively used with Neptune Analytics.
 # Bulk loads (used with Neptune DB) do not support the parquet format.
 # This distinction is handled in the load magic function when processing the format parameter.
 VALID_INCREMENTAL_FORMATS = VALID_COMMON_FORMATS + [FORMAT_PARQUET]
