@@ -53,6 +53,7 @@ logger = logging.getLogger('client')
 FORMAT_CSV = 'csv'
 FORMAT_OPENCYPHER = 'opencypher'
 FORMAT_NTRIPLE = 'ntriples'
+FORMAT_PARQUET = 'parquet'
 FORMAT_NQUADS = 'nquads'
 FORMAT_RDFXML = 'rdfxml'
 FORMAT_TURTLE = 'turtle'
@@ -69,8 +70,16 @@ MODE_AUTO = 'AUTO'
 LOAD_JOB_MODES = [MODE_RESUME, MODE_NEW, MODE_AUTO]
 DB_LOAD_TYPES = ['bulk']
 ANALYTICS_LOAD_TYPES = ['incremental']
-VALID_INCREMENTAL_FORMATS = ['', FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE]
-VALID_BULK_FORMATS = VALID_INCREMENTAL_FORMATS + [FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+VALID_COMMON_FORMATS = ['', FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE]
+
+# --------------
+# Currently, Parquet format is only supported for incremental loads, which are exclusively used with Neptune Analytics.
+# Bulk loads (used with Neptune DB) do not support the parquet format.
+# This distinction is handled in the load magic function when processing the format parameter.
+VALID_INCREMENTAL_FORMATS = VALID_COMMON_FORMATS + [FORMAT_PARQUET]
+VALID_BULK_FORMATS = VALID_COMMON_FORMATS + [FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+# --------------
+
 PARALLELISM_OPTIONS = [PARALLELISM_LOW, PARALLELISM_MEDIUM, PARALLELISM_HIGH, PARALLELISM_OVERSUBSCRIBE]
 LOADER_ACTION = 'loader'
 
