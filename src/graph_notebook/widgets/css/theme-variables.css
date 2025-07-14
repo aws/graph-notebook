@@ -1,0 +1,30 @@
+/**
+ * Theme variables for graph-notebook
+ * 
+ * Define custom CSS variables from the JupyterLabs' theme
+ */
+
+:root {
+  /* Base colors */
+  --bg-primary: var(--jp-layout-color1, white);
+  --bg-secondary: var(--jp-layout-color2, #f4f4f4);
+  --font-color: var(--jp-content-font-color1, black);
+  --border-color: var(--jp-border-color1, lightgrey);
+  --shadow-color: var(--jp-shadow-base-color, grey);
+  
+  /* Interactive elements */
+  --accent-color: var(--jp-brand-color1, #4c6b9e);
+  --accent-text-color: var(--jp-ui-inverse-font-color1, white);
+  
+  /* Table colors */
+  --table-row-odd: var(--jp-layout-color2, #f4f4f4);
+  --table-row-even: var(--jp-layout-color1, white);
+  
+  /* Menu icon stroke */
+  --icon-stroke: black;
+}
+
+body.jp-mod-dark,
+body[data-jp-theme-name="JupyterLab Dark"] {
+  --icon-stroke: white;
+}
