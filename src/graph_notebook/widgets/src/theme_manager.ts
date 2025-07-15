@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 /**
  * Theme manager for graph-notebook widgets
  * 
- * Detect and adapt to JupyterLab themes by applying CSS variables from the current Jupyterkab 
+ * Detect and adapt to JupyterLab themes by applying CSS variables from the current JupyterLab 
  * theme to widget elements.
  */
 
