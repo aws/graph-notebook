@@ -2493,7 +2493,7 @@ class Graph(Magics):
                         'parserConfiguration': {},
                     }
                     
-                    if source_format.value.lower() == FORMAT_CSV or source_format.value.lower() == FORMAT_PARQUET:
+                    if source_format.value.lower() == FORMAT_CSV:
                         bulk_load_kwargs['edgeOnlyLoad'] = edge_only_load.value
 
                     if dependencies:
