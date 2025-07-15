@@ -2491,8 +2491,10 @@ class Graph(Magics):
                         'updateSingleCardinalityProperties': update_single_cardinality.value,
                         'queueRequest': queue_request.value,
                         'parserConfiguration': {},
-                        'edgeOnlyLoad': edge_only_load.value
                     }
+                    
+                    if source_format.value.lower() == FORMAT_CSV or source_format.value.lower() == FORMAT_PARQUET:
+                        bulk_load_kwargs['edgeOnlyLoad'] = edge_only_load.value
 
                     if dependencies:
                         bulk_load_kwargs['dependencies'] = dependencies_list
@@ -2509,7 +2511,7 @@ class Graph(Magics):
                             bulk_load_kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                     kwargs.update(bulk_load_kwargs)
-
+                print(kwargs)
                 source_hbox.close()
                 source_format_hbox.close()
                 region_hbox.close()
