@@ -2493,7 +2493,7 @@ class Graph(Magics):
                         'parserConfiguration': {},
                     }
                     
-                    if source_format.value.lower() == FORMAT_CSV:
+                    if source_format.value.lower() == FORMAT_CSV or source_format.value.lower() == FORMAT_PARQUET:
                         bulk_load_kwargs['edgeOnlyLoad'] = edge_only_load.value
 
                     if dependencies:
@@ -2511,7 +2511,7 @@ class Graph(Magics):
                             bulk_load_kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                     kwargs.update(bulk_load_kwargs)
-
+                print(kwargs)
                 source_hbox.close()
                 source_format_hbox.close()
                 region_hbox.close()
