@@ -2511,7 +2511,7 @@ class Graph(Magics):
                             bulk_load_kwargs['parserConfiguration']['baseUri'] = base_uri.value
 
                     kwargs.update(bulk_load_kwargs)
-                print(kwargs)
+
                 source_hbox.close()
                 source_format_hbox.close()
                 region_hbox.close()
