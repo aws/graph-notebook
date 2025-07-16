@@ -1,3 +1,5 @@
+@import './theme-variables.css';
+
 .menu-div {
     position: absolute;
     top: 5px;
@@ -17,10 +19,10 @@ svg {
 
 
 .menu-action > button {
-    background: white;
+    background: var(--bg-primary);
     width: 35px;
     height: 35px;
-    border: 1px solid gray;
+    border: 1px solid var(--border-color);
     border-radius: 2px;
     pointer-events: all;
     top: 0;
@@ -28,7 +30,7 @@ svg {
 }
 
 .menu-action {
-    background: white;
+    background: var(--bg-primary);
     border: none;
     border-radius: 2px;
     display: inline;
@@ -37,7 +39,7 @@ svg {
 }
 
 .fullscreen {
-    background: white;
+    background: var(--bg-primary);
     position: fixed;
     top: 0;
     bottom: 0;
@@ -82,12 +84,12 @@ svg {
 }
 
 ::backdrop {
-    background-color: white;
+    background-color: var(--bg-primary);
 }
 
 .details {
     position: absolute !important;
-    background-color: white;
+    background-color: var(--bg-primary);
     text-align: center;
     border: none;
     visibility: visible;
@@ -97,14 +99,13 @@ svg {
     top: 100px;
     left: 100px;
     display: flex;
-
-    box-shadow: 3px 3px 3px 3px grey;
+    box-shadow: 3px 3px 3px 3px var(--shadow-color);
     overflow: hidden;
+    color: var(--font-color);
 }
 
 .active {
-    background-color: lightgrey !important;
-
+    background-color: var(--bg-secondary) !important;
     -webkit-transition: all .5s;
     -moz-transition: all .5s;
     -o-transition: all .5s;
@@ -119,10 +120,11 @@ td, th {
     border: none;
     text-align: left;
     padding: 8px;
+    color: var(--font-color);
 }
 
 tr:nth-child(odd) {
-    background-color: #f4f4f4;
+    background-color: var(--table-row-odd);
 }
 
 .collapsible {
@@ -163,14 +165,14 @@ tr:nth-child(odd) {
 .properties-content {
     border: none;
     transition: max-height 0.2s ease-out;
-    background-color: white;
+    background-color: var(--bg-primary);
     height: calc(100% - 80px);
     overflow: scroll;
+    color: var(--font-color);
 }
 
 .displayNone {
     display: none !important;
-
     width: 0;
 }
 
@@ -186,10 +188,13 @@ tr:nth-child(odd) {
     margin: auto auto auto 10px;
     overflow: hidden;
     width: 100%;
+    color: var(--font-color);
 }
 
 .details-container {
     width: 100%;
+    background-color: var(--bg-primary);
+    color: var(--font-color);
 }
 
 div.menu-action.active::after {
@@ -205,10 +210,10 @@ div.menu-action.active::after {
 }
 
 .vis-tooltip {
-    background: white !important;
+    background: var(--bg-primary) !important;
     font-size: 1em !important;
     font-family: "Courier New", Courier, monospace !important;
-
+    color: var(--font-color) !important;
     -webkit-marquee: auto medium infinite scroll normal !important;
     overflow-x: -webkit-marquee !important;
 }
@@ -221,13 +226,13 @@ div.menu-action.active::after {
     height: 35px;
     width: 100px;
     border-radius: 2px;
-    color: black;
+    color: var(--font-color);
+    background-color: var(--bg-primary);
     font-size: 15px;
     pointer-events: all;
-    border: 1px solid gray;
+    border: 1px solid var(--border-color);
     text-align: left;
     vertical-align: bottom;
-
     -webkit-transition: all .5s;
     -moz-transition: all .5s;
     -o-transition: all .5s;
@@ -242,23 +247,23 @@ button.active::after {
     display: inline-block;
     margin: auto auto auto 10px;
     font-weight: bold;
-
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--font-color);
 }
-
 
 .details-header {
     padding-top: 5px;
     padding-bottom: 5px;
     cursor: move;
-    background-color: white;
+    background-color: var(--bg-primary);
     margin: auto;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
-    border-bottom: 1px solid lightgrey;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--font-color);
 }
 
 .close-button {
@@ -267,27 +272,27 @@ button.active::after {
     background: inherit;
     border: none;
     cursor: pointer !important;
+    color: var(--font-color);
 }
 
 .details-footer {
-    background-color: white;
+    background-color: var(--bg-primary);
     display: flex;
     justify-content: flex-end;
     flex-direction: row;
-    border-top: 1px solid lightgrey;
+    border-top: 1px solid var(--border-color);
     height: 40px;
 }
 
 .details-footer-button {
-    background: #4c6b9e;
-    color: white;
+    background: var(--accent-color);
+    color: var(--accent-text-color);
     height: 70%;
     float: right;
     border-radius: 2px;
     border: none;
     margin-right: 20px;
     margin-top: 10px;
-
 }
 
 .right-actions {
