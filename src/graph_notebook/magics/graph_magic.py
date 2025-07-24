@@ -2491,8 +2491,10 @@ class Graph(Magics):
                         'updateSingleCardinalityProperties': update_single_cardinality.value,
                         'queueRequest': queue_request.value,
                         'parserConfiguration': {},
-                        'edgeOnlyLoad': edge_only_load.value
                     }
+                    
+                    if source_format.value.lower() == FORMAT_CSV:
+                        bulk_load_kwargs['edgeOnlyLoad'] = edge_only_load.value
 
                     if dependencies:
                         bulk_load_kwargs['dependencies'] = dependencies_list
