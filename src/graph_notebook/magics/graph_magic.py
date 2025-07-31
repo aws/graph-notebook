@@ -15,6 +15,8 @@ import os
 import uuid
 import ast
 import re
+import sys
+import math
 
 import numpy as np
 import plotly.graph_objects as go
@@ -3933,10 +3935,6 @@ class Graph(Magics):
             if not args.silent:
                 print(json.dumps(js, indent=2))
 
-
-
-
-
     # %degreeDistribution magic command.
     # It obtains the degree distribution of a graph in the form of a visual histogram in notebook. Histogram simply
     # shows the number of vertices with a given degree, where degree is shown on the x-axis and the count on y-axis.
@@ -3949,7 +3947,6 @@ class Graph(Magics):
     # > %degreeDistribution --traversalDirection inbound
     # > %degreeDistribution --traversalDirection inbound --vertexLabels airport country
 
-    # TODO: exit if graph is empty (no nodes)
     @line_magic
     @needs_local_scope
     @display_exceptions
@@ -4003,7 +4000,7 @@ class Graph(Magics):
 
         td_dropdown = widgets.Dropdown(
             options=TRAVERSAL_DIRECTIONS,
-            description='Traversal direction:',
+            description='Degree type:',
             disabled=False,
             style=SEED_WIDGET_STYLE,
             value = td_val
@@ -4059,62 +4056,62 @@ class Graph(Magics):
             with output:
                 try:
                     tabs_data = self.execute_degree_distribution_query(td, vlabels, elabels, local_ns)            
-                    res = local_ns['js']
-
-                    # Get the titles and children
-                    titles = tabs_data['titles']
-                    children = tabs_data['children']
-
-                    # Clear the wheel display
-                    status_output.close()
-
-                    
-                    # Plot is the first tab
-                    plot_output = widgets.Output(layout=DEFAULT_LAYOUT)
-                    titles.insert(0, 'Plot')
-                    children.insert(0, plot_output)
-
-                    # Retrieve the distribution
-                    pairs = np.array(res['results'][0]['output']['distribution'])
-                    keys = pairs[:,0]
-                    values = pairs[:,1]
-
-                    # Retrieve some statistics
-                    max_deg = res['results'][0]['output']['statistics']['maxDeg']
-                    median_deg = res['results'][0]['output']['statistics']['p50']
-                    mean_deg = res['results'][0]['output']['statistics']['mean']
-
-                    # Create the interactive visualization
-                    with plot_output:
-                        self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg)
-
-                    # Define a larger layout
-                    large_layout = widgets.Layout(
-                        width='100%',
-                        height='1200px',  # Increase the height as needed
-                        overflow='auto'
-                    )
-
-                    # Apply to the tab widget
-                    tab = widgets.Tab(layout=large_layout)
-
-                    # Apply to each output widget
-                    for i in range(len(children)):
-                        children[i].layout = large_layout
-
-                    # Apply to each output widget
-                    # Set up the tab widget                                       
-                    tab.children = children
-                    for i, title in enumerate(titles):
-                        tab.set_title(i, title)
-                    
-                    display(tab)
                 except KeyError as e:
                     print(f"Missing expected data in query results: {e}")
                 except IndexError as e:
                     print(f"Unexpected result format: {e}")
                 except Exception as e:
-                    print(f"Error processing degree distribution: {e}")
+                    print(f"Error processing degree distribution: {e}")    
+
+                res = local_ns['js']
+
+                # Clear the wheel display
+                status_output.clear_output()
+                
+                # Retrieve the distribution
+                pairs = np.array(res['results'][0]['output']['distribution'])
+                keys = pairs[:,0]
+                values = pairs[:,1]
+
+                # Retrieve some statistics
+                max_deg = res['results'][0]['output']['statistics']['maxDeg']
+                median_deg = res['results'][0]['output']['statistics']['p50']
+                mean_deg = res['results'][0]['output']['statistics']['mean']
+
+                # Get the titles and children
+                titles = tabs_data['titles']
+                children = tabs_data['children']
+
+                # Plot is the first tab
+                plot_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                titles.insert(0, 'Plot')
+                children.insert(0, plot_output)
+
+                # Create the interactive visualization
+                with plot_output:
+                    self.plot_interactive_degree_distribution(keys, values, max_deg, median_deg, mean_deg, 
+                                                                td, vlabels, elabels, len(available_vertex_labels), len(available_edge_labels))
+
+                # Define a larger layout
+                large_layout = widgets.Layout(
+                    width='100%',
+                    height='1200px',  # Increase the height as needed
+                    overflow='auto'
+                )
+
+                # Apply to the tab widget
+                tab = widgets.Tab(layout=large_layout)
+
+                # Apply to each output widget
+                for i in range(len(children)):
+                    children[i].layout = large_layout
+
+                # Set up the tab widget                                       
+                tab.children = children
+                for i, title in enumerate(titles):
+                    tab.set_title(i, title)
+                
+                display(tab)
         
         submit_button.on_click(on_button_clicked)
 
@@ -4133,20 +4130,19 @@ class Graph(Magics):
             # Construct the query
             line = "CALL neptune.algo.degreeDistribution({" + ", ".join(query_parts) + "}) YIELD output RETURN output"
 
-            # oc_rebuild_args = (f"{f'--store-to js --silent'}")
             oc_rebuild_args = (f"{f'--store-to js'}")
             tabs_data = self.handle_opencypher_query(oc_rebuild_args, line, local_ns, True)
 
             if 'js' not in local_ns:
                raise ValueError("Query execution failed to store results")
+
             return tabs_data
         except Exception as e:
             print(f"Error executing degree distribution query: {e}")
             return None
         
-
-    def suggest_degree_distribution_params (self, n, min_nonzero_count, max_count, min_deg, max_deg):
-
+    def suggest_degree_distribution_params (self, expected_nbins, n, min_nonzero_count, max_count, min_deg, max_deg):
+        
         degree_spread = max_deg / min_deg
         count_spread = max_count / min_nonzero_count
 
@@ -4154,11 +4150,11 @@ class Graph(Magics):
         if degree_spread >= 100 and n > 1000:
             x_scale = 'Log'
             bin_type = 'Logarithmic'
-            initial_bin_width = (np.log10(max_deg) - np.log10(min_deg)) / 20
+            initial_bin_width = (np.log10(max_deg) - np.log10(min_deg)) / np.log10(expected_nbins)
         else:
             x_scale = 'Linear'
             bin_type = 'Linear'
-            initial_bin_width = (max_deg - min_deg) / 20 if max_deg - min_deg > 0 else 1
+            initial_bin_width = (max_deg - min_deg) / expected_nbins if max_deg - min_deg > 0 else 1
 
         # Y-axis scale decision
         if count_spread >= 50 and n > 1000:
@@ -4180,7 +4176,9 @@ class Graph(Magics):
             'initial_bin_width': initial_bin_width
         }
 
-    def plot_interactive_degree_distribution(self, unique_degrees, counts, max_deg, median_deg, mean_deg):
+    def plot_interactive_degree_distribution(self, unique_degrees, counts, max_deg, median_deg, mean_deg,
+                                             td, vlabels, elabels, num_vlabels, num_elabels):
+        expected_nbins = 20
         min_deg = 0
         try:
             if unique_degrees is None or counts is None or len(unique_degrees) == 0:
@@ -4204,10 +4202,10 @@ class Graph(Magics):
                 description='Binning:'
             )
 
-            # Bin width widget, integer options in [1, 1+(max_deg/2)] interval 
+            # Bin width widget, integer/float options for linear/log scale
             bin_width_widget = widgets.FloatSlider(
                 min=1,
-                max=(max_deg - min_deg) // 5,
+                max=max(1, (max_deg - min_deg) // 5),
                 step=1,
                 value=1,
                 readout_format = 'd',
@@ -4216,14 +4214,36 @@ class Graph(Magics):
                         'For log binning: multiplicative factor')
             )
 
-            # Upper limit for y-axis range, enables zooming (lower limit is always zero)
+            # Y-axis maximum control: slider for quick selection, text for custom values
             y_max_widget = widgets.IntSlider(
-                value=max_count * 1.1,
+                value=int(max_count * 1.1),
                 min=1,
-                max=max_count * 1.1,
+                max=max(10, int(max_count * 1.1)),
                 step=1,
                 description='y-max:',
             )
+            
+            # Extend the y-max limit
+            y_max_text_widget = widgets.BoundedIntText(
+                value=int(max_count * 1.1),
+                min=1,
+                max=sys.maxsize,
+                step=1,
+                description='Extend y-max:',
+                style={
+                    'description_width': '50%',
+                    'readout_width': '30%'
+                },
+            )
+
+            # Sync slider and text input
+            def handle_text_change(change):
+                new_max = int(change.new)
+                if new_max > y_max_widget.max:
+                    y_max_widget.max = new_max
+                y_max_widget.value = new_max
+                
+            y_max_text_widget.observe(handle_text_change, names='value')
 
             # Range slider for x-axis, enables zooming
             x_range_widget = widgets.FloatRangeSlider(            
@@ -4238,46 +4258,71 @@ class Graph(Magics):
                 readout_format='.0f',
             )
             
+            # Add CSS to style the slider readout with a border
+            display(HTML("""
+            <style>
+            .widget-readout {
+                border: 1px solid #ccc !important;
+                border-radius: 3px !important;
+                padding: 1px 4px !important;
+            }
+            </style>
+            """))
+
             # Toggle switches for min/max degree lines
             show_mindeg_widget = widgets.Checkbox(
                 value=True,
-                description='Show Min Degree Line',
-                disabled=False
+                description='Show Min Degree',
+                disabled=False,
             )
             
             show_maxdeg_widget = widgets.Checkbox(
                 value=True,
-                description='Show Max Degree Line',
-                disabled=False
+                description='Show Max Degree',
+                disabled=False,
             )
 
-            min_nonzero_count = min(counts[counts > 0])
-            min_nonzero_deg = min(unique_degrees[unique_degrees > 0])
-            params = self.suggest_degree_distribution_params (sum(counts), min_nonzero_count, max(counts), min_nonzero_deg, max_deg)
-
-            # Set scale_widget value based on params
-            if params['x_scale'] == 'Log' and params['y_scale'] == 'Log':
-                scale_widget.value = 'Log-Log'
-            elif params['x_scale'] == 'Log' and params['y_scale'] == 'Linear':
-                scale_widget.value = 'Log(x)-Linear(y)'
-            elif params['x_scale'] == 'Linear' and params['y_scale'] == 'Log':
-                scale_widget.value = 'Linear(x)-Log(y)'
-            else:  # Both linear
+            max_deg = max(unique_degrees)
+            if max_deg <= 1:
                 scale_widget.value = 'Linear-Linear'
+                bin_widget.value = 'Linear'         
+                bin_width_widget.value = 1
+            else:                
+                min_nonzero_count = min(counts[counts > 0])
+                min_nonzero_deg = min(unique_degrees[unique_degrees > 0])
+                params = self.suggest_degree_distribution_params (expected_nbins, sum(counts), min_nonzero_count, max(counts), min_nonzero_deg, max_deg)
 
-            # Set bin_widget and bin_widthz_widget based on params
-            bin_widget.value = params['bin_type']          
-            bin_width_widget.value = params['initial_bin_width']
-            if params['bin_type'] == 'Logarithmic':
-                bin_width_widget.step = 0.01
-                bin_width_widget.readout_format = '.2f'
+                # Set scale_widget value based on params
+                if params['x_scale'] == 'Log' and params['y_scale'] == 'Log':
+                    scale_widget.value = 'Log-Log'
+                elif params['x_scale'] == 'Log' and params['y_scale'] == 'Linear':
+                    scale_widget.value = 'Log(x)-Linear(y)'
+                elif params['x_scale'] == 'Linear' and params['y_scale'] == 'Log':
+                    scale_widget.value = 'Linear(x)-Log(y)'
+                else:  # Both linear
+                    scale_widget.value = 'Linear-Linear'
+
+                # Set bin_widget and bin_widthz_widget based on params
+                bin_widget.value = params['bin_type']          
+                bin_width_widget.value = params['initial_bin_width']
+                if params['bin_type'] == 'Logarithmic':
+                    bin_width_widget.step = 0.01
+                    bin_width_widget.readout_format = '.2f'
+                    bin_width_widget.max = max (1, (np.log10(max_deg) - np.log10(min_nonzero_deg)) / np.log10(5))
+
+            # Adjust the initial y-max limit
+            total_nodes = sum(counts)
+            factor = 1
+            if bin_widget.value == 'Raw': # For raw data, use the original max count                
+                factor = max_count
+            elif bin_widget.value == 'Linear':
+                factor = min (total_nodes, max_count * (bin_width_widget.value ** 0.85))
+            elif bin_widget.value == 'Logarithmic':
+                factor = min (total_nodes, max_count * (10 ** (bin_width_widget.value ** 0.25)))
+            y_max_text_widget.value = y_max_widget.max = y_max_widget.value = max (1.1 * factor, y_max_text_widget.value)
 
             def update_plot(scale_type, bin_type, bin_width, y_max, x_range, show_mindeg, show_maxdeg):
-                # Start timing
-                start_time = time.time()
-                
                 alpha = 1
-
                 fig = go.Figure()    
                 fig.data = []
                 fig.layout = go.Layout()
@@ -4285,8 +4330,8 @@ class Graph(Magics):
                 # Get zero degree count
                 zero_idx = np.where(unique_degrees == 0)[0]
                 zero_degree_count = counts[zero_idx[0]] if len(zero_idx) > 0 else 0
-
                 isolateds_exist = zero_degree_count > 0
+
                 # Get non-zero degrees and counts
                 mask = unique_degrees > 0
                 filtered_degrees = unique_degrees[mask]
@@ -4300,55 +4345,51 @@ class Graph(Magics):
 
                 n_bins = 1
 
-                # Create histogram only if there are non-zero degree nodes
+                # Create histogram only if there is at least one non-zero degree node
                 if len(filtered_degrees) > 0:
                     if bin_type != 'Raw':
                         # Arrange the bins for a given bin_width
                         if bin_type == 'Linear':
-                            n_bins = max(1, int((max_deg - min_deg) / bin_width))
-                            bins = np.linspace(min_deg, max_deg, n_bins + 1)
+                            n_bins = int((max_deg - min_deg) / bin_width)
+                            bins = np.linspace(min_deg, max_deg, n_bins+1)
                         else:  # Logarithmic
                             min_deg_log = np.log10(min_deg) if min_deg > 0 else 0
                             max_deg_log = np.log10(max_deg) if max_deg > 0 else 1
-                            n_bins = max(1, int((max_deg_log - min_deg_log) / np.log10(bin_width+0.01)))
-                            bins = np.logspace(min_deg_log, max_deg_log, n_bins + 1)
+                            n_bins = int (10 ** ((max_deg_log - min_deg_log) / (bin_width)))
+                            bins = np.logspace(min_deg_log, max_deg_log, n_bins+1)
                         
                         # Efficient binning using digitize instead of histogram
                         bin_indices = np.digitize(filtered_degrees, bins) - 1
                         
                         # Create histogram using prefix sum approach
-                        hist_counts = np.zeros(len(bins)-1)
+                        hist_counts = np.zeros(len(bins))
                         for i, count in zip(bin_indices, filtered_counts):
                             if 0 <= i < len(hist_counts):  # Ensure index is valid
                                 hist_counts[i] += count
                         
-                        bin_centers = bins[:-1]
-
-                        # Create a step plot that looks like bars
-                        # Duplicate x values to create vertical lines
-                        x_steps = np.zeros(2 * len(bin_centers))
-                        x_steps[0::2] = bin_centers
-                        if bin_type == 'Linear':
-                            # For linear bins, use constant width
-                            x_steps[1::2] = bin_centers + (bins[1]-bins[0])
-                        else:  # Logarithmic
-                            # For logarithmic bins, use actual bin edges
+                        # Create a step plot that looks like bars, duplicate x values to create vertical lines
+                        x_steps = np.zeros(2 * len(bins))
+                        x_steps[0::2] = bins
+                        if bin_type == 'Linear': # For linear bins, use constant width                            
+                            x_steps[1::2] = bins + bin_width
+                        else: # For logarithmic bins, use actual bin edges   
+                            bins = np.concatenate((bins, np.array([bins[-1]+bin_width])))                         
                             x_steps[1::2] = bins[1:]
                         
                         # Duplicate y values to create horizontal lines
                         y_steps = np.zeros(2 * len(hist_counts))
                         y_steps[0::2] = hist_counts
                         y_steps[1::2] = hist_counts
-                        
-                        # Plot as a line with steps
+
                         fig = go.Figure(data=go.Scatter(
                             x=x_steps, 
                             y=y_steps, 
                             mode='lines', 
                             line=dict(color='#000080', width=1.5, shape='hv'), 
                             opacity=alpha,
+                            hovertemplate='<extra></extra>',
                             showlegend=False))
-
+                        
                         # Fill the area below the step plot
                         fig.add_trace(
                             go.Scatter(
@@ -4359,10 +4400,11 @@ class Graph(Magics):
                                 fill='tozeroy',
                                 fillcolor='rgba(0, 0, 128, ' + str(alpha*0.5) + ')',
                                 opacity=alpha,
-                                showlegend=False
-                            ))
-                    else:
-                    # For raw data, create bars at each unique degree
+                                # no text on hover because the line chart (that mimics the bars) have
+                                # multiple values for an x when it goes up/down, even when bin width = 1
+                                hovertemplate='<extra></extra>',
+                                showlegend=False))
+                    else: # For raw data, create bars at each unique degree                    
                         fig.add_trace(
                             go.Bar(
                                 x=filtered_degrees,
@@ -4370,13 +4412,24 @@ class Graph(Magics):
                                 name='Raw',
                                 marker_color='#000000',
                                 opacity=alpha,
-                                width=0.1,
+                                # text on hover only for raw data
+                                hovertemplate='<b>%{y}</b> nodes of degree <b>%{x}</b><extra></extra>',
+                                width=0.9,
                             ))
 
                 # Plot zero degree node count separately
                 if isolateds_exist:
                     # Use a special x position for zero degree nodes in log scale
                     zero_x_pos = 0.1 if scale_type in ['Log-Log', 'Log(x)-Linear(y)'] else 0
+
+                    # Adjust width based on binning type
+                    if bin_type == 'Linear':
+                        bar_width = 1  # bin width
+                    elif bin_type == 'Logarithmic':
+                        bar_width = 0.05  # Fixed small width for log scale
+                    else:  # Raw
+                        bar_width = 0.9  # Standard width for raw data
+                    
                     fig.add_trace(
                         go.Bar(
                             x=[zero_x_pos],
@@ -4384,10 +4437,40 @@ class Graph(Magics):
                             name='Isolated',
                             marker_color='red',
                             opacity=alpha,
-                            width=0.1,
+                            hovertemplate='<b>%{y}</b> nodes of degree zero<extra></extra>',
+                            width=bar_width,
                         ))
 
+                # Build title components
+                degree_type_map = {
+                    'both': 'Total',
+                    'inbound': 'In', 
+                    'outbound': 'Out'
+                }
+                
+                degree_display = degree_type_map.get(td, td.title())
+                
+                # Build vertex labels part
+                if not vlabels or len(vlabels) == num_vlabels: # if no label is selected, then all labels considered
+                    vertex_part = "for <b>all</b> vertex labels"
+                else:
+                    bold_vlabels = [f"<b>{label}</b>" for label in vlabels]
+                    vertex_part = f"for {', '.join(bold_vlabels)} vertices"
+                    
+                # Build edge labels part
+                if not elabels or len(elabels) == num_elabels:# if no label is selected, then all labels considered
+                    edge_part = "via <b>all</b> edge labels"
+                else:
+                    bold_elabels = [f"<b>{label}</b>" for label in elabels]
+                    edge_part = f"via {', '.join(bold_elabels)} edges"
+                    
+                title_text = f"<b>{degree_display}</b> degree distribution<br>{vertex_part}<br>{edge_part}"
+
                 fig.update_layout(
+                    hoverlabel=dict(
+                        bgcolor='rgba(0, 0, 128, ' + str(alpha*0.5) + ')',
+                        font_color="white"
+                    ),
                     # Size
                     width=1200,
                     height=600,
@@ -4421,24 +4504,21 @@ class Graph(Magics):
                     xaxis_title='Degree',
                     yaxis_title='Number of nodes',
                     title={
-                        'text': 'Degree Distribution',
+                        'text': title_text,
                         'x': 0.5,
                         'xanchor': 'center',
                         'yanchor': 'top'
                     },    
                     legend=dict(
                         orientation="v",  # Horizontal orientation
-                        yanchor="auto", # Anchor legend to its bottom edge
-                        xanchor="auto",  # Anchor legend to its right edge
+                        yanchor="auto",   # Anchor legend to its bottom edge
+                        xanchor="auto",   # Anchor legend to its right edge
                         x=1               # Position to the right of the plot
                     )
                 )
 
                 x_min = x_range[0]
                 x_max = x_range[1]
-
-                if isolateds_exist:
-                    x_min = max(x_min, 0.05)
 
                 # Set scales based on selection
                 if scale_type == 'Log-Log':
@@ -4447,33 +4527,30 @@ class Graph(Magics):
                         yaxis_type="log",  # Set y-axis to log scale
                         yaxis_range=[0.05, np.log10(y_max)],
                         yaxis=dict(                        
-                            exponentformat='power',  # Use × 10ⁿ notation
+                            exponentformat='power',  # Use scientific notation
                             showexponent='all',
+                            dtick=1  # Show only powers of 10
                         ),
                         xaxis=dict(                        
-                            exponentformat='power',  # Use × 10ⁿ notation
+                            exponentformat='power',  # Use scientific notation
                             showexponent='all',
+                            dtick=1  # Show only powers of 10
                         )
                     )
                     
-                    if isolateds_exist:
-                        x_min = max(x_min, 0.05)
-                    else:
-                        x_min = x_min+0.05
+                    x_min = max(x_min, 0.05)
                     x_min = np.log10(x_min)
                     x_max = np.log10(x_max)
                 elif scale_type == 'Log(x)-Linear(y)':
                     fig.update_layout(
                         xaxis_type="log",  # Set x-axis to log scale
                         xaxis=dict(                        
-                            exponentformat='power',  # Use × 10ⁿ notation
+                            exponentformat='power',  # Use scientific notation
                             showexponent='all',
+                            dtick=1  # Show only powers of 10
                         )
                     )
-                    if isolateds_exist:
-                        x_min = max(x_min, 0.05)
-                    else:
-                        x_min = x_min+0.05
+                    x_min = max(x_min, 0.05)
                     x_min = np.log10(x_min)
                     x_max = np.log10(x_max)
                 elif scale_type == 'Linear(x)-Log(y)':
@@ -4481,15 +4558,15 @@ class Graph(Magics):
                         yaxis_type="log",  # Set y-axis to log scale
                         yaxis_range=[0.05, np.log10(y_max)],
                         yaxis=dict(                        
-                            exponentformat='power',  # Use × 10ⁿ notation
+                            exponentformat='power',  # Use scientific notation
                             showexponent='all',
+                            dtick=1  # Show only powers of 10
                         )
                     )                   
 
                 fig.update_layout(
                     xaxis_range=[x_min, x_max]
                 )
-
 
                 # Add vertical dashed lines for min and max degree, if enabled
                 if show_mindeg and min_deg > 0:
@@ -4499,6 +4576,7 @@ class Graph(Magics):
                             y=[0, y_max],
                             mode='lines',
                             line=dict(color="darkgreen", width=2, dash="dash"),
+                            hovertemplate='Min non-zero degree is <b>%{x}</b><extra></extra>',
                             name = f'Min non-zero degree:{min_deg}'
                         )
                     )
@@ -4510,70 +4588,71 @@ class Graph(Magics):
                             y=[0, y_max],
                             mode='lines',
                             line=dict(color="darkred", width=2, dash="dash"),
+                            hovertemplate='Max degree is <b>%{x}</b><extra></extra>',
                             name = f'Max degree:{max_deg}'
                         )
                     )
 
                 fig.show()
 
-                # End timing and display
-                end_time = time.time()
-                runtime = end_time - start_time
-
                 # Update statistics
                 with stats_output:
                     stats_output.clear_output(wait=True)
                     total_nodes = sum(counts)
                     total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
-                    print(f"Number of nodes: {total_nodes:,}")
-                    print(f"Number of edges: {total_edges:,}")
-                    print(f"Number of isolated nodes: {zero_degree_count:,}")
-                    print(f"Average degree: {mean_deg:.2f}")
-                    print(f"Median degree: {median_deg:.2f}")
-                    print(f"Max degree: {max_deg:,}")
+
+                    stats_data = {
+                        'Metric': ['Nodes', 'Edges', 'Isolated nodes', 'Average degree', 'Median degree', 'Max degree'],
+                        'Value': [f"{total_nodes:,}", f"{total_edges:,}", f"{zero_degree_count:,}", f"{mean_deg:.2f}", f"{median_deg:.2f}", f"{max_deg:,}"]
+                    }
+                    
                     if min_deg > 0:
-                        print(f"Min non-zero degree: {min_deg:,}")            
+                        stats_data['Metric'].append('Min non-zero degree')
+                        stats_data['Value'].append(f"{min_deg:,}")
+                    
                     if bin_type != 'Raw':
-                        print(f"Number of bins: {n_bins:,}")
+                        stats_data['Metric'].append('Number of bins')
+                        stats_data['Value'].append(f"{n_bins:,}")
+                    
+                    df = pd.DataFrame(stats_data)
+                    display(df.style.hide(axis="index").set_table_styles([
+                        {'selector': 'th', 'props': [('background-color', '#f8f9fa'), ('font-weight', 'bold'), ('text-align', 'left')]},
+                        {'selector': 'td', 'props': [('padding', '8px'), ('text-align', 'left')]}
+                    ]))
         
             max_count = np.max(counts)
             total_nodes = sum(counts) 
             
             # Define a function to update bin_width_widget based on bin_type
             def update_bin_width_widget(change):
-                if change['new'] == 'Logarithmic':
-                    # For logarithmic binning, use a FloatSlider with smaller values
+                if change['new'] == 'Logarithmic':                    
                     bin_width_widget.value = 1.00
                     bin_width_widget.min = 1.00
-                    bin_width_widget.max = (np.log10(max_deg) - np.log10(min_deg+0.01)) / 2
+                    bin_width_widget.max = max(1, (np.log10(max_deg) - np.log10(min_deg)) / np.log10(5))
                     bin_width_widget.step = 0.01                    
                     bin_width_widget.readout_format = '.2f'
                     bin_width_widget.disabled = False
                 elif change['new'] == 'Raw':
-                    # For raw binning, disable the widget
                     bin_width_widget.value = 1
                     bin_width_widget.readout_format = 'd'
                     bin_width_widget.disabled = True
                 elif change['new'] == 'Linear':
-                    # For linear binning, use integer values
                     bin_width_widget.value = 1
                     bin_width_widget.min = 1
-                    bin_width_widget.max = (max_deg - min_deg) // 5
+                    bin_width_widget.max = max(1, (max_deg - min_deg) // 5)
                     bin_width_widget.step = 1                    
                     bin_width_widget.readout_format = 'd'
                     bin_width_widget.disabled = False
 
             def update_y_max_widget(change):                
                 factor = 1
-                if bin_widget.value == 'Raw':
-                    # For raw data, use the original max count
+                if bin_widget.value == 'Raw': # For raw data, use the original max count                    
                     factor = max_count
                 elif bin_widget.value == 'Linear':
                     factor = min (total_nodes, max_count * (bin_width_widget.value ** 0.85))
                 elif bin_widget.value == 'Logarithmic':
                     factor = min (total_nodes, max_count * (10 ** (bin_width_widget.value ** 0.25)))
-                
-                y_max_widget.max = y_max_widget.value = 1.1 * factor
+                y_max_text_widget.value = y_max_widget.max = y_max_widget.value = max (1.1 * factor, y_max_text_widget.value)
 
             # Observe changes to bin_width_widget and bin_widget
             bin_width_widget.observe(update_y_max_widget, names='value')
@@ -4585,6 +4664,9 @@ class Graph(Magics):
             # Output widget for statistics
             stats_output = widgets.Output()
 
+            # Create y_max container with both widgets
+            y_max_container = widgets.VBox([y_max_widget, y_max_text_widget])
+            
             # Interactive plot
             interactive_plot = widgets.interactive(
                 update_plot,
@@ -4596,12 +4678,22 @@ class Graph(Magics):
                 show_mindeg=show_mindeg_widget,
                 show_maxdeg=show_maxdeg_widget
             )
-            
-            # Vertical box layout
-            vbox = widgets.VBox([interactive_plot, stats_output])
-            
+
+            # Replace the individual checkboxes with the HBox in the interactive_plot's children
+            controls = list(interactive_plot.children[:-1])
+
+            # Replace y_max_widget with y_max_container
+            y_max_index = controls.index(y_max_widget)
+            controls[y_max_index] = y_max_container
+
+            # Create a new VBox with the modified controls and the output
+            modified_interactive = widgets.VBox(controls + [interactive_plot.children[-1]])
+
+            # Vertical box layout with stats
+            vbox = widgets.VBox([modified_interactive, stats_output])
+
             # Display the interactive plot and stats
             display(vbox)
-     
+
         except Exception as e:
             print(f"Error creating visualization: {e}")
