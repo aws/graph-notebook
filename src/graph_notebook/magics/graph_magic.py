@@ -4150,7 +4150,7 @@ class Graph(Magics):
         if degree_spread >= 100 and n > 1000:
             x_scale = 'Log'
             bin_type = 'Logarithmic'
-            initial_bin_width = (np.log10(max_deg) - np.log10(min_deg)) / np.log10(expected_nbins)
+            initial_bin_width = (np.log10(max_deg+1) - np.log10(min_deg+1)) / np.log10(expected_nbins)
         else:
             x_scale = 'Linear'
             bin_type = 'Linear'
@@ -4308,7 +4308,7 @@ class Graph(Magics):
                 if params['bin_type'] == 'Logarithmic':
                     bin_width_widget.step = 0.01
                     bin_width_widget.readout_format = '.2f'
-                    bin_width_widget.max = max (1, (np.log10(max_deg) - np.log10(min_nonzero_deg)) / np.log10(5))
+                    bin_width_widget.max = max (1, (np.log10(max_deg+1) - np.log10(min_nonzero_deg+1)) / np.log10(5))
 
             # Adjust the initial y-max limit
             total_nodes = sum(counts)
@@ -4525,7 +4525,7 @@ class Graph(Magics):
                     fig.update_layout(
                         xaxis_type="log",  # Set x-axis to log scale
                         yaxis_type="log",  # Set y-axis to log scale
-                        yaxis_range=[0.05, np.log10(y_max)],
+                        yaxis_range=[0.05, np.log10(y_max+1)],
                         yaxis=dict(                        
                             exponentformat='power',  # Use scientific notation
                             showexponent='all',
@@ -4538,9 +4538,8 @@ class Graph(Magics):
                         )
                     )
                     
-                    x_min = max(x_min, 0.05)
-                    x_min = np.log10(x_min)
-                    x_max = np.log10(x_max)
+                    x_min = np.log10(x_min+1)
+                    x_max = np.log10(x_max+1)
                 elif scale_type == 'Log(x)-Linear(y)':
                     fig.update_layout(
                         xaxis_type="log",  # Set x-axis to log scale
@@ -4550,13 +4549,12 @@ class Graph(Magics):
                             dtick=1  # Show only powers of 10
                         )
                     )
-                    x_min = max(x_min, 0.05)
-                    x_min = np.log10(x_min)
-                    x_max = np.log10(x_max)
+                    x_min = np.log10(x_min+1)
+                    x_max = np.log10(x_max+1)
                 elif scale_type == 'Linear(x)-Log(y)':
                     fig.update_layout(
                         yaxis_type="log",  # Set y-axis to log scale
-                        yaxis_range=[0.05, np.log10(y_max)],
+                        yaxis_range=[0.05, np.log10(y_max+1)],
                         yaxis=dict(                        
                             exponentformat='power',  # Use scientific notation
                             showexponent='all',
@@ -4628,7 +4626,7 @@ class Graph(Magics):
                 if change['new'] == 'Logarithmic':                    
                     bin_width_widget.value = 1.00
                     bin_width_widget.min = 1.00
-                    bin_width_widget.max = max(1, (np.log10(max_deg) - np.log10(min_deg)) / np.log10(5))
+                    bin_width_widget.max = max(1, (np.log10(max_deg+1) - np.log10(min_deg+1)) / np.log10(5))
                     bin_width_widget.step = 0.01                    
                     bin_width_widget.readout_format = '.2f'
                     bin_width_widget.disabled = False
