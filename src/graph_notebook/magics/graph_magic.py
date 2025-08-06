@@ -3764,7 +3764,32 @@ class Graph(Magics):
                 results_df, has_results = oc_results_df(res, res_format)
                 if has_results:
                     titles.append('Console')
-                # Need to eventually add code to parse and display a network for the bolt format here
+                # Create graph visualization for bolt response
+                try:
+                    # Wrap bolt response in expected format
+                    transformed_res = {"results": res} if isinstance(res, list) else {"results": []}
+                    
+                    gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                   group_by_raw=args.group_by_raw,
+                                   group_by_depth=args.group_by_depth,
+                                   edge_display_property=args.edge_display_property,
+                                   tooltip_property=args.tooltip_property,
+                                   edge_tooltip_property=args.edge_tooltip_property,
+                                   label_max_length=args.label_max_length,
+                                   edge_label_max_length=args.rel_label_max_length,
+                                   ignore_groups=args.ignore_groups)
+                    gn.add_results(transformed_res)
+                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                    if len(gn.graph.nodes) > 0:
+                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                            = args.stop_physics
+                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                        force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                        titles.append('Graph')
+                        children.append(force_graph_output)
+                except (TypeError, ValueError) as network_creation_error:
+                    logger.debug(f'Unable to create network from bolt result. Skipping from result set: {res}')
+                    logger.debug(f'Error: {network_creation_error}')
 
         if not args.silent:
             if args.mode != 'explain':
