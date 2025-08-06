@@ -26,8 +26,7 @@ REL_ENTITY_TYPE = 'relationship'
 
 class OCNetwork(EventfulNetwork):
     """OCNetwork extends the EventfulNetwork class and uses the add_results method to parse any response that returns
-    nodes/relationships as part (or all) of the response.  Currently this only works with HTTPS response format but in
-    the future, we will work to support Bolt based responses as well.
+    nodes/relationships as part (or all) of the response.
     """
 
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
