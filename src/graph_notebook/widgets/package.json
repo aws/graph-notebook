@@ -1,6 +1,6 @@
 {
   "name": "graph_notebook_widgets",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "author": "amazon",
   "description": "A Custom Jupyter Library for rendering NetworkX MultiDiGraphs using vis-network",
   "dependencies": {
@@ -12,7 +12,7 @@
     "vis-data": "7.1.4",
     "vis-network": "9.1.6",
     "vis-util": "5.0.3",
-   "@jupyterlab/application": "^4.3.5"
+    "@jupyterlab/application": "^4.3.5"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.3.5",
@@ -60,7 +60,7 @@
     "stylelint-csstree-validator": "^3.0.0",
     "stylelint-prettier": "^4.0.0",
     "ts-loader": "^9.4.4",
-    "typescript": "~5.0.4", 
+    "typescript": "~5.0.4",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
@@ -81,7 +81,7 @@
         "version": "^6.0.4",
         "requiredVersion": "^6.0.4"
       },
-      "@jupyterlab/application": {          
+      "@jupyterlab/application": {
         "bundled": false,
         "singleton": true,
         "version": "^4.0.0",
@@ -115,7 +115,7 @@
     }
   },
   "jupyter": {
-    "extension": "extension.js", 
+    "extension": "extension.js",
     "outputDir": "nbextension"
   },
   "keywords": [
@@ -127,10 +127,10 @@
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "engines": { 
+  "engines": {
     "node": ">=20.18.3",
     "npm": ">=10.8.2"
-  },   
+  },
   "scripts": {
     "build": "npm run build:lib && npm run build:nbextension && npm run build:labextension:dev",
     "build:prod": "npm run clean && npm run build:lib && npm run build:nbextension && npm run build:labextension",
