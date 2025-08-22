@@ -80,3 +80,24 @@ https://aws.amazon.com/amazon-linux-2/
 <b>DNS flush: </b> after setting your hosts file, do a DNS flush to make sure your changes are reflected in the client-side DNS.
 
 <b> HTTPS: </b> Check that when you connect to Neptune via a browser that you're using `https://` in the URL.
+
+## Magic commands specific to Neptune Analytics
+
+`%degreeDistribution` - Creates an interactive histogram visualizing the degree distribution of vertices in a graph. The histogram displays the number of vertices (y-axis) that have a specific degree (x-axis).
+
+**Parameters**
+-  **traversalDirection**: Specifies which degree to analyze
+	-  `both` (default): Total degree
+	-  `inbound`: In-degree
+	-  `outbound`: Out-degree
+-  **vertexLabels**: Filter vertices by label (default: empty list)
+-  **edgeLabels**: Filter edges by label (default: empty list)
+
+**Features**
+- Parameters can be set via command line arguments or dropdown widgets
+- Dropdowns are automatically populated with existing vertex/edge labels
+- Interactive controls for adjusting:
+	- Bin type and width
+	- Axis scales and limits
+
+For detailed examples and output formats, see the [documentation](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/degreedistribution.html).
