@@ -3,6 +3,7 @@
 Starting with v1.31.6, this file will contain a record of major features and updates made in each release of graph-notebook.
 
 ## Upcoming
+- Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) TODO: add to the specific release below when it's released
 
 ## Release 5.0.2 (Aug 19, 2025)
 - Support edgeOnlyLoad param for load magic  ([Link to PR](https://github.com/aws/graph-notebook/pull/750))
