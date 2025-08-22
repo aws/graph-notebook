@@ -100,4 +100,4 @@ https://aws.amazon.com/amazon-linux-2/
 	- Bin type and width
 	- Axis scales and limits
 
-For detailed examples and output formats, see the [documentation](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/degreedistribution.html).
+For detailed examples and output formats, see the [documentation](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/degree-distribution.html).
