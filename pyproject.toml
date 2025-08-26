@@ -9,7 +9,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "graph-notebook"
-version = "5.0.1"
+version = "5.0.2"
 description = "Jupyter notebook extension to connect to graph databases"
 readme = "README.md"
 license = { file = "LICENSE" }
