@@ -606,7 +606,34 @@ class Client(object):
         with driver.session(database=self.neo4j_database) as session:
             try:
                 res = session.run(query, kwargs)
-                data = res.data()
+                data = []
+                for record in res:
+                    record_dict = {}
+                    for key in record.keys():
+                        value = record[key]
+                        if hasattr(value, 'id') and (hasattr(value, 'labels') or hasattr(value, 'type')):  # Node or Relationship
+                            if hasattr(value, 'labels'):  # Node
+                                record_dict[key] = {
+                                    '~id': str(value.id),
+                                    '~entityType': 'node',
+                                    '~labels': list(value.labels),
+                                    '~properties': dict(value)
+                                }
+                            elif hasattr(value, 'type'):  # Relationship
+                                
+                                start_node = value.nodes[0] if value.nodes else None
+                                end_node = value.nodes[1] if len(value.nodes) > 1 else None
+                                record_dict[key] = {
+                                    '~id': str(value.id),
+                                    '~entityType': 'relationship',
+                                    '~start': str(start_node.id) if start_node else '',
+                                    '~end': str(end_node.id) if end_node else '',
+                                    '~type': value.type,
+                                    '~properties': dict(value)
+                                }
+                        else:
+                            record_dict[key] = value
+                    data.append(record_dict)
             except AuthError:
                 print("Neo4J Bolt request failed with an authentication error. Please ensure that the 'neo4j' section "
                       "of your %graph_notebook_config contains the correct credentials and auth setting.")
