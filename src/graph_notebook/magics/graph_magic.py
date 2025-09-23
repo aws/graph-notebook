@@ -3767,6 +3767,7 @@ class Graph(Magics):
                 # Create graph visualization for bolt response
                 try:
                     # Wrap bolt response in expected format
+                    # Required because the graph visualizer need the data to be present in a certain format 
                     transformed_res = {"results": res} if isinstance(res, list) else {"results": []}
                     
                     gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
