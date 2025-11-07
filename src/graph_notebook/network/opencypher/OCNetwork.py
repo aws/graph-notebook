@@ -7,9 +7,10 @@ import logging
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
+from graph_notebook.magics.schema import GraphSchema
 
 logging.basicConfig()
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("graph_magic")
 
 DEFAULT_LABEL_MAX_LENGTH = 10
 ENTITY_KEY = "~entityType"
@@ -224,3 +225,43 @@ class OCNetwork(EventfulNetwork):
                                 logger.debug(f'Property {res_sublist} in list results set is invalid, skipping')
                                 logger.debug(f'Error: {e}')
                                 continue
+
+    def create_schema_network(self, schema:GraphSchema):
+        try:
+            for item in schema.nodes:
+                props = {}
+                logger.debug(item)
+                for p in item.properties:
+                    props[p.name] = p.type
+                props['~label'] = item.labels
+                self.add_node(
+                    node_id=item.labels,
+                    data={
+                        "properties": props,
+                        "label": item.labels,
+                        "title": item.labels,
+                    },
+                )
+
+            for item in schema.relationship_patterns:
+                props = {}
+                edge = [i for i in schema.relationships if i.type == item.relation]
+                for p in edge[0].properties:
+                    props[p.name] = p.type
+                props['~label'] = item.relation
+                self.add_edge(
+                    from_id=item.left_node,
+                    to_id=item.right_node,
+                    edge_id=str(item),
+                    label=item.relation,
+                    title=item.relation,
+                    data={
+                        "properties": props,
+                        "label": item.relation,
+                        "title": item.relation,
+                    },
+                )
+
+        except (TypeError, ValueError) as network_creation_error:
+            print(network_creation_error)
+            logger.debug(f"Error: {network_creation_error}")
