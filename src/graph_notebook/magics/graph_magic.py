@@ -44,6 +44,7 @@ from graph_notebook.configuration.generate_config import generate_default_config
 from graph_notebook.decorators.decorators import display_exceptions, magic_variables, \
     neptune_db_only, neptune_graph_only
 from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_ml_parser
+from graph_notebook.magics.schema import get_schema
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
@@ -66,6 +67,7 @@ from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
     build_opencypher_metadata_from_query
+from dataclasses import asdict
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -3967,3 +3969,60 @@ class Graph(Magics):
             store_to_ns(args.store_to, js, local_ns)
             if not args.silent:
                 print(json.dumps(js, indent=2))
+
+    @line_magic
+    @needs_local_scope
+    @display_exceptions
+    def graph_schema(self, line='', local_ns=None):
+        logger.info(f'calling for schema on endpoint {self.graph_notebook_config.host}')
+        parser = argparse.ArgumentParser()
+        parser.add_argument('language', nargs='?', type=str.lower, default="propertygraph",
+                    help=f'The language endpoint to use. Valid inputs: {STATISTICS_LANGUAGE_INPUTS}. '
+                            f'Default: propertygraph.',
+                    choices=STATISTICS_LANGUAGE_INPUTS)
+        parser.add_argument('--silent', action='store_true', default=False, help="Display no output.")
+        parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
+        args = parser.parse_args(line.split())
+
+        if not args.language == 'propertygraph':
+            print("Currently, only fetching the schema of property graphs is supported.")
+        else: 
+            try:
+                if not args.silent:
+                    tab = widgets.Tab()
+                    titles = []
+                    children = []
+
+                schema = get_schema(self.client, self.graph_notebook_config)
+                if not args.silent:
+                    # Display GRAPH tab
+                    gn = OCNetwork(group_by_property='~label')
+                    logger.info("Creating schema network")
+                    gn.create_schema_network(schema)
+                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                    if len(gn.graph.nodes) > 0:
+                        options = self.graph_notebook_vis_options.copy()
+                        options['edges']['smooth'] = 'dynamic'
+                        force_graph_output = Force(network=gn, options=options)
+                        titles.append('Graph')
+                        children.append(force_graph_output)
+                
+                    # Display JSON tab
+                    json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                    with json_output:
+                        print(json.dumps(asdict(schema), indent=2))
+                    children.append(json_output)
+                    titles.append('JSON')
+
+                    tab.children = children
+                    
+                    for i in range(len(titles)):
+                        tab.set_title(i, titles[i])
+                    display(tab)
+                    
+                store_to_ns(args.store_to, schema, local_ns)
+            except Exception as e:
+                if not args.silent:
+                    print("Encountered an error when attempting to retrieve graph schema:\n")
+                    print(e)
+                store_to_ns(args.store_to, e, local_ns)
