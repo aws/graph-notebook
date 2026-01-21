@@ -66,6 +66,7 @@ from graph_notebook.widgets import Force
 from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
     build_opencypher_metadata_from_query
+from graph_notebook.formatters.gremlin import format_query as format_gremlin_query, GremlintConfig
 
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
@@ -412,6 +413,17 @@ class Graph(Magics):
         self.neptune_cfg_allowlist = copy(NEPTUNE_CONFIG_HOST_IDENTIFIERS)
         self.neptune_client_endpoint_url = None
         self.graph_notebook_config = generate_default_config()
+        
+        # Formatter config
+        self.formatter_config = {
+            'gremlin': {
+                'enabled': True,
+                'indentation': 0,
+                'max_line_length': 80,
+                'should_place_dots_after_line_breaks': True
+            }
+        }
+        
         try:
             self.config_location = os.getenv('GRAPH_NOTEBOOK_CONFIG', DEFAULT_CONFIG_LOCATION)
             self.client: Client = None
@@ -510,6 +522,35 @@ class Graph(Magics):
         export_config(args.export_to, self.graph_notebook_config.to_dict(), args.silent)
 
         return self.graph_notebook_config
+
+    @cell_magic
+    @display_exceptions
+    def graph_notebook_formatter(self, line='', cell=''):
+        """
+        Configure query formatters.
+        
+        Example:
+            %%graph_notebook_formatter
+            {
+                "gremlin": {
+                    "enabled": true,
+                    "indentation": 0,
+                    "max_line_length": 80,
+                    "should_place_dots_after_line_breaks": true
+                }
+            }
+        """
+        if cell.strip():
+            data = json.loads(cell)
+            if 'gremlin' in data:
+                gremlin_cfg = data['gremlin']
+                for key in ['enabled', 'indentation', 'max_line_length', 'should_place_dots_after_line_breaks']:
+                    if key in gremlin_cfg:
+                        self.formatter_config['gremlin'][key] = gremlin_cfg[key]
+            print('Set formatter config to:')
+            print(json.dumps(self.formatter_config, indent=4))
+        else:
+            print(json.dumps(self.formatter_config, indent=4))
 
     @line_cell_magic
     def neptune_config_allowlist(self, line='', cell=''):
@@ -1164,6 +1205,20 @@ class Graph(Magics):
         args = parser.parse_args(line.split())
         mode = str_to_query_mode(args.query_mode)
         logger.debug(f'Arguments {args}')
+        
+        # Format the Gremlin query if enabled
+        gremlin_fmt_cfg = self.formatter_config.get('gremlin', {})
+        if gremlin_fmt_cfg.get('enabled', True):
+            fmt_config = GremlintConfig(
+                indentation=gremlin_fmt_cfg.get('indentation', 0),
+                max_line_length=gremlin_fmt_cfg.get('max_line_length', 80),
+                should_place_dots_after_line_breaks=gremlin_fmt_cfg.get('should_place_dots_after_line_breaks', True)
+            )
+            formatted_cell = format_gremlin_query(cell, fmt_config)
+            if formatted_cell != cell:
+                cell = formatted_cell
+                self.shell.set_next_input(f'%%gremlin {line}\n{cell}', replace=True)
+        
         results_df = None
 
         query_params = None
