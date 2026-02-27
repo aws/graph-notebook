@@ -110,5 +110,8 @@ def network_from_json(raw) -> Network:
     data = json.loads(raw)
     network = Network()
     if 'graph' in data:
-        network.graph = json_graph.node_link_graph(data['graph'], directed=True)
+        graph_data = data['graph']
+        # networkx >= 3.4 changed default edge key from 'links' to 'edges'
+        edge_key = 'links' if 'links' in graph_data else 'edges'
+        network.graph = json_graph.node_link_graph(graph_data, directed=True, edges=edge_key)
     return network
