@@ -111,7 +111,11 @@ def network_from_json(raw) -> Network:
     network = Network()
     if 'graph' in data:
         graph_data = data['graph']
-        # networkx >= 3.4 changed default edge key from 'links' to 'edges'
-        edge_key = 'links' if 'links' in graph_data else 'edges'
-        network.graph = json_graph.node_link_graph(graph_data, directed=True, edges=edge_key)
+        try:
+            # networkx >= 3.4 requires explicit edges key
+            edge_key = 'links' if 'links' in graph_data else 'edges'
+            network.graph = json_graph.node_link_graph(graph_data, directed=True, edges=edge_key)
+        except TypeError:
+            # networkx < 3.4 does not support edges parameter
+            network.graph = json_graph.node_link_graph(graph_data, directed=True)
     return network
