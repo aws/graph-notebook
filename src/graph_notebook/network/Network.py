@@ -110,5 +110,8 @@ def network_from_json(raw) -> Network:
     data = json.loads(raw)
     network = Network()
     if 'graph' in data:
-        network.graph = json_graph.node_link_graph(data['graph'], directed=True)
+        try:
+            network.graph = json_graph.node_link_graph(data['graph'], directed=True, edges="links")
+        except:
+            network.graph = json_graph.node_link_graph(data['graph'], directed=True)
     return network
