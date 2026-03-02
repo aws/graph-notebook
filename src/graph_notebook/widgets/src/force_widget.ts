@@ -23,6 +23,7 @@ import {
   VisNode,
 } from "./types";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
+import { initThemeDetection } from "./theme_manager";
 
 import feather from "feather-icons";
 import $ from "jquery";
@@ -113,6 +114,9 @@ export class ForceView extends DOMWidgetView {
   private physicsBtn = document.createElement("button");
 
   render(): void {
+    // Initialize theme detection for dark mode compatibility
+    initThemeDetection();
+    
     // Add jQuery UI CSS via CDN
     const jqueryUICss = document.createElement('link');
     jqueryUICss.rel = 'stylesheet';

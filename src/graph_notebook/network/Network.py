@@ -93,9 +93,13 @@ class Network:
         pass
 
     def to_json(self) -> dict:
-        return {
-            'graph': json_graph.node_link_data(self.graph)
-        }
+        try:
+            # NetworkX 2.6+
+            graph_data = json_graph.node_link_data(self.graph, edges="links")
+        except TypeError:
+            # NetworkX < 2.6
+            graph_data = json_graph.node_link_data(self.graph)
+        return {'graph': graph_data}
 
 
 def network_to_json(network: Network) -> str:
@@ -106,5 +110,8 @@ def network_from_json(raw) -> Network:
     data = json.loads(raw)
     network = Network()
     if 'graph' in data:
-        network.graph = json_graph.node_link_graph(data['graph'], directed=True)
+        try:
+            network.graph = json_graph.node_link_graph(data['graph'], directed=True, edges="links")
+        except:
+            network.graph = json_graph.node_link_graph(data['graph'], directed=True)
     return network
