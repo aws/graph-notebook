@@ -423,6 +423,7 @@ class Graph(Magics):
         self.max_results = DEFAULT_MAX_RESULTS
         self.graph_notebook_vis_options = OPTIONS_DEFAULT_DIRECTED
         self._generate_client_from_config(self.graph_notebook_config)
+        self.show_graph_tab = True
         root_logger.setLevel(logging.CRITICAL)
         logger.setLevel(logging.ERROR)
 
@@ -881,66 +882,67 @@ class Graph(Magics):
                     children.append(raw_output)
                     titles.append('Raw')
                 else:
-                    if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
-                        # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
-                        logger.debug('creating sparql network...')
+                    if self.show_graph_tab:
+                        if query_type in ['SELECT', 'CONSTRUCT', 'DESCRIBE']:
+                            # TODO: Serialize other result types to SPARQL JSON so we can create table and visualization
+                            logger.debug('creating sparql network...')
 
-                        titles.append('Table')
+                            titles.append('Table')
 
-                        sn = SPARQLNetwork(group_by_property=args.group_by,
-                                           display_property=args.display_property,
-                                           edge_display_property=args.edge_display_property,
-                                           tooltip_property=args.tooltip_property,
-                                           edge_tooltip_property=args.edge_tooltip_property,
-                                           label_max_length=args.label_max_length,
-                                           edge_label_max_length=args.edge_label_max_length,
-                                           ignore_groups=args.ignore_groups,
-                                           expand_all=args.expand_all,
-                                           group_by_raw=args.group_by_raw)
+                            sn = SPARQLNetwork(group_by_property=args.group_by,
+                                            display_property=args.display_property,
+                                            edge_display_property=args.edge_display_property,
+                                            tooltip_property=args.tooltip_property,
+                                            edge_tooltip_property=args.edge_tooltip_property,
+                                            label_max_length=args.label_max_length,
+                                            edge_label_max_length=args.edge_label_max_length,
+                                            ignore_groups=args.ignore_groups,
+                                            expand_all=args.expand_all,
+                                            group_by_raw=args.group_by_raw)
 
-                        sn.extract_prefix_declarations_from_query(cell)
-                        try:
-                            sn.add_results(results)
-                        except ValueError as value_error:
-                            logger.debug(value_error)
+                            sn.extract_prefix_declarations_from_query(cell)
+                            try:
+                                sn.add_results(results)
+                            except ValueError as value_error:
+                                logger.debug(value_error)
 
-                        logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
-                        if len(sn.graph.nodes) > 0:
-                            self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                                = args.stop_physics
-                            self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                            f = Force(network=sn, options=self.graph_notebook_vis_options)
-                            titles.append('Graph')
-                            children.append(f)
-                            logger.debug('added sparql network to tabs')
+                            logger.debug(f'number of nodes is {len(sn.graph.nodes)}')
+                            if len(sn.graph.nodes) > 0:
+                                self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                                    = args.stop_physics
+                                self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                                f = Force(network=sn, options=self.graph_notebook_vis_options)
+                                titles.append('Graph')
+                                children.append(f)
+                                logger.debug('added sparql network to tabs')
 
-                        rows_and_columns = sparql_get_rows_and_columns(results)
-                        if rows_and_columns is not None:
-                            results_df = pd.DataFrame(rows_and_columns['rows']).convert_dtypes()
-                            results_df = results_df.astype(str)
-                            results_df = results_df.map(lambda x: encode_html_chars(x))
-                            results_df.insert(0, "#", range(1, len(results_df) + 1))
-                            for col_index, col_name in enumerate(rows_and_columns['columns']):
-                                try:
-                                    results_df.rename({results_df.columns[col_index + 1]: col_name},
-                                                      axis='columns',
-                                                      inplace=True)
-                                except IndexError:
-                                    results_df.insert(col_index + 1, col_name, [])
+                            rows_and_columns = sparql_get_rows_and_columns(results)
+                            if rows_and_columns is not None:
+                                results_df = pd.DataFrame(rows_and_columns['rows']).convert_dtypes()
+                                results_df = results_df.astype(str)
+                                results_df = results_df.map(lambda x: encode_html_chars(x))
+                                results_df.insert(0, "#", range(1, len(results_df) + 1))
+                                for col_index, col_name in enumerate(rows_and_columns['columns']):
+                                    try:
+                                        results_df.rename({results_df.columns[col_index + 1]: col_name},
+                                                        axis='columns',
+                                                        inplace=True)
+                                    except IndexError:
+                                        results_df.insert(col_index + 1, col_name, [])
 
-                        # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
-                        # pattern of showing a tsv with each line being a result binding in addition to new ones.
-                        if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
-                            lines = []
-                            for b in results['results']['bindings']:
-                                lines.append(
-                                    f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
-                            raw_output = widgets.Output(layout=sparql_layout)
-                            with raw_output:
-                                html = sparql_construct_template.render(lines=lines)
-                                display(HTML(html))
-                            children.append(raw_output)
-                            titles.append('Raw')
+                            # Handling CONSTRUCT and DESCRIBE on their own because we want to maintain the previous result
+                            # pattern of showing a tsv with each line being a result binding in addition to new ones.
+                            if query_type == 'CONSTRUCT' or query_type == 'DESCRIBE':
+                                lines = []
+                                for b in results['results']['bindings']:
+                                    lines.append(
+                                        f'{b["subject"]["value"]}\t{b["predicate"]["value"]}\t{b["object"]["value"]}')
+                                raw_output = widgets.Output(layout=sparql_layout)
+                                with raw_output:
+                                    html = sparql_construct_template.render(lines=lines)
+                                    display(HTML(html))
+                                children.append(raw_output)
+                                titles.append('Raw')
 
                     json_output = widgets.Output(layout=sparql_layout)
                     with json_output:
@@ -1343,57 +1345,58 @@ class Graph(Magics):
                 titles.append('Console')
 
                 gremlin_network = None
-                try:
-                    logger.debug(f'groupby: {args.group_by}')
-                    logger.debug(f'display_property: {args.display_property}')
-                    logger.debug(f'edge_display_property: {args.edge_display_property}')
-                    logger.debug(f'label_max_length: {args.label_max_length}')
-                    logger.debug(f'ignore_groups: {args.ignore_groups}')
-                    gn = GremlinNetwork(group_by_property=args.group_by,
-                                        display_property=args.display_property,
-                                        group_by_raw=args.group_by_raw,
-                                        group_by_depth=args.group_by_depth,
-                                        edge_display_property=args.edge_display_property,
-                                        tooltip_property=args.tooltip_property,
-                                        edge_tooltip_property=args.edge_tooltip_property,
-                                        label_max_length=args.label_max_length,
-                                        edge_label_max_length=args.edge_label_max_length,
-                                        ignore_groups=args.ignore_groups,
-                                        using_http=using_http)
-
-                    if using_http and 'path()' in cell and query_res and isinstance(query_res, list):
-                        first_path = query_res[0]
-                        if isinstance(first_path, dict) and first_path.keys() == {'labels', 'objects'}:
-                            query_res_to_path_type = []
-                            for path in query_res:
-                                new_path_list = path['objects']
-                                new_path = Path(labels=[], objects=new_path_list)
-                                query_res_to_path_type.append(new_path)
-                            query_res = query_res_to_path_type
-
-                    if args.path_pattern == '':
-                        gn.add_results(query_res, is_http=using_http)
-                    else:
-                        pattern = parse_pattern_list_str(args.path_pattern)
-                        gn.add_results_with_pattern(query_res, pattern)
-                    gremlin_network = gn
-                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                except ValueError as value_error:
-                    logger.debug(
-                        f'Unable to create graph network from result due to error: {value_error}. '
-                        f'Skipping from result set.')
-                if gremlin_network and len(gremlin_network.graph.nodes) > 0:
+                if self.show_graph_tab:
                     try:
-                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                            = args.stop_physics
-                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        f = Force(network=gremlin_network, options=self.graph_notebook_vis_options)
-                        titles.append('Graph')
-                        children.append(f)
-                        logger.debug('added gremlin network to tabs')
-                    except Exception as force_error:
+                        logger.debug(f'groupby: {args.group_by}')
+                        logger.debug(f'display_property: {args.display_property}')
+                        logger.debug(f'edge_display_property: {args.edge_display_property}')
+                        logger.debug(f'label_max_length: {args.label_max_length}')
+                        logger.debug(f'ignore_groups: {args.ignore_groups}')
+                        gn = GremlinNetwork(group_by_property=args.group_by,
+                                            display_property=args.display_property,
+                                            group_by_raw=args.group_by_raw,
+                                            group_by_depth=args.group_by_depth,
+                                            edge_display_property=args.edge_display_property,
+                                            tooltip_property=args.tooltip_property,
+                                            edge_tooltip_property=args.edge_tooltip_property,
+                                            label_max_length=args.label_max_length,
+                                            edge_label_max_length=args.edge_label_max_length,
+                                            ignore_groups=args.ignore_groups,
+                                            using_http=using_http)
+
+                        if using_http and 'path()' in cell and query_res and isinstance(query_res, list):
+                            first_path = query_res[0]
+                            if isinstance(first_path, dict) and first_path.keys() == {'labels', 'objects'}:
+                                query_res_to_path_type = []
+                                for path in query_res:
+                                    new_path_list = path['objects']
+                                    new_path = Path(labels=[], objects=new_path_list)
+                                    query_res_to_path_type.append(new_path)
+                                query_res = query_res_to_path_type
+
+                        if args.path_pattern == '':
+                            gn.add_results(query_res, is_http=using_http)
+                        else:
+                            pattern = parse_pattern_list_str(args.path_pattern)
+                            gn.add_results_with_pattern(query_res, pattern)
+                        gremlin_network = gn
+                        logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                    except ValueError as value_error:
                         logger.debug(
-                            f'Unable to render visualization from graph network due to error: {force_error}. Skipping.')
+                            f'Unable to create graph network from result due to error: {value_error}. '
+                            f'Skipping from result set.')
+                    if gremlin_network and len(gremlin_network.graph.nodes) > 0:
+                        try:
+                            self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                                = args.stop_physics
+                            self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                            f = Force(network=gremlin_network, options=self.graph_notebook_vis_options)
+                            titles.append('Graph')
+                            children.append(f)
+                            logger.debug('added gremlin network to tabs')
+                        except Exception as force_error:
+                            logger.debug(
+                                f'Unable to render visualization from graph network due to error: {force_error}. Skipping.')
 
                 # Check if we can access the CDNs required by itables library.
                 # If not, then render our own HTML template.
@@ -3474,6 +3477,14 @@ class Graph(Magics):
     def disable_debug(self, line):
         logger.setLevel(logging.ERROR)
         root_logger.setLevel(logging.CRITICAL)
+        
+    @line_magic
+    def enable_graph_tab(self, line):
+        self.show_graph_tab = True
+        
+    @line_magic
+    def disable_graph_tab(self, line):
+        self.show_graph_tab = False
 
     @line_magic
     @needs_local_scope
@@ -3726,28 +3737,30 @@ class Graph(Magics):
                 results_df, has_results = oc_results_df(res, res_format)
                 if has_results:
                     titles.append('Console')
-                try:
-                    gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
-                                   group_by_raw=args.group_by_raw,
-                                   group_by_depth=args.group_by_depth,
-                                   edge_display_property=args.edge_display_property,
-                                   tooltip_property=args.tooltip_property,
-                                   edge_tooltip_property=args.edge_tooltip_property,
-                                   label_max_length=args.label_max_length,
-                                   edge_label_max_length=args.rel_label_max_length,
-                                   ignore_groups=args.ignore_groups)
-                    gn.add_results(res)
-                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
-                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                            = args.stop_physics
-                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
-                        titles.append('Graph')
-                        children.append(force_graph_output)
-                except (TypeError, ValueError) as network_creation_error:
-                    logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
-                    logger.debug(f'Error: {network_creation_error}')
+                    
+                if self.show_graph_tab:
+                    try:
+                        gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                    group_by_raw=args.group_by_raw,
+                                    group_by_depth=args.group_by_depth,
+                                    edge_display_property=args.edge_display_property,
+                                    tooltip_property=args.tooltip_property,
+                                    edge_tooltip_property=args.edge_tooltip_property,
+                                    label_max_length=args.label_max_length,
+                                    edge_label_max_length=args.rel_label_max_length,
+                                    ignore_groups=args.ignore_groups)
+                        gn.add_results(res)
+                        logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                        if len(gn.graph.nodes) > 0:
+                            self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                                = args.stop_physics
+                            self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                            force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                            titles.append('Graph')
+                            children.append(force_graph_output)
+                    except (TypeError, ValueError) as network_creation_error:
+                        logger.debug(f'Unable to create network from result. Skipping from result set: {res}')
+                        logger.debug(f'Error: {network_creation_error}')
 
         elif args.mode == 'bolt':
             res_format = 'bolt'
@@ -3764,33 +3777,35 @@ class Graph(Magics):
                 results_df, has_results = oc_results_df(res, res_format)
                 if has_results:
                     titles.append('Console')
-                # Create graph visualization for bolt response
-                try:
-                    # Wrap bolt response in expected format
-                    # Required because the graph visualizer need the data to be present in a certain format 
-                    transformed_res = {"results": res} if isinstance(res, list) else {"results": []}
-                    
-                    gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
-                                   group_by_raw=args.group_by_raw,
-                                   group_by_depth=args.group_by_depth,
-                                   edge_display_property=args.edge_display_property,
-                                   tooltip_property=args.tooltip_property,
-                                   edge_tooltip_property=args.edge_tooltip_property,
-                                   label_max_length=args.label_max_length,
-                                   edge_label_max_length=args.rel_label_max_length,
-                                   ignore_groups=args.ignore_groups)
-                    gn.add_results(transformed_res)
-                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
-                        self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
-                            = args.stop_physics
-                        self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
-                        force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
-                        titles.append('Graph')
-                        children.append(force_graph_output)
-                except (TypeError, ValueError) as network_creation_error:
-                    logger.debug(f'Unable to create network from bolt result. Skipping from result set: {res}')
-                    logger.debug(f'Error: {network_creation_error}')
+                
+                if self.show_graph_tab:
+                    # Create graph visualization for bolt response
+                    try:
+                        # Wrap bolt response in expected format
+                        # Required because the graph visualizer need the data to be present in a certain format 
+                        transformed_res = {"results": res} if isinstance(res, list) else {"results": []}
+                        
+                        gn = OCNetwork(group_by_property=args.group_by, display_property=args.display_property,
+                                    group_by_raw=args.group_by_raw,
+                                    group_by_depth=args.group_by_depth,
+                                    edge_display_property=args.edge_display_property,
+                                    tooltip_property=args.tooltip_property,
+                                    edge_tooltip_property=args.edge_tooltip_property,
+                                    label_max_length=args.label_max_length,
+                                    edge_label_max_length=args.rel_label_max_length,
+                                    ignore_groups=args.ignore_groups)
+                        gn.add_results(transformed_res)
+                        logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                        if len(gn.graph.nodes) > 0:
+                            self.graph_notebook_vis_options['physics']['disablePhysicsAfterInitialSimulation'] \
+                                = args.stop_physics
+                            self.graph_notebook_vis_options['physics']['simulationDuration'] = args.simulation_duration
+                            force_graph_output = Force(network=gn, options=self.graph_notebook_vis_options)
+                            titles.append('Graph')
+                            children.append(force_graph_output)
+                    except (TypeError, ValueError) as network_creation_error:
+                        logger.debug(f'Unable to create network from bolt result. Skipping from result set: {res}')
+                        logger.debug(f'Error: {network_creation_error}')
 
         if not args.silent:
             if args.mode != 'explain':
