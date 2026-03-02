@@ -6,6 +6,17 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 - Support edgeOnlyLoad parameter for neptune database bulk load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/750))
 - Support loading parquet format data for neptune analytics incremental load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/752))
 
+
+## Release 5.1.0 (Oct 26, 2025)
+- Fix typos in Sample Notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/760))
+- Show graph visualization for bolt queries ([Link to PR](https://github.com/aws/graph-notebook/pull/761))
+- Added support for python v3.12 and v3.13 ([Link to PR](https://github.com/aws/graph-notebook/pull/764))
+
+## Release 5.0.2 (Aug 19, 2025)
+- Support edgeOnlyLoad param for load magic  ([Link to PR](https://github.com/aws/graph-notebook/pull/750))
+- Theme support for Graph Notebook Widgets ([Link to PR](https://github.com/aws/graph-notebook/pull/754))
+- Fix expected output in graph query tutorials ([Link to PR](https://github.com/aws/graph-notebook/pull/755))
+
 ## Release 5.0.1 (May 19, 2025)
 - Locked numba dependency to 0.60.0 to avoid numpy conflict ([Link to PR](https://github.com/aws/graph-notebook/pull/735))
 - Fixed library target for nbclassic nbextension for graph_notebook_widget ([Link to PR](https://github.com/aws/graph-notebook/pull/739))
