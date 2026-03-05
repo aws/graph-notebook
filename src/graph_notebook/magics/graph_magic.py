@@ -62,7 +62,6 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     SPARQL_EXPLAIN_MODES, OPENCYPHER_EXPLAIN_MODES, GREMLIN_EXPLAIN_MODES, \
     OPENCYPHER_PLAN_CACHE_MODES, OPENCYPHER_DEFAULT_TIMEOUT, OPENCYPHER_STATUS_STATE_MODES, \
     normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, TRAVERSAL_DIRECTIONS, \
-    normalize_service_name, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME, GRAPH_PG_INFO_METRICS, TRAVERSAL_DIRECTIONS, \
     GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, GRAPHSONV4_UNTYPED, \
     GREMLIN_SERIALIZERS_WS, get_gremlin_serializer_mime, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
@@ -201,7 +200,30 @@ class QueryMode(Enum):
     PROFILE = 'profile'
     EMPTY = ''
 
-
+def validate_arg_with_warning(args, arg_name, condition, warning_msg, default_value=None):
+    """
+    Validate an argument and show a warning without stopping execution.
+     
+    Args:
+        args: The parsed arguments object
+        arg_name: Name of the argument to validate
+        condition: Boolean condition - if True, validation passes
+        warning_msg: Warning message to display if validation fails
+        default_value: Optional default value to set if validation fails
+     
+    Returns:
+        True if validation passed, False otherwise
+    """
+    if not hasattr(args, arg_name):
+        return True
+     
+    if not condition:
+        print(f"Warning: {warning_msg}")
+        if default_value is not None:
+            setattr(args, arg_name, default_value)
+        return False
+    return True
+ 
 def generate_seed_error_msg(error_content, file_name, line_index=None):
     error_message = f"Terminated seed due to error in file {file_name}"
     if line_index:
@@ -4026,7 +4048,9 @@ class Graph(Magics):
             summary_res.raise_for_status()
             summary_res_json = summary_res.json()
             available_vertex_labels = summary_res_json['graphSummary']['nodeLabels']
+            available_vertex_labels = sorted(available_vertex_labels)
             available_edge_labels = summary_res_json['graphSummary']['edgeLabels']
+            available_edge_labels = sorted(available_edge_labels)
         except Exception as e:
             print(f"Error retrieving graph summary: {e}")
             return
@@ -4037,8 +4061,7 @@ class Graph(Magics):
         # - both [default]: Counts both the incoming and outgoing edges for each vertex.
         parser.add_argument('--traversalDirection', nargs='?', type=str.lower, default='both',
                             help=f'Type of the degree for which the distribution is shown. Valid inputs: {TRAVERSAL_DIRECTIONS}. '
-                                 f'Default: both.',
-                            choices=TRAVERSAL_DIRECTIONS)
+                                 f'Default: both.')
         
         # vertexLabels: List of the vertex labels, space separated, for which the degrees are computed:
         # - default value is empty list, which means the degrees are computed for any vertex label.
@@ -4052,11 +4075,34 @@ class Graph(Magics):
                             help="The edge labels for which the degree distribution is shown. If not supplied, "
                                  "we will default to using all the edge labels.")
         
-        
         args = parser.parse_args(line.split())
         
+        #  Validate traversal direction argument
+        validate_arg_with_warning(
+            args, 'traversalDirection',
+            args.traversalDirection in TRAVERSAL_DIRECTIONS if args.traversalDirection else True,
+            f"Invalid traversal direction '{args.traversalDirection}'. Valid options: {TRAVERSAL_DIRECTIONS}, using default: {TRAVERSAL_DIRECTIONS[0]}",
+            default_value=TRAVERSAL_DIRECTIONS[0]
+        )
+ 
+        # Validate vertex labels arguments
+        validate_arg_with_warning(
+            args, 'vertexLabels',
+            isinstance(args.vertexLabels, list) and all(label in available_vertex_labels for label in args.vertexLabels),
+            f"Some vertex labels are invalid. Valid labels: {available_vertex_labels}. No vertex label is selected.",
+            default_value= []
+        )
+ 
+        # Validate edge labels arguments
+        validate_arg_with_warning(
+            args, 'edgeLabels',
+            isinstance(args.edgeLabels, list) and all(label in available_edge_labels for label in args.edgeLabels),
+            f"Some edge labels are invalid. Valid labels: {available_edge_labels}. No edge label is selected.",
+            default_value= []
+        )
+
         # If the traversalDirection parameter selection is specified on the command line, it is shown as the default
-        # in the dropdown menu. Othweise, the default in the dropdown is 'both'
+        # in the dropdown menu. Otherwise, the default in the dropdown is 'both'
         td_val = args.traversalDirection
         td_val = td_val.lower() if td_val else 'both' 
 
@@ -4071,7 +4117,6 @@ class Graph(Magics):
         # Existing vertex labels in the graph are shown in the dropdown menu. If any vertex label is specified on
         # the command line, they are shown to be selected in the dropdown menu. Otherwise, no label is selected
         # in the dropdown menu, which means any label and all the labels are considered in the computation.
-        available_vertex_labels = sorted(available_vertex_labels)
         selected_vlabels = args.vertexLabels if args.vertexLabels else []
         vertex_labels_select = widgets.SelectMultiple(
             options=available_vertex_labels,
@@ -4084,7 +4129,6 @@ class Graph(Magics):
         # Existing edge labels in the graph are shown in the dropdown menu. If any edge label is specified on
         # the command line, they are shown to be selected in the dropdown menu. Otherwise, no label is selected
         # in the dropdown menu, which means any label and all the labels are considered in the computation.
-        available_edge_labels = sorted(available_edge_labels)
         selected_elabels = args.edgeLabels if args.edgeLabels else []
         edge_labels_select = widgets.SelectMultiple(
             options=available_edge_labels,
@@ -4118,6 +4162,11 @@ class Graph(Magics):
             with output:
                 try:
                     tabs_data = self.execute_degree_distribution_query(td, vlabels, elabels, local_ns)            
+                    # Handle None return AFTER the call, inside try block
+                    if tabs_data is None:
+                        print("Warning: Degree distribution query returned no data.")
+                        return
+        
                 except KeyError as e:
                     print(f"Missing expected data in query results: {e}")
                 except IndexError as e:
@@ -4203,20 +4252,20 @@ class Graph(Magics):
             print(f"Error executing degree distribution query: {e}")
             return None
         
-    def suggest_degree_distribution_params (self, expected_nbins, n, min_nonzero_count, max_count, min_deg, max_deg):
+    def suggest_degree_distribution_params (self, expected_nbins, n, min_nonzero_count, max_count, min_nonzero_deg, max_deg):
         
-        degree_spread = max_deg / min_deg
+        degree_spread = max_deg / min_nonzero_deg
         count_spread = max_count / min_nonzero_count
 
         # X-axis scale decision
         if degree_spread >= 100 and n > 1000:
             x_scale = 'Log'
             bin_type = 'Logarithmic'
-            initial_bin_width = (np.log10(max_deg+1) - np.log10(min_deg+1)) / np.log10(expected_nbins)
+            initial_bin_width = (np.log10(max_deg+1) - np.log10(min_nonzero_deg+1)) / np.log10(expected_nbins)
         else:
             x_scale = 'Linear'
             bin_type = 'Linear'
-            initial_bin_width = (max_deg - min_deg) / expected_nbins if max_deg - min_deg > 0 else 1
+            initial_bin_width = (max_deg - min_nonzero_deg) / expected_nbins if max_deg - min_nonzero_deg > 0 else 1
 
         # Y-axis scale decision
         if count_spread >= 50 and n > 1000:
@@ -4413,6 +4462,8 @@ class Graph(Magics):
                         # Arrange the bins for a given bin_width
                         if bin_type == 'Linear':
                             n_bins = int((max_deg - min_deg) / bin_width)
+                            if n_bins == 0:
+                                n_bins = 1
                             bins = np.linspace(min_deg, max_deg, n_bins+1)
                         else:  # Logarithmic
                             min_deg_log = np.log10(min_deg) if min_deg > 0 else 0
@@ -4659,7 +4710,9 @@ class Graph(Magics):
                 with stats_output:
                     stats_output.clear_output(wait=True)
                     total_nodes = sum(counts)
-                    total_edges = sum(d * c for d, c in zip(unique_degrees, counts)) // 2
+                    total_edges = sum(d * c for d, c in zip(unique_degrees, counts))
+                    if td == 'both':
+                        total_edges = total_edges / 2
 
                     stats_data = {
                         'Metric': ['Nodes', 'Edges', 'Isolated nodes', 'Average degree', 'Median degree', 'Max degree'],
