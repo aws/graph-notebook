@@ -55,7 +55,7 @@ from graph_notebook.magics.ml import neptune_ml_magic_handler, generate_neptune_
 from graph_notebook.magics.streams import StreamViewer
 from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OPTIONS, PARALLELISM_HIGH, \
     LOAD_JOB_MODES, MODE_AUTO, FINAL_LOAD_STATUSES, SPARQL_ACTION, FORMAT_CSV, FORMAT_OPENCYPHER, FORMAT_NTRIPLE, \
-    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, \
+    DB_LOAD_TYPES, ANALYTICS_LOAD_TYPES, VALID_BULK_FORMATS, VALID_INCREMENTAL_FORMATS, FORMAT_PARQUET, \
     FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, FORMAT_NTRIPLE, STREAM_RDF, STREAM_PG, STREAM_ENDPOINTS, \
     NEPTUNE_CONFIG_HOST_IDENTIFIERS, is_allowed_neptune_host, \
     STATISTICS_LANGUAGE_INPUTS, STATISTICS_LANGUAGE_INPUTS_SPARQL, STATISTICS_MODES, SUMMARY_MODES, \
@@ -161,7 +161,7 @@ serializers_map = {
 
 DEFAULT_NAMEDGRAPH_URI = "http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph"
 DEFAULT_BASE_URI = "http://aws.amazon.com/neptune/default"
-RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE]
+RDF_LOAD_FORMATS = [FORMAT_NTRIPLE, FORMAT_NQUADS, FORMAT_RDFXML, FORMAT_TURTLE, FORMAT_PARQUET]
 BASE_URI_FORMATS = [FORMAT_RDFXML, FORMAT_TURTLE]
 DEFAULT_LOAD_CONCURRENCY = 1
 
@@ -2527,7 +2527,7 @@ class Graph(Magics):
                         'parserConfiguration': {},
                     }
                     
-                    if source_format.value.lower() == FORMAT_CSV:
+                    if source_format.value.lower() == FORMAT_CSV or source_format.value.lower() == FORMAT_PARQUET:
                         bulk_load_kwargs['edgeOnlyLoad'] = edge_only_load.value
 
                     if dependencies:

@@ -4,6 +4,8 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) TODO: add to the specific release below when it's released
+- Support edgeOnlyLoad parameter for neptune database bulk load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/750))
+- Support loading parquet format data for neptune analytics incremental load operation ([Link to PR](https://github.com/aws/graph-notebook/pull/752))
 
 
 ## Release 5.1.0 (Oct 26, 2025)
