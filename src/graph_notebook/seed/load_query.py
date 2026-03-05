@@ -47,7 +47,7 @@ def file_to_query(file, path_to_data_sets):
         return None
 
 
-def _validate_and_extract_archive(archive_path, extract_dir):
+def validate_and_extract_archive(archive_path, extract_dir):
     """
     Validates all archive member paths before extraction.
     Raises ValueError if any member:
@@ -62,6 +62,11 @@ def _validate_and_extract_archive(archive_path, extract_dir):
             for member in tar.getmembers():
                 if member.isdir():
                     continue
+                if member.issym() or member.islnk():
+                    raise ValueError(
+                        f"Archive member '{member.name}' is a symbolic or hard link which is not allowed. "
+                        f"Please ensure the archive contains only regular files and try again."
+                    )
                 if '/' in member.name or '\\' in member.name:
                     raise ValueError(
                         f"Archive member '{member.name}' is nested inside a subdirectory. "
@@ -141,7 +146,7 @@ def download_and_extract_archive_from_s3(bucket_name, filepath):
         if not base_file.endswith('/') and (tarfile.is_tarfile(archive_path) or zipfile.is_zipfile(archive_path)):
             nested_dir = pjoin(extract_dir, base_file.split('.')[0])
             os.makedirs(nested_dir, exist_ok=True)
-            _validate_and_extract_archive(archive_path, nested_dir)
+            validate_and_extract_archive(archive_path, nested_dir)
             os.remove(archive_path)
             return nested_dir
 
