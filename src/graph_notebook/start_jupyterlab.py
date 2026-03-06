@@ -11,11 +11,14 @@ from graph_notebook.ipython_profile.configure_ipython_profile import configure_m
 
 
 def install_custom_css():
-    config_dir = Path(os.environ.get('JUPYTER_CONFIG_DIR', os.path.expanduser('~/.jupyter')))
-    dest = config_dir / 'custom'
-    dest.mkdir(parents=True, exist_ok=True)
-    src = Path(__file__).parent / 'jupyter_profile' / 'custom' / 'custom.css'
-    shutil.copy2(src, dest / 'custom.css')
+    try:
+        config_dir = Path(os.environ.get('JUPYTER_CONFIG_DIR', os.path.expanduser('~/.jupyter')))
+        dest = config_dir / 'custom'
+        dest.mkdir(parents=True, exist_ok=True)
+        src = Path(__file__).parent / 'jupyter_profile' / 'custom' / 'custom.css'
+        shutil.copy2(src, dest / 'custom.css')
+    except Exception as e:
+        print(f'Warning: Failed to install custom CSS: {e}')
 
 
 def main():
