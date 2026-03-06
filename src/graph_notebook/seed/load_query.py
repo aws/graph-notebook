@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import os
+import time
 import zipfile
 import tarfile
 import boto3
@@ -30,20 +31,72 @@ def normalize_language_name(lang):
     return lang
 
 
-def file_to_query(file, path_to_data_sets):
-    if file == '__init__.py' or file == '__pycache__':
+def content_to_query(name, content):
+    if name == '__init__.py' or name == '__pycache__':
         return None
+    return {'name': name, 'content': content}
+
+
+def file_to_query(file, path_to_data_sets):
     full_path = pjoin(path_to_data_sets, file)
     try:
         with open(full_path, mode='r', encoding="utf-8") as file_content:
-            query_dict = {
-                'name': file,
-                'content': file_content.read()
-            }
-            return query_dict
+            return content_to_query(file, file_content.read())
     except Exception:
         print(f"Unable to read queries from file [{file}] under local directory [{path_to_data_sets}]")
         return None
+
+
+def validate_and_extract_archive(archive_path, extract_dir):
+    """
+    Validates all archive member paths before extraction.
+    Raises ValueError if any member:
+      - contains an absolute or relative path that resolves outside the extraction directory
+      - is nested inside a subdirectory
+    Extracts to extract_dir if all members are safe.
+    """
+    abs_extract_dir = os.path.realpath(extract_dir)
+
+    if tarfile.is_tarfile(archive_path):
+        with tarfile.open(archive_path) as tar:
+            for member in tar.getmembers():
+                if member.isdir():
+                    continue
+                if member.issym() or member.islnk():
+                    raise ValueError(
+                        f"Archive member '{member.name}' is a symbolic or hard link which is not allowed. "
+                        f"Please ensure the archive contains only regular files and try again."
+                    )
+                if '/' in member.name or '\\' in member.name:
+                    raise ValueError(
+                        f"Archive member '{member.name}' is nested inside a subdirectory. "
+                        f"Please ensure all query files are at the root of the archive and try again."
+                    )
+                member_path = os.path.realpath(os.path.join(abs_extract_dir, member.name))
+                if not member_path.startswith(abs_extract_dir + os.sep):
+                    raise ValueError(
+                        f"Archive member '{member.name}' contains an absolute or relative path that resolves "
+                        f"outside the extraction directory. Please fix the archive and try again."
+                    )
+            tar.extractall(extract_dir)
+
+    elif zipfile.is_zipfile(archive_path):
+        with zipfile.ZipFile(archive_path, 'r') as zf:
+            for name in zf.namelist():
+                if name.endswith('/'):
+                    continue
+                if '/' in name or '\\' in name:
+                    raise ValueError(
+                        f"Archive member '{name}' is nested inside a subdirectory. "
+                        f"Please ensure all query files are at the root of the archive and try again."
+                    )
+                member_path = os.path.realpath(os.path.join(abs_extract_dir, name))
+                if not member_path.startswith(abs_extract_dir + os.sep):
+                    raise ValueError(
+                        f"Archive member '{name}' contains an absolute or relative path that resolves "
+                        f"outside the extraction directory. Please fix the archive and try again."
+                    )
+            zf.extractall(extract_dir)
 
 
 def download_and_extract_archive_from_s3(bucket_name, filepath):
@@ -56,55 +109,52 @@ def download_and_extract_archive_from_s3(bucket_name, filepath):
     We will first attempt to send a signed AWS request to retrieve the S3 file. If credentials cannot be located, the
     request will be retried once more, unsigned.
 
-    If the S3 request succeeds, this function will create a temporary file(or folder containing data files, in the case
-    of a directory/archive URI) in the immediate Jupyter directory. After the datafiles are processed in get_queries,
-    the temporary file is deleted.
+    If the S3 request succeeds, this function will create a temporary directory /tmp/seed-{timestamp}/
+    to extract archive contents into. After the datafiles are processed in get_queries, the temporary
+    directory is deleted in a finally block regardless of success or failure.
     """
     base_file = os.path.basename(filepath)
     if not base_file:
         base_file = filepath
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucket_name)
-    while True:
-        try:
-            if base_file.endswith('/'):
-                if not os.path.exists(base_file):
-                    os.makedirs(base_file)
-                for obj in bucket.objects.filter(Prefix=filepath):
-                    if not obj.key.endswith('/'):
-                        new_file = os.path.basename(obj.key)
-                        target_file = base_file + new_file
-                        bucket.download_file(obj.key, target_file)
-            else:
-                bucket.download_file(filepath, base_file)
-            break
-        except ClientError as e:
-            if e.response['Error']['Code'] in ["404", "403"]:
-                print("Unable to access the sample dataset specified.")
-            raise
-        except NoCredentialsError:
-            # if no AWS credentials are available, retry with unsigned request.
-            s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
-    is_archive = True
-    if os.path.isdir(base_file):  # check this first so we don't get an IsADirectoryError in below conditionals
-        is_archive = False
-    elif tarfile.is_tarfile(base_file):
-        tar_file = tarfile.open(base_file)
-        tar_file.extractall()
-        tar_file.close()
-    elif zipfile.is_zipfile(base_file):
-        with zipfile.ZipFile(base_file, 'r') as zf:
-            zf.extractall()
-    else:
-        is_archive = False
-    if is_archive:
-        # we have the extracted contents elsewhere now, so delete the downloaded archive.
-        os.remove(base_file)
-        path_to_data_sets = pjoin(os.getcwd(), os.path.splitext(base_file)[0])
-    else:
-        # Any other filetype. If unreadable, we'll handle it in the file_to_query function.
-        path_to_data_sets = pjoin(os.getcwd(), base_file)
-    return path_to_data_sets
+    extract_dir = f'/tmp/seed-{int(time.time() * 1000)}'
+    # retry with a new timestamp if the directory already exists (e.g. two calls in the same millisecond)
+    while os.path.exists(extract_dir):
+        extract_dir = f'/tmp/seed-{int(time.time() * 1000)}'
+    os.makedirs(extract_dir)
+    try:
+        while True:
+            try:
+                if base_file.endswith('/'):
+                    for obj in bucket.objects.filter(Prefix=filepath):
+                        if not obj.key.endswith('/'):
+                            new_file = os.path.basename(obj.key)
+                            bucket.download_file(obj.key, pjoin(extract_dir, new_file))
+                else:
+                    bucket.download_file(filepath, pjoin(extract_dir, base_file))
+                break
+            except ClientError as e:
+                if e.response['Error']['Code'] in ["404", "403"]:
+                    print("Unable to access the sample dataset specified.")
+                raise
+            except NoCredentialsError:
+                # if no AWS credentials are available, retry with unsigned request.
+                s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+
+        archive_path = pjoin(extract_dir, base_file)
+        if not base_file.endswith('/') and (tarfile.is_tarfile(archive_path) or zipfile.is_zipfile(archive_path)):
+            nested_dir = pjoin(extract_dir, base_file.split('.')[0])
+            os.makedirs(nested_dir, exist_ok=True)
+            validate_and_extract_archive(archive_path, nested_dir)
+            os.remove(archive_path)
+            return nested_dir
+
+        return extract_dir
+    except Exception:
+        # clean up the temp directory on any failure to avoid leaving partial files on disk
+        rmtree(extract_dir, ignore_errors=True)
+        raise
 
 
 # returns a list of queries which correspond to a given query language and name
@@ -120,25 +170,28 @@ def get_queries(query_language, name, location):
             path_to_data_sets = download_and_extract_archive_from_s3(bucketname, filename)
         else:
             path_to_data_sets = name
-    queries = []
 
+    queries = []
     if os.path.isdir(path_to_data_sets):  # path_to_data_sets is an existing directory
-        for file in os.listdir(path_to_data_sets):
-            new_query = file_to_query(file, path_to_data_sets)
+        try:
+            for file in os.listdir(path_to_data_sets):
+                new_query = file_to_query(file, path_to_data_sets)
+                if new_query:
+                    queries.append(new_query)
+            queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexicographical order.
+        finally:
+            if name.startswith('s3://'):
+                rmtree(path_to_data_sets, ignore_errors=True)
+    elif os.path.isfile(path_to_data_sets):  # path_to_data_sets is an existing file
+        try:
+            file = os.path.basename(path_to_data_sets)
+            folder = os.path.dirname(path_to_data_sets)
+            new_query = file_to_query(file, folder)
             if new_query:
                 queries.append(new_query)
-        queries.sort(key=lambda i: i['name'])  # ensure we get queries back in lexicographical order.
-        if name.startswith('s3://'):
-            # if S3 data was downloaded, delete the temp folder.
-            rmtree(path_to_data_sets, ignore_errors=True)
-    elif os.path.isfile(path_to_data_sets):  # path_to_data_sets is an existing file
-        file = os.path.basename(path_to_data_sets)
-        folder = os.path.dirname(path_to_data_sets)
-        new_query = file_to_query(file, folder)
-        if new_query:
-            queries.append(new_query)
-        if name.startswith('s3://'):
-            os.unlink(path_to_data_sets)
+        finally:
+            if name.startswith('s3://'):
+                rmtree(os.path.dirname(path_to_data_sets), ignore_errors=True)
     else:
         return None
 
