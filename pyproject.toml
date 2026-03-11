@@ -48,6 +48,7 @@ dependencies = [
     'networkx>=3.0,<4.0',
     'numpy>=1.24.0',
     'pandas>=2.2.2',
+    'plotly>=6.1.2',
 
     # Graph databases and query languages
     'gremlinpython>=3.5.1,<=3.7.2',
