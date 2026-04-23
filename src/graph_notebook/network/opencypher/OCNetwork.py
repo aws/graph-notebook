@@ -7,7 +7,7 @@ import logging
 
 from graph_notebook.network.EventfulNetwork import EventfulNetwork, DEFAULT_GRP, DEPTH_GRP_KEY, DEFAULT_RAW_GRP_KEY
 from networkx import MultiDiGraph
-from graph_notebook.magics.schema import GraphSchema
+from graph_notebook.schema_model import GraphSchema
 
 logging.basicConfig()
 logger = logging.getLogger("graph_magic")
@@ -246,8 +246,9 @@ class OCNetwork(EventfulNetwork):
             for item in schema.relationship_patterns:
                 props = {}
                 edge = [i for i in schema.relationships if i.type == item.relation]
-                for p in edge[0].properties:
-                    props[p.name] = p.type
+                if edge:
+                    for p in edge[0].properties:
+                        props[p.name] = p.type
                 props['~label'] = item.relation
                 self.add_edge(
                     from_id=item.left_node,

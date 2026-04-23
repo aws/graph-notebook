@@ -1111,7 +1111,7 @@ class Client(object):
                 req = self._prepare_request('DELETE', url, headers=headers)
             else:
                 req = self._prepare_request('POST', url, data=json.dumps(data), headers=headers)
-        res = self._http_session.send(req)
+        res = self._http_session.send(req, verify=self.ssl_verify)
         return res
 
     def _prepare_request(self, method, url, *, data=None, params=None, headers=None, service=None):

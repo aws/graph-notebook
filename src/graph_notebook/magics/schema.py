@@ -1,93 +1,10 @@
 import logging
 from graph_notebook.neptune.client import Client, NEPTUNE_DB_SERVICE_NAME, NEPTUNE_ANALYTICS_SERVICE_NAME
 from graph_notebook.configuration.generate_config import Configuration
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
+from graph_notebook.schema_model import Property, Node, Relationship, RelationshipPattern, GraphSchema
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger("graph_magic")
-
-@dataclass
-class Property:
-    """Represents a property definition for nodes and relationships in the graph.
-
-    Properties are key-value pairs that can be attached to both nodes and
-    relationships, storing additional metadata about these graph elements.
-
-    Attributes:
-        name (str): The name/key of the property
-        type (str): The data type of the property value
-    """
-
-    name: str
-    type: List[str]
-
-
-@dataclass
-class Node:
-    """Defines a node type in the graph schema.
-
-    Nodes represent entities in the graph database and can have labels
-    and properties that describe their characteristics.
-
-    Attributes:
-        labels (str): The label(s) that categorize this node type
-        properties (List[Property]): List of properties that can be assigned to this node type
-    """
-
-    labels: str
-    properties: List[Property] = field(default_factory=list)
-
-
-@dataclass
-class Relationship:
-    """Defines a relationship type in the graph schema.
-
-    Relationships represent connections between nodes in the graph and can
-    have their own properties to describe the nature of the connection.
-
-    Attributes:
-        type (str): The type/category of the relationship
-        properties (List[Property]): List of properties that can be assigned to this relationship type
-    """
-
-    type: str
-    properties: List[Property] = field(default_factory=list)
-
-
-@dataclass
-class RelationshipPattern:
-    """Defines a valid relationship pattern between nodes in the graph.
-
-    Relationship patterns describe the allowed connections between different
-    types of nodes in the graph schema.
-
-    Attributes:
-        left_node (str): The label of the source/starting node
-        right_node (str): The label of the target/ending node
-        relation (str): The type of relationship connecting the nodes
-    """
-
-    left_node: str
-    right_node: str
-    relation: str
-
-
-@dataclass
-class GraphSchema:
-    """Represents the complete schema definition for the graph database.
-
-    The graph schema defines all possible node types, relationship types,
-    and valid patterns of connections between nodes.
-
-    Attributes:
-        nodes (List[Node]): List of all node types defined in the schema
-        relationships (List[Relationship]): List of all relationship types defined in the schema
-        relationship_patterns (List[RelationshipPattern]): List of valid relationship patterns
-    """
-
-    nodes: List[Node]
-    relationships: List[Relationship]
-    relationship_patterns: List[RelationshipPattern]
 
 
 def _get_labels(summary) -> Tuple[List[str], List[str]]:
@@ -102,28 +19,30 @@ def _get_labels(summary) -> Tuple[List[str], List[str]]:
     e_labels = summary['edgeLabels']
     return n_labels, e_labels
 
-def _get_triples(client:Client, e_labels: List[str]) -> List[RelationshipPattern]:
-        triple_query = """
-        MATCH (a)-[e:`{e_label}`]->(b)
-        WITH a,e,b LIMIT 3000
-        RETURN DISTINCT labels(a) AS from, type(e) AS edge, labels(b) AS to
-        LIMIT 10
-        """
+def _get_triples(client: Client, e_labels: List[str]) -> List[RelationshipPattern]:
+    triple_query = """
+    MATCH (a)-[e:`{e_label}`]->(b)
+    WITH a,e,b LIMIT 3000
+    RETURN DISTINCT labels(a) AS from, type(e) AS edge, labels(b) AS to
+    LIMIT 10
+    """
 
-        triple_schema = []
-        for label in e_labels:
-            logger.debug(f'Running get triples for {label}')
-            q = triple_query.format(e_label=label)
-            data = client.opencypher_http(q).json()
+    triple_schema = []
+    for label in e_labels:
+        logger.debug(f'Running get triples for {label}')
+        q = triple_query.format(e_label=label)
+        data = client.opencypher_http(q).json()
 
-            for d in data['results']:
-                triple = RelationshipPattern(d["from"][0], d["to"][0], d["edge"])
-                triple_schema.append(triple)
+        for d in data['results']:
+            left = ":".join(sorted(d["from"]))
+            right = ":".join(sorted(d["to"]))
+            triple = RelationshipPattern(left, right, d["edge"])
+            triple_schema.append(triple)
 
-        return triple_schema
+    return triple_schema
 
-def _get_node_properties(client:Client,
-     n_labels: List[str], types: Dict[str, str]
+def _get_node_properties(client: Client,
+    n_labels: List[str], types: Dict[str, str]
 ) -> List:
     node_properties_query = """
     MATCH (a:`{n_label}`)
@@ -134,31 +53,22 @@ def _get_node_properties(client:Client,
     for label in n_labels:
         logger.debug(f'Running get node properties for {label}')
         q = node_properties_query.format(n_label=label)
-        data = {"label": label, "properties": client.opencypher_http(q).json()['results']}
-        s = set({})
-        for p in data["properties"]:            
-            props = {}
-
+        data = client.opencypher_http(q).json()['results']
+        props = {}
+        for p in data:
             for k, v in p['props'].items():
                 prop_type = types[type(v).__name__]
                 if k not in props:
                     props[k] = {prop_type}
                 else:
-                    props[k].update([prop_type])
+                    props[k].add(prop_type)
 
-            properties = []
-            for k, v in props.items():
-                properties.append(Property(name=k, type=list(v)))
-
-        np = {
-            "properties": [{"property": k, "type": v} for k, v in s],
-            "labels": label,
-        }
+        properties = [Property(name=k, type=list(v)) for k, v in props.items()]
         nodes.append(Node(labels=label, properties=properties))
 
     return nodes
 
-def _get_edge_properties(client:Client, 
+def _get_edge_properties(client: Client,
     e_labels: List[str], types: Dict[str, str]
 ) -> List:
     edge_properties_query = """
@@ -170,30 +80,179 @@ def _get_edge_properties(client:Client,
     for label in e_labels:
         logger.debug(f'Running get edge properties for {label}')
         q = edge_properties_query.format(e_label=label)
-        data = {"label": label, "properties": client.opencypher_http(q).json()['results']}
-        s = set({})
-        for p in data["properties"]:
-            from typing import cast
-
-            p_dict = cast(Dict[str, Any], p)
-            props = cast(Dict[str, Any], p_dict["props"])
-
-            props = {}
+        data = client.opencypher_http(q).json()['results']
+        props = {}
+        for p in data:
             for k, v in p['props'].items():
                 prop_type = types[type(v).__name__]
                 if k not in props:
                     props[k] = {prop_type}
                 else:
-                    props[k].update([prop_type])
-            properties = []
-            for k, v in props.items():
-                properties.append(Property(name=k, type=list(v)))
+                    props[k].add(prop_type)
 
+        properties = [Property(name=k, type=list(v)) for k, v in props.items()]
         edges.append(Relationship(type=label, properties=properties))
 
     return edges
 
-def get_schema(client:Client, config:Configuration) -> GraphSchema:
+SPARQL_TYPE_MAP = {
+    'http://www.w3.org/2001/XMLSchema#integer': 'INTEGER',
+    'http://www.w3.org/2001/XMLSchema#int': 'INTEGER',
+    'http://www.w3.org/2001/XMLSchema#long': 'INTEGER',
+    'http://www.w3.org/2001/XMLSchema#short': 'INTEGER',
+    'http://www.w3.org/2001/XMLSchema#byte': 'INTEGER',
+    'http://www.w3.org/2001/XMLSchema#decimal': 'DOUBLE',
+    'http://www.w3.org/2001/XMLSchema#float': 'DOUBLE',
+    'http://www.w3.org/2001/XMLSchema#double': 'DOUBLE',
+    'http://www.w3.org/2001/XMLSchema#date': 'DATE',
+    'http://www.w3.org/2001/XMLSchema#dateTime': 'DATE',
+    'http://www.w3.org/2001/XMLSchema#boolean': 'BOOLEAN',
+    'http://www.w3.org/2001/XMLSchema#string': 'STRING',
+}
+
+METADATA_CLASS_PREFIXES = [
+    'http://www.w3.org/2000/01/rdf-schema',
+    'http://www.w3.org/2002/07/owl',
+]
+
+RDF_TYPE_URI = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+
+
+def _uri_local_name(uri: str) -> str:
+    """Extract the local name from a URI (after last # or /)."""
+    for sep in ('#', '/'):
+        idx = uri.rfind(sep)
+        if idx != -1:
+            return uri[idx + 1:]
+    return uri
+
+
+def _is_metadata_uri(uri: str) -> bool:
+    return any(uri.startswith(p) for p in METADATA_CLASS_PREFIXES)
+
+
+def _sparql_get_classes(client: Client) -> List[str]:
+    """Discover RDF classes via SPARQL. From graph-explorer classesWithCountsTemplates.ts"""
+    query = """
+    SELECT ?class (COUNT(?s) AS ?count)
+    WHERE { ?s a ?class }
+    GROUP BY ?class
+    """
+    bindings = client.sparql(query).json()['results']['bindings']
+    return [b['class']['value'] for b in bindings if not _is_metadata_uri(b['class']['value'])]
+
+
+def _sparql_get_predicates_by_class(client: Client, class_uri: str) -> List[Property]:
+    """Sample one instance and return literal predicates with types.
+    From graph-explorer predicatesByClassTemplate.ts"""
+    query = f"""
+    SELECT ?pred (SAMPLE(?object) AS ?sample)
+    WHERE {{
+        {{ SELECT ?subject WHERE {{ ?subject a <{class_uri}>. }} LIMIT 1 }}
+        ?subject ?pred ?object.
+        FILTER(!isBlank(?object) && isLiteral(?object))
+    }}
+    GROUP BY ?pred
+    """
+    bindings = client.sparql(query).json()['results']['bindings']
+    return [
+        Property(
+            name=_uri_local_name(b['pred']['value']),
+            type=[SPARQL_TYPE_MAP.get(b.get('sample', {}).get('datatype', ''), 'STRING')]
+        )
+        for b in bindings
+    ]
+
+
+def _sparql_get_predicates_with_counts(client: Client) -> List[str]:
+    """Fetch all predicates to non-literals (relationships).
+    From graph-explorer predicatesWithCountsTemplate.ts"""
+    query = """
+    SELECT ?predicate (COUNT(?predicate) AS ?count)
+    WHERE {
+        [] ?predicate ?object
+        FILTER(!isLiteral(?object))
+    }
+    GROUP BY ?predicate
+    """
+    bindings = client.sparql(query).json()['results']['bindings']
+    return [
+        b['predicate']['value'] for b in bindings
+        if b['predicate']['value'] != RDF_TYPE_URI and not _is_metadata_uri(b['predicate']['value'])
+    ]
+
+
+def _sparql_get_relationship_patterns(client: Client, pred_uri: str) -> List[RelationshipPattern]:
+    """For a predicate, discover which class pairs it connects."""
+    query = f"""
+    SELECT DISTINCT ?fromClass ?toClass
+    WHERE {{
+        ?s a ?fromClass .
+        ?s <{pred_uri}> ?o .
+        ?o a ?toClass .
+    }}
+    LIMIT 50
+    """
+    bindings = client.sparql(query).json()['results']['bindings']
+    return [
+        RelationshipPattern(
+            left_node=_uri_local_name(b['fromClass']['value']),
+            right_node=_uri_local_name(b['toClass']['value']),
+            relation=_uri_local_name(pred_uri),
+        )
+        for b in bindings
+    ]
+
+
+def _get_rdf_schema(client: Client, config: Configuration) -> GraphSchema:
+    """Build a GraphSchema from an RDF/SPARQL endpoint."""
+    logger.info("Finding Schema for RDF/SPARQL endpoint")
+
+    class_uris = None
+    pred_uris = None
+
+    # Use Neptune summary API if available
+    if config.neptune_service == NEPTUNE_DB_SERVICE_NAME:
+        try:
+            summary = client.statistics('sparql', True, 'basic', False).json()['payload']['graphSummary']
+            logger.info("Using Neptune RDF summary for class/predicate discovery")
+            class_uris = [c for c in summary.get('classes', []) if not _is_metadata_uri(c)]
+            pred_uris = [
+                uri for pred_map in summary.get('predicates', [])
+                for uri in pred_map
+                if uri != RDF_TYPE_URI and not _is_metadata_uri(uri)
+            ]
+        except Exception as e:
+            logger.warning(f"Neptune RDF summary unavailable, falling back to SPARQL discovery: {e}")
+
+    # Fall back to SPARQL queries
+    if class_uris is None:
+        class_uris = _sparql_get_classes(client)
+    if pred_uris is None:
+        pred_uris = _sparql_get_predicates_with_counts(client)
+
+    # Get properties per class
+    nodes = []
+    for class_uri in class_uris:
+        logger.info(f"Fetching predicates for class {class_uri}")
+        props = _sparql_get_predicates_by_class(client, class_uri)
+        nodes.append(Node(labels=_uri_local_name(class_uri), properties=props))
+
+    # Get relationships and patterns
+    relationships = []
+    relationship_patterns = []
+    for uri in pred_uris:
+        relationships.append(Relationship(type=_uri_local_name(uri), properties=[]))
+        logger.info(f"Fetching relationship patterns for {uri}")
+        relationship_patterns.extend(_sparql_get_relationship_patterns(client, uri))
+
+    return GraphSchema(nodes=nodes, relationships=relationships, relationship_patterns=relationship_patterns)
+
+
+def get_schema(client: Client, config: Configuration, language: str = 'propertygraph') -> GraphSchema:
+    if language in ('sparql', 'rdf'):
+        return _get_rdf_schema(client, config)
+
     if config.neptune_service == NEPTUNE_DB_SERVICE_NAME:
         logger.info("Finding Schema for Neptune Database")
         summary = client.statistics('propertygraph', True, 'basic', False)

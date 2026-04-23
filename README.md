@@ -80,6 +80,22 @@ We encourage others to contribute configurations they find useful. There is an [
 
 `%graph_notebook_vis_options` - Print the Vis.js options being used for rendered graphs
 
+`%graph_schema` - Introspect and visualize the schema of a property graph or RDF graph database. Displays an interactive graph visualization showing node labels, relationship types, and how they connect, along with a JSON tab containing the full schema details including property names and types. Supports Amazon Neptune DB and Neptune Analytics for property graphs, and any SPARQL 1.1 endpoint for RDF graphs.
+
+``` python
+# Basic usage - visualize property graph schema
+%graph_schema
+
+# Visualize RDF/SPARQL schema
+%graph_schema sparql
+
+# Store schema to a variable for programmatic access
+%graph_schema --store-to my_schema
+
+# Suppress visual output
+%graph_schema --silent --store-to my_schema
+```
+
 **TIP** :point_right: You can list all the magics installed in the Python 3 kernel using the `%lsmagic` command.
 
 **TIP** :point_right: Many of the magic commands support a `--help` option in order to provide additional information.

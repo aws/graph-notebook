@@ -4812,6 +4812,10 @@ class Graph(Magics):
 
         except Exception as e:
             print(f"Error creating visualization: {e}")
+
+
+            
+
     @line_magic
     @needs_local_scope
     @display_exceptions
@@ -4826,45 +4830,42 @@ class Graph(Magics):
         parser.add_argument('--store-to', type=str, default='', help='store query result to this variable')
         args = parser.parse_args(line.split())
 
-        if not args.language == 'propertygraph':
-            print("Currently, only fetching the schema of property graphs is supported.")
-        else: 
-            try:
-                if not args.silent:
-                    tab = widgets.Tab()
-                    titles = []
-                    children = []
+        try:
+            if not args.silent:
+                tab = widgets.Tab()
+                titles = []
+                children = []
 
-                schema = get_schema(self.client, self.graph_notebook_config)
-                if not args.silent:
-                    # Display GRAPH tab
-                    gn = OCNetwork(group_by_property='~label')
-                    logger.info("Creating schema network")
-                    gn.create_schema_network(schema)
-                    logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
-                    if len(gn.graph.nodes) > 0:
-                        options = self.graph_notebook_vis_options.copy()
-                        options['edges']['smooth'] = 'dynamic'
-                        force_graph_output = Force(network=gn, options=options)
-                        titles.append('Graph')
-                        children.append(force_graph_output)
-                
-                    # Display JSON tab
-                    json_output = widgets.Output(layout=DEFAULT_LAYOUT)
-                    with json_output:
-                        print(json.dumps(asdict(schema), indent=2))
-                    children.append(json_output)
-                    titles.append('JSON')
+            schema = get_schema(self.client, self.graph_notebook_config, args.language)
+            if not args.silent:
+                # Display GRAPH tab
+                gn = OCNetwork(group_by_property='~label')
+                logger.info("Creating schema network")
+                gn.create_schema_network(schema)
+                logger.debug(f'number of nodes is {len(gn.graph.nodes)}')
+                if len(gn.graph.nodes) > 0:
+                    options = self.graph_notebook_vis_options.copy()
+                    options['edges']['smooth'] = 'dynamic'
+                    force_graph_output = Force(network=gn, options=options)
+                    titles.append('Graph')
+                    children.append(force_graph_output)
 
-                    tab.children = children
-                    
-                    for i in range(len(titles)):
-                        tab.set_title(i, titles[i])
-                    display(tab)
-                    
-                store_to_ns(args.store_to, schema, local_ns)
-            except Exception as e:
-                if not args.silent:
-                    print("Encountered an error when attempting to retrieve graph schema:\n")
-                    print(e)
-                store_to_ns(args.store_to, e, local_ns)
+                # Display JSON tab
+                json_output = widgets.Output(layout=DEFAULT_LAYOUT)
+                with json_output:
+                    print(json.dumps(asdict(schema), indent=2))
+                children.append(json_output)
+                titles.append('JSON')
+
+                tab.children = children
+
+                for i in range(len(titles)):
+                    tab.set_title(i, titles[i])
+                display(tab)
+
+            store_to_ns(args.store_to, schema, local_ns)
+        except Exception as e:
+            if not args.silent:
+                print("Encountered an error when attempting to retrieve graph schema:\n")
+                print(e)
+            store_to_ns(args.store_to, e, local_ns)
