@@ -64,7 +64,8 @@
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
-    "@types/backbone": "^1.4.15"
+    "@types/backbone": "^1.4.15",
+    "license-webpack-plugin": "4.0.2"
   },
   "files": [
     "lib/**/*.js",
