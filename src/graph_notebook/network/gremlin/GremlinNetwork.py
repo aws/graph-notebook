@@ -110,7 +110,7 @@ class GremlinNetwork(EventfulNetwork):
     def __init__(self, graph: MultiDiGraph = None, callbacks=None, label_max_length=DEFAULT_LABEL_MAX_LENGTH,
                  edge_label_max_length=DEFAULT_LABEL_MAX_LENGTH, group_by_property=None, display_property=None,
                  edge_display_property=None, tooltip_property=None, edge_tooltip_property=None, ignore_groups=False,
-                 group_by_depth=False, group_by_raw=False, using_http=False):
+                 group_by_depth=False, group_by_raw=False, using_http=False, vis_group_keys=None):
         if graph is None:
             graph = MultiDiGraph()
         if group_by_depth:
@@ -121,9 +121,28 @@ class GremlinNetwork(EventfulNetwork):
             display_property = 'label' if using_http else T_LABEL
         if not edge_display_property:
             edge_display_property = 'label' if using_http else T_LABEL
+        self.vis_group_keys = set(vis_group_keys) if vis_group_keys else set()
         super().__init__(graph, callbacks, label_max_length, edge_label_max_length, group_by_property,
                          display_property, edge_display_property, tooltip_property, edge_tooltip_property,
                          ignore_groups, group_by_raw)
+
+    def _resolve_multilabel_group(self, label):
+        """For multi-label vertices (:: separated), check if any individual label
+        component matches a defined vis options group key. Returns the first match,
+        or the full label if no match is found."""
+        if not self.vis_group_keys or '::' not in label:
+            return label
+        if label in self.vis_group_keys:
+            return label
+        # Check if any vis group key has the same components (order-independent)
+        label_components = set(label.split('::'))
+        for key in self.vis_group_keys:
+            if '::' in key and set(key.split('::')) == label_components:
+                return key
+        for component in label.split('::'):
+            if component in self.vis_group_keys:
+                return component
+        return label
 
     def get_dict_element_property_value(self, element, k, temp_label, custom_property):
         property_value = None
@@ -399,7 +418,7 @@ class GremlinNetwork(EventfulNetwork):
                     # This sets the group key to the label if either "label" is passed in or
                     # T.label is set in order to handle the default case of grouping by label
                     # when no explicit key is specified
-                    group = v.label
+                    group = self._resolve_multilabel_group(v.label)
                 elif str(self.group_by_property) in [T_ID, 'id', '~id']:
                     group = v.id
                 elif self.group_by_property == DEPTH_GRP_KEY:
@@ -408,17 +427,26 @@ class GremlinNetwork(EventfulNetwork):
                     group = DEFAULT_GRP
             else:  # handle dict format group_by
                 try:
+                    # For multi-label vertices, try the full label first, then individual components
+                    matched_label = None
                     if str(v.label) in self.group_by_property:
-                        if self.group_by_property[str(v.label)] == DEFAULT_RAW_GRP_KEY:
+                        matched_label = str(v.label)
+                    elif '::' in v.label:
+                        for component in v.label.split('::'):
+                            if component in self.group_by_property:
+                                matched_label = component
+                                break
+                    if matched_label is not None:
+                        if self.group_by_property[matched_label] == DEFAULT_RAW_GRP_KEY:
                             group = str(v)
-                        elif self.group_by_property[str(v.label)] in [T_LABEL, 'label']:
-                            group = v.label
-                        elif self.group_by_property[str(v.label)] in [T_ID, 'id', '~id']:
+                        elif self.group_by_property[matched_label] in [T_LABEL, 'label']:
+                            group = self._resolve_multilabel_group(v.label)
+                        elif self.group_by_property[matched_label] in [T_ID, 'id', '~id']:
                             group = v.id
-                        elif self.group_by_property[str(v.label)] == DEPTH_GRP_KEY:
+                        elif self.group_by_property[matched_label] == DEPTH_GRP_KEY:
                             group = depth_group
                         else:
-                            group = vertex_dict[self.group_by_property[str(v.label)]]
+                            group = vertex_dict[self.group_by_property[matched_label]]
                     else:
                         group = DEFAULT_GRP
                 except KeyError:
@@ -515,7 +543,10 @@ class GremlinNetwork(EventfulNetwork):
                             group = depth_group
                             group_is_set = True
                         elif str(k) == self.group_by_property:
-                            group = str(v[k])
+                            if str(self.group_by_property) in ['label', T_LABEL] and isinstance(v[k], str) and '::' in v[k]:
+                                group = self._resolve_multilabel_group(v[k])
+                            else:
+                                group = str(v[k])
                             group_is_set = True
                 if not display_is_set:
                     label_property_raw_value = self.get_dict_element_property_value(v, k, label_raw,

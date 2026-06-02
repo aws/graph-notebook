@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Autoformatter for gremlin queries
+- Support group matching for multi-label vertices in Gremlin visualization ([Link to Issue](https://github.com/aws/graph-notebook/issues/746))
 
 ## Release 5.2.0 (Mar 11, 2026)
 - Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) 
