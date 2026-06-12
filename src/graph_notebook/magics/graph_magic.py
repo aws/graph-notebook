@@ -1351,6 +1351,12 @@ class Graph(Magics):
                             query_res_http_json = json.loads(query_res_fixed)
                         if 'result' in query_res_http_json:
                             query_res = query_res_http_json['result']['data']
+                            # Handle typed GraphSON format where data is {"@type": "g:List", "@value": [...]}
+                            if isinstance(query_res, dict) and '@type' in query_res and '@value' in query_res:
+                                from gremlin_python.structure.io.graphsonV3d0 import GraphSONReader
+                                reader = GraphSONReader()
+                                query_res = reader.to_object(query_res)
+                                using_http = False  # results are now deserialized objects like WS path
                         else:
                             if 'reason' in query_res_http_json:
                                 logger.debug('Query failed with internal error, see response.')
