@@ -21,6 +21,9 @@ import math
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from pygments import highlight
+from pygments.lexers import JsonLexer
+from pygments.formatters import HtmlFormatter
 from IPython.display import display
 
 
@@ -75,12 +78,8 @@ from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
     build_opencypher_metadata_from_query
 
-from pygments import highlight
-from pygments.lexers import JsonLexer
-from pygments.formatters import HtmlFormatter
-
 _JSON_LEXER = JsonLexer()
-_JSON_FORMATTER = HtmlFormatter(noclasses=True, style='monokai')
+_JSON_FORMATTER = HtmlFormatter(noclasses=True, nobackground=True, style='default')
 
 
 def display_json(data, indent=2, default=None):
