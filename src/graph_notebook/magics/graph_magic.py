@@ -75,6 +75,28 @@ from graph_notebook.options import OPTIONS_DEFAULT_DIRECTED, vis_options_merge
 from graph_notebook.magics.metadata import build_sparql_metadata_from_query, build_gremlin_metadata_from_query, \
     build_opencypher_metadata_from_query
 
+from pygments import highlight
+from pygments.lexers import JsonLexer
+from pygments.formatters import HtmlFormatter
+
+_JSON_LEXER = JsonLexer()
+_JSON_FORMATTER = HtmlFormatter(noclasses=True, style='monokai')
+
+
+def display_json(data, indent=2, default=None):
+    """Display a JSON-serializable object with syntax highlighting in Jupyter notebooks.
+
+    Uses Pygments to render colored, formatted JSON via IPython's HTML display.
+    Falls back to plain print if rendering fails for any reason.
+    """
+    try:
+        json_str = json.dumps(data, indent=indent, default=default)
+        highlighted = highlight(json_str, _JSON_LEXER, _JSON_FORMATTER)
+        display(HTML(highlighted))
+    except Exception:
+        print(json.dumps(data, indent=indent, default=default))
+
+
 sparql_table_template = retrieve_template("sparql_table.html")
 sparql_explain_template = retrieve_template("sparql_explain.html")
 sparql_construct_template = retrieve_template("sparql_construct.html")
@@ -518,12 +540,12 @@ class Graph(Magics):
             self._generate_client_from_config(config)
             if not args.silent:
                 print('Set notebook config to:')
-                print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
+                display_json(self.graph_notebook_config.to_dict(), indent=4)
         elif args.mode == 'reset':
             self.graph_notebook_config = get_config(self.config_location, neptune_hosts=self.neptune_cfg_allowlist)
             if not args.silent:
                 print('Reset notebook config to:')
-                print(json.dumps(self.graph_notebook_config.to_dict(), indent=4))
+                display_json(self.graph_notebook_config.to_dict(), indent=4)
         elif args.mode == 'silent':
             """
             silent option to that our neptune_menu extension can receive json instead
@@ -532,11 +554,12 @@ class Graph(Magics):
             config_dict = self.graph_notebook_config.to_dict()
             store_to_ns(args.store_to, json.dumps(config_dict, indent=4), local_ns)
             if not args.silent:
-                return print(json.dumps(config_dict, indent=4))
+                display_json(config_dict, indent=4)
+                return
         else:
             config_dict = self.graph_notebook_config.to_dict()
             if not args.silent:
-                print(json.dumps(config_dict, indent=4))
+                display_json(config_dict, indent=4)
 
         store_to_ns(args.store_to, json.dumps(self.graph_notebook_config.to_dict(), indent=4), local_ns)
         export_config(args.export_to, self.graph_notebook_config.to_dict(), args.silent)
@@ -664,7 +687,7 @@ class Graph(Magics):
         statistics_res.raise_for_status()
         statistics_res_json = statistics_res.json()
         if not args.silent:
-            print(json.dumps(statistics_res_json, indent=2))
+            display_json(statistics_res_json)
 
         store_to_ns(args.store_to, statistics_res_json, local_ns)
 
@@ -707,7 +730,7 @@ class Graph(Magics):
         summary_res.raise_for_status()
         summary_res_json = summary_res.json()
         if not args.silent:
-            print(json.dumps(summary_res_json, indent=2))
+            display_json(summary_res_json)
 
         store_to_ns(args.store_to, summary_res_json, local_ns)
 
@@ -977,7 +1000,7 @@ class Graph(Magics):
 
                     json_output = widgets.Output(layout=sparql_layout)
                     with json_output:
-                        print(json.dumps(results, indent=2))
+                        display_json(results)
                     children.append(json_output)
                     titles.append('JSON')
 
@@ -1108,7 +1131,7 @@ class Graph(Magics):
 
         store_to_ns(args.store_to, res, local_ns)
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            display_json(res)
 
     @magic_variables
     @cell_magic
@@ -1582,7 +1605,7 @@ class Graph(Magics):
                 cancel_res.raise_for_status()
                 res = cancel_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            display_json(res)
         store_to_ns(args.store_to, res, local_ns)
 
     @magic_variables
@@ -1632,7 +1655,7 @@ class Graph(Magics):
             logger.info(f'got the json format response {res}')
             store_to_ns(args.store_to, res, local_ns)
             if not args.silent:
-                return res
+                display_json(res)
         except ValueError:
             logger.info(f'got the HTML format response {status_res.text}')
             store_to_ns(args.store_to, status_res.text, local_ns)
@@ -1664,7 +1687,7 @@ class Graph(Magics):
             if not args.include_metadata:
                 res.pop('ResponseMetadata', None)
             if not args.silent:
-                print(json.dumps(res, indent=2, default=str))
+                display_json(res, default=str)
             store_to_ns(args.store_to, res, local_ns)
         except Exception as e:
             if not args.silent:
@@ -1716,7 +1739,7 @@ class Graph(Magics):
                 res.pop('ResponseMetadata', None)
             if not args.silent:
                 print("Successfully submitted snapshot request:")
-                print(json.dumps(res, indent=2, default=str))
+                display_json(res, default=str)
             store_to_ns(args.store_to, res, local_ns)
         except Exception as e:
             if not args.silent:
@@ -1751,7 +1774,7 @@ class Graph(Magics):
             if not args.include_metadata:
                 res.pop('ResponseMetadata', None)
             if not args.silent:
-                print(json.dumps(res, indent=2, default=str))
+                display_json(res, default=str)
             store_to_ns(args.store_to, res, local_ns)
         except Exception as e:
             if not args.silent:
@@ -1818,7 +1841,7 @@ class Graph(Magics):
                             f"ResetGraph call submitted successfully for graph ID [{graph_id}]. "
                             f"Please note that the graph may take several minutes to become available again, "
                             f"You can use %status or %get_graph to check the current status of the graph.\n")
-                        print(json.dumps(res, indent=2, default=str))
+                        display_json(res, default=str)
                     except Exception as e:
                         print("Received an error when attempting graph reset:")
                         print(e)
@@ -2607,7 +2630,7 @@ class Graph(Magics):
                     store_to_ns(args.store_to, load_result, local_ns)
                     with output:
                         print("Load completed.\n")
-                        print(json.dumps(load_result, indent=2))
+                        display_json(load_result)
                 else:
                     try:
                         load_res.raise_for_status()
@@ -2805,7 +2828,7 @@ class Graph(Magics):
                              )
 
                     with raw_output:
-                        print(json.dumps(res, indent=2))
+                        display_json(res)
             else:
                 labels = [widgets.Label(value=label_id) for label_id in ids]
 
@@ -2841,7 +2864,7 @@ class Graph(Magics):
         load_status_res.raise_for_status()
         res = load_status_res.json()
         if not args.silent:
-            print(json.dumps(res, indent=2))
+            display_json(res)
 
         store_to_ns(args.store_to, res, local_ns)
 
@@ -2889,7 +2912,7 @@ class Graph(Magics):
 
         if not args.silent:
             if print_res:
-                print(json.dumps(print_res, indent=2))
+                display_json(print_res)
             else:
                 print("No cancellable load jobs were found.")
 
@@ -3561,7 +3584,7 @@ class Graph(Magics):
 
         if cell == '' and not args.load_from:
             if not args.silent:
-                print(json.dumps(self.graph_notebook_vis_options, indent=2))
+                display_json(self.graph_notebook_vis_options)
         else:
             try:
                 if args.load_from:
@@ -3583,7 +3606,7 @@ class Graph(Magics):
                 return
             self.graph_notebook_vis_options = vis_options_merge(self.graph_notebook_vis_options, options_dict)
             print("Visualization settings successfully changed to:\n")
-            print(json.dumps(self.graph_notebook_vis_options, indent=2))
+            display_json(self.graph_notebook_vis_options)
 
         store_to_ns(args.store_to, json.dumps(self.graph_notebook_vis_options, indent=2), local_ns)
 
@@ -3844,7 +3867,7 @@ class Graph(Magics):
                 # Display JSON tab
                 json_output = widgets.Output(layout=oc_layout)
                 with json_output:
-                    print(json.dumps(res, indent=2))
+                    display_json(res)
                 children.append(json_output)
                 titles.append('JSON')
 
@@ -4017,7 +4040,7 @@ class Graph(Magics):
             js = res.json()
             store_to_ns(args.store_to, js, local_ns)
             if not args.silent:
-                print(json.dumps(js, indent=2))
+                display_json(js)
 
     # %degreeDistribution magic command.
     # It obtains the degree distribution of a graph in the form of a visual histogram in notebook. Histogram simply
