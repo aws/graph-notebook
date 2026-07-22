@@ -123,9 +123,24 @@ STREAM_PG = 'PropertyGraph'
 STREAM_RDF = 'RDF'
 STREAM_ENDPOINTS = {STREAM_PG: 'gremlin', STREAM_RDF: 'sparql'}
 
-ANALYTICS_CONFIG_HOST_IDENTIFIERS = ["neptune-graph", "api.aws", "on.aws", "aws.dev"]
-NEPTUNE_CONFIG_HOST_IDENTIFIERS = ["neptune.amazonaws.com", "neptune.*.amazonaws.com.cn",
-                                   "sc2s.sgov.gov", "c2s.ic.gov"] + ANALYTICS_CONFIG_HOST_IDENTIFIERS
+# Allowed Neptune host suffixes. Entries are matched as case-insensitive DNS
+# suffixes (either an exact match, or a proper subdomain), NOT as substrings
+# or regex patterns. Do NOT add regex metacharacters here -- values are
+# treated as literal domain suffixes.
+ANALYTICS_CONFIG_HOST_IDENTIFIERS = [
+    "neptune-graph.amazonaws.com",
+    "api.aws",
+    "on.aws",
+    "aws.dev",
+]
+
+NEPTUNE_CONFIG_HOST_IDENTIFIERS = [
+    "neptune.amazonaws.com",
+    "neptune.amazonaws.com.cn",
+    "neptune.*.amazonaws.com.cn",
+    "sc2s.sgov.gov",
+    "c2s.ic.gov",
+] + ANALYTICS_CONFIG_HOST_IDENTIFIERS
 
 false_str_variants = [False, 'False', 'false', 'FALSE']
 
@@ -186,11 +201,66 @@ GRAPH_PG_INFO_METRICS = {'numVertices', 'numEdges', 'numVertexProperties', 'numE
 
 TRAVERSAL_DIRECTIONS = ['both', 'inbound', 'outbound']
 
-def is_allowed_neptune_host(hostname: str, host_allowlist: list):
-    for host_snippet in host_allowlist:
-        if re.search(host_snippet, hostname):
+def is_allowed_neptune_host(hostname: str, host_allowlist: list) -> bool:
+    """
+    Return True iff ``hostname`` matches one of the entries in
+    ``host_allowlist`` as a case-insensitive DNS-label suffix.
+
+    Entries are literal DNS suffixes; a label of ``*`` matches exactly
+    one DNS label of the hostname (not a regex). 
+    """
+    # Reject non-strings and URL-shaped / whitespace-bearing inputs.
+    if not isinstance(hostname, str) or any(c in hostname for c in "/@?# \t\r\n"):
+        return False
+
+    # Normalize and split the hostname into DNS labels.
+    host_labels = hostname.strip().rstrip('.').lower().split('.')
+    
+    if any(not label for label in host_labels):
+        return False
+
+    for entry in host_allowlist:
+        # Skip empty / non-string entries so they can't act as a wildcard.
+        if not isinstance(entry, str):
+            continue
+        
+        pattern = entry.strip().rstrip('.').lower().split('.')
+        if any(not label for label in pattern):
+            continue
+
+        if _labels_match_tail(pattern, host_labels):
             return True
+
     return False
+
+
+def _labels_match_tail(pattern: list, host_labels: list) -> bool:
+    """
+    Return True if ``pattern`` matches the tail of ``host_labels``
+    label-by-label. A ``*`` in ``pattern`` matches any single
+    non-empty label.
+
+    Examples:
+        1. pattern=[neptune, amazonaws, com]
+           host   =[neptune, amazonaws, com]                    -> True  (exact)
+
+        2. pattern=[neptune, amazonaws, com]
+           host   =[my, cluster, neptune, amazonaws, com]       -> True  (subdomain)
+        
+        3. pattern=[neptune, *, amazonaws, com, cn]
+           host   =[..., neptune, cn-north-1, amazonaws, com, cn]
+                                                             -> True  (`*` matches 'cn-north-1')
+        4. pattern=[neptune, amazonaws, com]
+           host   =[xneptune, amazonaws, com]                   -> False (label boundary)
+        
+        5. pattern=[neptune, *, amazonaws, com, cn]
+           host   =[neptune, amazonaws, com]                    -> False (host too short)
+    """
+    if len(host_labels) < len(pattern):
+        return False
+    tail = host_labels[-len(pattern):]
+    return all(pattern_label == '*' or pattern_label == host_label
+               for pattern_label, host_label in zip(pattern, tail))
 
 
 def get_gremlin_serializer_driver_class(serializer_str: str):
