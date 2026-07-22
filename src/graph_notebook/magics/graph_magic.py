@@ -40,6 +40,7 @@ from SPARQLWrapper import SPARQLWrapper
 from botocore.session import get_session
 from gremlin_python.driver.protocol import GremlinServerError
 from gremlin_python.structure.graph import Path
+from gremlin_python.structure.io.graphsonV3d0 import GraphSONReader
 from IPython.core.display import HTML, display_html, display
 from IPython.core.magic import (Magics, magics_class, cell_magic, line_magic, line_cell_magic, needs_local_scope)
 from ipywidgets.widgets.widget_description import DescriptionStyle
@@ -1353,7 +1354,6 @@ class Graph(Magics):
                             query_res = query_res_http_json['result']['data']
                             # Handle typed GraphSON format where data is {"@type": "g:List", "@value": [...]}
                             if isinstance(query_res, dict) and '@type' in query_res and '@value' in query_res:
-                                from gremlin_python.structure.io.graphsonV3d0 import GraphSONReader
                                 reader = GraphSONReader()
                                 query_res = reader.to_object(query_res)
                                 using_http = False  # results are now deserialized objects like WS path
