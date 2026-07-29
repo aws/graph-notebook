@@ -66,6 +66,7 @@ from graph_notebook.neptune.client import (ClientBuilder, Client, PARALLELISM_OP
     GREMLIN_PROTOCOL_FORMATS, DEFAULT_HTTP_PROTOCOL, DEFAULT_WS_PROTOCOL, GRAPHSONV4_UNTYPED, \
     GREMLIN_SERIALIZERS_WS, get_gremlin_serializer_mime, normalize_protocol_name, generate_snapshot_name)
 from graph_notebook.network import SPARQLNetwork
+from graph_notebook.neptune.utils import serialize_query_params
 from graph_notebook.network.gremlin.GremlinNetwork import parse_pattern_list_str, GremlinNetwork
 from graph_notebook.visualization.rows_and_columns import sparql_get_rows_and_columns, opencypher_get_rows_and_columns
 from graph_notebook.visualization.template_retriever import retrieve_template
@@ -1206,14 +1207,10 @@ class Graph(Magics):
                 query_params_input = local_ns[args.query_parameters]
             else:
                 query_params_input = args.query_parameters
-            if isinstance(query_params_input, dict):
-                query_params = json.dumps(query_params_input)
-            else:
-                try:
-                    query_params_dict = json.loads(query_params_input.replace("'", '"'))
-                    query_params = json.dumps(query_params_dict)
-                except Exception as e:
-                    print(f"Invalid query parameter input, ignoring.")
+            query_params = serialize_query_params(query_params_input)
+            if query_params is None:
+                print(f"Invalid query parameter input, ignoring.")
+                query_params = None
 
         if args.no_scroll:
             gremlin_layout = UNRESTRICTED_LAYOUT
@@ -3685,14 +3682,9 @@ class Graph(Magics):
                 query_params_input = local_ns[args.query_parameters]
             else:
                 query_params_input = args.query_parameters
-            if isinstance(query_params_input, dict):
-                query_params = json.dumps(query_params_input)
-            else:
-                try:
-                    query_params_dict = json.loads(query_params_input.replace("'", '"'))
-                    query_params = json.dumps(query_params_dict)
-                except Exception as e:
-                    print(f"Invalid query parameter input, ignoring.")
+            query_params = serialize_query_params(query_params_input)
+            if query_params is None:
+                print(f"Invalid query parameter input, ignoring.")
 
         if args.no_scroll:
             oc_layout = UNRESTRICTED_LAYOUT

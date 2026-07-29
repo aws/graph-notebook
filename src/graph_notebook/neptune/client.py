@@ -28,6 +28,7 @@ import nest_asyncio
 from networkx import is_valid_directed_joint_degree
 
 from graph_notebook.neptune.bolt_auth_token import NeptuneBoltAuthToken
+from graph_notebook.neptune.utils import serialize_query_params
 
 # This patch is no longer needed when graph_notebook is using the a Gremlin Python
 # client >= 3.5.0 as the HashableDict is now part of that client driver.
@@ -559,7 +560,7 @@ class Client(object):
             data['language'] = 'gremlin'
             headers['content-type'] = 'application/json'
             if query_params:
-                data['parameters'] = str(query_params).replace("'", '"')
+                data['parameters'] = serialize_query_params(query_params)
         else:
             uri = f'{self.get_uri(use_websocket=False, use_proxy=use_proxy)}/gremlin'
             data['gremlin'] = query
@@ -599,7 +600,7 @@ class Client(object):
             headers['content-type'] = 'application/json'
             if 'parameters' in args:
                 query_params = args.pop('parameters')
-                data['parameters'] = str(query_params).replace("'", '"')
+                data['parameters'] = serialize_query_params(query_params)
             if plan_type == 'explain':
                 # Remove explain.mode once HTTP is changed
                 explain_mode = args.pop('explain.mode')
@@ -656,7 +657,7 @@ class Client(object):
                 data['explain'] = explain
                 headers['Accept'] = "text/html"
             if query_params:
-                data['parameters'] = str(query_params).replace("'", '"')  # '{"AUS_code":"AUS","WLG_code":"WLG"}'
+                data['parameters'] = serialize_query_params(query_params)
             if query_timeout and self.is_analytics_domain():
                 data['queryTimeoutMilliseconds'] = str(query_timeout)
         else:
