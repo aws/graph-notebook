@@ -5,6 +5,42 @@ import boto3
 import pandas as pd
 import numpy as np
 import pickle
+
+
+class RestrictedUnpickler(pickle.Unpickler):
+    """Restrict unpickling to safe types to prevent arbitrary code execution."""
+
+    ALLOWED_CLASSES = {
+        ('builtins', 'set'),
+        ('builtins', 'frozenset'),
+        ('collections', 'OrderedDict'),
+        ('collections', 'defaultdict'),
+        ('numpy', 'ndarray'),
+        ('numpy', 'dtype'),
+        ('numpy.core.multiarray', '_reconstruct'),
+        ('numpy', 'core'),
+    }
+
+    def find_class(self, module, name):
+        if (module, name) in self.ALLOWED_CLASSES:
+            return super().find_class(module, name)
+        if module == 'builtins' and name in ('dict', 'list', 'tuple', 'str', 'int', 'float', 'bool', 'bytes'):
+            return super().find_class(module, name)
+        if module.startswith('numpy') and name in (
+            'ndarray', 'dtype', '_reconstruct', 'scalar', 'array',
+        ):
+            return super().find_class(module, name)
+        if module.startswith('sklearn'):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Deserialization of {module}.{name} is blocked for security reasons"
+        )
+
+
+def safe_pickle_load(filepath):
+    """Load a pickle file using the restricted unpickler."""
+    with open(filepath, "rb") as f:
+        return RestrictedUnpickler(f).load()
 import os
 import requests
 import json
@@ -209,15 +245,14 @@ def get_node_to_idx_mapping(training_job_name: str = None, dataprocessing_job_na
             return
         S3Downloader.download(os.path.join(job_s3_output, filename), model_artifacts_location)
 
-    with open(os.path.join(model_artifacts_location, filename), "rb") as f:
-        mapping = pickle.load(f)[mapping_key]
-        if vertex_label is not None:
-            if vertex_label in mapping:
-                mapping = mapping[vertex_label]
-            else:
-                print("Mapping for vertex label: {} not found.".format(vertex_label))
-                print("valid vertex labels which have vertices mapped to embeddings: {} ".format(list(mapping.keys())))
-                print("Returning mapping for all valid vertex labels")
+    mapping = safe_pickle_load(os.path.join(model_artifacts_location, filename))[mapping_key]
+    if vertex_label is not None:
+        if vertex_label in mapping:
+            mapping = mapping[vertex_label]
+        else:
+            print("Mapping for vertex label: {} not found.".format(vertex_label))
+            print("valid vertex labels which have vertices mapped to embeddings: {} ".format(list(mapping.keys())))
+            print("Returning mapping for all valid vertex labels")
 
     return mapping
 
