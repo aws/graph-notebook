@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Autoformatter for gremlin queries
+- Updated ITables to 2.4+ with safe query-table HTML rendering ([Link to PR](https://github.com/aws/graph-notebook/pull/785))
 
 ## Release 5.2.0 (Mar 11, 2026)
 - Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) 
