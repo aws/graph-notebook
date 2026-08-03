@@ -4,7 +4,12 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Autoformatter for gremlin queries
-- Support group matching for multi-label vertices in Gremlin visualization ([Link to Issue](https://github.com/aws/graph-notebook/issues/746))
+
+## Release 5.3.0 (Aug 03, 2026) 
+- Support group matching for multi-label vertices in Gremlin visualization ([Link to PR](https://github.com/aws/graph-notebook/pull/776))
+- Prettify JSON outputs ([Link to PR](https://github.com/aws/graph-notebook/pull/783))
+- Update NeptuneML notebooks ([Link to PR](https://github.com/aws/graph-notebook/pull/784))
+- Stability improvements
 
 ## Release 5.2.0 (Mar 11, 2026)
 - Added %degreeDistribution magic command ([PR](https://github.com/aws/graph-notebook/pull/749)) 
