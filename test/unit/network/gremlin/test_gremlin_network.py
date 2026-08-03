@@ -3014,6 +3014,126 @@ class TestGremlinNetwork(unittest.TestCase):
         self.assertEqual(v1_data['group'], '__DEPTH-2__')
         self.assertEqual(v2_data['group'], '__DEPTH-4__')
 
+    # Multi-label group matching tests (Issue #746)
+
+    def test_multilabel_vertex_matches_first_label_component(self):
+        """Vertex with :: separator should match group key for first label component"""
+        vertex = Vertex(id='1', label='TAG::TAG_ANIMAL_CONTROL')
+        gn = GremlinNetwork(vis_group_keys=['TAG', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG')
+
+    def test_multilabel_vertex_matches_second_label_component(self):
+        """Vertex with :: separator should match group key for second label component"""
+        vertex = Vertex(id='1', label='TAG::TAG_ANIMAL_CONTROL')
+        gn = GremlinNetwork(vis_group_keys=['TAG_ANIMAL_CONTROL', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG_ANIMAL_CONTROL')
+
+    def test_multilabel_vertex_no_match_falls_back_to_full_label(self):
+        """Vertex with :: separator falls back to full label when no component matches"""
+        vertex = Vertex(id='1', label='TAG::TAG_ANIMAL_CONTROL')
+        gn = GremlinNetwork(vis_group_keys=['AGENT', 'PERSON'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+    def test_multilabel_vertex_no_vis_group_keys_uses_full_label(self):
+        """Without vis_group_keys, multi-label vertex uses full label as group"""
+        vertex = Vertex(id='1', label='TAG::TAG_ANIMAL_CONTROL')
+        gn = GremlinNetwork()
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+    def test_single_label_vertex_unaffected_by_vis_group_keys(self):
+        """Single-label vertex behavior unchanged with vis_group_keys"""
+        vertex = Vertex(id='1', label='AGENT')
+        gn = GremlinNetwork(vis_group_keys=['AGENT', 'TAG'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'AGENT')
+
+    def test_multilabel_dict_vertex_matches_component(self):
+        """Dict vertex with :: string label should match group key for individual component"""
+        vertex = {
+            'id': '1',
+            'label': 'TAG_ANIMAL_CONTROL::TAG',
+            'name': 'animal_control'
+        }
+        gn = GremlinNetwork(using_http=True, vis_group_keys=['TAG', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG')
+
+    def test_multilabel_dict_vertex_no_match_falls_back(self):
+        """Dict vertex with :: string label falls back to full label when no component matches"""
+        vertex = {
+            'id': '1',
+            'label': 'TAG_ANIMAL_CONTROL::TAG',
+            'name': 'animal_control'
+        }
+        gn = GremlinNetwork(using_http=True, vis_group_keys=['AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG_ANIMAL_CONTROL::TAG')
+
+    def test_multilabel_dict_format_groupby_matches_component(self):
+        """Dict format group_by should match multi-label vertex by component"""
+        vertex = Vertex(id='1', label='TAG::TAG_ANIMAL_CONTROL')
+        gn = GremlinNetwork(group_by_property='{"TAG":"label"}', vis_group_keys=['TAG'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG')
+
+    def test_multilabel_vertex_full_label_group_key_order_independent(self):
+        """Full multi-label group key should match regardless of component order"""
+        vertex = Vertex(id='1', label='TAG_ANIMAL_CONTROL::TAG')
+        gn = GremlinNetwork(vis_group_keys=['TAG::TAG_ANIMAL_CONTROL', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+    def test_multilabel_dict_vertex_full_label_group_key_order_independent(self):
+        """Dict vertex: full multi-label group key should match regardless of component order"""
+        vertex = {
+            T.id: '1',
+            T.label: 'TAG_ANIMAL_CONTROL::TAG',
+            'name': 'animal_control'
+        }
+        gn = GremlinNetwork(vis_group_keys=['TAG::TAG_ANIMAL_CONTROL', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+    def test_multilabel_full_label_key_takes_priority_over_component(self):
+        """Full multi-label group key should take priority over individual component match"""
+        vertex = Vertex(id='1', label='TAG_ANIMAL_CONTROL::TAG')
+        gn = GremlinNetwork(vis_group_keys=['TAG::TAG_ANIMAL_CONTROL', 'TAG', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertNotEqual(node['group'], 'TAG')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+    def test_multilabel_component_match_without_full_label_key(self):
+        """After reset, only current group keys should be used for matching"""
+        vertex = Vertex(id='1', label='TAG_ANIMAL_CONTROL::TAG')
+
+        # Before reset: full label key matches
+        gn = GremlinNetwork(vis_group_keys=['TAG::TAG_ANIMAL_CONTROL', 'TAG', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+
+        # Simulate reset: new network with only component keys
+        gn = GremlinNetwork(vis_group_keys=['TAG', 'AGENT'])
+        gn.add_vertex(vertex)
+        node = gn.graph.nodes.get('1')
+        self.assertNotEqual(node['group'], 'TAG::TAG_ANIMAL_CONTROL')
+        self.assertEqual(node['group'], 'TAG')
+
 
 if __name__ == '__main__':
     unittest.main()

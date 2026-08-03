@@ -1418,7 +1418,8 @@ class Graph(Magics):
                                             label_max_length=args.label_max_length,
                                             edge_label_max_length=args.edge_label_max_length,
                                             ignore_groups=args.ignore_groups,
-                                            using_http=using_http)
+                                            using_http=using_http,
+                                            vis_group_keys=list(self.graph_notebook_vis_options.get('groups', {}).keys()))
 
                         if using_http and 'path()' in cell and query_res and isinstance(query_res, list):
                             first_path = query_res[0]
