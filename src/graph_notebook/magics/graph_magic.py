@@ -363,6 +363,21 @@ def encode_html_chars(result):
     return fixed_result
 
 
+def encode_html_axis_label(label):
+    if isinstance(label, tuple):
+        return tuple(encode_html_axis_label(item) for item in label)
+    if isinstance(label, str):
+        return encode_html_chars(label)
+    return label
+
+
+def show_pre_encoded_results(results_df, **kwargs):
+    """Display query results whose HTML-sensitive characters are already encoded."""
+    display_df = results_df.rename(columns=encode_html_axis_label)
+    display_df.columns.names = [encode_html_axis_label(name) for name in display_df.columns.names]
+    return show(display_df, allow_html=True, **kwargs)
+
+
 def decode_html_chars(results_df: pd.DataFrame = None) -> pd.DataFrame:
     for k, v in iter(DT_HTML_CHAR_MAP.items()):
         results_df = results_df.map(lambda x: x.replace(v, k))
@@ -1041,7 +1056,7 @@ class Graph(Magics):
                     if args.hide_index:
                         sparql_columndefs[1]["visible"] = False
                     init_notebook_mode(connected=args.connected_table)
-                    show(results_df,
+                    show_pre_encoded_results(results_df,
                          connected=args.connected_table,
                          scrollX=True,
                          scrollY=sparql_scrollY,
@@ -1522,7 +1537,7 @@ class Graph(Magics):
                     if args.hide_index:
                         gremlin_columndefs[1]["visible"] = False
                     init_notebook_mode(connected=args.connected_table)
-                    show(results_df,
+                    show_pre_encoded_results(results_df,
                          connected=args.connected_table,
                          scrollX=True,
                          scrollY=gremlin_scrollY,
@@ -3903,7 +3918,7 @@ class Graph(Magics):
                     if args.hide_index:
                         oc_columndefs[1]["visible"] = False
                     init_notebook_mode(connected=args.connected_table)
-                    show(results_df,
+                    show_pre_encoded_results(results_df,
                          connected=args.connected_table,
                          scrollX=True,
                          scrollY=oc_scrollY,

@@ -4,6 +4,7 @@ Starting with v1.31.6, this file will contain a record of major features and upd
 
 ## Upcoming
 - Autoformatter for gremlin queries
+- Updated ITables to 2.4+ with safe query-table HTML rendering ([Link to PR](https://github.com/aws/graph-notebook/pull/785))
 
 ## Release 5.3.0 (Aug 03, 2026) 
 - Support group matching for multi-label vertices in Gremlin visualization ([Link to PR](https://github.com/aws/graph-notebook/pull/776))
